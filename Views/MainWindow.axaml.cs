@@ -540,7 +540,12 @@ namespace CleanScan.Views
 
             if (this.FindControl<MpvHost>("VideoHost") is { } host)
             {
-                host.HandleReady += hwnd => _mpvService.Initialize(hwnd);
+                host.HandleReady += hwnd =>
+                {
+                    _mpvService.Initialize(hwnd);
+                    if (TryValidateSourceSelection(out _))
+                        _ = LoadScriptAsync();
+                };
                 host.FileDropped += OnPlayerFileDrop;
             }
 
