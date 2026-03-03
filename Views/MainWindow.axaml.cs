@@ -430,6 +430,7 @@ namespace CleanScan.Views
         private bool  _suppressTextEvents;
         private bool  _isClosing;
         private bool  _isInitializing;
+        private bool  _layoutInitialized;
         private bool  _sourceValidationErrorVisible;
         private Grid? _mainGrid;
 
@@ -667,6 +668,7 @@ namespace CleanScan.Views
         private void OnClosing(object? sender, WindowClosingEventArgs e)
         {
             _isClosing = true;
+            _layoutInitialized = false;
             _refreshDebouncer.Cancel();
             SaveWindowSettings();
             _mpvService?.Dispose();
@@ -790,6 +792,10 @@ namespace CleanScan.Views
 
             if (saved?.BottomPanelHeight is { } bph)
                 MainGrid.RowDefinitions[2].Height = new GridLength(Math.Clamp(bph, 60, 800), GridUnitType.Pixel);
+
+            _layoutInitialized = true;
+            // Sauvegarde explicite après initialisation pour garantir des coordonnées valides
+            Dispatcher.UIThread.Post(SaveWindowSettings, DispatcherPriority.Render);
         }
 
         private double GetStartupHeight(WindowSettings? saved)
@@ -827,7 +833,7 @@ namespace CleanScan.Views
 
         private async void OnPositionChanged(object? sender, PixelPointEventArgs e)
         {
-            if (_isInitializing || _isClosing || WindowState != WindowState.Normal) return;
+            if (!_layoutInitialized || _isInitializing || _isClosing || WindowState != WindowState.Normal) return;
             await _windowStateDebouncer.DebounceAsync(() =>
             {
                 SaveWindowSettings();
@@ -837,7 +843,7 @@ namespace CleanScan.Views
 
         private async void OnWindowSizeChanged(object? sender, SizeChangedEventArgs e)
         {
-            if (_isInitializing || _isClosing || WindowState != WindowState.Normal) return;
+            if (!_layoutInitialized || _isInitializing || _isClosing || WindowState != WindowState.Normal) return;
             await _windowStateDebouncer.DebounceAsync(() =>
             {
                 SaveWindowSettings();
@@ -847,7 +853,7 @@ namespace CleanScan.Views
 
         private async void OnBottomPanelSizeChanged(object? sender, SizeChangedEventArgs e)
         {
-            if (_isInitializing || _isClosing) return;
+            if (!_layoutInitialized || _isInitializing || _isClosing) return;
             await _windowStateDebouncer.DebounceAsync(() =>
             {
                 SaveWindowSettings();
