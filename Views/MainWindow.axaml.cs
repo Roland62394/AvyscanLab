@@ -482,6 +482,8 @@ namespace CleanScan.Views
             Opened  += OnOpened;
             Closing += OnClosing;
             PositionChanged += OnPositionChanged;
+            SizeChanged     += OnWindowSizeChanged;
+            BottomPanel.SizeChanged += OnBottomPanelSizeChanged;
             InitializeChoiceFields();
             UpdateOptionColumnVisibility();
             RegisterChangeHandlers();
@@ -785,6 +787,9 @@ namespace CleanScan.Views
                 Position = new PixelPoint(sx, sy);
             else
                 SnapToBottomOfScreen();
+
+            if (saved?.BottomPanelHeight is { } bph)
+                MainGrid.RowDefinitions[2].Height = new GridLength(Math.Clamp(bph, 60, 800), GridUnitType.Pixel);
         }
 
         private double GetStartupHeight(WindowSettings? saved)
@@ -816,12 +821,33 @@ namespace CleanScan.Views
         private void SaveWindowSettings()
         {
             if (!IsVisible || WindowState != WindowState.Normal) return;
-            _windowStateService.Save(new WindowSettings(Bounds.Width, Height, Position.X, Position.Y, ViewModel.CurrentLanguageCode));
+            var bottomH = BottomPanel.Bounds.Height is > 0 and var bh ? (double?)bh : null;
+            _windowStateService.Save(new WindowSettings(Bounds.Width, Height, Position.X, Position.Y, ViewModel.CurrentLanguageCode, bottomH));
         }
 
         private async void OnPositionChanged(object? sender, PixelPointEventArgs e)
         {
             if (_isInitializing || _isClosing || WindowState != WindowState.Normal) return;
+            await _windowStateDebouncer.DebounceAsync(() =>
+            {
+                SaveWindowSettings();
+                return Task.CompletedTask;
+            });
+        }
+
+        private async void OnWindowSizeChanged(object? sender, SizeChangedEventArgs e)
+        {
+            if (_isInitializing || _isClosing || WindowState != WindowState.Normal) return;
+            await _windowStateDebouncer.DebounceAsync(() =>
+            {
+                SaveWindowSettings();
+                return Task.CompletedTask;
+            });
+        }
+
+        private async void OnBottomPanelSizeChanged(object? sender, SizeChangedEventArgs e)
+        {
+            if (_isInitializing || _isClosing) return;
             await _windowStateDebouncer.DebounceAsync(() =>
             {
                 SaveWindowSettings();

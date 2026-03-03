@@ -425,7 +425,7 @@
         <!-- ══════════════════════════════════════════════════════
              ZONE CENTRALE — vidéo + timeline (fixe) + séparateur + panneau bas
         ══════════════════════════════════════════════════════ -->
-        <Grid RowDefinitions="*,4,360">
+        <Grid x:Name="MainGrid" RowDefinitions="*,4,360">
 
         <!-- ── Row 0 : DockPanel — Transport Bar (fixe) + Vidéo (fill) ── -->
         <DockPanel Grid.Row="0">
@@ -492,7 +492,7 @@
                       Cursor="SizeNorthSouth"/>
 
         <!-- ── Row 2 : OPTIONS / FILTERS / PARAMS ── -->
-        <Border Grid.Row="2"
+        <Border x:Name="BottomPanel" Grid.Row="2"
                 Background="{StaticResource BgPanel}"
                 BorderBrush="{StaticResource BorderSubtle}"
                 BorderThickness="0,1,0,0">
