@@ -179,7 +179,7 @@ public sealed class MpvService : IDisposable
     public void Seek(double seconds)
     {
         if (_ctx == 0) return;
-        mpv_command(_ctx, ["seek", seconds.ToString("F3", CultureInfo.InvariantCulture), "absolute", null]);
+        mpv_command(_ctx, ["seek", seconds.ToString("F3", CultureInfo.InvariantCulture), "absolute+exact", null]);
     }
 
     public double GetPosition()

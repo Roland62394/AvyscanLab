@@ -533,6 +533,18 @@ if (enable_crop) {
 src = src.KillAudio().AssumeFPS(play_speed)
 src_matrix = _MatrixAuto(src)
 
+# Rand-Padding für Zeitfilter (verhindert Zugriffe außerhalb des Bereichs bei ImageSource).
+# MVTools2 MDegrain2/3 fordert Frames außerhalb des Clips für Bewegungsreferenzen an.
+# Bei ImageSource existieren diese Frames nicht als Datei → Absturz.
+# Wir fügen vorne/hinten Kopien des ersten/letzten Frames ein und entfernen das Padding am Ausgang.
+n_img_orig = 0
+n_img_pad  = 0
+if (use_img) {
+  n_img_orig = FrameCount(src)
+  n_img_pad  = 4   # deckt MDegrain3 (delta=3) + RemoveDirtMC (delta=1) mit Puffer ab
+  src = Trim(src, 0, 0).Loop(n_img_pad) + src + Trim(src, n_img_orig - 1, n_img_orig - 1).Loop(n_img_pad)
+}
+
 
 # =========================
 # PIPELINE — KORRIGIERTE REIHENFOLGE v2
@@ -630,6 +642,9 @@ out = preview
     \     EnsureColorspaceSafe(final, "YV24", matrix=src_matrix),
     \     label_size=preview_label_size)
     \ : final
+
+# Rand-Padding für Zeitfilter entfernen (nur bei Bildsequenz-Quelle)
+out = (n_img_pad > 0) ? Trim(out, n_img_pad, n_img_pad + n_img_orig - 1) : out
 
 out = out.Prefetch(threads)
 out

@@ -506,7 +506,12 @@ namespace CleanScan.Views
                 seekBar.AddHandler(PointerReleasedEvent, (_, _) =>
                     {
                         _seekDragging = false;
-                        _mpvService?.Seek(seekBar.Value);
+                        // Clamp to 1 ms before end to avoid requesting frame N (out of range) from AviSynth.
+                        // AviSynth clips have frames 0..N-1; seeking to exactly duration = N/fps causes a crash.
+                        var pos = _seekDuration > 0
+                            ? Math.Min(seekBar.Value, _seekDuration - 0.001)
+                            : seekBar.Value;
+                        _mpvService?.Seek(pos);
                     },
                     RoutingStrategies.Bubble, handledEventsToo: true);
             }

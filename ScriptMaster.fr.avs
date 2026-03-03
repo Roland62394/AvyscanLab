@@ -536,6 +536,18 @@ if (enable_crop) {
 src = src.KillAudio().AssumeFPS(play_speed)
 src_matrix = _MatrixAuto(src)
 
+# Padding des bords pour les filtres temporels (évite les accès hors plage pour ImageSource)
+# MVTools2 MDegrain2 (delta=2) et MDegrain3 (delta=3) demandent des frames avant/après la plage.
+# Pour ImageSource, ces frames n'ont pas de fichier correspondant → crash.
+# On préfixe/suffixe le clip avec des copies de la première/dernière frame, puis on retire le padding en sortie.
+n_img_orig = 0
+n_img_pad  = 0
+if (use_img) {
+  n_img_orig = FrameCount(src)
+  n_img_pad  = 4   # couvre MDegrain3 (delta=3) + RemoveDirtMC (delta=1) avec marge
+  src = Trim(src, 0, 0).Loop(n_img_pad) + src + Trim(src, n_img_orig - 1, n_img_orig - 1).Loop(n_img_pad)
+}
+
 
 # =========================
 # PIPELINE — ORDRE CORRIGÉ v2
@@ -633,6 +645,9 @@ out = preview
     \     EnsureColorspaceSafe(final, "YV24", matrix=src_matrix),
     \     label_size=preview_label_size)
     \ : final
+
+# Retrait du padding ajouté pour les filtres temporels (image source uniquement)
+out = (n_img_pad > 0) ? Trim(out, n_img_pad, n_img_pad + n_img_orig - 1) : out
 
 out = out.Prefetch(threads)
 out

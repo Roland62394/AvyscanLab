@@ -533,6 +533,18 @@ if (enable_crop) {
 src = src.KillAudio().AssumeFPS(play_speed)
 src_matrix = _MatrixAuto(src)
 
+# Relleno de bordes para filtros temporales (evita accesos fuera de rango con ImageSource).
+# MVTools2 MDegrain2/3 solicita frames más allá de los límites del clip para referencias de movimiento.
+# Con ImageSource, esos frames no tienen archivo correspondiente → crash.
+# Añadimos copias del primer/último frame al inicio/fin y eliminamos el relleno en la salida.
+n_img_orig = 0
+n_img_pad  = 0
+if (use_img) {
+  n_img_orig = FrameCount(src)
+  n_img_pad  = 4   # cubre MDegrain3 (delta=3) + RemoveDirtMC (delta=1) con margen
+  src = Trim(src, 0, 0).Loop(n_img_pad) + src + Trim(src, n_img_orig - 1, n_img_orig - 1).Loop(n_img_pad)
+}
+
 
 # =========================
 # PIPELINE — ORDEN CORREGIDO v2
@@ -630,6 +642,9 @@ out = preview
     \     EnsureColorspaceSafe(final, "YV24", matrix=src_matrix),
     \     label_size=preview_label_size)
     \ : final
+
+# Eliminar relleno de bordes para filtros temporales (solo en secuencia de imágenes)
+out = (n_img_pad > 0) ? Trim(out, n_img_pad, n_img_pad + n_img_orig - 1) : out
 
 out = out.Prefetch(threads)
 out
