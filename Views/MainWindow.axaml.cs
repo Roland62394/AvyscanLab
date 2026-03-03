@@ -493,10 +493,11 @@ namespace CleanScan.Views
             if (this.FindControl<MpvHost>("VideoHost") is { } host)
                 host.HandleReady += hwnd => _mpvService.Initialize(hwnd);
 
-            _mpvService.PositionChanged += pos => Dispatcher.UIThread.Post(() => OnMpvPosition(pos));
-            _mpvService.DurationChanged += dur => Dispatcher.UIThread.Post(() => OnMpvDuration(dur));
-            _mpvService.PauseChanged    += p   => Dispatcher.UIThread.Post(() => OnMpvPauseChanged(p));
-            _mpvService.FileLoaded      += ()  => Dispatcher.UIThread.Post(() => OnMpvFileLoaded());
+            _mpvService.PositionChanged    += pos => Dispatcher.UIThread.Post(() => OnMpvPosition(pos));
+            _mpvService.DurationChanged    += dur => Dispatcher.UIThread.Post(() => OnMpvDuration(dur));
+            _mpvService.PauseChanged       += p   => Dispatcher.UIThread.Post(() => OnMpvPauseChanged(p));
+            _mpvService.FileLoaded         += ()  => Dispatcher.UIThread.Post(() => OnMpvFileLoaded());
+            _mpvService.UnexpectedShutdown += ()  => Dispatcher.UIThread.Post(OnMpvUnexpectedShutdown);
 
             if (this.FindControl<Slider>("SeekBar") is { } seekBar)
             {
@@ -537,6 +538,25 @@ namespace CleanScan.Views
         private void OnMpvFileLoaded()
         {
             if (this.FindControl<Slider>("SeekBar") is { } s) s.Value = 0;
+        }
+
+        private void OnMpvUnexpectedShutdown()
+        {
+            // mpv shut down unexpectedly (e.g. AviSynth error during seek).
+            // Reinitialise the player and reload the current script.
+            _seekDragging = false;
+            _seekDuration = 0;
+            if (this.FindControl<Slider>("SeekBar") is { } s)
+            {
+                s.Value     = 0;
+                s.Maximum   = 1;
+                s.IsEnabled = false;
+            }
+
+            _mpvService?.Reinitialize();
+
+            if (TryValidateSourceSelection(out _))
+                _ = LoadScriptAsync();
         }
 
         private void UpdateTimeLabel(double pos, double dur)

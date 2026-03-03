@@ -88,15 +88,22 @@ public sealed class MpvService : IDisposable
     #endregion
 
     private nint                     _ctx;
+    private nint                     _hwnd;
     private CancellationTokenSource? _cts;
     private Task?                    _eventTask;
     private double                   _pendingSeekPos;
     private bool                     _disposed;
+    private bool                     _expectingShutdown;
 
     public bool IsReady => _ctx != 0;
 
+    /// <summary>Fired (on background thread) when mpv shuts down unexpectedly during playback.</summary>
+    public event Action? UnexpectedShutdown;
+
     public void Initialize(nint hwnd)
     {
+        _hwnd = hwnd;
+
         try { _ctx = mpv_create(); }
         catch { return; }
 
@@ -182,11 +189,29 @@ public sealed class MpvService : IDisposable
         return val;
     }
 
+    /// <summary>
+    /// Reinitialize mpv after an unexpected shutdown (uses the same HWND as the last Initialize call).
+    /// Must be called from the UI thread.
+    /// </summary>
+    public void Reinitialize()
+    {
+        if (_hwnd == 0 || _disposed) return;
+
+        // EventLoop has already exited; clean up its .NET resources.
+        _eventTask?.Wait(TimeSpan.FromMilliseconds(500));
+        _eventTask = null;
+        _cts?.Dispose();
+        _cts = null;
+
+        Initialize(_hwnd);
+    }
+
     public void Dispose()
     {
         if (_disposed) return;
         _disposed = true;
 
+        _expectingShutdown = true;
         _cts?.Cancel();
 
         var ctx = _ctx;
@@ -217,6 +242,11 @@ public sealed class MpvService : IDisposable
             switch (ev.EventId)
             {
                 case EventShutdown:
+                    if (!_expectingShutdown)
+                    {
+                        _ctx = 0; // invalidate before notifying UI
+                        UnexpectedShutdown?.Invoke();
+                    }
                     return;
 
                 case EventFileLoaded:
