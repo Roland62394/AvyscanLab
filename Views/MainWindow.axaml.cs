@@ -1613,14 +1613,17 @@ namespace CleanScan.Views
             _mpvService?.TogglePlayPause();
 
         private void OnVdbStopClick(object? sender, RoutedEventArgs e) =>
-            _mpvService?.Stop();
+            _mpvService?.Pause();
 
         private void OnVdbNextFrameClick(object? sender, RoutedEventArgs e) =>
             _mpvService?.FrameStep();
 
         private void OnVdbEndClick(object? sender, RoutedEventArgs e)
         {
-            if (_seekDuration > 0) _mpvService?.Seek(_seekDuration);
+            if (_totalFrames > 0 && _fps > 0)
+                _mpvService?.Seek((_totalFrames - 1.0) / _fps);
+            else if (_seekDuration > 0)
+                _mpvService?.Seek(_seekDuration - 0.001);
         }
 
         // ── Raccourcis clavier transport ────────────────────────────────
