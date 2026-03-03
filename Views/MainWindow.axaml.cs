@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Resources;
@@ -354,6 +355,45 @@ namespace CleanScan.Views
                 ["es"] = "Solo modo edge: umbral mínimo de respuesta de la máscara (después de la compresión gamma) para activar el enfoque. La compresión gamma sola suele ser suficiente — threshold=0 para desactivarla. Recomendado si persiste grano residual: 20–40. Sin efecto en modo simple." },
         };
 
+        private readonly record struct SliderSpec(
+            string Field, double Min, double Max, double SmallChange, bool IsFloat, int Decimals = 0);
+
+        private static readonly SliderSpec[] SliderSpecs =
+        [
+            new("Crop_L",            0,    500,  1,    false),
+            new("Crop_T",            0,    500,  1,    false),
+            new("Crop_R",            0,    500,  1,    false),
+            new("Crop_B",            0,    500,  1,    false),
+            new("degrain_thSAD",     0,    1000, 10,   false),
+            new("degrain_thSADC",    0,    1000, 10,   false),
+            new("degrain_blksize",   4,    64,   4,    false),
+            new("degrain_overlap",   0,    32,   1,    false),
+            new("degrain_pel",       1,    4,    1,    false),
+            new("degrain_search",    0,    5,    1,    false),
+            new("denoise_strength",  1,    20,   1,    false),
+            new("denoise_dist",      1,    20,   1,    false),
+            new("Lum_Bright",       -255,  255,  1,    false),
+            new("Lum_Contrast",      0.1,  3.0,  0.05, true, 2),
+            new("Lum_Sat",           0.1,  3.0,  0.05, true, 2),
+            new("Lum_Hue",          -180,  180,  1,    false),
+            new("Lum_GammaY",        0.1,  3.0,  0.05, true, 2),
+            new("LockChan",         -3,    2,    1,    false),
+            new("LockVal",           0,    255,  1,    false),
+            new("Scale",             0,    10,   0.5,  true, 1),
+            new("Th",                0,    1,    0.01, true, 2),
+            new("HiTh",              0,    1,    0.01, true, 2),
+            new("X",                 0,    2000, 10,   false),
+            new("Y",                 0,    2000, 10,   false),
+            new("W",                 0,    4000, 10,   false),
+            new("H",                 0,    4000, 10,   false),
+            new("Omin",              0,    255,  1,    false),
+            new("Omax",              0,    255,  1,    false),
+            new("Verbosity",         0,    6,    1,    false),
+            new("Sharp_Strength",    1,    20,   1,    false),
+            new("Sharp_Radius",      0.5,  5.0,  0.1,  true, 1),
+            new("Sharp_Threshold",   0,    100,  1,    false),
+        ];
+
         [GeneratedRegex(@"^\d+$")]
         private static partial Regex NumericStemRegex();
 
@@ -428,6 +468,8 @@ namespace CleanScan.Views
         private double      _fps;
 
         private bool  _suppressTextEvents;
+        private bool  _sliderSync;
+        private readonly Dictionary<string, (Slider Slider, SliderSpec Spec)> _sliderMap = new();
         private bool  _isClosing;
         private bool  _isInitializing;
         private bool  _layoutInitialized;
@@ -488,6 +530,7 @@ namespace CleanScan.Views
             InitializeChoiceFields();
             UpdateOptionColumnVisibility();
             RegisterChangeHandlers();
+            InitSliders();
             InitPlayerControls();
         }
 
@@ -597,6 +640,66 @@ namespace CleanScan.Views
                 lbl.Text = $"{Fmt(pos)} / {Fmt(dur)}";
         }
 
+        private void InitSliders()
+        {
+            foreach (var spec in SliderSpecs)
+            {
+                if (this.FindControl<Slider>("Slide_" + spec.Field) is not { } slider) continue;
+                slider.Minimum     = spec.Min;
+                slider.Maximum     = spec.Max;
+                slider.SmallChange = spec.SmallChange;
+                slider.LargeChange = spec.SmallChange * 10;
+                _sliderMap[spec.Field] = (slider, spec);
+
+                var captured = spec;
+                slider.ValueChanged += (_, _) => OnSliderValueChanged(captured);
+            }
+
+            _config.Changed += OnConfigChangedForSlider;
+        }
+
+        private void OnSliderValueChanged(SliderSpec spec)
+        {
+            if (_sliderSync || _suppressTextEvents) return;
+            if (!_sliderMap.TryGetValue(spec.Field, out var entry)) return;
+            if (this.FindControl<TextBox>(spec.Field) is not { } tb) return;
+
+            _sliderSync = true;
+            try
+            {
+                tb.Text = spec.IsFloat
+                    ? entry.Slider.Value.ToString("F" + spec.Decimals, CultureInfo.InvariantCulture)
+                    : ((int)Math.Round(entry.Slider.Value)).ToString();
+            }
+            finally { _sliderSync = false; }
+        }
+
+        private void OnConfigChangedForSlider(string key, string value)
+        {
+            if (!_sliderMap.TryGetValue(key, out var entry)) return;
+            if (_sliderSync) return;
+            if (!double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var val)) return;
+
+            Dispatcher.UIThread.Post(() =>
+            {
+                _sliderSync = true;
+                try { entry.Slider.Value = Math.Clamp(val, entry.Slider.Minimum, entry.Slider.Maximum); }
+                finally { _sliderSync = false; }
+            });
+        }
+
+        private void SyncAllSliders()
+        {
+            foreach (var (field, (slider, _)) in _sliderMap)
+            {
+                var raw = _config.Get(field);
+                if (!double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var val)) continue;
+                _sliderSync = true;
+                try { slider.Value = Math.Clamp(val, slider.Minimum, slider.Maximum); }
+                finally { _sliderSync = false; }
+            }
+        }
+
         // Positions the window BEFORE Show() is called, so the native window is
         // created directly at the right coordinates (no top-left flash on startup).
         private void PreApplyWindowPosition()
@@ -670,6 +773,7 @@ namespace CleanScan.Views
             _isClosing = true;
             _layoutInitialized = false;
             _refreshDebouncer.Cancel();
+            _config.Changed -= OnConfigChangedForSlider;
             SaveWindowSettings();
             _mpvService?.Dispose();
         }
@@ -909,6 +1013,7 @@ namespace CleanScan.Views
 
             UpdateOptionColumnVisibility();
             _config.ReplaceAll(newValues);
+            SyncAllSliders();
         }
 
         private static bool IsPathField(string name) =>
