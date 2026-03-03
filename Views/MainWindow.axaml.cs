@@ -424,6 +424,8 @@ namespace CleanScan.Views
         private MpvService? _mpvService;
         private bool        _seekDragging;
         private double      _seekDuration;
+        private int         _totalFrames;
+        private double      _fps;
 
         private bool  _suppressTextEvents;
         private bool  _isClosing;
@@ -506,11 +508,13 @@ namespace CleanScan.Views
                 seekBar.AddHandler(PointerReleasedEvent, (_, _) =>
                     {
                         _seekDragging = false;
-                        // Clamp to 1 ms before end to avoid requesting frame N (out of range) from AviSynth.
-                        // AviSynth clips have frames 0..N-1; seeking to exactly duration = N/fps causes a crash.
-                        var pos = _seekDuration > 0
-                            ? Math.Min(seekBar.Value, _seekDuration - 0.001)
-                            : seekBar.Value;
+                        var pos = seekBar.Value;
+                        // Clamp to the last valid frame: (N-1)/fps.
+                        // Frame-based is exact; duration-based fallback used before first FileLoaded.
+                        if (_totalFrames > 0 && _fps > 0)
+                            pos = Math.Min(pos, (_totalFrames - 1.0) / _fps);
+                        else if (_seekDuration > 0)
+                            pos = Math.Min(pos, _seekDuration - 0.001);
                         _mpvService?.Seek(pos);
                     },
                     RoutingStrategies.Bubble, handledEventsToo: true);
@@ -543,6 +547,21 @@ namespace CleanScan.Views
         private void OnMpvFileLoaded()
         {
             if (this.FindControl<Slider>("SeekBar") is { } s) s.Value = 0;
+
+            // Query exact frame count and fps to set an accurate slider maximum.
+            // This prevents seeking past the last valid frame, which would crash AviSynth
+            // (ImageSource has no file for out-of-range indices) and freeze video players at EOF.
+            if (_mpvService is { IsReady: true })
+            {
+                _totalFrames = _mpvService.GetTotalFrames();
+                _fps         = _mpvService.GetFps();
+
+                if (_totalFrames > 0 && _fps > 0 && this.FindControl<Slider>("SeekBar") is { } bar)
+                {
+                    bar.Maximum   = (_totalFrames - 1.0) / _fps;
+                    bar.IsEnabled = true;
+                }
+            }
         }
 
         private void OnMpvUnexpectedShutdown()
@@ -1633,7 +1652,10 @@ namespace CleanScan.Views
 
                 case (Key.Right, KeyModifiers.Control):
                     e.Handled = true;
-                    if (_seekDuration > 0) _mpvService?.Seek(_seekDuration);
+                    if (_totalFrames > 0 && _fps > 0)
+                        _mpvService?.Seek((_totalFrames - 1.0) / _fps);
+                    else if (_seekDuration > 0)
+                        _mpvService?.Seek(_seekDuration - 0.001);
                     break;
             }
         }
@@ -1652,6 +1674,8 @@ namespace CleanScan.Views
                 if (string.IsNullOrWhiteSpace(scriptPath)) return;
 
                 var pos = _mpvService.IsReady ? _mpvService.GetPosition() : 0.0;
+                _totalFrames = 0;  // will be refreshed in OnMpvFileLoaded
+                _fps         = 0;
                 _mpvService.LoadFile(scriptPath, pos);
             }
             finally { _refreshGate.Release(); }

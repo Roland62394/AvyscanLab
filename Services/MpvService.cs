@@ -189,6 +189,21 @@ public sealed class MpvService : IDisposable
         return val;
     }
 
+    public int GetTotalFrames()
+    {
+        if (_ctx == 0) return 0;
+        if (mpv_get_property(_ctx, "estimated-frame-count", FormatDouble, out var val) != 0) return 0;
+        return (int)Math.Round(val);
+    }
+
+    public double GetFps()
+    {
+        if (_ctx == 0) return 0;
+        if (mpv_get_property(_ctx, "container-fps", FormatDouble, out var fps) == 0 && fps > 0) return fps;
+        if (mpv_get_property(_ctx, "fps",           FormatDouble, out var fps2) == 0 && fps2 > 0) return fps2;
+        return 0;
+    }
+
     /// <summary>
     /// Reinitialize mpv after an unexpected shutdown (uses the same HWND as the last Initialize call).
     /// Must be called from the UI thread.
