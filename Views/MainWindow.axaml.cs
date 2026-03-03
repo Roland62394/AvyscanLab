@@ -493,7 +493,10 @@ namespace CleanScan.Views
             _mpvService = new MpvService();
 
             if (this.FindControl<MpvHost>("VideoHost") is { } host)
+            {
                 host.HandleReady += hwnd => _mpvService.Initialize(hwnd);
+                host.FileDropped += OnPlayerFileDrop;
+            }
 
             _mpvService.PositionChanged    += pos => Dispatcher.UIThread.Post(() => OnMpvPosition(pos));
             _mpvService.DurationChanged    += dur => Dispatcher.UIThread.Post(() => OnMpvDuration(dur));
@@ -1166,6 +1169,15 @@ namespace CleanScan.Views
                 await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), GetUiText("DropInvalidFileType"));
                 return;
             }
+            await ApplyDetectedSourceAndRefreshAsync(path);
+        }
+
+        private async void OnPlayerFileDrop(string path)
+        {
+            var ext = Path.GetExtension(path);
+            if (string.IsNullOrWhiteSpace(ext)) return;
+            if (!VideoExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase) &&
+                !ImageExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase)) return;
             await ApplyDetectedSourceAndRefreshAsync(path);
         }
 
