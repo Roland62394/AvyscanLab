@@ -1,0 +1,115 @@
+<Window xmlns="https://github.com/avaloniaui"
+       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+       x:Class="CleanScan.Views.AboutWindow"
+       Width="520"
+       Height="420"
+       CanResize="False"
+       WindowStartupLocation="CenterScreen"
+       SystemDecorations="None"
+       ShowInTaskbar="False"
+       Background="#0F1319"
+       Icon="/Assets/Ico.ico">
+   <Window.Styles>
+       <Style Selector="Button#CloseXButton /template/ ContentPresenter">
+           <Setter Property="Background" Value="Transparent"/>
+       </Style>
+       <Style Selector="Button#CloseXButton:pointerover /template/ ContentPresenter">
+           <Setter Property="Background" Value="Transparent"/>
+       </Style>
+       <Style Selector="Button#CloseXButton:pointerover">
+           <Setter Property="Foreground" Value="#C05050"/>
+       </Style>
+   </Window.Styles>
+
+   <Border BorderBrush="#252E42" BorderThickness="1" Margin="8" Background="#161B24">
+       <Grid RowDefinitions="Auto,*,Auto">
+
+           <!-- Barre de titre personnalisée (déplaçable) -->
+           <Border x:Name="TitleBar"
+                   Grid.Row="0"
+                   Height="34"
+                   Padding="14,0,6,0"
+                   Background="#0F1319"
+                   BorderBrush="#252E42"
+                   BorderThickness="0,0,0,1">
+               <Grid ColumnDefinitions="*,Auto">
+                   <TextBlock x:Name="TitleBarLabel"
+                              Grid.Column="0"
+                              FontSize="10"
+                              FontFamily="Consolas,Cascadia Code,monospace"
+                              Foreground="#4A5470"
+                              LetterSpacing="2"
+                              VerticalAlignment="Center"/>
+                   <Button x:Name="CloseXButton"
+                           Grid.Column="1"
+                           Width="28"
+                           Height="28"
+                           Padding="0"
+                           Background="Transparent"
+                           BorderThickness="0"
+                           Foreground="#4A5470"
+                           FontSize="13"
+                           HorizontalContentAlignment="Center"
+                           VerticalContentAlignment="Center"
+                           Content="✕"/>
+               </Grid>
+           </Border>
+
+           <!-- Contenu principal -->
+           <StackPanel Grid.Row="1"
+                       Margin="16,12,16,12"
+                       Spacing="0"
+                       VerticalAlignment="Center">
+               <Image x:Name="AboutImage"
+                      Width="400"
+                      Height="210"
+                      HorizontalAlignment="Center"
+                      Stretch="Uniform"
+                      Margin="0,0,0,18"/>
+               <TextBlock x:Name="CompanyTextBlock"
+                          FontSize="13"
+                          FontWeight="SemiBold"
+                          FontFamily="Consolas,Cascadia Code,monospace"
+                          Foreground="#F0F0F0"
+                          LetterSpacing="2"
+                          HorizontalAlignment="Center"
+                          Margin="0,0,0,4"/>
+               <TextBlock x:Name="VersionTextBlock"
+                          FontSize="11"
+                          FontFamily="Consolas,Cascadia Code,monospace"
+                          Foreground="#7984A5"
+                          HorizontalAlignment="Center"
+                          Margin="0,0,0,10"/>
+               <TextBlock x:Name="WebsiteTextBlock"
+                          FontSize="11"
+                          FontFamily="Consolas,Cascadia Code,monospace"
+                          HorizontalAlignment="Center"
+                          Margin="0,0,0,6"/>
+               <TextBlock x:Name="RightsTextBlock"
+                          FontSize="10"
+                          FontFamily="Consolas,Cascadia Code,monospace"
+                          Foreground="#555E72"
+                          HorizontalAlignment="Center"/>
+           </StackPanel>
+
+           <!-- Pied de page -->
+           <Border Grid.Row="2"
+                   BorderBrush="#252E42"
+                   BorderThickness="0,1,0,0"
+                   Padding="14,8,14,12">
+               <Button x:Name="CloseButton"
+                       HorizontalAlignment="Right"
+                       HorizontalContentAlignment="Center"
+                       VerticalContentAlignment="Center"
+                       MinWidth="96"
+                       Height="26"
+                       Padding="12,0"
+                       Background="#1C2333"
+                       Foreground="#DBDBDB"
+                       BorderBrush="#252E42"
+                       BorderThickness="1"/>
+           </Border>
+
+       </Grid>
+   </Border>
+</Window>

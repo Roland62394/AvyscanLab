@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.1</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="film" xml:space="preserve">
+    <value>""</value>
+  </data>
+  <data name="img" xml:space="preserve">
+    <value>""</value>
+  </data>
+  <data name="img_start" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="img_end" xml:space="preserve">
+    <value>244</value>
+  </data>
+  <data name="play_speed" xml:space="preserve">
+    <value>24</value>
+  </data>
+  <data name="use_img" xml:space="preserve">
+    <value>true</value>
+  </data>
+  <data name="enable_flip_h" xml:space="preserve">
+    <value>false</value>
+  </data>
+  <data name="enable_flip_v" xml:space="preserve">
+    <value>false</value>
+  </data>
+  <data name="enable_crop" xml:space="preserve">
+    <value>true</value>
+  </data>
+  <data name="enable_stabilize" xml:space="preserve">
+    <value>false</value>
+  </data>
+  <data name="enable_degrain" xml:space="preserve">
+    <value>true</value>
+  </data>
+  <data name="enable_denoise" xml:space="preserve">
+    <value>true</value>
+  </data>
+  <data name="enable_luma_levels" xml:space="preserve">
+    <value>true</value>
+  </data>
+  <data name="enable_gammac" xml:space="preserve">
+    <value>true</value>
+  </data>
+  <data name="enable_sharp" xml:space="preserve">
+    <value>true</value>
+  </data>
+  <data name="preview" xml:space="preserve">
+    <value>true</value>
+  </data>
+  <data name="threads" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="Crop_L" xml:space="preserve">
+    <value>550</value>
+  </data>
+  <data name="Crop_T" xml:space="preserve">
+    <value>500</value>
+  </data>
+  <data name="Crop_R" xml:space="preserve">
+    <value>1000</value>
+  </data>
+  <data name="Crop_B" xml:space="preserve">
+    <value>500</value>
+  </data>
+  <data name="stab_maxr" xml:space="preserve">
+    <value>8</value>
+  </data>
+  <data name="stab_maxd" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="stab_noise" xml:space="preserve">
+    <value>10.0</value>
+  </data>
+  <data name="stab_sharp" xml:space="preserve">
+    <value>100</value>
+  </data>
+  <data name="degrain_mode" xml:space="preserve">
+    <value>"both"</value>
+  </data>
+  <data name="degrain_strength" xml:space="preserve">
+    <value>2.0</value>
+  </data>
+  <data name="degrain_radius" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="degrain_luma" xml:space="preserve">
+    <value>3.0</value>
+  </data>
+  <data name="degrain_chroma" xml:space="preserve">
+    <value>2.5</value>
+  </data>
+  <data name="denoise_mode" xml:space="preserve">
+    <value>"removedirtmc"</value>
+  </data>
+  <data name="denoise_strength" xml:space="preserve">
+    <value>2.0</value>
+  </data>
+  <data name="denoise_radius" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="denoise_luma" xml:space="preserve">
+    <value>3.0</value>
+  </data>
+  <data name="denoise_chroma" xml:space="preserve">
+    <value>2.5</value>
+  </data>
+  <data name="Lum_Bright" xml:space="preserve">
+    <value>0.0</value>
+  </data>
+  <data name="Lum_Contrast" xml:space="preserve">
+    <value>1.05</value>
+  </data>
+  <data name="Lum_Sat" xml:space="preserve">
+    <value>1.10</value>
+  </data>
+  <data name="Lum_Hue" xml:space="preserve">
+    <value>0.0</value>
+  </data>
+  <data name="Lum_GammaY" xml:space="preserve">
+    <value>1.30</value>
+  </data>
+  <data name="LockChan" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="LockVal" xml:space="preserve">
+    <value>250</value>
+  </data>
+  <data name="Scale" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="Th" xml:space="preserve">
+    <value>0.12</value>
+  </data>
+  <data name="HiTh" xml:space="preserve">
+    <value>0.25</value>
+  </data>
+  <data name="X" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="Y" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="W" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="H" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="Omin" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="Omax" xml:space="preserve">
+    <value>255</value>
+  </data>
+  <data name="Show" xml:space="preserve">
+    <value>false</value>
+  </data>
+  <data name="Verbosity" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="Sharp_Mode" xml:space="preserve">
+    <value>"unsharp"</value>
+  </data>
+  <data name="Sharp_Strength" xml:space="preserve">
+    <value>0.4</value>
+  </data>
+  <data name="Sharp_Radius" xml:space="preserve">
+    <value>1.5</value>
+  </data>
+  <data name="Sharp_Threshold" xml:space="preserve">
+    <value>4</value>
+  </data>
+</root>

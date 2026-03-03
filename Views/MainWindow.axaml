@@ -1,0 +1,815 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:CleanScan.ViewModels"
+        xmlns:local="using:CleanScan.Views"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="480" d:DesignHeight="400"
+        x:Class="CleanScan.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/Ico.ico"
+        Title="CleanScan"
+        Background="#0F1319"
+        Width="960"
+        MinWidth="700"
+        MinHeight="500"
+        KeyDown="OnWindowKeyDown">
+
+    <Window.Resources>
+        <!-- ─── Colors ─── -->
+        <SolidColorBrush x:Key="BgDeep"        Color="#0F1319"/>
+        <SolidColorBrush x:Key="BgPanel"       Color="#161B24"/>
+        <SolidColorBrush x:Key="BgHeader"      Color="#1C2333"/>
+        <SolidColorBrush x:Key="BgInput"       Color="#1A2030"/>
+        <SolidColorBrush x:Key="BorderSubtle"  Color="#252E42"/>
+        <SolidColorBrush x:Key="BorderAccent"  Color="#2E3D5A"/>
+        <SolidColorBrush x:Key="TextPrimary"   Color="#7984A5"/>
+        <SolidColorBrush x:Key="TextSecondary" Color="#DBDBDB"/>
+        <SolidColorBrush x:Key="TextLabel"     Color="#F6F6F6"/>
+        <SolidColorBrush x:Key="AccentBlue"    Color="#3B82C4"/>
+        <SolidColorBrush x:Key="AccentGreen"   Color="#35C156"/>
+        <SolidColorBrush x:Key="AccentDimmed"  Color="#1E3A2E"/>
+    </Window.Resources>
+
+    <Window.Styles>
+
+        <!-- ─── Global text ─── -->
+        <Style Selector="TextBlock">
+            <Setter Property="Foreground"        Value="{StaticResource TextLabel}"/>
+            <Setter Property="FontSize"          Value="13"/>
+            <Setter Property="FontFamily"        Value="Consolas,Cascadia Code,monospace"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- ─── TextBox ─── -->
+        <Style Selector="TextBox">
+            <Setter Property="Background"               Value="{StaticResource BgInput}"/>
+            <Setter Property="Foreground"               Value="{StaticResource TextPrimary}"/>
+            <Setter Property="BorderBrush"              Value="{StaticResource BorderSubtle}"/>
+            <Setter Property="BorderThickness"          Value="1"/>
+            <Setter Property="CornerRadius"             Value="3"/>
+            <Setter Property="FontSize"                 Value="13"/>
+            <Setter Property="FontFamily"               Value="Consolas,Cascadia Code,monospace"/>
+            <Setter Property="Height"                   Value="28"/>
+            <Setter Property="Padding"                  Value="6,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="TextAlignment"            Value="Right"/>
+            <Setter Property="CaretBrush"               Value="{StaticResource AccentBlue}"/>
+        </Style>
+        <Style Selector="TextBox:focus">
+            <Setter Property="BorderBrush" Value="{StaticResource AccentBlue}"/>
+        </Style>
+        <Style Selector="TextBox:pointerover">
+            <Setter Property="BorderBrush" Value="{StaticResource BorderAccent}"/>
+        </Style>
+
+        <!-- ─── ComboBox ─── -->
+        <Style Selector="ComboBox">
+            <Setter Property="Background"      Value="{StaticResource BgInput}"/>
+            <Setter Property="Foreground"      Value="{StaticResource TextPrimary}"/>
+            <Setter Property="BorderBrush"     Value="{StaticResource BorderSubtle}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius"    Value="3"/>
+            <Setter Property="FontSize"        Value="13"/>
+            <Setter Property="FontFamily"      Value="Consolas,Cascadia Code,monospace"/>
+            <Setter Property="Height"          Value="28"/>
+            <Setter Property="Padding"         Value="8,0"/>
+            <Setter Property="MinWidth"        Value="130"/>
+        </Style>
+
+        <!-- ─── Toggle button ─── -->
+        <Style Selector="Button.toggle">
+            <Setter Property="Height"                     Value="30"/>
+            <Setter Property="Padding"                    Value="8,0"/>
+            <Setter Property="CornerRadius"               Value="4"/>
+            <Setter Property="BorderThickness"            Value="1"/>
+            <Setter Property="BorderBrush"                Value="{StaticResource BorderSubtle}"/>
+            <Setter Property="Background"                 Value="#1C2333"/>
+            <Setter Property="Foreground"                 Value="{StaticResource TextPrimary}"/>
+            <Setter Property="FontSize"                   Value="13"/>
+            <Setter Property="FontFamily"                 Value="Consolas,Cascadia Code,monospace"/>
+            <Setter Property="FontWeight"                 Value="SemiBold"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment"   Value="Center"/>
+            <Setter Property="Cursor"                     Value="Hand"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"
+                                          TextElement.FontSize="{TemplateBinding FontSize}"
+                                          TextElement.FontFamily="{TemplateBinding FontFamily}"
+                                          TextElement.FontWeight="{TemplateBinding FontWeight}"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Button.toggle:pointerover">
+            <Setter Property="Background"  Value="#243050"/>
+            <Setter Property="BorderBrush" Value="{StaticResource AccentBlue}"/>
+            <Setter Property="Foreground"  Value="{StaticResource TextLabel}"/>
+        </Style>
+        <Style Selector="Button.toggle:pointerover /template/ ContentPresenter">
+            <Setter Property="Background"             Value="Transparent"/>
+            <Setter Property="TextElement.Foreground" Value="{StaticResource TextLabel}"/>
+        </Style>
+        <Style Selector="Button.toggle:pressed">
+            <Setter Property="Background"  Value="#1a2540"/>
+            <Setter Property="BorderBrush" Value="{StaticResource AccentBlue}"/>
+            <Setter Property="Foreground"  Value="{StaticResource TextLabel}"/>
+        </Style>
+        <Style Selector="Button.toggle:pressed /template/ ContentPresenter">
+            <Setter Property="Background"             Value="Transparent"/>
+            <Setter Property="TextElement.Foreground" Value="{StaticResource TextLabel}"/>
+        </Style>
+
+        <!-- ─── Expand arrow button ─── -->
+        <Style Selector="Button.expand-btn">
+            <Setter Property="Width"                      Value="28"/>
+            <Setter Property="Height"                     Value="30"/>
+            <Setter Property="Padding"                    Value="0"/>
+            <Setter Property="CornerRadius"               Value="3"/>
+            <Setter Property="BorderThickness"            Value="1"/>
+            <Setter Property="BorderBrush"                Value="{StaticResource BorderSubtle}"/>
+            <Setter Property="Background"                 Value="Transparent"/>
+            <Setter Property="Foreground"                 Value="{StaticResource TextLabel}"/>
+            <Setter Property="FontSize"                   Value="11"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment"   Value="Center"/>
+            <Setter Property="Cursor"                     Value="Hand"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"
+                                          TextElement.FontSize="{TemplateBinding FontSize}"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Button.expand-btn:pointerover">
+            <Setter Property="Background"  Value="#243050"/>
+            <Setter Property="BorderBrush" Value="{StaticResource AccentBlue}"/>
+            <Setter Property="Foreground"  Value="{StaticResource AccentBlue}"/>
+        </Style>
+        <Style Selector="Button.expand-btn:pointerover /template/ ContentPresenter">
+            <Setter Property="Background"             Value="#243050"/>
+            <Setter Property="TextElement.Foreground" Value="{StaticResource AccentBlue}"/>
+        </Style>
+        <Style Selector="Button.expand-btn:pressed">
+            <Setter Property="Background" Value="#1a2540"/>
+        </Style>
+        <Style Selector="Button.expand-btn:pressed /template/ ContentPresenter">
+            <Setter Property="Background"             Value="#1a2540"/>
+            <Setter Property="TextElement.Foreground" Value="{StaticResource AccentBlue}"/>
+        </Style>
+        <Style Selector="Button.expand-btn.active">
+            <Setter Property="BorderBrush" Value="{StaticResource AccentGreen}"/>
+            <Setter Property="Foreground"  Value="{StaticResource AccentGreen}"/>
+        </Style>
+        <Style Selector="Button.expand-btn.active /template/ ContentPresenter">
+            <Setter Property="TextElement.Foreground" Value="{StaticResource AccentGreen}"/>
+        </Style>
+        <Style Selector="Button.expand-btn.active:pointerover">
+            <Setter Property="BorderBrush" Value="{StaticResource AccentGreen}"/>
+            <Setter Property="Foreground"  Value="{StaticResource AccentGreen}"/>
+        </Style>
+        <Style Selector="Button.expand-btn.active:pointerover /template/ ContentPresenter">
+            <Setter Property="TextElement.Foreground" Value="{StaticResource AccentGreen}"/>
+        </Style>
+        <Style Selector="Button.expand-btn.active:pressed /template/ ContentPresenter">
+            <Setter Property="TextElement.Foreground" Value="{StaticResource AccentGreen}"/>
+        </Style>
+
+        <!-- ─── Menu ─── -->
+        <Style Selector="Menu">
+            <Setter Property="Background" Value="{StaticResource BgHeader}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextLabel}"/>
+        </Style>
+        <Style Selector="MenuFlyoutPresenter">
+            <Setter Property="Background" Value="{StaticResource BgHeader}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderSubtle}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style Selector="MenuItem">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextLabel}"/>
+            <Setter Property="FontSize"   Value="13"/>
+            <Setter Property="FontFamily" Value="Consolas,Cascadia Code,monospace"/>
+            <Setter Property="Height"     Value="32"/>
+            <Setter Property="Padding"    Value="12,0"/>
+        </Style>
+        <Style Selector="MenuItem:pointerover">
+            <Setter Property="Background" Value="#243050"/>
+            <Setter Property="Foreground" Value="{StaticResource TextLabel}"/>
+        </Style>
+        <Style Selector="MenuItem:selected">
+            <Setter Property="Background" Value="#243050"/>
+            <Setter Property="Foreground" Value="{StaticResource TextLabel}"/>
+        </Style>
+
+        <!-- ─── Param row label ─── -->
+        <Style Selector="TextBlock.param-label">
+            <Setter Property="Width"      Value="100"/>
+            <Setter Property="FontSize"   Value="13"/>
+            <Setter Property="Foreground" Value="{StaticResource TextLabel}"/>
+        </Style>
+
+        <!-- ─── Section title ─── -->
+        <Style Selector="TextBlock.section-title">
+            <Setter Property="FontSize"      Value="11"/>
+            <Setter Property="FontWeight"    Value="SemiBold"/>
+            <Setter Property="LetterSpacing" Value="2"/>
+            <Setter Property="Foreground"    Value="{StaticResource TextSecondary}"/>
+            <Setter Property="Margin"        Value="0,0,0,10"/>
+        </Style>
+
+        <!-- ─── Group label ─── -->
+        <Style Selector="TextBlock.group-label">
+            <Setter Property="FontSize"      Value="11"/>
+            <Setter Property="FontWeight"    Value="SemiBold"/>
+            <Setter Property="LetterSpacing" Value="2"/>
+            <Setter Property="Foreground"    Value="{StaticResource TextLabel}"/>
+            <Setter Property="Margin"        Value="0,0,0,6"/>
+        </Style>
+
+        <!-- ─── Transport button (barre lecteur VirtualDub) ─── -->
+        <Style Selector="Button.transport">
+            <Setter Property="Width"                      Value="34"/>
+            <Setter Property="Height"                     Value="32"/>
+            <Setter Property="Padding"                    Value="0"/>
+            <Setter Property="CornerRadius"               Value="5"/>
+            <Setter Property="BorderThickness"            Value="1"/>
+            <Setter Property="BorderBrush"                Value="{StaticResource BorderSubtle}"/>
+            <Setter Property="Background"                 Value="{StaticResource BgInput}"/>
+            <Setter Property="Foreground"                 Value="{StaticResource TextLabel}"/>
+            <Setter Property="FontSize"                   Value="14"/>
+            <Setter Property="FontFamily"                 Value="Consolas,Cascadia Code,monospace"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment"   Value="Center"/>
+            <Setter Property="Cursor"                     Value="Hand"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"
+                                          TextElement.FontSize="{TemplateBinding FontSize}"
+                                          TextElement.FontFamily="{TemplateBinding FontFamily}"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Button.transport:pointerover">
+            <Setter Property="Background"  Value="#243050"/>
+            <Setter Property="BorderBrush" Value="{StaticResource AccentBlue}"/>
+            <Setter Property="Foreground"  Value="#FFFFFF"/>
+        </Style>
+        <Style Selector="Button.transport:pointerover /template/ ContentPresenter">
+            <Setter Property="Background"             Value="Transparent"/>
+            <Setter Property="TextElement.Foreground" Value="#FFFFFF"/>
+        </Style>
+        <Style Selector="Button.transport:pressed">
+            <Setter Property="Background"  Value="#1a2540"/>
+            <Setter Property="BorderBrush" Value="{StaticResource AccentBlue}"/>
+        </Style>
+        <Style Selector="Button.transport:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+
+        <!-- Play variant -->
+        <Style Selector="Button.transport.play">
+            <Setter Property="Width"       Value="52"/>
+            <Setter Property="FontSize"    Value="17"/>
+            <Setter Property="BorderBrush" Value="{StaticResource AccentGreen}"/>
+            <Setter Property="Foreground"  Value="{StaticResource AccentGreen}"/>
+        </Style>
+        <Style Selector="Button.transport.play:pointerover">
+            <Setter Property="Background"  Value="{StaticResource AccentDimmed}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource AccentGreen}"/>
+            <Setter Property="Foreground"  Value="{StaticResource AccentGreen}"/>
+        </Style>
+        <Style Selector="Button.transport.play:pointerover /template/ ContentPresenter">
+            <Setter Property="TextElement.Foreground" Value="{StaticResource AccentGreen}"/>
+        </Style>
+        <Style Selector="Button.transport.play:pressed /template/ ContentPresenter">
+            <Setter Property="TextElement.Foreground" Value="{StaticResource AccentGreen}"/>
+        </Style>
+
+        <!-- Stop variant -->
+        <Style Selector="Button.transport.stop">
+            <Setter Property="Width"       Value="44"/>
+            <Setter Property="FontSize"    Value="15"/>
+            <Setter Property="Foreground"  Value="#C04848"/>
+            <Setter Property="BorderBrush" Value="#6B3030"/>
+        </Style>
+        <Style Selector="Button.transport.stop:pointerover">
+            <Setter Property="Background"  Value="#2A1515"/>
+            <Setter Property="BorderBrush" Value="#C04848"/>
+            <Setter Property="Foreground"  Value="#C04848"/>
+        </Style>
+        <Style Selector="Button.transport.stop:pointerover /template/ ContentPresenter">
+            <Setter Property="TextElement.Foreground" Value="#C04848"/>
+        </Style>
+        <Style Selector="Button.transport.stop:pressed /template/ ContentPresenter">
+            <Setter Property="TextElement.Foreground" Value="#C04848"/>
+        </Style>
+
+    </Window.Styles>
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <!-- ══════════════════════════════════════════════════════════
+         ROOT LAYOUT
+    ══════════════════════════════════════════════════════════ -->
+    <DockPanel Background="{StaticResource BgDeep}">
+
+        <!-- ── TOP BAR ── -->
+        <Border DockPanel.Dock="Top"
+                Background="{StaticResource BgHeader}"
+                BorderBrush="{StaticResource BorderSubtle}"
+                BorderThickness="0,0,0,1">
+            <StackPanel Spacing="0">
+
+                <!-- Menu strip -->
+                <Border Background="{StaticResource BgHeader}" Padding="0">
+                    <Menu HorizontalAlignment="Stretch">
+                        <Menu.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <DockPanel LastChildFill="False" HorizontalAlignment="Stretch"/>
+                            </ItemsPanelTemplate>
+                        </Menu.ItemsPanel>
+                        <MenuItem x:Name="InfosMenu" Header="Infos">
+                            <MenuItem x:Name="UserGuideMenuItem"     Header="User guide"     Click="OnUserGuideClick"/>
+                            <MenuItem x:Name="ScriptPreviewMenuItem" Header="Script preview" Click="OnScriptPreviewClick"/>
+                        </MenuItem>
+                        <MenuItem x:Name="PresetMenuItem" Header="Preset" Click="OnPresetClick"/>
+                        <MenuItem x:Name="SettingsMenu" Header="Settings">
+                            <MenuItem StaysOpenOnClick="True" Focusable="False">
+                                <MenuItem.Header>
+                                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2">
+                                        <TextBlock Text="threads" VerticalAlignment="Center"/>
+                                        <TextBox x:Name="threads" Width="44" TextAlignment="Center"/>
+                                    </StackPanel>
+                                </MenuItem.Header>
+                            </MenuItem>
+                        </MenuItem>
+                        <MenuItem x:Name="AboutMenuItem" Header="A propos" DockPanel.Dock="Right" Click="OnAboutClick"/>
+                        <MenuItem x:Name="LanguagesMenu" Header="Language" DockPanel.Dock="Right">
+                            <MenuItem x:Name="LanguageEnglishMenuItem" Header="English"  Tag="en" Click="OnLanguageClick"/>
+                            <MenuItem x:Name="LanguageFrenchMenuItem"  Header="Français" Tag="fr" Click="OnLanguageClick"/>
+                            <MenuItem x:Name="LanguageGermanMenuItem"  Header="Deutsch"  Tag="de" Click="OnLanguageClick"/>
+                            <MenuItem x:Name="LanguageSpanishMenuItem" Header="Español"  Tag="es" Click="OnLanguageClick"/>
+                        </MenuItem>
+                    </Menu>
+                </Border>
+
+                <!-- Source row -->
+                <Border Background="{StaticResource BgPanel}"
+                        BorderBrush="{StaticResource BorderSubtle}"
+                        BorderThickness="0,1,0,0"
+                        Padding="12,7">
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Disabled">
+                        <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+
+                            <!-- Source -->
+                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <TextBlock Text="SOURCE" FontSize="10" FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextSecondary}"
+                                           VerticalAlignment="Center" Margin="0,0,2,0"/>
+                                <TextBox x:Name="source" Width="380" Cursor="Hand" IsReadOnly="True"
+                                         TextAlignment="Left" DragDrop.AllowDrop="True"/>
+                            </StackPanel>
+
+                            <!-- img_start -->
+                            <StackPanel x:Name="img_start_panel" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <TextBlock Text="start" FontSize="10" Foreground="{StaticResource TextSecondary}" VerticalAlignment="Center"/>
+                                <TextBox x:Name="img_start" Width="60"/>
+                            </StackPanel>
+
+                            <!-- img_end -->
+                            <StackPanel x:Name="img_end_panel" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <TextBlock Text="end" FontSize="10" Foreground="{StaticResource TextSecondary}" VerticalAlignment="Center"/>
+                                <TextBox x:Name="img_end" Width="60"/>
+                            </StackPanel>
+
+                            <!-- play_speed -->
+                            <StackPanel x:Name="play_speed_panel" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <TextBlock Text="fps" FontSize="10" Foreground="{StaticResource TextSecondary}" VerticalAlignment="Center"/>
+                                <TextBox x:Name="play_speed" Width="44"/>
+                            </StackPanel>
+
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <!-- ══════════════════════════════════════════════════════
+             ZONE CENTRALE — vidéo + timeline (fixe) + séparateur + panneau bas
+        ══════════════════════════════════════════════════════ -->
+        <Grid RowDefinitions="*,4,360">
+
+        <!-- ── Row 0 : DockPanel — Transport Bar (fixe) + Vidéo (fill) ── -->
+        <DockPanel Grid.Row="0">
+
+            <!-- Transport Bar fixée en bas du bloc vidéo -->
+            <Border DockPanel.Dock="Bottom"
+                    Background="{StaticResource BgHeader}"
+                    BorderBrush="{StaticResource BorderSubtle}"
+                    BorderThickness="0,1,0,0"
+                    Padding="16,10">
+                <StackPanel Spacing="8">
+
+                    <!-- Slider de position + temps -->
+                    <Grid ColumnDefinitions="*,10,Auto">
+                        <Slider x:Name="SeekBar" Grid.Column="0"
+                                Minimum="0" Maximum="1" Value="0"
+                                IsEnabled="False"
+                                VerticalAlignment="Center"/>
+                        <TextBlock x:Name="TimeLabel" Grid.Column="2"
+                                   Text="–:–– / –:––"
+                                   FontFamily="Consolas,Cascadia Code,monospace"
+                                   FontSize="11"
+                                   Foreground="{StaticResource TextSecondary}"
+                                   VerticalAlignment="Center"
+                                   MinWidth="110"/>
+                    </Grid>
+
+                    <!-- Boutons -->
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Spacing="5">
+                        <Button x:Name="VdbBeginning" Classes="transport" Content="|◀" FontSize="12"
+                                ToolTip.Tip="Beginning  (Ctrl+←)" Click="OnVdbBeginningClick"/>
+                        <Button x:Name="VdbPrevFrame" Classes="transport" Content="◀◀"
+                                ToolTip.Tip="Prev frame  (←)" Click="OnVdbPrevFrameClick"/>
+                        <Rectangle Width="1" Height="22" Fill="{StaticResource BorderSubtle}" Margin="4,0"/>
+                        <Button x:Name="VdbPlay" Classes="transport play" Content="▶"
+                                ToolTip.Tip="Play  (Space)" Click="OnVdbPlayClick"/>
+                        <Button x:Name="VdbStop" Classes="transport stop" Content="⏹"
+                                ToolTip.Tip="Stop" Click="OnVdbStopClick"/>
+                        <Rectangle Width="1" Height="22" Fill="{StaticResource BorderSubtle}" Margin="4,0"/>
+                        <Button x:Name="VdbNextFrame" Classes="transport" Content="▶▶"
+                                ToolTip.Tip="Next frame  (→)" Click="OnVdbNextFrameClick"/>
+                        <Button x:Name="VdbEnd" Classes="transport" Content="▶|" FontSize="12"
+                                ToolTip.Tip="End  (Ctrl+→)" Click="OnVdbEndClick"/>
+                    </StackPanel>
+
+                </StackPanel>
+            </Border>
+
+            <!-- Lecteur vidéo mpv — remplit l'espace restant -->
+            <Border Background="Black" MinHeight="100">
+                <local:MpvHost x:Name="VideoHost"/>
+            </Border>
+
+        </DockPanel>
+
+        <!-- ── Row 1 : Séparateur redimensionnable (vidéo ↕ panneau bas) ── -->
+        <GridSplitter Grid.Row="1"
+                      ResizeDirection="Rows"
+                      HorizontalAlignment="Stretch"
+                      Background="{StaticResource BorderSubtle}"
+                      Cursor="SizeNorthSouth"/>
+
+        <!-- ── Row 2 : OPTIONS / FILTERS / PARAMS ── -->
+        <Border Grid.Row="2"
+                Background="{StaticResource BgPanel}"
+                BorderBrush="{StaticResource BorderSubtle}"
+                BorderThickness="0,1,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="185"/>  <!-- Colonne boutons toggle -->
+                    <ColumnDefinition Width="*"/>    <!-- Colonne réglages filtre -->
+                </Grid.ColumnDefinitions>
+
+                <!-- ════ COL 0 — OPTIONS + FILTERS (boutons toggle) ════ -->
+                <Border Grid.Column="0"
+                        Background="{StaticResource BgPanel}"
+                        BorderBrush="{StaticResource BorderSubtle}"
+                        BorderThickness="0,0,1,0">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <DockPanel Margin="10,10,10,10">
+
+                            <!-- OPTIONS -->
+                            <StackPanel DockPanel.Dock="Top" Spacing="3" Margin="0,0,0,8">
+                                <TextBlock Classes="group-label" Text="OPTIONS"/>
+                                <Button x:Name="preview"       Classes="toggle"
+                                        HorizontalAlignment="Stretch" Click="OnOptionToggleButtonClick"/>
+                                <Button x:Name="enable_flip_h" Classes="toggle"
+                                        HorizontalAlignment="Stretch" Click="OnOptionToggleButtonClick"/>
+                                <Button x:Name="enable_flip_v" Classes="toggle"
+                                        HorizontalAlignment="Stretch" Click="OnOptionToggleButtonClick"/>
+                            </StackPanel>
+
+                            <Rectangle DockPanel.Dock="Top"
+                                       Height="1" Fill="{StaticResource BorderSubtle}"
+                                       Margin="0,0,0,8"/>
+
+                            <!-- FILTERS -->
+                            <StackPanel DockPanel.Dock="Top" Spacing="4">
+                                <TextBlock Classes="group-label" Text="FILTERS"/>
+
+                                <Grid ColumnDefinitions="*,4,28">
+                                    <Button Grid.Column="0" x:Name="enable_crop"
+                                            Classes="toggle" HorizontalAlignment="Stretch"
+                                            Click="OnOptionToggleButtonClick"/>
+                                    <Button Grid.Column="2" x:Name="CropExpandBtn"
+                                            Classes="expand-btn" Content="▶"
+                                            Click="OnExpandButtonClick" Tag="CropParams"/>
+                                </Grid>
+
+                                <Grid ColumnDefinitions="*,4,28">
+                                    <Button Grid.Column="0" x:Name="enable_gammac"
+                                            Classes="toggle" HorizontalAlignment="Stretch"
+                                            Click="OnOptionToggleButtonClick"/>
+                                    <Button Grid.Column="2" x:Name="GammacExpandBtn"
+                                            Classes="expand-btn" Content="▶"
+                                            Click="OnExpandButtonClick" Tag="GammacParams"/>
+                                </Grid>
+
+                                <Grid ColumnDefinitions="*,4,28">
+                                    <Button Grid.Column="0" x:Name="enable_denoise"
+                                            Classes="toggle" HorizontalAlignment="Stretch"
+                                            Click="OnOptionToggleButtonClick"/>
+                                    <Button Grid.Column="2" x:Name="DenoiseExpandBtn"
+                                            Classes="expand-btn" Content="▶"
+                                            Click="OnExpandButtonClick" Tag="DenoiseParams"/>
+                                </Grid>
+
+                                <Grid ColumnDefinitions="*,4,28">
+                                    <Button Grid.Column="0" x:Name="enable_degrain"
+                                            Classes="toggle" HorizontalAlignment="Stretch"
+                                            Click="OnOptionToggleButtonClick"/>
+                                    <Button Grid.Column="2" x:Name="DegrainExpandBtn"
+                                            Classes="expand-btn" Content="▶"
+                                            Click="OnExpandButtonClick" Tag="DegrainParams"/>
+                                </Grid>
+
+                                <Grid ColumnDefinitions="*,4,28">
+                                    <Button Grid.Column="0" x:Name="enable_luma_levels"
+                                            Classes="toggle" HorizontalAlignment="Stretch"
+                                            Click="OnOptionToggleButtonClick"/>
+                                    <Button Grid.Column="2" x:Name="LumaExpandBtn"
+                                            Classes="expand-btn" Content="▶"
+                                            Click="OnExpandButtonClick" Tag="LumaParams"/>
+                                </Grid>
+
+                                <Grid ColumnDefinitions="*,4,28">
+                                    <Button Grid.Column="0" x:Name="enable_sharp"
+                                            Classes="toggle" HorizontalAlignment="Stretch"
+                                            Click="OnOptionToggleButtonClick"/>
+                                    <Button Grid.Column="2" x:Name="SharpExpandBtn"
+                                            Classes="expand-btn" Content="▶"
+                                            Click="OnExpandButtonClick" Tag="SharpParams"/>
+                                </Grid>
+                            </StackPanel>
+
+                        </DockPanel>
+                    </ScrollViewer>
+                </Border>
+
+                <!-- ════ COL 1 — RÉGLAGES du filtre sélectionné ════ -->
+                <Border Grid.Column="1" Background="{StaticResource BgPanel}">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  Margin="16,14,16,14">
+                        <Panel>
+
+                            <TextBlock x:Name="ParamsPlaceholder"
+                                       IsVisible="True"
+                                       Text="← select a filter"
+                                       FontSize="11"
+                                       Foreground="{StaticResource TextSecondary}"
+                                       Opacity="0.4"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Center"/>
+
+                            <!-- ── CROP ── -->
+                            <StackPanel x:Name="CropParams" IsVisible="False" Spacing="6">
+                                <TextBlock Classes="section-title" Text="CROP"/>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_Crop_L" Classes="param-label" Text="Crop_L"/>
+                                    <TextBox x:Name="Crop_L" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_Crop_T" Classes="param-label" Text="Crop_T"/>
+                                    <TextBox x:Name="Crop_T" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_Crop_R" Classes="param-label" Text="Crop_R"/>
+                                    <TextBox x:Name="Crop_R" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_Crop_B" Classes="param-label" Text="Crop_B"/>
+                                    <TextBox x:Name="Crop_B" Width="70"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- ── DEGRAIN ── -->
+                            <StackPanel x:Name="DegrainParams" IsVisible="False" Spacing="6">
+                                <TextBlock Classes="section-title" Text="DEGRAIN"/>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_degrain_preset" Classes="param-label" Text="preset"/>
+                                    <ComboBox x:Name="degrain_preset"/>
+                                </StackPanel>
+                                <Separator Margin="0,0,0,2"/>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_degrain_mode" Classes="param-label" Text="mode"/>
+                                    <ComboBox x:Name="degrain_mode"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_degrain_thSAD" Classes="param-label" Text="thSAD"/>
+                                    <TextBox x:Name="degrain_thSAD" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_degrain_thSADC" Classes="param-label" Text="thSADC"/>
+                                    <TextBox x:Name="degrain_thSADC" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_degrain_blksize" Classes="param-label" Text="blksize"/>
+                                    <TextBox x:Name="degrain_blksize" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_degrain_overlap" Classes="param-label" Text="overlap"/>
+                                    <TextBox x:Name="degrain_overlap" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_degrain_pel" Classes="param-label" Text="pel"/>
+                                    <TextBox x:Name="degrain_pel" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_degrain_search" Classes="param-label" Text="search"/>
+                                    <TextBox x:Name="degrain_search" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_degrain_prefilter" Classes="param-label" Text="prefilter"/>
+                                    <ComboBox x:Name="degrain_prefilter"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- ── DENOISE ── -->
+                            <StackPanel x:Name="DenoiseParams" IsVisible="False" Spacing="6">
+                                <TextBlock Classes="section-title" Text="DENOISE"/>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_denoise_preset" Classes="param-label" Text="preset"/>
+                                    <ComboBox x:Name="denoise_preset"/>
+                                </StackPanel>
+                                <Separator Margin="0,0,0,2"/>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_denoise_mode" Classes="param-label" Text="mode"/>
+                                    <ComboBox x:Name="denoise_mode"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_denoise_strength" Classes="param-label" Text="strength"/>
+                                    <TextBox x:Name="denoise_strength" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_denoise_dist" Classes="param-label" Text="dist"/>
+                                    <TextBox x:Name="denoise_dist" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_denoise_grey" Classes="param-label" Text="grey"/>
+                                    <Button x:Name="denoise_grey" Width="70" Classes="toggle" Click="OnOptionToggleButtonClick"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- ── LUMA LEVELS ── -->
+                            <StackPanel x:Name="LumaParams" IsVisible="False" Spacing="6">
+                                <TextBlock Classes="section-title" Text="LUMA LEVELS"/>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_Lum_Bright" Classes="param-label" Text="Bright"/>
+                                    <TextBox x:Name="Lum_Bright" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_Lum_Contrast" Classes="param-label" Text="Contrast"/>
+                                    <TextBox x:Name="Lum_Contrast" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_Lum_Sat" Classes="param-label" Text="Sat"/>
+                                    <TextBox x:Name="Lum_Sat" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_Lum_Hue" Classes="param-label" Text="Hue"/>
+                                    <TextBox x:Name="Lum_Hue" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_Lum_GammaY" Classes="param-label" Text="GammaY"/>
+                                    <TextBox x:Name="Lum_GammaY" Width="70"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- ── GAMMAC ── -->
+                            <StackPanel x:Name="GammacParams" IsVisible="False" Spacing="6">
+                                <TextBlock Classes="section-title" Text="GAMMAC"/>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_LockChan" Classes="param-label" Text="LockChan"/>
+                                    <TextBox x:Name="LockChan" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_LockVal" Classes="param-label" Text="LockVal"/>
+                                    <TextBox x:Name="LockVal" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_Scale" Classes="param-label" Text="Scale"/>
+                                    <TextBox x:Name="Scale" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_Th" Classes="param-label" Text="Th"/>
+                                    <TextBox x:Name="Th" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_HiTh" Classes="param-label" Text="HiTh"/>
+                                    <TextBox x:Name="HiTh" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_X" Classes="param-label" Text="X"/>
+                                    <TextBox x:Name="X" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_Y" Classes="param-label" Text="Y"/>
+                                    <TextBox x:Name="Y" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_W" Classes="param-label" Text="W"/>
+                                    <TextBox x:Name="W" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_H" Classes="param-label" Text="H"/>
+                                    <TextBox x:Name="H" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_Omin" Classes="param-label" Text="Omin"/>
+                                    <TextBox x:Name="Omin" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_Omax" Classes="param-label" Text="Omax"/>
+                                    <TextBox x:Name="Omax" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_ShowPreview" Classes="param-label" Text="Show"/>
+                                    <Button x:Name="ShowPreview" Width="70" Classes="toggle" Click="OnOptionToggleButtonClick"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_Verbosity" Classes="param-label" Text="Verbosity"/>
+                                    <TextBox x:Name="Verbosity" Width="70"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- ── SHARPEN ── -->
+                            <StackPanel x:Name="SharpParams" IsVisible="False" Spacing="6">
+                                <TextBlock Classes="section-title" Text="SHARPEN"/>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_sharp_preset" Classes="param-label" Text="preset"/>
+                                    <ComboBox x:Name="sharp_preset"/>
+                                </StackPanel>
+                                <Separator Margin="0,0,0,2"/>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_Sharp_Strength" Classes="param-label" Text="Strength"/>
+                                    <TextBox x:Name="Sharp_Strength" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_Sharp_Radius" Classes="param-label" Text="Radius"/>
+                                    <TextBox x:Name="Sharp_Radius" Width="70"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_Sharp_Mode" Classes="param-label" Text="Mode"/>
+                                    <ComboBox x:Name="Sharp_Mode"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="Label_Sharp_Threshold" Classes="param-label" Text="Threshold"/>
+                                    <TextBox x:Name="Sharp_Threshold" Width="70"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                        </Panel>
+                    </ScrollViewer>
+                </Border>
+
+            </Grid>
+        </Border>
+
+        </Grid><!-- fin Grid vidéo+splitter+panneau bas -->
+
+    </DockPanel>
+</Window>

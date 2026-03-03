@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tail:*)",
+      "Bash(dotnet build:*)",
+      "Bash(ls:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:avisynth.nl)",
+      "WebFetch(domain:forum.videohelp.com)",
+      "WebFetch(domain:www.aquilinestudios.org)",
+      "WebFetch(domain:forum.doom9.org)",
+      "WebFetch(domain:forum.selur.net)",
+      "Bash(cd:*)"
+    ]
+  }
+}

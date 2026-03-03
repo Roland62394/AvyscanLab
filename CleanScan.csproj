@@ -1,0 +1,115 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\Ico.ico</ApplicationIcon>
+
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Tests\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Models\" />
+    <AvaloniaResource Include="Assets\**" />
+    <EmbeddedResource Include="Properties\Resources.resx" />
+    <EmbeddedResource Include="Resources\ConfigValues.resx" />
+    <Folder Include="Plugins\MVTools2\Documentation\" />
+    <Folder Include="Plugins\MVTools2\Doc_DepanEstimate\" />
+    <Folder Include="Plugins\MVTools2\Doc_Depan\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.3.12" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.12" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.12" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.12" />
+
+    <!-- En Release, on ne sort pas Avalonia.Diagnostics -->
+    <PackageReference Include="Avalonia.Diagnostics" Version="11.3.12">
+      <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
+      <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="ClaudeCodeSdk" Version="0.10.1" />
+
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+
+    <PackageReference Include="Obfuscar" Version="2.2.50">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- Fichiers spécifiques -->
+  <ItemGroup>
+    <Content Include="ScriptMaster*.avs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+  </ItemGroup>
+
+  <!-- Lecteur mpv embarqué -->
+  <ItemGroup>
+    <Content Include="mpv\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+  </ItemGroup>
+
+  <!-- ✅ UNE SEULE règle pour tout Plugins -->
+  <ItemGroup>
+    <!-- Copie tout le contenu Plugins (dll, avsi, etc.) en gardant l'arborescence -->
+    <Content Include="Plugins\**\*" Exclude="Plugins\**\VirtualDub2.exe;Plugins\**\vdub2.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <TargetPath>Plugins\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Update="Assets\Logo.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </AvaloniaResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="Plugins\RemoveDirt\OLDRemoveDirt.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+    <Content Update="Plugins\RemoveDirt\RemoveDirt.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <Optimize>True</Optimize>
+  </PropertyGroup>
+
+  <Target Name="PublishSingleFileForReleaseBuild" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' and '$(IsSingleFileBuildPublish)' != 'true'">
+    <MSBuild Projects="$(MSBuildProjectFullPath)" Targets="Publish" Properties="Configuration=$(Configuration);&#xD;&#xA;                         RuntimeIdentifier=$(RuntimeIdentifier);&#xD;&#xA;                         SelfContained=$(SelfContained);&#xD;&#xA;                         PublishSingleFile=$(PublishSingleFile);&#xD;&#xA;                         IncludeAllContentForSelfExtract=$(IncludeAllContentForSelfExtract);&#xD;&#xA;                         EnableCompressionInSingleFile=$(EnableCompressionInSingleFile);&#xD;&#xA;                         IsSingleFileBuildPublish=true" />
+  </Target>
+
+</Project>
