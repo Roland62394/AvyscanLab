@@ -378,10 +378,10 @@ namespace CleanScan.Views
             new("Lum_Hue",          -180,  180,  1,    false),
             new("Lum_GammaY",        0.1,  3.0,  0.05, true, 2),
             new("LockChan",         -3,    2,    1,    false),
-            new("LockVal",           0,    255,  1,    false),
-            new("Scale",             0,    10,   0.5,  true, 1),
-            new("Th",                0,    1,    0.01, true, 2),
-            new("HiTh",              0,    1,    0.01, true, 2),
+            new("LockVal",           1,    255,  1,    false),
+            new("Scale",             0.1,  10,   0.1,  true, 2),
+            new("Th",                0,    1,    0.01, true, 3),
+            new("HiTh",              0,    1,    0.01, true, 3),
             new("X",                 0,    2000, 10,   false),
             new("Y",                 0,    2000, 10,   false),
             new("W",                 0,    4000, 10,   false),
@@ -671,15 +671,24 @@ namespace CleanScan.Views
         {
             DebugLog("OnMpvLoadFailed: " + errorMsg);
 
-            // "unknown file format" → AviSynth+ absent ou non reconnu.
-            // On tente un fallback : charger la source directement (sans filtres).
+            // "unknown file format" peut signifier soit AviSynth absent, soit un script AviSynth
+            // qui plante à l'exécution (ex: paramètre invalide dans un filtre comme GamMac).
+            // On distingue les deux cas via la présence d'AviSynth.dll.
             if (!_loadingSourceFallback
              && errorMsg.Contains("unknown file format", StringComparison.OrdinalIgnoreCase))
             {
                 var diag = GetAviSynthDiagnostic();
                 DebugLog("AviSynth diag: " + diag);
 
-                // Fallback : tenter la source directement si disponible.
+                // Si AviSynth est installé et chargeable, le script lui-même a planté
+                // (paramètre invalide, plugin manquant, etc.) — pas de fallback vidéo.
+                if (diag.Contains("chargeable", StringComparison.OrdinalIgnoreCase))
+                {
+                    ShowPlayerStatus("Erreur de script AviSynth.\nVérifiez les paramètres des filtres actifs (LockVal, Scale, Th…).");
+                    return;
+                }
+
+                // AviSynth absent ou non chargeable : fallback lecture directe.
                 var raw = _config.Get("source");
                 if (!string.IsNullOrWhiteSpace(raw))
                 {
@@ -687,12 +696,12 @@ namespace CleanScan.Views
                     if (File.Exists(path))
                     {
                         _loadingSourceFallback = true;
-                        ShowPlayerStatus($"Format .avs non reconnu ({diag}).\nLecture directe de la source (sans filtres AviSynth).");
+                        ShowPlayerStatus($"AviSynth+ non détecté ({diag}).\nLecture directe de la source (sans filtres).");
                         _mpvService.LoadFile(path, 0);
                         return;
                     }
                 }
-                ShowPlayerStatus($"Format .avs non reconnu.\n{diag}");
+                ShowPlayerStatus($"AviSynth+ non détecté.\n{diag}");
                 return;
             }
 

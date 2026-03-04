@@ -577,7 +577,7 @@ if (enable_gammac && FunctionExists("GamMac")) {
   rgb = GamMac(rgb,
     \ LockChan=LockChan, LockVal=LockVal,
     \ x=X, y=Y, w=W, h=H,
-    \ Scale=Scale, Th=Th, LoTh=0.02, HiTh=HiTh,
+    \ Scale=Scale, Th=Th, HiTh=HiTh,
     \ Omin=Omin, Omax=Omax, Show=Show, Verbosity=Verbosity)
   c = EnsureColorspaceSafe(rgb, base_pix, matrix=mx)
 }
