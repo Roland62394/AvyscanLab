@@ -792,7 +792,7 @@ namespace CleanScan.Views
 
         private void OnSliderValueChanged(SliderSpec spec)
         {
-            if (_sliderSync || _suppressTextEvents) return;
+            if (!_layoutInitialized || _sliderSync || _suppressTextEvents) return;
             if (!_sliderMap.TryGetValue(spec.Field, out var entry)) return;
             if (this.FindControl<TextBox>(spec.Field) is not { } tb) return;
 
