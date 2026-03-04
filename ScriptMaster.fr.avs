@@ -283,7 +283,6 @@ function _OpenWithLabel(string label, clip v, int "overlay_size", bool "show_ove
 function OpenVideoSourceSmart(string path, string "force", bool "show_label", int "source_overlay_size")
 {
   Assert(Exist(path), "Fichier introuvable: " + path)
-  ext = _LowerExt(path)
   last_err = ""
   chosen = ""
   v = NOP()
@@ -646,5 +645,6 @@ out = preview
 # Retrait du padding ajouté pour les filtres temporels (image source uniquement)
 out = (n_img_pad > 0) ? Trim(out, n_img_pad, n_img_pad + n_img_orig - 1) : out
 
-out = out.Prefetch(threads)
+effective_threads = (enable_gammac) ? 1 : threads
+out = out.Prefetch(effective_threads)
 out
