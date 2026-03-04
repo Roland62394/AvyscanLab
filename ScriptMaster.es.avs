@@ -20,7 +20,7 @@ play_speed  = 24
 
 use_img = true    # true = ImageSource ; false = vídeo
 
-force_source = ""  # "" = auto (LWLIBAV y luego FFMS2) | "LWLIBAV" | "FFMS2"
+force_source = ""  # "" = auto (LWLIBAV -> LSMASH -> FFMS2 -> DSHOW) | "LWLIBAV" | "LSMASH" | "FFMS2" | "DSHOW"
 show_source_used = true
 
 # ------------ OPTIONS ------------
@@ -283,6 +283,7 @@ function _OpenWithLabel(string label, clip v, int "overlay_size", bool "show_ove
 function OpenVideoSourceSmart(string path, string "force", bool "show_label", int "source_overlay_size")
 {
   Assert(Exist(path), "Archivo no encontrado: " + path)
+  ext = _LowerExt(path)
   last_err = ""
   chosen = ""
   v = NOP()
@@ -290,21 +291,34 @@ function OpenVideoSourceSmart(string path, string "force", bool "show_label", in
   show_label = Default(show_label, true)
   source_overlay_size = Default(source_overlay_size, 26)
 
-
-  # Pipeline simplifié : uniquement les ouvreurs basés FFmpeg.
-  # force="LWLIBAV" ou force="FFMS2" ; sinon auto (LWLIBAV puis FFMS2).
   if (force == "LWLIBAV") {
     try { v = LWLibavVideoSource(path, threads=lw_threads, cache=lw_cache, seek_mode=lw_seek_mode, dr=lw_dr, format=lw_format)  chosen = "LWLIBAV" }
     catch(err) { last_err = err }
+  } else if (force == "LSMASH") {
+    try { v = LSMASHVideoSource(path, threads=lw_threads, seek_mode=lw_seek_mode, dr=lw_dr, format=lw_format)  chosen = "LSMASH" }
+    catch(err) { last_err = err }
   } else if (force == "FFMS2") {
     try { v = FFVideoSource(path, cachefile=ffms_cachefile, threads=ffms_threads, fpsnum=ffms_fpsnum, fpsden=ffms_fpsden)  chosen = "FFMS2" }
+    catch(err) { last_err = err }
+  } else if (force == "DSHOW") {
+    try { v = DirectShowSource(path, convertfps=dshow_convertfps, fps=dshow_fps)  chosen = "DSHOW" }
     catch(err) { last_err = err }
   } else {
     try { v = LWLibavVideoSource(path, threads=lw_threads, cache=lw_cache, seek_mode=lw_seek_mode, dr=lw_dr, format=lw_format)  chosen = "LWLIBAV" }
     catch(err) { last_err = err }
 
+    if (chosen == "" && (ext == ".mp4" || ext == ".m4v" || ext == ".mov")) {
+      try { v = LSMASHVideoSource(path, threads=lw_threads, seek_mode=lw_seek_mode, dr=lw_dr, format=lw_format)  chosen = "LSMASH" }
+      catch(err) { last_err = err }
+    }
+
     if (chosen == "" && FunctionExists("FFVideoSource")) {
       try { v = FFVideoSource(path, cachefile=ffms_cachefile, threads=ffms_threads, fpsnum=ffms_fpsnum, fpsden=ffms_fpsden)  chosen = "FFMS2" }
+      catch(err) { last_err = err }
+    }
+
+    if (chosen == "") {
+      try { v = DirectShowSource(path, convertfps=dshow_convertfps, fps=dshow_fps)  chosen = "DSHOW" }
       catch(err) { last_err = err }
     }
   }
