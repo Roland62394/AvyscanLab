@@ -577,8 +577,9 @@
                 BorderThickness="0,1,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="240"/>  <!-- Colonne boutons toggle -->
-                    <ColumnDefinition Width="*"/>    <!-- Colonne réglages filtre -->
+                    <ColumnDefinition Width="240" MinWidth="120"/>  <!-- Colonne boutons toggle -->
+                    <ColumnDefinition Width="5"/>                   <!-- Séparateur -->
+                    <ColumnDefinition Width="*"/>                   <!-- Colonne réglages filtre -->
                 </Grid.ColumnDefinitions>
 
                 <!-- ════ COL 0 — OPTIONS + FILTERS (boutons toggle) ════ -->
@@ -588,7 +589,7 @@
                         BorderThickness="0,0,1,0">
                     <ScrollViewer VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled">
-                        <DockPanel Margin="10,10,10,10">
+                        <DockPanel Margin="10,10,20,10">
 
                             <!-- OPTIONS -->
                             <StackPanel DockPanel.Dock="Top" Spacing="3" Margin="0,0,0,8">
@@ -609,7 +610,7 @@
                             <StackPanel DockPanel.Dock="Top" Spacing="4">
                                 <TextBlock Classes="group-label" Text="FILTERS"/>
 
-                                <Grid ColumnDefinitions="*,4,28">
+                                <Grid ColumnDefinitions="*,10,28">
                                     <Button Grid.Column="0" x:Name="enable_crop"
                                             Classes="toggle" HorizontalAlignment="Stretch"
                                             Click="OnOptionToggleButtonClick"/>
@@ -618,7 +619,7 @@
                                             Click="OnExpandButtonClick" Tag="CropParams"/>
                                 </Grid>
 
-                                <Grid ColumnDefinitions="*,4,28">
+                                <Grid ColumnDefinitions="*,10,28">
                                     <Button Grid.Column="0" x:Name="enable_gammac"
                                             Classes="toggle" HorizontalAlignment="Stretch"
                                             Click="OnOptionToggleButtonClick"/>
@@ -627,7 +628,7 @@
                                             Click="OnExpandButtonClick" Tag="GammacParams"/>
                                 </Grid>
 
-                                <Grid ColumnDefinitions="*,4,28">
+                                <Grid ColumnDefinitions="*,10,28">
                                     <Button Grid.Column="0" x:Name="enable_denoise"
                                             Classes="toggle" HorizontalAlignment="Stretch"
                                             Click="OnOptionToggleButtonClick"/>
@@ -636,7 +637,7 @@
                                             Click="OnExpandButtonClick" Tag="DenoiseParams"/>
                                 </Grid>
 
-                                <Grid ColumnDefinitions="*,4,28">
+                                <Grid ColumnDefinitions="*,10,28">
                                     <Button Grid.Column="0" x:Name="enable_degrain"
                                             Classes="toggle" HorizontalAlignment="Stretch"
                                             Click="OnOptionToggleButtonClick"/>
@@ -645,7 +646,7 @@
                                             Click="OnExpandButtonClick" Tag="DegrainParams"/>
                                 </Grid>
 
-                                <Grid ColumnDefinitions="*,4,28">
+                                <Grid ColumnDefinitions="*,10,28">
                                     <Button Grid.Column="0" x:Name="enable_luma_levels"
                                             Classes="toggle" HorizontalAlignment="Stretch"
                                             Click="OnOptionToggleButtonClick"/>
@@ -654,7 +655,7 @@
                                             Click="OnExpandButtonClick" Tag="LumaParams"/>
                                 </Grid>
 
-                                <Grid ColumnDefinitions="*,4,28">
+                                <Grid ColumnDefinitions="*,10,28">
                                     <Button Grid.Column="0" x:Name="enable_sharp"
                                             Classes="toggle" HorizontalAlignment="Stretch"
                                             Click="OnOptionToggleButtonClick"/>
@@ -668,8 +669,15 @@
                     </ScrollViewer>
                 </Border>
 
-                <!-- ════ COL 1 — RÉGLAGES du filtre sélectionné ════ -->
-                <Border Grid.Column="1" Background="{StaticResource BgPanel}">
+                <!-- ════ COL 1 — Séparateur redimensionnable ════ -->
+                <GridSplitter Grid.Column="1"
+                              ResizeDirection="Columns"
+                              VerticalAlignment="Stretch"
+                              Background="{StaticResource BorderSubtle}"
+                              Cursor="SizeWestEast"/>
+
+                <!-- ════ COL 2 — RÉGLAGES du filtre sélectionné ════ -->
+                <Border Grid.Column="2" Background="{StaticResource BgPanel}">
                     <ScrollViewer VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled"
                                   Margin="16,14,16,14">
