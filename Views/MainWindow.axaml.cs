@@ -370,7 +370,7 @@ namespace CleanScan.Views
             new("degrain_overlap",   0,    32,   1,    false),
             new("degrain_pel",       1,    4,    1,    false),
             new("degrain_search",    0,    5,    1,    false),
-            new("denoise_strength",  1,    20,   1,    false),
+            new("denoise_strength",  1,    24,   1,    false),
             new("denoise_dist",      1,    20,   1,    false),
             new("Lum_Bright",       -255,  255,  1,    false),
             new("Lum_Contrast",      0.1,  3.0,  0.05, true, 2),
@@ -780,7 +780,7 @@ namespace CleanScan.Views
 
         private void OnSliderValueChanged(SliderSpec spec)
         {
-            if (_sliderSync || _suppressTextEvents) return;
+            if (!_layoutInitialized || _sliderSync || _suppressTextEvents) return;
             if (!_sliderMap.TryGetValue(spec.Field, out var entry)) return;
             if (this.FindControl<TextBox>(spec.Field) is not { } tb) return;
 
