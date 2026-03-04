@@ -571,7 +571,7 @@ c = src
 if (enable_gammac && FunctionExists("GamMac")) {
   base_pix = PixelType(c)
   mx  = _MatrixAuto(c)
-  rgb = EnsureColorspaceSafe(c, "RGB32", matrix=mx)
+  rgb = EnsureColorspaceSafe(c, "RGB24", matrix=mx)
   rgb = GamMac(rgb,
     \ LockChan=LockChan, LockVal=LockVal,
     \ x=X, y=Y, w=W, h=H,
