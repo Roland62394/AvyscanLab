@@ -20,7 +20,7 @@ play_speed  = 24
 
 use_img = true    # true = ImageSource ; false = video
 
-force_source = ""  # "" = auto (LWLIBAV -> LSMASH -> FFMS2 -> DSHOW) | "LWLIBAV" | "LSMASH" | "FFMS2" | "DSHOW"
+force_source = ""  # "" = auto (LWLIBAV -> LSMASH -> FFMS2 -> AVI) | "LWLIBAV" | "LSMASH" | "FFMS2"
 show_source_used = true
 
 # ------------ OPTIONS ------------
@@ -160,9 +160,6 @@ ffms_threads   = -1
 ffms_fpsnum    = -1
 ffms_fpsden    = 1
 
-# ------------ DirectShow ------------
-dshow_convertfps = true
-dshow_fps        = play_speed
 
 # =========================
 # END CONFIGURATION
@@ -283,7 +280,6 @@ function _OpenWithLabel(string label, clip v, int "overlay_size", bool "show_ove
 function OpenVideoSourceSmart(string path, string "force", bool "show_label", int "source_overlay_size")
 {
   Assert(Exist(path), "File not found: " + path)
-  ext = _LowerExt(path)
   last_err = ""
   chosen = ""
   v = NOP()
@@ -300,14 +296,13 @@ function OpenVideoSourceSmart(string path, string "force", bool "show_label", in
   } else if (force == "FFMS2") {
     try { v = FFVideoSource(path, cachefile=ffms_cachefile, threads=ffms_threads, fpsnum=ffms_fpsnum, fpsden=ffms_fpsden)  chosen = "FFMS2" }
     catch(err) { last_err = err }
-  } else if (force == "DSHOW") {
-    try { v = DirectShowSource(path, convertfps=dshow_convertfps, fps=dshow_fps)  chosen = "DSHOW" }
-    catch(err) { last_err = err }
   } else {
-    try { v = LWLibavVideoSource(path, threads=lw_threads, cache=lw_cache, seek_mode=lw_seek_mode, dr=lw_dr, format=lw_format)  chosen = "LWLIBAV" }
-    catch(err) { last_err = err }
+    if (FunctionExists("LWLibavVideoSource")) {
+      try { v = LWLibavVideoSource(path, threads=lw_threads, cache=lw_cache, seek_mode=lw_seek_mode, dr=lw_dr, format=lw_format)  chosen = "LWLIBAV" }
+      catch(err) { last_err = err }
+    }
 
-    if (chosen == "" && (ext == ".mp4" || ext == ".m4v" || ext == ".mov")) {
+    if (chosen == "" && FunctionExists("LSMASHVideoSource")) {
       try { v = LSMASHVideoSource(path, threads=lw_threads, seek_mode=lw_seek_mode, dr=lw_dr, format=lw_format)  chosen = "LSMASH" }
       catch(err) { last_err = err }
     }
@@ -317,8 +312,8 @@ function OpenVideoSourceSmart(string path, string "force", bool "show_label", in
       catch(err) { last_err = err }
     }
 
-    if (chosen == "") {
-      try { v = DirectShowSource(path, convertfps=dshow_convertfps, fps=dshow_fps)  chosen = "DSHOW" }
+    if (chosen == "" && _LowerExt(path) == ".avi") {
+      try { v = AviSource(path)  chosen = "AVI" }
       catch(err) { last_err = err }
     }
   }
