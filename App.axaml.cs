@@ -58,7 +58,7 @@ namespace CleanScan
                 var config             = new ConfigStore();
                 var sourceService      = new SourceService();
                 var aviService         = new AviService();
-                var scriptService      = new ScriptService(sourceService, aviService);
+                var scriptService      = new ScriptService(sourceService);
                 var presetService      = new PresetService(GetAppDataPath("presets.json"));
                 var windowStateService = new WindowStateService(GetAppDataPath("window-settings.json"));
                 var dialogService      = new DialogService();

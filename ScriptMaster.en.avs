@@ -20,9 +20,7 @@ play_speed  = 24
 
 use_img = true    # true = ImageSource ; false = video
 
-# AVI source mode
-prefer_avi_vfw = true
-force_source = ""  # "" = auto | "AVISOURCE" | "LWLIBAV" | "LSMASH" | "FFMS2" | "DSHOW"
+force_source = ""  # "" = auto (LWLIBAV then FFMS2) | "LWLIBAV" | "FFMS2"
 show_source_used = true
 
 # ------------ OPTIONS ------------
@@ -282,54 +280,39 @@ function _OpenWithLabel(string label, clip v, int "overlay_size", bool "show_ove
   return show_overlay ? Subtitle(v, "source: " + label, size=overlay_size, align=8) : v
 }
 
-function OpenVideoSourceSmart(string path, bool "prefer_vfw", string "force", bool "show_label", int "source_overlay_size")
+function OpenVideoSourceSmart(string path, string "force", bool "show_label", int "source_overlay_size")
 {
-  Assert(Exist(path), "Fichier introuvable: " + path)
-  ext = _LowerExt(path)
+  Assert(Exist(path), "File not found: " + path)
   last_err = ""
   chosen = ""
   v = NOP()
-  prefer_vfw = Default(prefer_vfw, true)
-  force = Default(force, "")
+  force = UCase(Default(force, ""))
   show_label = Default(show_label, true)
   source_overlay_size = Default(source_overlay_size, 26)
 
-  if (force != "") {
-    fs = UCase(force)
-    try {
-      v = (fs == "AVISOURCE") ? AviSource(path)
-        \ : (fs == "LSMASH")  ? LSMASHVideoSource(path, threads=lw_threads, seek_mode=lw_seek_mode, dr=lw_dr, format=lw_format)
-        \ : (fs == "LWLIBAV") ? LWLibavVideoSource(path, threads=lw_threads, cache=lw_cache, seek_mode=lw_seek_mode, dr=lw_dr, format=lw_format)
-        \ : (fs == "FFMS2")   ? FFVideoSource(path, cachefile=ffms_cachefile, threads=ffms_threads, fpsnum=ffms_fpsnum, fpsden=ffms_fpsden)
-        \                     : DirectShowSource(path)
-      chosen = fs
-    } catch(err) { last_err = err  chosen = "" }
-  }
 
-  if (chosen == "" && ext == ".avi" && prefer_vfw) {
-    try { v = AviSource(path)  chosen = "AVISOURCE" }
-    catch(err) { last_err = err }
-  }
-  if (chosen == "") {
+  # Pipeline simplifié : uniquement les ouvreurs basés FFmpeg.
+  # force="LWLIBAV" ou force="FFMS2" ; sinon auto (LWLIBAV puis FFMS2).
+  if (force == "LWLIBAV") {
     try { v = LWLibavVideoSource(path, threads=lw_threads, cache=lw_cache, seek_mode=lw_seek_mode, dr=lw_dr, format=lw_format)  chosen = "LWLIBAV" }
     catch(err) { last_err = err }
-  }
-  if (chosen == "" && (ext == ".mp4" || ext == ".m4v" || ext == ".mov")) {
-    try { v = LSMASHVideoSource(path, threads=lw_threads, seek_mode=lw_seek_mode, dr=lw_dr, format=lw_format)  chosen = "LSMASH" }
-    catch(err) { last_err = err }
-  }
-  if (chosen == "" && FunctionExists("FFVideoSource")) {
+  } else if (force == "FFMS2") {
     try { v = FFVideoSource(path, cachefile=ffms_cachefile, threads=ffms_threads, fpsnum=ffms_fpsnum, fpsden=ffms_fpsden)  chosen = "FFMS2" }
     catch(err) { last_err = err }
-  }
-  if (chosen == "") {
-    try { v = DirectShowSource(path)  chosen = "DSHOW" }
+  } else {
+    try { v = LWLibavVideoSource(path, threads=lw_threads, cache=lw_cache, seek_mode=lw_seek_mode, dr=lw_dr, format=lw_format)  chosen = "LWLIBAV" }
     catch(err) { last_err = err }
+
+    if (chosen == "" && FunctionExists("FFVideoSource")) {
+      try { v = FFVideoSource(path, cachefile=ffms_cachefile, threads=ffms_threads, fpsnum=ffms_fpsnum, fpsden=ffms_fpsden)  chosen = "FFMS2" }
+      catch(err) { last_err = err }
+    }
   }
 
-  Assert(chosen != "", "Impossible d'ouvrir le clip.\nDernière erreur:\n" + last_err)
+  Assert(chosen != "", "Unable to open clip.\nLast error:\n" + last_err)
   return _OpenWithLabel(chosen, v, overlay_size=source_overlay_size, show_overlay=show_label)
 }
+
 
 
 # =========================
@@ -522,7 +505,7 @@ src = NOP()
 if (use_img) {
   src = ImageSource(src_path, start=img_start, end=img_end, fps=play_speed, use_DevIL=true, pixel_type="RGB24")
 } else {
-  src = OpenVideoSourceSmart(src_path, prefer_vfw=prefer_avi_vfw, force=force_source, show_label=(show_source_used && preview), source_overlay_size=source_label_size)
+  src = OpenVideoSourceSmart(src_path, force=force_source, show_label=(show_source_used && preview), source_overlay_size=source_label_size)
 }
 
 src = ApplyMirrors(src, enable_flip_h, enable_flip_v)
@@ -571,7 +554,7 @@ c = src
 if (enable_gammac && FunctionExists("GamMac")) {
   base_pix = PixelType(c)
   mx  = _MatrixAuto(c)
-  rgb = EnsureColorspaceSafe(c, "RGB32", matrix=mx)
+  rgb = EnsureColorspaceSafe(c, "RGB24", matrix=mx)
   rgb = GamMac(rgb,
     \ LockChan=LockChan, LockVal=LockVal,
     \ x=X, y=Y, w=W, h=H,

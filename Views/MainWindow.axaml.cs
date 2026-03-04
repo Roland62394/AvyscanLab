@@ -489,7 +489,7 @@ namespace CleanScan.Views
             _config             = new ConfigStore();
             _sourceService      = new SourceService();
             _aviService         = new AviService();
-            _scriptService      = new ScriptService(_sourceService, _aviService);
+            _scriptService      = new ScriptService(_sourceService);
             _presetService      = new PresetService(GetAppDataPath(PresetsFileName));
             _windowStateService = new WindowStateService(GetAppDataPath(WindowSettingsFileName));
             _dialogService      = new DialogService();
