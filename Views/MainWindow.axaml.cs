@@ -470,8 +470,6 @@ namespace CleanScan.Views
         private bool  _suppressTextEvents;
         private bool  _sliderSync;
         private bool  _loadingSourceFallback;
-        private string? _activeSliderField;
-        private bool   _sliderDragInProgress;
         private readonly Dictionary<string, (Slider Slider, SliderSpec Spec)> _sliderMap = new();
         private bool  _isClosing;
         private bool  _isInitializing;
@@ -775,23 +773,7 @@ namespace CleanScan.Views
 
                 var captured = spec;
                 slider.ValueChanged += (_, _) => OnSliderValueChanged(captured);
-                slider.AddHandler(PointerPressedEvent, (_, _) => _activeSliderField = captured.Field,
-                    RoutingStrategies.Bubble, handledEventsToo: true);
-                slider.AddHandler(Thumb.DragStartedEvent, (_, _) =>
-                    {
-                        _activeSliderField = captured.Field;
-                        _sliderDragInProgress = true;
-                    }, RoutingStrategies.Bubble, handledEventsToo: true);
-                slider.AddHandler(Thumb.DragCompletedEvent, (_, _) =>
-                    {
-                        _sliderDragInProgress = false;
-                        CommitSliderField(captured.Field);
-                    }, RoutingStrategies.Bubble, handledEventsToo: true);
-                slider.AddHandler(PointerReleasedEvent, (_, _) =>
-                    {
-                        if (_sliderDragInProgress) return;
-                        CommitSliderField(captured.Field);
-                    },
+                slider.AddHandler(PointerReleasedEvent, (_, _) => CommitSliderField(captured.Field),
                     RoutingStrategies.Bubble, handledEventsToo: true);
             }
 
@@ -817,11 +799,11 @@ namespace CleanScan.Views
 
         private void CommitSliderField(string field)
         {
-            if (!string.Equals(_activeSliderField, field, StringComparison.Ordinal)) return;
-            _activeSliderField = null;
-            if (this.FindControl<TextBox>(field) is not { } tb) return;
-            _ = ApplyFieldChangeAsync(field, tb.Text ?? string.Empty,
-                showValidationError: true, refreshScriptPreview: false);
+            if (!_sliderMap.TryGetValue(field, out var entry)) return;
+            var text = entry.Spec.IsFloat
+                ? entry.Slider.Value.ToString("F" + entry.Spec.Decimals, CultureInfo.InvariantCulture)
+                : ((int)Math.Round(entry.Slider.Value)).ToString();
+            _ = ApplyFieldChangeAsync(field, text, showValidationError: true, refreshScriptPreview: false);
         }
 
         private void OnConfigChangedForSlider(string key, string value)
@@ -829,11 +811,13 @@ namespace CleanScan.Views
             if (!_sliderMap.TryGetValue(key, out var entry)) return;
             if (_sliderSync) return;
             if (!double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var val)) return;
+            var clamped = Math.Clamp(val, entry.Slider.Minimum, entry.Slider.Maximum);
 
             Dispatcher.UIThread.Post(() =>
             {
+                if (Math.Abs(entry.Slider.Value - clamped) < 0.0001) return;
                 _sliderSync = true;
-                try { entry.Slider.Value = Math.Clamp(val, entry.Slider.Minimum, entry.Slider.Maximum); }
+                try { entry.Slider.Value = clamped; }
                 finally { _sliderSync = false; }
             });
         }
