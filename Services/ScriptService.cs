@@ -35,6 +35,8 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
     ];
 
     public const string UseImageConfigName    = "use_img";
+    private const string ForceSourceConfigName = "force_source";
+    private const string ForceSourceValue      = "LWLIBAV";
 
     // ── Compiled regexes ────────────────────────────────────────────────────
 
@@ -214,6 +216,10 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
     internal string BuildContents(string scriptContents, Dictionary<string, string> configValues)
     {
         var updated = scriptContents;
+
+        // Force l'utilisation de LWLIBAV dans le ScriptUser généré.
+        updated = ReplaceConfigValue(updated, ForceSourceConfigName, $"\"{ForceSourceValue}\"");
+
         foreach (var pair in configValues)
             updated = ReplaceConfigValue(updated, GetScriptConfigName(pair.Key), FormatValueForScript(pair.Key, pair.Value));
 
