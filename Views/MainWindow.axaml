@@ -335,6 +335,8 @@
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Margin" Value="8,0"/>
+            <Setter Property="Width" Value="216"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
             <Setter Property="Template">
                 <ControlTemplate TargetType="Slider">
                     <Grid VerticalAlignment="Center">
@@ -569,7 +571,7 @@
                 BorderThickness="0,1,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="185"/>  <!-- Colonne boutons toggle -->
+                    <ColumnDefinition Width="240"/>  <!-- Colonne boutons toggle -->
                     <ColumnDefinition Width="*"/>    <!-- Colonne réglages filtre -->
                 </Grid.ColumnDefinitions>
 
@@ -763,7 +765,7 @@
                                 </StackPanel>
                                 <Grid ColumnDefinitions="Auto,*,70">
                                     <TextBlock Grid.Column="0" x:Name="Label_denoise_strength" Classes="param-label" Text="strength" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_denoise_strength" Classes="param-slider" Minimum="1" Maximum="20" SmallChange="1"/>
+                                    <Slider Grid.Column="1" x:Name="Slide_denoise_strength" Classes="param-slider" Minimum="1" Maximum="24" SmallChange="1"/>
                                     <TextBox Grid.Column="2" x:Name="denoise_strength" Width="70"/>
                                 </Grid>
                                 <Grid ColumnDefinitions="Auto,*,70">

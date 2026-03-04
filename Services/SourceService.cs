@@ -42,9 +42,11 @@ public sealed partial class SourceService
     public string BuildImageSequenceSourcePath(string filePath)
     {
         var normalized = NormalizeConfiguredPath(filePath);
-        var directory = Path.GetDirectoryName(normalized);
-        var extension = Path.GetExtension(normalized);
-        var name = Path.GetFileNameWithoutExtension(normalized);
+        var lastSlash = normalized.LastIndexOfAny(['/', '\\']);
+        var directory = lastSlash >= 0 ? normalized[..lastSlash] : string.Empty;
+        var fileName = lastSlash >= 0 ? normalized[(lastSlash + 1)..] : normalized;
+        var extension = Path.GetExtension(fileName);
+        var name = Path.GetFileNameWithoutExtension(fileName);
 
         if (!string.IsNullOrWhiteSpace(name) && ImageSequencePatternRegex().IsMatch(name))
         {
@@ -57,7 +59,8 @@ public sealed partial class SourceService
         }
 
         var pattern = $"%0{name.Length}d{extension}";
-        return Path.Combine(directory, pattern);
+        var separator = normalized.Contains('\\') ? '\\' : '/';
+        return $"{directory}{separator}{pattern}";
     }
 
     public string NormalizePathForAvisynth(string path) =>
