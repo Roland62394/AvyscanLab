@@ -553,6 +553,7 @@ namespace CleanScan.Views
             _mpvService.DurationChanged    += dur => Dispatcher.UIThread.Post(() => OnMpvDuration(dur));
             _mpvService.PauseChanged       += p   => Dispatcher.UIThread.Post(() => OnMpvPauseChanged(p));
             _mpvService.FileLoaded         += ()  => Dispatcher.UIThread.Post(() => OnMpvFileLoaded());
+            _mpvService.LoadFailed         += msg => Dispatcher.UIThread.Post(() => OnMpvLoadFailed(msg));
             _mpvService.UnexpectedShutdown += ()  => Dispatcher.UIThread.Post(OnMpvUnexpectedShutdown);
 
             if (this.FindControl<Slider>("SeekBar") is { } seekBar)
@@ -598,8 +599,21 @@ namespace CleanScan.Views
                 btn.Content = paused ? "▶" : "⏸";
         }
 
+        private void OnMpvLoadFailed(string errorMsg)
+        {
+            if (this.FindControl<Border>("PlayerErrorBanner") is { } banner
+             && this.FindControl<TextBlock>("PlayerErrorText")  is { } text)
+            {
+                text.Text      = $"Erreur de lecture : {errorMsg}\n\nVérifiez qu'AviSynth+ est installé et que les plugins requis sont présents.";
+                banner.IsVisible = true;
+            }
+        }
+
         private void OnMpvFileLoaded()
         {
+            if (this.FindControl<Border>("PlayerErrorBanner") is { } banner)
+                banner.IsVisible = false;
+
             if (this.FindControl<Slider>("SeekBar") is { } s) s.Value = 0;
 
             // Query exact frame count and fps to set an accurate slider maximum.
@@ -1833,6 +1847,8 @@ namespace CleanScan.Views
                 var pos = _mpvService.IsReady ? _mpvService.GetPosition() : 0.0;
                 _totalFrames = 0;  // will be refreshed in OnMpvFileLoaded
                 _fps         = 0;
+                if (this.FindControl<Border>("PlayerErrorBanner") is { } banner)
+                    banner.IsVisible = false;
                 _mpvService.LoadFile(scriptPath, pos);
             }
             finally { _refreshGate.Release(); }

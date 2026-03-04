@@ -33,6 +33,9 @@ public sealed class MpvService : IDisposable
     private static extern int mpv_set_option_string(nint ctx, string name, string data);
 
     [DllImport("libmpv-2", CharSet = CharSet.Ansi)]
+    private static extern nint mpv_error_string(int error);
+
+    [DllImport("libmpv-2", CharSet = CharSet.Ansi)]
     private static extern int mpv_command(nint ctx, string?[] args);
 
     [DllImport("libmpv-2", CharSet = CharSet.Ansi)]
@@ -68,12 +71,20 @@ public sealed class MpvService : IDisposable
         public nint Data;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MpvEventEndFile
+    {
+        public int Reason;
+        public int Error;
+    }
+
     private const int EventShutdown       = 1;
     private const int EventEndFile        = 7;
     private const int EventFileLoaded     = 8;
     private const int EventPropertyChange = 22;
     private const int FormatDouble        = 5;
     private const int FormatFlag          = 3;
+    private const int EndFileReasonError  = 4;
 
     #endregion
 
@@ -84,6 +95,7 @@ public sealed class MpvService : IDisposable
     public event Action<bool>?   PauseChanged;
     public event Action?         FileLoaded;
     public event Action?         EndReached;
+    public event Action<string>? LoadFailed;
 
     #endregion
 
@@ -110,7 +122,7 @@ public sealed class MpvService : IDisposable
         if (_ctx == 0) return;
 
         mpv_set_option_string(_ctx, "wid",                    hwnd.ToString());
-        mpv_set_option_string(_ctx, "vo",                     "gpu");
+        mpv_set_option_string(_ctx, "vo",                     "auto");
         mpv_set_option_string(_ctx, "osc",                    "no");
         mpv_set_option_string(_ctx, "input-default-bindings", "no");
         mpv_set_option_string(_ctx, "input-vo-keyboard",      "no");
@@ -276,6 +288,21 @@ public sealed class MpvService : IDisposable
                 }
 
                 case EventEndFile:
+                    if (ev.Data != 0)
+                    {
+                        try
+                        {
+                            var endFile = Marshal.PtrToStructure<MpvEventEndFile>(ev.Data);
+                            if (endFile.Reason == EndFileReasonError)
+                            {
+                                var msg = Marshal.PtrToStringAnsi(mpv_error_string(endFile.Error))
+                                          ?? $"error {endFile.Error}";
+                                LoadFailed?.Invoke(msg);
+                                break;
+                            }
+                        }
+                        catch { }
+                    }
                     EndReached?.Invoke();
                     break;
 

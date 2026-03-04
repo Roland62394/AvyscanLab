@@ -540,7 +540,17 @@
 
             <!-- Lecteur vidéo mpv — remplit l'espace restant -->
             <Border Background="Black" MinHeight="100">
-                <local:MpvHost x:Name="VideoHost"/>
+                <Grid>
+                    <local:MpvHost x:Name="VideoHost"/>
+                    <Border x:Name="PlayerErrorBanner" IsVisible="False"
+                            Background="#CC111111" VerticalAlignment="Center"
+                            Padding="16,10">
+                        <TextBlock x:Name="PlayerErrorText"
+                                   Foreground="#FFCC4444" FontSize="12"
+                                   TextWrapping="Wrap" TextAlignment="Center"
+                                   HorizontalAlignment="Center"/>
+                    </Border>
+                </Grid>
             </Border>
 
         </DockPanel>
