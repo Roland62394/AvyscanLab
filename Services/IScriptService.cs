@@ -4,7 +4,7 @@ namespace CleanScan.Services;
 
 public interface IScriptService
 {
-    void Generate(Dictionary<string, string> configValues, string lang = "fr");
+    void Generate(Dictionary<string, string> configValues, string lang = "en");
     string? GetPrimaryScriptPath();
     IEnumerable<string> GetScriptPaths();
     string? GetMasterScriptPath();

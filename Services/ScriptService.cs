@@ -12,7 +12,7 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
     // ── Public constants ────────────────────────────────────────────────────
 
     public const string ScriptUserFileName  = "ScriptUser.avs";
-    public const string ScriptMasterFileName = "ScriptMaster.fr.avs";
+    public const string ScriptMasterFileName = "ScriptMaster.en.avs";
 
     public static readonly string[] TextFieldNames =
     [
@@ -58,7 +58,7 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
 
     // ── IScriptService ──────────────────────────────────────────────────────
 
-    public void Generate(Dictionary<string, string> configValues, string lang = "fr")
+    public void Generate(Dictionary<string, string> configValues, string lang = "en")
     {
         var templatePath = GetMasterScriptPath(lang);
         if (string.IsNullOrWhiteSpace(templatePath) || !File.Exists(templatePath))
@@ -92,21 +92,20 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
             yield return basePath;
     }
 
-    public string? GetMasterScriptPath() => GetMasterScriptPath("fr");
+    public string? GetMasterScriptPath() => GetMasterScriptPath("en");
 
     private string? GetMasterScriptPath(string lang)
     {
-        // Cherche ScriptMaster.{lang}.avs, sauf pour "fr" qui utilise le fichier de base
-        if (!string.IsNullOrWhiteSpace(lang) && !lang.Equals("fr", StringComparison.OrdinalIgnoreCase))
-        {
-            var langFileName = $"ScriptMaster.{lang.ToLowerInvariant()}.avs";
-            var cwdLang = Path.Combine(Environment.CurrentDirectory, langFileName);
-            if (File.Exists(cwdLang)) return cwdLang;
-            var baseLang = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath!)!, langFileName);
-            if (File.Exists(baseLang)) return baseLang;
-        }
+        var normalizedLang = string.IsNullOrWhiteSpace(lang) ? "en" : lang.ToLowerInvariant();
+        var langFileName = $"ScriptMaster.{normalizedLang}.avs";
 
-        // Fallback : ScriptMaster.fr.avs (français par défaut)
+        var cwdLang = Path.Combine(Environment.CurrentDirectory, langFileName);
+        if (File.Exists(cwdLang)) return cwdLang;
+
+        var baseLang = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath!)!, langFileName);
+        if (File.Exists(baseLang)) return baseLang;
+
+        // Fallback : ScriptMaster.en.avs
         var cwd = Path.Combine(Environment.CurrentDirectory, ScriptMasterFileName);
         if (File.Exists(cwd)) return cwd;
         var base_ = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath!)!, ScriptMasterFileName);
