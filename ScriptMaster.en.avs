@@ -173,9 +173,7 @@ ffms_fpsden    = 1
 pluginRoot = ScriptDir() + "Plugins/"
 
 if (!use_img) {
-  if (Exist(pluginRoot + "Dual/L-Smash-Works/LSMASHSource.dll")) {
-    LoadPlugin(pluginRoot + "Dual/L-Smash-Works/LSMASHSource.dll")
-  }
+  TryLoadPlugin(pluginRoot + "Dual/L-Smash-Works/LWLibavSource.dll")
 }
 
 function TryLoadPlugin(string path) {
