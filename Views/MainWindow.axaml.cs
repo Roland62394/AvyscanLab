@@ -469,6 +469,7 @@ namespace CleanScan.Views
 
         private bool  _suppressTextEvents;
         private bool  _sliderSync;
+        private bool  _loadingSourceFallback;
         private readonly Dictionary<string, (Slider Slider, SliderSpec Spec)> _sliderMap = new();
         private bool  _isClosing;
         private bool  _isInitializing;
@@ -536,17 +537,44 @@ namespace CleanScan.Views
 
         private void InitPlayerControls()
         {
+            DebugLog("InitPlayerControls start");
             _mpvService = new MpvService();
 
             if (this.FindControl<MpvHost>("VideoHost") is { } host)
             {
+                DebugLog("VideoHost found");
                 host.HandleReady += hwnd =>
                 {
+                    DebugLog($"HandleReady hwnd={hwnd}");
                     _mpvService.Initialize(hwnd);
-                    if (TryValidateSourceSelection(out _))
-                        _ = LoadScriptAsync();
+                    DebugLog($"After Initialize, IsReady={_mpvService.IsReady}");
+                    if (!_mpvService.IsReady)
+                    {
+                        ShowPlayerStatus("mpv non disponible.\nVérifiez que libmpv-2.dll est présent dans le dossier mpv/.");
+                        return;
+                    }
+
+                    // Check AviSynth at startup so the user sees the status immediately.
+                    var avsCheck = GetAviSynthDiagnostic();
+                    DebugLog("AviSynth startup check: " + avsCheck);
+                    if (!avsCheck.Contains("chargeable OK", StringComparison.Ordinal))
+                        ShowPlayerStatus("AviSynth — " + avsCheck);
+
+                    var srcOk = TryValidateSourceSelection(out _);
+                    DebugLog($"TryValidateSourceSelection={srcOk}");
+                    if (!srcOk)
+                    {
+                        if (avsCheck.Contains("chargeable OK", StringComparison.Ordinal))
+                            ShowPlayerStatus("Aucune source configurée.\nGlissez un fichier vidéo sur le player ou renseignez le champ SOURCE.");
+                        return;
+                    }
+                    _ = LoadScriptAsync();
                 };
                 host.FileDropped += OnPlayerFileDrop;
+            }
+            else
+            {
+                DebugLog("VideoHost NOT found — FindControl returned null");
             }
 
             _mpvService.PositionChanged    += pos => Dispatcher.UIThread.Post(() => OnMpvPosition(pos));
@@ -599,20 +627,93 @@ namespace CleanScan.Views
                 btn.Content = paused ? "▶" : "⏸";
         }
 
-        private void OnMpvLoadFailed(string errorMsg)
+        private static readonly string _logPath =
+            Path.Combine(Path.GetTempPath(), "cleanscan_debug.txt");
+
+        private static string GetAviSynthDiagnostic()
         {
+            var system32 = Environment.GetFolderPath(Environment.SpecialFolder.System);
+            var dllPath  = Path.Combine(system32, "AviSynth.dll");
+            if (!File.Exists(dllPath))
+                return $"AviSynth.dll absent de {system32}";
+            try
+            {
+                if (System.Runtime.InteropServices.NativeLibrary.TryLoad(dllPath, out var h))
+                {
+                    System.Runtime.InteropServices.NativeLibrary.Free(h);
+                    return $"AviSynth.dll présent et chargeable — le build mpv ne supporte pas AviSynth";
+                }
+                return $"AviSynth.dll présent dans System32 mais non chargeable (mauvaise architecture ?)";
+            }
+            catch (Exception ex) { return $"AviSynth.dll erreur : {ex.Message}"; }
+        }
+
+        private static void DebugLog(string msg)
+        {
+            try { File.AppendAllText(_logPath, $"{DateTime.Now:HH:mm:ss.fff}  {msg}\n"); }
+            catch { }
+        }
+
+        private void ShowPlayerStatus(string message)
+        {
+            DebugLog("ShowPlayerStatus: " + message.Replace('\n', ' '));
+            Title = "CleanScan — " + message.Split('\n')[0];
+
             if (this.FindControl<Border>("PlayerErrorBanner") is { } banner
              && this.FindControl<TextBlock>("PlayerErrorText")  is { } text)
             {
-                text.Text      = $"Erreur de lecture : {errorMsg}\n\nVérifiez qu'AviSynth+ est installé et que les plugins requis sont présents.";
+                text.Text        = message;
                 banner.IsVisible = true;
             }
         }
 
+        private void OnMpvLoadFailed(string errorMsg)
+        {
+            DebugLog("OnMpvLoadFailed: " + errorMsg);
+
+            // "unknown file format" → AviSynth+ absent ou non reconnu.
+            // On tente un fallback : charger la source directement (sans filtres).
+            if (!_loadingSourceFallback
+             && errorMsg.Contains("unknown file format", StringComparison.OrdinalIgnoreCase))
+            {
+                var diag = GetAviSynthDiagnostic();
+                DebugLog("AviSynth diag: " + diag);
+
+                // Fallback : tenter la source directement si disponible.
+                var raw = _config.Get("source");
+                if (!string.IsNullOrWhiteSpace(raw))
+                {
+                    var path = _sourceService.NormalizeConfiguredPath(raw);
+                    if (File.Exists(path))
+                    {
+                        _loadingSourceFallback = true;
+                        ShowPlayerStatus($"Format .avs non reconnu ({diag}).\nLecture directe de la source (sans filtres AviSynth).");
+                        _mpvService.LoadFile(path, 0);
+                        return;
+                    }
+                }
+                ShowPlayerStatus($"Format .avs non reconnu.\n{diag}");
+                return;
+            }
+
+            _loadingSourceFallback = false;
+            ShowPlayerStatus($"Erreur de lecture : {errorMsg}");
+        }
+
         private void OnMpvFileLoaded()
         {
-            if (this.FindControl<Border>("PlayerErrorBanner") is { } banner)
+            DebugLog("OnMpvFileLoaded — file loaded successfully");
+            Title = "CleanScan";
+
+            if (_loadingSourceFallback)
+            {
+                // Fallback actif : on garde le banner pour signaler le mode dégradé.
+                ShowPlayerStatus("Mode dégradé : lecture directe de la source (AviSynth+ non installé).");
+            }
+            else if (this.FindControl<Border>("PlayerErrorBanner") is { } banner)
+            {
                 banner.IsVisible = false;
+            }
 
             if (this.FindControl<Slider>("SeekBar") is { } s) s.Value = 0;
 
@@ -1839,7 +1940,11 @@ namespace CleanScan.Views
             await _refreshGate.WaitAsync();
             try
             {
-                if (!TryValidateSourceSelection(out _)) return;
+                if (!TryValidateSourceSelection(out _))
+                {
+                    ShowPlayerStatus("Aucune source valide.\nRenseignez le champ SOURCE avec un fichier existant.");
+                    return;
+                }
 
                 var scriptPath = _scriptService.GetPrimaryScriptPath();
                 if (string.IsNullOrWhiteSpace(scriptPath)) return;
@@ -1847,8 +1952,15 @@ namespace CleanScan.Views
                 var pos = _mpvService.IsReady ? _mpvService.GetPosition() : 0.0;
                 _totalFrames = 0;  // will be refreshed in OnMpvFileLoaded
                 _fps         = 0;
-                if (this.FindControl<Border>("PlayerErrorBanner") is { } banner)
-                    banner.IsVisible = false;
+                _loadingSourceFallback = false;
+                DebugLog($"LoadFile: {scriptPath}, pos={pos:F2}, IsReady={_mpvService.IsReady}");
+                try
+                {
+                    var content = File.ReadAllText(scriptPath);
+                    DebugLog($"Script ({content.Length} chars): {content[..Math.Min(400, content.Length)].Replace('\n', '|').Replace('\r', ' ')}");
+                }
+                catch (Exception ex) { DebugLog($"Script read error: {ex.Message}"); }
+                ShowPlayerStatus("Chargement…");
                 _mpvService.LoadFile(scriptPath, pos);
             }
             finally { _refreshGate.Release(); }

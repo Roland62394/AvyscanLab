@@ -543,10 +543,10 @@
                 <Grid>
                     <local:MpvHost x:Name="VideoHost"/>
                     <Border x:Name="PlayerErrorBanner" IsVisible="False"
-                            Background="#CC111111" VerticalAlignment="Center"
-                            Padding="16,10">
+                            Background="#DD111111" VerticalAlignment="Center"
+                            HorizontalAlignment="Stretch" Padding="16,12">
                         <TextBlock x:Name="PlayerErrorText"
-                                   Foreground="#FFCC4444" FontSize="12"
+                                   Foreground="#FFEEEEEE" FontSize="12"
                                    TextWrapping="Wrap" TextAlignment="Center"
                                    HorizontalAlignment="Center"/>
                     </Border>

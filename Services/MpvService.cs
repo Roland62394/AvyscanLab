@@ -122,7 +122,7 @@ public sealed class MpvService : IDisposable
         if (_ctx == 0) return;
 
         mpv_set_option_string(_ctx, "wid",                    hwnd.ToString());
-        mpv_set_option_string(_ctx, "vo",                     "auto");
+        mpv_set_option_string(_ctx, "vo",                     "gpu");
         mpv_set_option_string(_ctx, "osc",                    "no");
         mpv_set_option_string(_ctx, "input-default-bindings", "no");
         mpv_set_option_string(_ctx, "input-vo-keyboard",      "no");
