@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -285,7 +286,65 @@ public sealed partial class ScriptService(SourceService source, IAviService avi)
             string.Equals(name, "denoise_mode", StringComparison.OrdinalIgnoreCase))
             return $"\"{NormalizeChoiceValue(value)}\"";
 
+        return SanitizeScriptValue(name, value);
+    }
+
+    private static string SanitizeScriptValue(string name, string value)
+    {
+        value ??= string.Empty;
+
+        if (string.Equals(name, "denoise_strength", StringComparison.OrdinalIgnoreCase))
+            return ClampIntString(value, min: 1, max: 24, fallback: 10);
+
+        if (string.Equals(name, "denoise_dist", StringComparison.OrdinalIgnoreCase))
+            return ClampIntString(value, min: 1, max: 10, fallback: 3);
+
+        if (string.Equals(name, "LockChan", StringComparison.OrdinalIgnoreCase))
+            return ClampIntString(value, min: -3, max: 2, fallback: 1);
+
+        if (string.Equals(name, "LockVal", StringComparison.OrdinalIgnoreCase))
+            return ClampIntString(value, min: 0, max: 255, fallback: 250);
+
+        if (string.Equals(name, "Scale", StringComparison.OrdinalIgnoreCase))
+            return ClampDoubleString(value, min: 0.1, max: 10.0, fallback: 2.0, decimals: 2);
+
+        if (string.Equals(name, "Th", StringComparison.OrdinalIgnoreCase))
+            return ClampDoubleString(value, min: 0.0, max: 1.0, fallback: 0.12, decimals: 3);
+
+        if (string.Equals(name, "HiTh", StringComparison.OrdinalIgnoreCase))
+            return ClampDoubleString(value, min: 0.0, max: 1.0, fallback: 0.25, decimals: 3);
+
+        if (string.Equals(name, "X", StringComparison.OrdinalIgnoreCase)
+         || string.Equals(name, "Y", StringComparison.OrdinalIgnoreCase)
+         || string.Equals(name, "W", StringComparison.OrdinalIgnoreCase)
+         || string.Equals(name, "H", StringComparison.OrdinalIgnoreCase))
+            return ClampIntString(value, min: 0, max: 10000, fallback: 0);
+
+        if (string.Equals(name, "Omin", StringComparison.OrdinalIgnoreCase)
+         || string.Equals(name, "Omax", StringComparison.OrdinalIgnoreCase))
+            return ClampIntString(value, min: 0, max: 255, fallback: string.Equals(name, "Omax", StringComparison.OrdinalIgnoreCase) ? 255 : 0);
+
+        if (string.Equals(name, "Verbosity", StringComparison.OrdinalIgnoreCase))
+            return ClampIntString(value, min: 0, max: 6, fallback: 4);
+
         return value;
+    }
+
+    private static string ClampIntString(string raw, int min, int max, int fallback)
+    {
+        if (!int.TryParse(raw?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed))
+            parsed = fallback;
+        return Math.Clamp(parsed, min, max).ToString(CultureInfo.InvariantCulture);
+    }
+
+    private static string ClampDoubleString(string raw, double min, double max, double fallback, int decimals)
+    {
+        var normalized = (raw ?? string.Empty).Trim().Replace(',', '.');
+        if (!double.TryParse(normalized, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed))
+            parsed = fallback;
+
+        var clamped = Math.Clamp(parsed, min, max);
+        return clamped.ToString("F" + decimals, CultureInfo.InvariantCulture);
     }
 
     private static bool IsPathField(string name) =>
