@@ -470,6 +470,7 @@ namespace CleanScan.Views
         private bool  _suppressTextEvents;
         private bool  _sliderSync;
         private bool  _loadingSourceFallback;
+        private string? _activeSliderField;
         private readonly Dictionary<string, (Slider Slider, SliderSpec Spec)> _sliderMap = new();
         private bool  _isClosing;
         private bool  _isInitializing;
@@ -773,6 +774,17 @@ namespace CleanScan.Views
 
                 var captured = spec;
                 slider.ValueChanged += (_, _) => OnSliderValueChanged(captured);
+                slider.AddHandler(PointerPressedEvent, (_, _) => _activeSliderField = captured.Field,
+                    RoutingStrategies.Bubble, handledEventsToo: true);
+                slider.AddHandler(PointerReleasedEvent, (_, _) =>
+                    {
+                        if (!string.Equals(_activeSliderField, captured.Field, StringComparison.Ordinal)) return;
+                        _activeSliderField = null;
+                        if (this.FindControl<TextBox>(captured.Field) is not { } tb) return;
+                        _ = ApplyFieldChangeAsync(captured.Field, tb.Text ?? string.Empty,
+                            showValidationError: true, refreshScriptPreview: false);
+                    },
+                    RoutingStrategies.Bubble, handledEventsToo: true);
             }
 
             _config.Changed += OnConfigChangedForSlider;
@@ -1185,7 +1197,7 @@ namespace CleanScan.Views
                 {
                     combo.SelectionChanged += async (_, _) =>
                     {
-                        if (_suppressTextEvents) return;
+                        if (_suppressTextEvents || _sliderSync) return;
                         await ApplyFieldChangeAsync(spec.Name, combo.SelectedItem?.ToString() ?? string.Empty,
                             showValidationError: spec.ValidateOnChange, refreshScriptPreview: false);
                     };
@@ -1248,7 +1260,7 @@ namespace CleanScan.Views
                 case UpdateMode.Debounced:
                     textBox.TextChanged += async (_, _) =>
                     {
-                        if (_suppressTextEvents) return;
+                        if (_suppressTextEvents || _sliderSync) return;
                         await ApplyFieldChangeAsync(spec.Name, textBox.Text ?? string.Empty,
                             showValidationError: spec.ValidateOnChange, refreshScriptPreview: false);
                     };
@@ -1286,7 +1298,7 @@ namespace CleanScan.Views
                 case UpdateMode.Immediate:
                     textBox.TextChanged += async (_, _) =>
                     {
-                        if (_suppressTextEvents) return;
+                        if (_suppressTextEvents || _sliderSync) return;
                         await ApplyFieldChangeAsync(spec.Name, textBox.Text ?? string.Empty,
                             showValidationError: spec.ValidateOnChange, refreshScriptPreview: true);
                     };

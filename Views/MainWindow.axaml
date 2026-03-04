@@ -335,7 +335,7 @@
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Margin" Value="8,0"/>
-            <Setter Property="Width" Value="72"/>
+            <Setter Property="Width" Value="216"/>
             <Setter Property="HorizontalAlignment" Value="Left"/>
             <Setter Property="Template">
                 <ControlTemplate TargetType="Slider">
@@ -571,7 +571,7 @@
                 BorderThickness="0,1,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="185"/>  <!-- Colonne boutons toggle -->
+                    <ColumnDefinition Width="240"/>  <!-- Colonne boutons toggle -->
                     <ColumnDefinition Width="*"/>    <!-- Colonne réglages filtre -->
                 </Grid.ColumnDefinitions>
 
