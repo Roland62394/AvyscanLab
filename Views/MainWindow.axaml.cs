@@ -772,12 +772,47 @@ namespace CleanScan.Views
                 _sliderMap[spec.Field] = (slider, spec);
 
                 var captured = spec;
+                var pressing = false;
+
                 slider.ValueChanged += (_, _) => OnSliderValueChanged(captured);
-                slider.AddHandler(PointerReleasedEvent, (_, _) => CommitSliderField(captured.Field),
-                    RoutingStrategies.Bubble, handledEventsToo: true);
+
+                slider.AddHandler(PointerPressedEvent, (_, e) =>
+                {
+                    if (!e.GetCurrentPoint(slider).Properties.IsLeftButtonPressed) return;
+                    pressing = true;
+                    e.Pointer.Capture(slider);
+                    MoveSliderToPointer(slider, e);
+                    e.Handled = true;
+                }, RoutingStrategies.Bubble, handledEventsToo: true);
+
+                slider.AddHandler(PointerMovedEvent, (_, e) =>
+                {
+                    if (!pressing) return;
+                    MoveSliderToPointer(slider, e);
+                    e.Handled = true;
+                }, RoutingStrategies.Bubble, handledEventsToo: true);
+
+                slider.AddHandler(PointerReleasedEvent, (_, e) =>
+                {
+                    if (!pressing) return;
+                    pressing = false;
+                    e.Pointer.Capture(null);
+                    CommitSliderField(captured.Field);
+                    e.Handled = true;
+                }, RoutingStrategies.Bubble, handledEventsToo: true);
             }
 
             _config.Changed += OnConfigChangedForSlider;
+        }
+
+        private static void MoveSliderToPointer(Slider slider, PointerEventArgs e)
+        {
+            const double thumbHalf = 7.0;
+            var w = slider.Bounds.Width;
+            if (w <= thumbHalf * 2) return;
+            var x     = e.GetCurrentPoint(slider).Position.X;
+            var ratio = Math.Clamp((x - thumbHalf) / (w - thumbHalf * 2), 0.0, 1.0);
+            slider.Value = slider.Minimum + ratio * (slider.Maximum - slider.Minimum);
         }
 
         private void OnSliderValueChanged(SliderSpec spec)

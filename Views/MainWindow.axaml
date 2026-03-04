@@ -331,51 +331,57 @@
 
         <!-- ─── Param slider ─── -->
         <Style Selector="Slider.param-slider">
-            <Setter Property="Focusable" Value="False"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Margin" Value="8,0"/>
             <Setter Property="Width" Value="216"/>
             <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="IsSnapToTickEnabled" Value="False"/>
             <Setter Property="Template">
                 <ControlTemplate TargetType="Slider">
-                    <Grid VerticalAlignment="Center">
+                    <!-- Background transparent = zone cliquable sur toute la hauteur -->
+                    <Grid Background="Transparent" VerticalAlignment="Center">
                         <!-- piste grise de fond -->
                         <Border Height="3" VerticalAlignment="Center"
                                 Background="{StaticResource BorderAccent}"
-                                CornerRadius="2"/>
+                                CornerRadius="2"
+                                IsHitTestVisible="False"/>
                         <Track Name="PART_Track"
                                Minimum="{TemplateBinding Minimum}"
                                Maximum="{TemplateBinding Maximum}"
                                Value="{TemplateBinding Value, Mode=TwoWay}"
-                               IsDirectionReversed="{TemplateBinding IsDirectionReversed}">
+                               IsDirectionReversed="{TemplateBinding IsDirectionReversed}"
+                               Orientation="Horizontal">
                             <Track.DecreaseButton>
-                                <RepeatButton Name="PART_DecreaseButton" Focusable="False">
+                                <!-- IsHitTestVisible=False : on gère l'interaction en code-behind -->
+                                <RepeatButton Name="PART_DecreaseButton" IsHitTestVisible="False">
                                     <RepeatButton.Template>
                                         <ControlTemplate>
                                             <Border Height="3" VerticalAlignment="Center"
                                                     Background="{StaticResource AccentBlue}"
-                                                    CornerRadius="2 0 0 2"/>
+                                                    CornerRadius="2 0 0 2"
+                                                    IsHitTestVisible="False"/>
                                         </ControlTemplate>
                                     </RepeatButton.Template>
                                 </RepeatButton>
                             </Track.DecreaseButton>
                             <Track.IncreaseButton>
-                                <RepeatButton Name="PART_IncreaseButton" Focusable="False">
+                                <RepeatButton Name="PART_IncreaseButton" IsHitTestVisible="False">
                                     <RepeatButton.Template>
                                         <ControlTemplate>
-                                            <Border Background="Transparent"/>
+                                            <Border IsHitTestVisible="False"/>
                                         </ControlTemplate>
                                     </RepeatButton.Template>
                                 </RepeatButton>
                             </Track.IncreaseButton>
-                            <Thumb Name="PART_Thumb">
+                            <Thumb Name="PART_Thumb" IsHitTestVisible="False">
                                 <Thumb.Template>
-                                    <ControlTemplate>
+                                    <ControlTemplate TargetType="Thumb">
                                         <Ellipse Width="14" Height="14"
                                                  Fill="{StaticResource AccentBlue}"
                                                  Stroke="{StaticResource BgDeep}"
-                                                 StrokeThickness="2"/>
+                                                 StrokeThickness="2"
+                                                 IsHitTestVisible="False"/>
                                     </ControlTemplate>
                                 </Thumb.Template>
                             </Thumb>
