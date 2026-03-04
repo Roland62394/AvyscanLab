@@ -335,6 +335,8 @@
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Margin" Value="8,0"/>
+            <Setter Property="Width" Value="72"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
             <Setter Property="Template">
                 <ControlTemplate TargetType="Slider">
                     <Grid VerticalAlignment="Center">
