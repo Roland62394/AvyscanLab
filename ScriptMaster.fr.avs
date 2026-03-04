@@ -149,7 +149,7 @@ source_label_size  = 40
 
 # ------------ L-SMASH Works ------------
 lw_threads   = 0
-lw_cache     = true
+lw_cache     = false
 lw_seek_mode = 0
 lw_dr        = false
 lw_format    = ""
