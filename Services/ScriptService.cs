@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace CleanScan.Services;
 
-public sealed partial class ScriptService(SourceService source, IAviService avi) : IScriptService
+public sealed partial class ScriptService(SourceService source) : IScriptService
 {
     // ── Public constants ────────────────────────────────────────────────────
 
@@ -35,7 +35,6 @@ public sealed partial class ScriptService(SourceService source, IAviService avi)
     ];
 
     public const string UseImageConfigName    = "use_img";
-    public const string PreferAviVfwConfigName = "prefer_avi_vfw";
 
     // ── Compiled regexes ────────────────────────────────────────────────────
 
@@ -219,7 +218,6 @@ public sealed partial class ScriptService(SourceService source, IAviService avi)
         foreach (var pair in configValues)
             updated = ReplaceConfigValue(updated, GetScriptConfigName(pair.Key), FormatValueForScript(pair.Key, pair.Value));
 
-        updated = ApplyAviSourceStrategy(updated, configValues);
         updated = UpdateSourceClipLine(updated, configValues);
         return RewritePluginPathsToAbsolute(updated);
     }
@@ -247,30 +245,6 @@ public sealed partial class ScriptService(SourceService source, IAviService avi)
         return configValues.TryGetValue(key, out var sel) && !string.IsNullOrWhiteSpace(sel)
             ? source.NormalizePathForAvisynth(sel)
             : string.Empty;
-    }
-
-    private string ApplyAviSourceStrategy(string scriptContents, Dictionary<string, string> configValues) =>
-        ReplaceConfigValue(scriptContents, PreferAviVfwConfigName,
-            ShouldPreferAviVfwForSelectedSource(configValues) ? "true" : "false");
-
-    private bool ShouldPreferAviVfwForSelectedSource(Dictionary<string, string> configValues)
-    {
-        if (!TryGetSelectedVideoSourcePath(configValues, out var path)) return true;
-        if (!string.Equals(Path.GetExtension(path), ".avi", StringComparison.OrdinalIgnoreCase)) return true;
-        return !avi.IsAviFourCcKnownToFailWithAviSource(path);
-    }
-
-    private bool TryGetSelectedVideoSourcePath(Dictionary<string, string> configValues, out string selectedVideoPath)
-    {
-        selectedVideoPath = string.Empty;
-        if (IsImageSourceEnabled(configValues)) return false;
-
-        var raw = configValues.TryGetValue("source", out var s) ? s : string.Empty;
-        if (string.IsNullOrWhiteSpace(raw) && configValues.TryGetValue("film", out var f)) raw = f;
-        if (string.IsNullOrWhiteSpace(raw)) return false;
-
-        selectedVideoPath = source.NormalizeConfiguredPath(raw);
-        return !string.IsNullOrWhiteSpace(selectedVideoPath);
     }
 
     private static bool IsImageSourceEnabled(Dictionary<string, string> configValues) =>
