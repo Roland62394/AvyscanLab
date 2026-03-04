@@ -370,7 +370,7 @@ namespace CleanScan.Views
             new("degrain_overlap",   0,    32,   1,    false),
             new("degrain_pel",       1,    4,    1,    false),
             new("degrain_search",    0,    5,    1,    false),
-            new("denoise_strength",  1,    20,   1,    false),
+            new("denoise_strength",  1,    24,   1,    false),
             new("denoise_dist",      1,    20,   1,    false),
             new("Lum_Bright",       -255,  255,  1,    false),
             new("Lum_Contrast",      0.1,  3.0,  0.05, true, 2),
@@ -780,7 +780,7 @@ namespace CleanScan.Views
 
         private void OnSliderValueChanged(SliderSpec spec)
         {
-            if (_sliderSync || _suppressTextEvents) return;
+            if (!_layoutInitialized || _sliderSync || _suppressTextEvents) return;
             if (!_sliderMap.TryGetValue(spec.Field, out var entry)) return;
             if (this.FindControl<TextBox>(spec.Field) is not { } tb) return;
 
@@ -828,6 +828,7 @@ namespace CleanScan.Views
             if (saved is null) return; // First launch: OnOpened handles it via SnapToBottomOfScreen
 
             WindowStartupLocation = WindowStartupLocation.Manual;
+            Width    = ClampWindowWidth(saved.Width);
             Height   = Math.Clamp(saved.Height, MinHeight, MaxHeight);
             Position = new PixelPoint(saved.X, saved.Y);
             // IsSavedPositionVisible is validated later in ApplyStartupLayout (OnOpened).
@@ -1007,6 +1008,7 @@ namespace CleanScan.Views
         private void ApplyStartupLayout(WindowSettings? saved = null)
         {
             WindowStartupLocation = WindowStartupLocation.Manual;
+            Width  = GetStartupWidth(saved);
             Height = GetStartupHeight(saved);
 
             if (saved is { X: var sx, Y: var sy } && IsSavedPositionVisible(sx, sy))
@@ -1028,6 +1030,20 @@ namespace CleanScan.Views
                 return Math.Clamp(saved.Height, MinHeight, MaxHeight);
 
             return GetCompactStartupHeight();
+        }
+
+        private double GetStartupWidth(WindowSettings? saved)
+        {
+            if (saved is not null)
+                return ClampWindowWidth(saved.Width);
+
+            return Width;
+        }
+
+        private double ClampWindowWidth(double width)
+        {
+            var maxWidth = double.IsFinite(MaxWidth) ? MaxWidth : double.MaxValue;
+            return Math.Clamp(width, MinWidth, maxWidth);
         }
 
         private double GetCompactStartupHeight()
@@ -1052,7 +1068,7 @@ namespace CleanScan.Views
         {
             if (!IsVisible || WindowState != WindowState.Normal) return;
             var bottomH = BottomPanel.Bounds.Height is > 0 and var bh ? (double?)bh : null;
-            _windowStateService.Save(new WindowSettings(Bounds.Width, Height, Position.X, Position.Y, ViewModel.CurrentLanguageCode, bottomH));
+            _windowStateService.Save(new WindowSettings(Bounds.Width, Bounds.Height, Position.X, Position.Y, ViewModel.CurrentLanguageCode, bottomH));
         }
 
         private async void OnPositionChanged(object? sender, PixelPointEventArgs e)
