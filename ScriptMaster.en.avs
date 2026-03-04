@@ -647,5 +647,6 @@ out = preview
 # Strip border padding added for temporal filters (image source only)
 out = (n_img_pad > 0) ? Trim(out, n_img_pad, n_img_pad + n_img_orig - 1) : out
 
-out = out.Prefetch(threads)
+effective_threads = (enable_gammac) ? 1 : threads
+out = out.Prefetch(effective_threads)
 out

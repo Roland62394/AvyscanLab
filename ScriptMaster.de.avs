@@ -646,5 +646,6 @@ out = preview
 # Rand-Padding für Zeitfilter entfernen (nur bei Bildsequenz-Quelle)
 out = (n_img_pad > 0) ? Trim(out, n_img_pad, n_img_pad + n_img_orig - 1) : out
 
-out = out.Prefetch(threads)
+effective_threads = (enable_gammac) ? 1 : threads
+out = out.Prefetch(effective_threads)
 out
