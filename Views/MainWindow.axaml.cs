@@ -828,6 +828,7 @@ namespace CleanScan.Views
             if (saved is null) return; // First launch: OnOpened handles it via SnapToBottomOfScreen
 
             WindowStartupLocation = WindowStartupLocation.Manual;
+            Width    = ClampWindowWidth(saved.Width);
             Height   = Math.Clamp(saved.Height, MinHeight, MaxHeight);
             Position = new PixelPoint(saved.X, saved.Y);
             // IsSavedPositionVisible is validated later in ApplyStartupLayout (OnOpened).
@@ -1007,6 +1008,7 @@ namespace CleanScan.Views
         private void ApplyStartupLayout(WindowSettings? saved = null)
         {
             WindowStartupLocation = WindowStartupLocation.Manual;
+            Width  = GetStartupWidth(saved);
             Height = GetStartupHeight(saved);
 
             if (saved is { X: var sx, Y: var sy } && IsSavedPositionVisible(sx, sy))
@@ -1028,6 +1030,20 @@ namespace CleanScan.Views
                 return Math.Clamp(saved.Height, MinHeight, MaxHeight);
 
             return GetCompactStartupHeight();
+        }
+
+        private double GetStartupWidth(WindowSettings? saved)
+        {
+            if (saved is not null)
+                return ClampWindowWidth(saved.Width);
+
+            return Width;
+        }
+
+        private double ClampWindowWidth(double width)
+        {
+            var maxWidth = double.IsFinite(MaxWidth) ? MaxWidth : double.MaxValue;
+            return Math.Clamp(width, MinWidth, maxWidth);
         }
 
         private double GetCompactStartupHeight()
@@ -1052,7 +1068,7 @@ namespace CleanScan.Views
         {
             if (!IsVisible || WindowState != WindowState.Normal) return;
             var bottomH = BottomPanel.Bounds.Height is > 0 and var bh ? (double?)bh : null;
-            _windowStateService.Save(new WindowSettings(Bounds.Width, Height, Position.X, Position.Y, ViewModel.CurrentLanguageCode, bottomH));
+            _windowStateService.Save(new WindowSettings(Bounds.Width, Bounds.Height, Position.X, Position.Y, ViewModel.CurrentLanguageCode, bottomH));
         }
 
         private async void OnPositionChanged(object? sender, PixelPointEventArgs e)
