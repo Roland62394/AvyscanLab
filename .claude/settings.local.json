@@ -12,7 +12,8 @@
       "WebFetch(domain:forum.doom9.org)",
       "WebFetch(domain:forum.selur.net)",
       "Bash(cd:*)",
-      "Bash(do sed:*)"
+      "Bash(do sed:*)",
+      "Bash(rm:*)"
     ]
   }
 }

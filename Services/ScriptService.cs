@@ -36,7 +36,7 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
 
     public const string UseImageConfigName    = "use_img";
     private const string ForceSourceConfigName = "force_source";
-    private const string ForceSourceValue      = "LWLIBAV";
+    private const string ForceSourceValue      = "FFMS2";
 
     // ── Compiled regexes ────────────────────────────────────────────────────
 
@@ -285,7 +285,7 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
             return ClampIntString(value, min: 1, max: 255, fallback: 250);
 
         if (string.Equals(name, "Scale", StringComparison.OrdinalIgnoreCase))
-            return ClampDoubleString(value, min: 0.1, max: 10.0, fallback: 2.0, decimals: 2);
+            return ClampIntString(value, min: 1, max: 10, fallback: 2);
 
         if (string.Equals(name, "Th", StringComparison.OrdinalIgnoreCase))
             return ClampDoubleString(value, min: 0.0, max: 1.0, fallback: 0.12, decimals: 3);

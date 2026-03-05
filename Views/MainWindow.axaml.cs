@@ -641,7 +641,7 @@ namespace CleanScan.Views
                 if (System.Runtime.InteropServices.NativeLibrary.TryLoad(dllPath, out var h))
                 {
                     System.Runtime.InteropServices.NativeLibrary.Free(h);
-                    return $"AviSynth.dll présent et chargeable — le build mpv ne supporte pas AviSynth";
+                    return $"AviSynth.dll présent et chargeable OK";
                 }
                 return $"AviSynth.dll présent dans System32 mais non chargeable (mauvaise architecture ?)";
             }
@@ -675,7 +675,8 @@ namespace CleanScan.Views
             // qui plante à l'exécution (ex: paramètre invalide dans un filtre comme GamMac).
             // On distingue les deux cas via la présence d'AviSynth.dll.
             if (!_loadingSourceFallback
-             && errorMsg.Contains("unknown file format", StringComparison.OrdinalIgnoreCase))
+             && (errorMsg.Contains("unknown file format", StringComparison.OrdinalIgnoreCase)
+              || errorMsg.Contains("unrecognized file format", StringComparison.OrdinalIgnoreCase)))
             {
                 var diag = GetAviSynthDiagnostic();
                 DebugLog("AviSynth diag: " + diag);

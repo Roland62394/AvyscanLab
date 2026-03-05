@@ -20,7 +20,7 @@ play_speed  = 24
 
 use_img = true    # true = ImageSource ; false = video
 
-force_source = ""  # "" = auto (LWLIBAV -> LSMASH -> FFMS2 -> AVI) | "LWLIBAV" | "LSMASH" | "FFMS2"
+force_source = "FFMS2"  # "FFMS2" | "" = auto (FFMS2 -> LSMASH -> LWLIBAV -> AVI) | "LWLIBAV" | "LSMASH"
 show_source_used = true
 
 # ------------ OPTIONS ------------
@@ -148,17 +148,17 @@ preview_label_size = 40
 source_label_size  = 40
 
 # ------------ L-SMASH Works ------------
-lw_threads   = 0
-lw_cache     = false
-lw_seek_mode = 0
-lw_dr        = false
-lw_format    = ""
+global lw_threads   = 0
+global lw_cache     = false
+global lw_seek_mode = 0
+global lw_dr        = false
+global lw_format    = ""
 
 # ------------ FFMS2 ------------
-ffms_cachefile = ""
-ffms_threads   = -1
-ffms_fpsnum    = -1
-ffms_fpsden    = 1
+global ffms_cachefile = ""
+global ffms_threads   = -1
+global ffms_fpsnum    = -1
+global ffms_fpsden    = 1
 
 
 # =========================
@@ -173,7 +173,7 @@ ffms_fpsden    = 1
 pluginRoot = ScriptDir() + "Plugins/"
 
 if (!use_img) {
-  TryLoadPlugin(pluginRoot + "Dual/L-Smash-Works/LWLibavSource.dll")
+  TryLoadPlugin(pluginRoot + "Dual/L-Smash-Works/LSMASHSource.dll")
 }
 
 function TryLoadPlugin(string path) {
@@ -295,8 +295,8 @@ function OpenVideoSourceSmart(string path, string "force", bool "show_label", in
     try { v = FFVideoSource(path, cachefile=ffms_cachefile, threads=ffms_threads, fpsnum=ffms_fpsnum, fpsden=ffms_fpsden)  chosen = "FFMS2" }
     catch(err) { last_err = err }
   } else {
-    if (FunctionExists("LWLibavVideoSource")) {
-      try { v = LWLibavVideoSource(path, threads=lw_threads, cache=lw_cache, seek_mode=lw_seek_mode, dr=lw_dr, format=lw_format)  chosen = "LWLIBAV" }
+    if (FunctionExists("FFVideoSource")) {
+      try { v = FFVideoSource(path, cachefile=ffms_cachefile, threads=ffms_threads, fpsnum=ffms_fpsnum, fpsden=ffms_fpsden)  chosen = "FFMS2" }
       catch(err) { last_err = err }
     }
 
@@ -305,8 +305,8 @@ function OpenVideoSourceSmart(string path, string "force", bool "show_label", in
       catch(err) { last_err = err }
     }
 
-    if (chosen == "" && FunctionExists("FFVideoSource")) {
-      try { v = FFVideoSource(path, cachefile=ffms_cachefile, threads=ffms_threads, fpsnum=ffms_fpsnum, fpsden=ffms_fpsden)  chosen = "FFMS2" }
+    if (chosen == "" && FunctionExists("LWLibavVideoSource")) {
+      try { v = LWLibavVideoSource(path, threads=lw_threads, cache=lw_cache, seek_mode=lw_seek_mode, dr=lw_dr, format=lw_format)  chosen = "LWLIBAV" }
       catch(err) { last_err = err }
     }
 
@@ -316,7 +316,11 @@ function OpenVideoSourceSmart(string path, string "force", bool "show_label", in
     }
   }
 
-  Assert(chosen != "", "Unable to open clip.\nLast error:\n" + last_err)
+  if (chosen == "") {
+    err_clip = BlankClip(width=1280, height=720, fps=25, length=1, color=$000000)
+    err_clip = Subtitle(err_clip, "Unable to open clip\n" + last_err, size=28, align=5, lsp=10)
+    return err_clip
+  }
   return _OpenWithLabel(chosen, v, overlay_size=source_overlay_size, show_overlay=show_label)
 }
 
@@ -556,18 +560,21 @@ if (use_img) {
 # =========================
 
 c = src
+pipeline_err = ""
 
 # STEP 1 — GamMac FIRST (selective RGB correction — neutralises colour cast before RemoveDirt)
 if (enable_gammac && FunctionExists("GamMac")) {
-  base_pix = PixelType(c)
-  mx  = _MatrixAuto(c)
-  rgb = EnsureColorspaceSafe(c, "RGB24", matrix=mx)
-  rgb = GamMac(rgb,
-    \ LockChan=LockChan, LockVal=LockVal,
-    \ x=X, y=Y, w=W, h=H,
-    \ Scale=Scale, Th=Th, HiTh=HiTh,
-    \ Omin=Omin, Omax=Omax, Show=Show, Verbosity=Verbosity)
-  c = EnsureColorspaceSafe(rgb, base_pix, matrix=mx)
+  try {
+    base_pix = PixelType(c)
+    mx  = _MatrixAuto(c)
+    rgb = EnsureColorspaceSafe(c, "RGB24", matrix=mx)
+    rgb = GamMac(rgb,
+      \ LockChan=LockChan, LockVal=LockVal,
+      \ x=X, y=Y, w=W, h=H,
+      \ Scale=Scale, Th=Th, HiTh=HiTh,
+      \ Omin=Omin, Omax=Omax, Show=Show, Verbosity=Verbosity)
+    c = EnsureColorspaceSafe(rgb, base_pix, matrix=mx)
+  } catch(err) { pipeline_err = "GamMac: " + err }
 }
 
 # STEP 2 — Dust / film stains (RemoveDirt)
@@ -622,6 +629,10 @@ if (enable_sharp) {
 
 final = c
 
+if (pipeline_err != "") {
+  err_clip = BlankClip(final, length=1, color=$000000)
+  final = Subtitle(err_clip, pipeline_err, size=24, align=5, lsp=10)
+}
 
 # =========================
 # PREVIEW / OUTPUT
