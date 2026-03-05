@@ -310,25 +310,6 @@
             <Setter Property="TextElement.Foreground" Value="{StaticResource AccentGreen}"/>
         </Style>
 
-        <!-- Stop variant -->
-        <Style Selector="Button.transport.stop">
-            <Setter Property="Width"       Value="44"/>
-            <Setter Property="FontSize"    Value="15"/>
-            <Setter Property="Foreground"  Value="#C04848"/>
-            <Setter Property="BorderBrush" Value="#6B3030"/>
-        </Style>
-        <Style Selector="Button.transport.stop:pointerover">
-            <Setter Property="Background"  Value="#2A1515"/>
-            <Setter Property="BorderBrush" Value="#C04848"/>
-            <Setter Property="Foreground"  Value="#C04848"/>
-        </Style>
-        <Style Selector="Button.transport.stop:pointerover /template/ ContentPresenter">
-            <Setter Property="TextElement.Foreground" Value="#C04848"/>
-        </Style>
-        <Style Selector="Button.transport.stop:pressed /template/ ContentPresenter">
-            <Setter Property="TextElement.Foreground" Value="#C04848"/>
-        </Style>
-
         <!-- ─── Param slider ─── -->
         <Style Selector="Slider.param-slider">
             <Setter Property="VerticalAlignment" Value="Center"/>
@@ -534,8 +515,6 @@
                         <Rectangle Width="1" Height="22" Fill="{StaticResource BorderSubtle}" Margin="4,0"/>
                         <Button x:Name="VdbPlay" Classes="transport play" Content="▶"
                                 ToolTip.Tip="Play  (Space)" Click="OnVdbPlayClick"/>
-                        <Button x:Name="VdbStop" Classes="transport stop" Content="⏹"
-                                ToolTip.Tip="Stop" Click="OnVdbStopClick"/>
                         <Rectangle Width="1" Height="22" Fill="{StaticResource BorderSubtle}" Margin="4,0"/>
                         <Button x:Name="VdbNextFrame" Classes="transport" Content="▶▶"
                                 ToolTip.Tip="Next frame  (→)" Click="OnVdbNextFrameClick"/>

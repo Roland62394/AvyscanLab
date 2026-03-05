@@ -466,10 +466,12 @@ namespace CleanScan.Views
         private double      _seekDuration;
         private int         _totalFrames;
         private double      _fps;
+        private double      _pendingSeekPos;
 
         private bool  _suppressTextEvents;
         private bool  _sliderSync;
         private bool  _loadingSourceFallback;
+        private bool  _awaitingFirstFrame;
         private readonly Dictionary<string, (Slider Slider, SliderSpec Spec)> _sliderMap = new();
         private bool  _isClosing;
         private bool  _isInitializing;
@@ -606,6 +608,11 @@ namespace CleanScan.Views
 
         private void OnMpvPosition(double pos)
         {
+            if (_awaitingFirstFrame)
+            {
+                _awaitingFirstFrame = false;
+                SetPlayButtonLoading(false);
+            }
             if (_seekDragging || _seekDuration <= 0) return;
             if (this.FindControl<Slider>("SeekBar") is { } s) s.Value = pos;
             UpdateTimeLabel(pos, _seekDuration);
@@ -619,12 +626,24 @@ namespace CleanScan.Views
                 s.Maximum   = dur > 0 ? dur : 1;
                 s.IsEnabled = dur > 0;
             }
+            UpdateTimeLabel(_mpvService?.GetPosition() ?? 0, dur);
         }
 
         private void OnMpvPauseChanged(bool paused)
         {
             if (this.FindControl<Button>("VdbPlay") is { } btn)
                 btn.Content = paused ? "▶" : "⏸";
+        }
+
+        private void SetPlayButtonLoading(bool loading)
+        {
+            if (this.FindControl<Button>("VdbPlay") is not { } btn) return;
+            var accent = new SolidColorBrush(Color.Parse(loading ? "#E0C030" : "#35C156"));
+            var bg     = new SolidColorBrush(Color.Parse(loading ? "#3A3010" : "#0E2016"));
+            btn.Foreground  = accent;
+            btn.BorderBrush = accent;
+            btn.Background  = bg;
+            btn.BorderThickness = new Thickness(loading ? 2 : 1);
         }
 
         private static readonly string _logPath =
@@ -669,6 +688,7 @@ namespace CleanScan.Views
 
         private void OnMpvLoadFailed(string errorMsg)
         {
+            SetPlayButtonLoading(false);
             DebugLog("OnMpvLoadFailed: " + errorMsg);
 
             // "unknown file format" peut signifier soit AviSynth absent, soit un script AviSynth
@@ -725,7 +745,7 @@ namespace CleanScan.Views
                 banner.IsVisible = false;
             }
 
-            if (this.FindControl<Slider>("SeekBar") is { } s) s.Value = 0;
+            if (this.FindControl<Slider>("SeekBar") is { } s) s.Value = _pendingSeekPos;
 
             // Query exact frame count and fps to set an accurate slider maximum.
             // This prevents seeking past the last valid frame, which would crash AviSynth
@@ -1464,6 +1484,34 @@ namespace CleanScan.Views
                 return;
             }
 
+            // Stop mpv playback and reset player state for the new clip.
+            _mpvService?.Stop();
+            _seekDragging = false;
+            _seekDuration = 0;
+            _totalFrames  = 0;
+            _fps          = 0;
+            if (this.FindControl<Slider>("SeekBar") is { } seekBar)
+            {
+                seekBar.Value     = 0;
+                seekBar.Maximum   = 1;
+                seekBar.IsEnabled = false;
+            }
+            UpdateTimeLabel(0, 0);
+
+            // Reset crop values to 0.
+            _suppressTextEvents = true;
+            try
+            {
+                foreach (var cropField in new[] { "Crop_L", "Crop_T", "Crop_R", "Crop_B" })
+                {
+                    _config.Set(cropField, "0");
+                    if (this.FindControl<TextBox>(cropField) is { } tb)
+                        tb.Text = "0";
+                }
+            }
+            finally { _suppressTextEvents = false; }
+            SyncAllSliders();
+
             var isFilm = _sourceService.IsVideoSource(rawValue);
             UpdateSourceSelection(isFilmSelected: isFilm, updateConfig: true);
 
@@ -1479,7 +1527,7 @@ namespace CleanScan.Views
             if (TryValidateSourceSelection(out var msg))
             {
                 _refreshDebouncer.Cancel();
-                await LoadScriptAsync();
+                await LoadScriptAsync(resetPosition: true);
                 return;
             }
 
@@ -1956,9 +2004,6 @@ namespace CleanScan.Views
         private void OnVdbPlayClick(object? sender, RoutedEventArgs e) =>
             _mpvService?.TogglePlayPause();
 
-        private void OnVdbStopClick(object? sender, RoutedEventArgs e) =>
-            _mpvService?.Pause();
-
         private void OnVdbNextFrameClick(object? sender, RoutedEventArgs e) =>
             _mpvService?.FrameStep();
 
@@ -2008,7 +2053,7 @@ namespace CleanScan.Views
         }
 
         // ── Chargement du script dans le player ─────────────────────────
-        private async Task LoadScriptAsync()
+        private async Task LoadScriptAsync(bool resetPosition = false)
         {
             if (_isClosing || _mpvService is null) return;
 
@@ -2024,7 +2069,18 @@ namespace CleanScan.Views
                 var scriptPath = _scriptService.GetPrimaryScriptPath();
                 if (string.IsNullOrWhiteSpace(scriptPath)) return;
 
-                var pos = _mpvService.IsReady ? _mpvService.GetPosition() : 0.0;
+                double pos;
+                if (resetPosition)
+                    pos = 0.0;
+                else if (_mpvService.IsReady)
+                {
+                    var cur = _mpvService.GetPosition();
+                    // If mpv is mid-reload it may report 0 — keep the previous pending position.
+                    pos = (cur < 0.5 && _pendingSeekPos > 0.5) ? _pendingSeekPos : cur;
+                }
+                else
+                    pos = _pendingSeekPos;
+                _pendingSeekPos = pos;
                 _totalFrames = 0;  // will be refreshed in OnMpvFileLoaded
                 _fps         = 0;
                 _loadingSourceFallback = false;
@@ -2035,6 +2091,8 @@ namespace CleanScan.Views
                     DebugLog($"Script ({content.Length} chars): {content[..Math.Min(400, content.Length)].Replace('\n', '|').Replace('\r', ' ')}");
                 }
                 catch (Exception ex) { DebugLog($"Script read error: {ex.Message}"); }
+                _awaitingFirstFrame = true;
+                SetPlayButtonLoading(true);
                 ShowPlayerStatus("Chargement…");
                 _mpvService.LoadFile(scriptPath, pos);
             }
