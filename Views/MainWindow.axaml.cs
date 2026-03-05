@@ -471,7 +471,7 @@ namespace CleanScan.Views
         private bool  _suppressTextEvents;
         private bool  _sliderSync;
         private bool  _loadingSourceFallback;
-        private bool  _awaitingFirstFrame;
+
         private readonly Dictionary<string, (Slider Slider, SliderSpec Spec)> _sliderMap = new();
         private bool  _isClosing;
         private bool  _isInitializing;
@@ -583,6 +583,7 @@ namespace CleanScan.Views
             _mpvService.DurationChanged    += dur => Dispatcher.UIThread.Post(() => OnMpvDuration(dur));
             _mpvService.PauseChanged       += p   => Dispatcher.UIThread.Post(() => OnMpvPauseChanged(p));
             _mpvService.FileLoaded         += ()  => Dispatcher.UIThread.Post(() => OnMpvFileLoaded());
+
             _mpvService.LoadFailed         += msg => Dispatcher.UIThread.Post(() => OnMpvLoadFailed(msg));
             _mpvService.UnexpectedShutdown += ()  => Dispatcher.UIThread.Post(OnMpvUnexpectedShutdown);
 
@@ -608,11 +609,6 @@ namespace CleanScan.Views
 
         private void OnMpvPosition(double pos)
         {
-            if (_awaitingFirstFrame)
-            {
-                _awaitingFirstFrame = false;
-                SetPlayButtonLoading(false);
-            }
             if (_seekDragging || _seekDuration <= 0) return;
             if (this.FindControl<Slider>("SeekBar") is { } s) s.Value = pos;
             UpdateTimeLabel(pos, _seekDuration);
@@ -633,17 +629,6 @@ namespace CleanScan.Views
         {
             if (this.FindControl<Button>("VdbPlay") is { } btn)
                 btn.Content = paused ? "▶" : "⏸";
-        }
-
-        private void SetPlayButtonLoading(bool loading)
-        {
-            if (this.FindControl<Button>("VdbPlay") is not { } btn) return;
-            var accent = new SolidColorBrush(Color.Parse(loading ? "#E0C030" : "#35C156"));
-            var bg     = new SolidColorBrush(Color.Parse(loading ? "#3A3010" : "#0E2016"));
-            btn.Foreground  = accent;
-            btn.BorderBrush = accent;
-            btn.Background  = bg;
-            btn.BorderThickness = new Thickness(loading ? 2 : 1);
         }
 
         private static readonly string _logPath =
@@ -688,7 +673,6 @@ namespace CleanScan.Views
 
         private void OnMpvLoadFailed(string errorMsg)
         {
-            SetPlayButtonLoading(false);
             DebugLog("OnMpvLoadFailed: " + errorMsg);
 
             // "unknown file format" peut signifier soit AviSynth absent, soit un script AviSynth
@@ -2007,6 +1991,18 @@ namespace CleanScan.Views
         private void OnVdbNextFrameClick(object? sender, RoutedEventArgs e) =>
             _mpvService?.FrameStep();
 
+        private static readonly double[] PlaybackSpeeds = [0.25, 0.5, 1.0];
+        private int _speedIndex = 2; // default 1x
+
+        private void OnSpeedClick(object? sender, RoutedEventArgs e)
+        {
+            _speedIndex = (_speedIndex + 1) % PlaybackSpeeds.Length;
+            var speed = PlaybackSpeeds[_speedIndex];
+            _mpvService?.SetSpeed(speed);
+            if (this.FindControl<Button>("SpeedBtn") is { } btn)
+                btn.Content = speed < 1.0 ? $"{speed:G}x" : "1x";
+        }
+
         private void OnVdbEndClick(object? sender, RoutedEventArgs e)
         {
             if (_totalFrames > 0 && _fps > 0)
@@ -2091,8 +2087,6 @@ namespace CleanScan.Views
                     DebugLog($"Script ({content.Length} chars): {content[..Math.Min(400, content.Length)].Replace('\n', '|').Replace('\r', ' ')}");
                 }
                 catch (Exception ex) { DebugLog($"Script read error: {ex.Message}"); }
-                _awaitingFirstFrame = true;
-                SetPlayButtonLoading(true);
                 ShowPlayerStatus("Chargement…");
                 _mpvService.LoadFile(scriptPath, pos);
             }

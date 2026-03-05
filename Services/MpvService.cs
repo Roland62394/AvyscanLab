@@ -196,6 +196,12 @@ public sealed class MpvService : IDisposable
         mpv_command(_ctx, ["seek", seconds.ToString("F3", CultureInfo.InvariantCulture), "absolute+exact", null]);
     }
 
+    public void SetSpeed(double speed)
+    {
+        if (_ctx == 0) return;
+        mpv_set_property_string(_ctx, "speed", speed.ToString("F2", CultureInfo.InvariantCulture));
+    }
+
     public double GetPosition()
     {
         if (_ctx == 0) return 0;

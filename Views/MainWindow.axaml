@@ -520,6 +520,10 @@
                                 ToolTip.Tip="Next frame  (→)" Click="OnVdbNextFrameClick"/>
                         <Button x:Name="VdbEnd" Classes="transport" Content="▶|" FontSize="12"
                                 ToolTip.Tip="End  (Ctrl+→)" Click="OnVdbEndClick"/>
+                        <Rectangle Width="1" Height="22" Fill="{StaticResource BorderSubtle}" Margin="4,0"/>
+                        <Button x:Name="SpeedBtn" Classes="transport" Content="1x"
+                                FontSize="10" Width="38"
+                                ToolTip.Tip="Playback speed" Click="OnSpeedClick"/>
                     </StackPanel>
 
                 </StackPanel>
