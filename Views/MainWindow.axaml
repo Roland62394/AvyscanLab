@@ -961,7 +961,7 @@
                         Grid.Column="0" Grid.ColumnSpan="3"
                         Background="#F0181C28" ZIndex="10"
                         Padding="24,16">
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                    <StackPanel VerticalAlignment="Top" HorizontalAlignment="Center"
                                 Spacing="12" MinWidth="420" MaxWidth="600">
                         <TextBlock x:Name="RecordOverlayTitle"
                                    Text="⏺ Record"
