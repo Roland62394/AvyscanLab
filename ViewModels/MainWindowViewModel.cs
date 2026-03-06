@@ -68,7 +68,9 @@ namespace CleanScan.ViewModels
                 ["RecordNoFileError"] = "Please enter a file name.",
                 ["RecordNoScriptError"] = "No script available for encoding.",
                 ["RecordFfmpegNotFound"] = "ffmpeg was not found. Place ffmpeg.exe next to CleanScan or install it in PATH.",
-                ["RecordDoneMsg"] = "Encoding completed successfully."
+                ["RecordDoneMsg"] = "Encoding completed successfully.",
+                ["TrialTitle"] = "Trial version",
+                ["TrialMessage"] = "This trial version limits your clip duration to 1 min."
             },
             ["fr"] = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -130,7 +132,9 @@ namespace CleanScan.ViewModels
                 ["RecordNoFileError"] = "Veuillez saisir un nom de fichier.",
                 ["RecordNoScriptError"] = "Aucun script disponible pour l'encodage.",
                 ["RecordFfmpegNotFound"] = "ffmpeg est introuvable. Placez ffmpeg.exe à côté de CleanScan ou installez-le dans le PATH.",
-                ["RecordDoneMsg"] = "Encodage terminé avec succès."
+                ["RecordDoneMsg"] = "Encodage terminé avec succès.",
+                ["TrialTitle"] = "Version d'essai",
+                ["TrialMessage"] = "Cette version d'essai limite la durée de votre clip à 1 min."
             },
             ["de"] = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -192,7 +196,9 @@ namespace CleanScan.ViewModels
                 ["RecordNoFileError"] = "Bitte geben Sie einen Dateinamen ein.",
                 ["RecordNoScriptError"] = "Kein Skript für die Kodierung verfügbar.",
                 ["RecordFfmpegNotFound"] = "ffmpeg wurde nicht gefunden. Platzieren Sie ffmpeg.exe neben CleanScan oder installieren Sie es im PATH.",
-                ["RecordDoneMsg"] = "Kodierung erfolgreich abgeschlossen."
+                ["RecordDoneMsg"] = "Kodierung erfolgreich abgeschlossen.",
+                ["TrialTitle"] = "Testversion",
+                ["TrialMessage"] = "Diese Testversion begrenzt die Dauer Ihres Clips auf 1 Min."
             },
             ["es"] = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -254,7 +260,9 @@ namespace CleanScan.ViewModels
                 ["RecordNoFileError"] = "Introduzca un nombre de archivo.",
                 ["RecordNoScriptError"] = "No hay script disponible para la codificación.",
                 ["RecordFfmpegNotFound"] = "No se encontró ffmpeg. Coloque ffmpeg.exe junto a CleanScan o instálelo en el PATH.",
-                ["RecordDoneMsg"] = "Codificación completada con éxito."
+                ["RecordDoneMsg"] = "Codificación completada con éxito.",
+                ["TrialTitle"] = "Versión de prueba",
+                ["TrialMessage"] = "Esta versión de prueba limita la duración de su clip a 1 min."
             }
         };
 

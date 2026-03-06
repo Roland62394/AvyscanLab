@@ -3083,8 +3083,8 @@ namespace CleanScan.Views
                     UpdateRecordProgress(100, "100%");
                     await _dialogService.ShowErrorAsync(this, GetUiText("RecordBtn"), GetUiText("RecordDoneMsg"));
                     await _dialogService.ShowErrorAsync(this,
-                        "Version d'essai",
-                        "Cette version d'essai limite la durée de votre clip à 1 min.");
+                        GetUiText("TrialTitle"),
+                        GetUiText("TrialMessage"));
                 }
                 else
                 {
