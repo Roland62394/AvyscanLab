@@ -857,7 +857,7 @@
                                         </Grid>
                                         <Grid ColumnDefinitions="Auto,Auto,70">
                                             <TextBlock Grid.Column="0" x:Name="Label_Scale" Classes="param-label" Text="Scale" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                            <Slider Grid.Column="1" x:Name="Slide_Scale" Classes="param-slider" Minimum="1" Maximum="10" SmallChange="1"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_Scale" Classes="param-slider" Minimum="0" Maximum="2" SmallChange="1"/>
                                             <TextBox Grid.Column="2" x:Name="Scale" Width="70"/>
                                         </Grid>
                                         <Grid ColumnDefinitions="Auto,Auto,70">

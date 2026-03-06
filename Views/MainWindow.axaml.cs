@@ -382,7 +382,7 @@ namespace CleanScan.Views
             new("Lum_GammaY",        0.1,  3.0,  0.05, true, 2),
             new("LockChan",         -3,    2,    1,    false),
             new("LockVal",           1,    255,  1,    false),
-            new("Scale",             0.1,  10,   0.1,  true, 2),
+            new("Scale",             0,    2,    1,    false),
             new("Th",                0,    1,    0.01, true, 3),
             new("HiTh",              0,    1,    0.01, true, 3),
             new("X",                 0,    2000, 10,   false),
@@ -1171,11 +1171,22 @@ namespace CleanScan.Views
             return new PixelPoint(x, y);
         }
 
+        private WindowSettings? _lastNormalSettings;
+
         private void SaveWindowSettings()
         {
-            if (!IsVisible || WindowState != WindowState.Normal) return;
-            var bottomH = BottomPanel.Bounds.Height is > 0 and var bh ? (double?)bh : null;
-            _windowStateService.Save(new WindowSettings(Bounds.Width, Bounds.Height, Position.X, Position.Y, ViewModel.CurrentLanguageCode, bottomH));
+            if (!IsVisible) return;
+
+            if (WindowState == WindowState.Normal)
+            {
+                var bottomH = BottomPanel.Bounds.Height is > 0 and var bh ? (double?)bh : null;
+                _lastNormalSettings = new WindowSettings(Bounds.Width, Bounds.Height, Position.X, Position.Y, ViewModel.CurrentLanguageCode, bottomH);
+            }
+
+            // Always persist — use last known normal geometry when maximized
+            var settings = _lastNormalSettings;
+            if (settings is not null)
+                _windowStateService.Save(settings with { Language = ViewModel.CurrentLanguageCode });
         }
 
         private async void OnPositionChanged(object? sender, PixelPointEventArgs e)

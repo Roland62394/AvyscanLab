@@ -283,7 +283,7 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
             return ClampIntString(value, min: 1, max: 255, fallback: 250);
 
         if (string.Equals(name, "Scale", StringComparison.OrdinalIgnoreCase))
-            return ClampIntString(value, min: 1, max: 10, fallback: 2);
+            return ClampIntString(value, min: 0, max: 2, fallback: 1);
 
         if (string.Equals(name, "Th", StringComparison.OrdinalIgnoreCase))
             return ClampDoubleString(value, min: 0.0, max: 1.0, fallback: 0.12, decimals: 3);
