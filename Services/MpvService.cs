@@ -108,8 +108,10 @@ public sealed class MpvService : IDisposable
     private double                   _pendingSeekPos;
     private bool                     _disposed;
     private bool                     _expectingShutdown;
+    private double                   _duration;
 
     public bool IsReady => _ctx != 0;
+    public double Duration => _duration;
 
     /// <summary>Fired (on background thread) when mpv shuts down unexpectedly during playback.</summary>
     public event Action? UnexpectedShutdown;
@@ -340,7 +342,7 @@ public sealed class MpvService : IDisposable
         {
             var val = Marshal.PtrToStructure<double>(prop.Data);
             if (name == "time-pos") PositionChanged?.Invoke(val);
-            else if (name == "duration") DurationChanged?.Invoke(val);
+            else if (name == "duration") { _duration = val; DurationChanged?.Invoke(val); }
         }
         else if (prop.Format == FormatFlag)
         {

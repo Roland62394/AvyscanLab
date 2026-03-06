@@ -543,6 +543,10 @@
                         <Button x:Name="HalfResBtn" Classes="transport" Content="½"
                                 FontSize="24" Width="34"
                                 ToolTip.Tip="Half-resolution preview" Click="OnHalfResClick"/>
+                        <Rectangle Width="1" Height="22" Fill="{StaticResource BorderSubtle}" Margin="4,0"/>
+                        <Button x:Name="RecordBtn" Classes="transport" Content="⏺ Record"
+                                FontSize="12" MinWidth="120" Padding="16,4"
+                                ToolTip.Tip="Record" Click="OnRecordClick"/>
                     </StackPanel>
 
                 </StackPanel>
@@ -950,6 +954,97 @@
                             </StackPanel>
                         </ScrollViewer>
                     </Grid>
+                </Border>
+
+                <!-- ════ RECORD OVERLAY (surimpression) ════ -->
+                <Border x:Name="RecordOverlay" IsVisible="False"
+                        Grid.Column="0" Grid.ColumnSpan="3"
+                        Background="#F0181C28" ZIndex="10"
+                        Padding="24,16">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                                Spacing="12" MinWidth="420" MaxWidth="600">
+                        <TextBlock x:Name="RecordOverlayTitle"
+                                   Text="⏺ Record"
+                                   FontSize="18" FontWeight="Bold"
+                                   Foreground="White"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,6"/>
+
+                        <!-- Output directory -->
+                        <StackPanel Spacing="4">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock x:Name="RecordDirLabel" Text="Output directory"
+                                           FontSize="13" Foreground="{StaticResource TextLabel}"/>
+                                <TextBlock x:Name="RecordDiskSpace" Text=""
+                                           FontSize="11" Foreground="{StaticResource TextSecondary}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <Grid ColumnDefinitions="*,6,Auto">
+                                <TextBox x:Name="RecordDir" Grid.Column="0"
+                                         FontSize="13" Height="30"
+                                         Watermark="C:\output"/>
+                                <Button Grid.Column="2" Content="…" FontSize="14"
+                                        Width="34" Height="30"
+                                        Click="OnRecordDirPickClick"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- Output file name -->
+                        <StackPanel Spacing="4">
+                            <TextBlock x:Name="RecordFileLabel" Text="File name"
+                                       FontSize="13" Foreground="{StaticResource TextLabel}"/>
+                            <TextBox x:Name="RecordFileName" FontSize="13" Height="30"
+                                     Watermark="output"/>
+                        </StackPanel>
+
+                        <!-- Encoder + Container -->
+                        <Grid ColumnDefinitions="*,16,*">
+                            <StackPanel Grid.Column="0" Spacing="4">
+                                <TextBlock x:Name="RecordEncoderLabel" Text="Encoder"
+                                           FontSize="13" Foreground="{StaticResource TextLabel}"/>
+                                <ComboBox x:Name="RecordEncoder" MinWidth="140" FontSize="13"
+                                          SelectedIndex="0">
+                                    <ComboBoxItem Content="x264" Tag="x264"/>
+                                    <ComboBoxItem Content="x265" Tag="x265"/>
+                                    <ComboBoxItem Content="FFV1 (lossless)" Tag="ffv1"/>
+                                    <ComboBoxItem Content="UT Video (lossless)" Tag="utvideo"/>
+                                    <ComboBoxItem Content="ProRes" Tag="prores"/>
+                                    <ComboBoxItem Content="TIFF sequence" Tag="tiff"/>
+                                    <ComboBoxItem Content="PNG sequence" Tag="png"/>
+                                </ComboBox>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Spacing="4">
+                                <TextBlock x:Name="RecordContainerLabel" Text="Container"
+                                           FontSize="13" Foreground="{StaticResource TextLabel}"/>
+                                <ComboBox x:Name="RecordContainer" MinWidth="140" FontSize="13"
+                                          SelectedIndex="0">
+                                    <ComboBoxItem Content="MKV" Tag="mkv"/>
+                                    <ComboBoxItem Content="MP4" Tag="mp4"/>
+                                    <ComboBoxItem Content="AVI" Tag="avi"/>
+                                    <ComboBoxItem Content="MOV" Tag="mov"/>
+                                </ComboBox>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Progress -->
+                        <StackPanel x:Name="RecordProgressPanel" Spacing="2" IsVisible="False">
+                            <ProgressBar x:Name="RecordProgressBar" Minimum="0" Maximum="100"
+                                         Value="0" Height="14" Foreground="#3B82C4"/>
+                            <TextBlock x:Name="RecordProgressText" Text=""
+                                       FontSize="12" Foreground="{StaticResource TextSecondary}"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- Start button -->
+                        <Button x:Name="RecordStartBtn"
+                                Content="▶ Start encoding"
+                                FontSize="14" FontWeight="SemiBold"
+                                Padding="24,8"
+                                HorizontalAlignment="Center"
+                                Margin="0,8,0,0"
+                                Background="#35C156" Foreground="White"
+                                Click="OnRecordStartClick"/>
+                    </StackPanel>
                 </Border>
 
             </Grid>

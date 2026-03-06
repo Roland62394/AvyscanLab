@@ -54,7 +54,20 @@ namespace CleanScan.ViewModels
                 ["VdbNextFrame"] = "Next frame  (→)",
                 ["VdbEnd"]       = "End  (Ctrl+→)",
                 ["SpeedBtn"]     = "Playback speed",
-                ["HalfResBtn"]   = "Half-resolution preview"
+                ["HalfResBtn"]   = "Half-resolution preview",
+                ["RecordBtn"]    = "Record",
+                ["RecordDirLabel"] = "Output directory",
+                ["RecordFileLabel"] = "File name",
+                ["RecordEncoderLabel"] = "Encoder",
+                ["RecordContainerLabel"] = "Container",
+                ["RecordDirPickTitle"] = "Select output directory",
+                ["RecordStartBtn"] = "▶ Start encoding",
+                ["RecordStopBtn"] = "■ Stop encoding",
+                ["RecordNoDirError"] = "Please select an output directory.",
+                ["RecordNoFileError"] = "Please enter a file name.",
+                ["RecordNoScriptError"] = "No script available for encoding.",
+                ["RecordFfmpegNotFound"] = "ffmpeg was not found. Place ffmpeg.exe next to CleanScan or install it in PATH.",
+                ["RecordDoneMsg"] = "Encoding completed successfully."
             },
             ["fr"] = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -102,7 +115,20 @@ namespace CleanScan.ViewModels
                 ["VdbNextFrame"] = "Image suivante  (→)",
                 ["VdbEnd"]       = "Fin  (Ctrl+→)",
                 ["SpeedBtn"]     = "Vitesse de lecture",
-                ["HalfResBtn"]   = "Aperçu demi-résolution"
+                ["HalfResBtn"]   = "Aperçu demi-résolution",
+                ["RecordBtn"]    = "Enregistrer",
+                ["RecordDirLabel"] = "Répertoire de sortie",
+                ["RecordFileLabel"] = "Nom du fichier",
+                ["RecordEncoderLabel"] = "Encodeur",
+                ["RecordContainerLabel"] = "Conteneur",
+                ["RecordDirPickTitle"] = "Sélectionner le répertoire de sortie",
+                ["RecordStartBtn"] = "▶ Lancer l'encodage",
+                ["RecordStopBtn"] = "■ Arrêter l'encodage",
+                ["RecordNoDirError"] = "Veuillez sélectionner un répertoire de sortie.",
+                ["RecordNoFileError"] = "Veuillez saisir un nom de fichier.",
+                ["RecordNoScriptError"] = "Aucun script disponible pour l'encodage.",
+                ["RecordFfmpegNotFound"] = "ffmpeg est introuvable. Placez ffmpeg.exe à côté de CleanScan ou installez-le dans le PATH.",
+                ["RecordDoneMsg"] = "Encodage terminé avec succès."
             },
             ["de"] = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -150,7 +176,20 @@ namespace CleanScan.ViewModels
                 ["VdbNextFrame"] = "Nächstes Bild  (→)",
                 ["VdbEnd"]       = "Ende  (Ctrl+→)",
                 ["SpeedBtn"]     = "Wiedergabegeschwindigkeit",
-                ["HalfResBtn"]   = "Vorschau halbe Auflösung"
+                ["HalfResBtn"]   = "Vorschau halbe Auflösung",
+                ["RecordBtn"]    = "Aufnahme",
+                ["RecordDirLabel"] = "Ausgabeverzeichnis",
+                ["RecordFileLabel"] = "Dateiname",
+                ["RecordEncoderLabel"] = "Encoder",
+                ["RecordContainerLabel"] = "Container",
+                ["RecordDirPickTitle"] = "Ausgabeverzeichnis auswählen",
+                ["RecordStartBtn"] = "▶ Kodierung starten",
+                ["RecordStopBtn"] = "■ Kodierung stoppen",
+                ["RecordNoDirError"] = "Bitte wählen Sie ein Ausgabeverzeichnis.",
+                ["RecordNoFileError"] = "Bitte geben Sie einen Dateinamen ein.",
+                ["RecordNoScriptError"] = "Kein Skript für die Kodierung verfügbar.",
+                ["RecordFfmpegNotFound"] = "ffmpeg wurde nicht gefunden. Platzieren Sie ffmpeg.exe neben CleanScan oder installieren Sie es im PATH.",
+                ["RecordDoneMsg"] = "Kodierung erfolgreich abgeschlossen."
             },
             ["es"] = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -198,7 +237,20 @@ namespace CleanScan.ViewModels
                 ["VdbNextFrame"] = "Fotograma siguiente  (→)",
                 ["VdbEnd"]       = "Fin  (Ctrl+→)",
                 ["SpeedBtn"]     = "Velocidad de reproducción",
-                ["HalfResBtn"]   = "Vista previa a media resolución"
+                ["HalfResBtn"]   = "Vista previa a media resolución",
+                ["RecordBtn"]    = "Grabar",
+                ["RecordDirLabel"] = "Directorio de salida",
+                ["RecordFileLabel"] = "Nombre del archivo",
+                ["RecordEncoderLabel"] = "Codificador",
+                ["RecordContainerLabel"] = "Contenedor",
+                ["RecordDirPickTitle"] = "Seleccionar directorio de salida",
+                ["RecordStartBtn"] = "▶ Iniciar codificación",
+                ["RecordStopBtn"] = "■ Detener codificación",
+                ["RecordNoDirError"] = "Seleccione un directorio de salida.",
+                ["RecordNoFileError"] = "Introduzca un nombre de archivo.",
+                ["RecordNoScriptError"] = "No hay script disponible para la codificación.",
+                ["RecordFfmpegNotFound"] = "No se encontró ffmpeg. Coloque ffmpeg.exe junto a CleanScan o instálelo en el PATH.",
+                ["RecordDoneMsg"] = "Codificación completada con éxito."
             }
         };
 

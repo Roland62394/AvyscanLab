@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -537,6 +538,7 @@ namespace CleanScan.Views
             UpdateOptionColumnVisibility();
             RegisterChangeHandlers();
             InitSliders();
+            InitRecordPanel();
             InitPlayerControls();
         }
 
@@ -856,6 +858,20 @@ namespace CleanScan.Views
                     CommitSliderField(captured.Field);
                     e.Handled = true;
                 }, RoutingStrategies.Bubble, handledEventsToo: true);
+
+                // Mouse wheel on TextBox
+                if (this.FindControl<TextBox>(spec.Field) is { } tb)
+                {
+                    var capturedSpec = spec;
+                    tb.PointerWheelChanged += (_, e) =>
+                    {
+                        e.Handled = true;
+                        if (!_sliderMap.TryGetValue(capturedSpec.Field, out var entry)) return;
+                        var delta = e.Delta.Y > 0 ? capturedSpec.SmallChange : -capturedSpec.SmallChange;
+                        entry.Slider.Value = Math.Clamp(entry.Slider.Value + delta, entry.Spec.Min, entry.Spec.Max);
+                        CommitSliderField(capturedSpec.Field);
+                    };
+                }
             }
 
             _config.Changed += OnConfigChangedForSlider;
@@ -1040,6 +1056,7 @@ namespace CleanScan.Views
             SetLanguageMenuChecks();
             ApplyParamTooltips(languageCode);
             ApplyTransportTooltips();
+            ApplyRecordLabels();
 
             if (persist && IsVisible)
             {
@@ -1060,11 +1077,30 @@ namespace CleanScan.Views
                 ("VdbEnd",       "VdbEnd"),
                 ("SpeedBtn",     "SpeedBtn"),
                 ("HalfResBtn",   "HalfResBtn"),
+                ("RecordBtn",    "RecordBtn"),
             })
             {
                 if (this.FindControl<Button>(controlName) is { } btn)
                     ToolTip.SetTip(btn, GetUiText(textKey));
             }
+        }
+
+        private void ApplyRecordLabels()
+        {
+            if (this.FindControl<Button>("RecordBtn") is { } btn)
+                btn.Content = "⏺ " + GetUiText("RecordBtn");
+            if (this.FindControl<TextBlock>("RecordOverlayTitle") is { } title)
+                title.Text = "⏺ " + GetUiText("RecordBtn");
+            if (this.FindControl<TextBlock>("RecordDirLabel") is { } dirLbl)
+                dirLbl.Text = GetUiText("RecordDirLabel");
+            if (this.FindControl<TextBlock>("RecordFileLabel") is { } fileLbl)
+                fileLbl.Text = GetUiText("RecordFileLabel");
+            if (this.FindControl<TextBlock>("RecordEncoderLabel") is { } encLbl)
+                encLbl.Text = GetUiText("RecordEncoderLabel");
+            if (this.FindControl<TextBlock>("RecordContainerLabel") is { } cntLbl)
+                cntLbl.Text = GetUiText("RecordContainerLabel");
+            if (this.FindControl<Button>("RecordStartBtn") is { } startBtn)
+                startBtn.Content = GetUiText("RecordStartBtn");
         }
 
         private void ApplyParamTooltips(string lang)
@@ -2120,6 +2156,320 @@ namespace CleanScan.Views
                 btn.Foreground = Brushes.White;
             }
             UpdateConfigurationValue("preview_half", _halfRes.ToString().ToLowerInvariant());
+        }
+
+        private bool _recordOpen;
+        private void InitRecordPanel()
+        {
+            if (this.FindControl<TextBox>("RecordDir") is { } tb)
+                tb.LostFocus += (_, _) => UpdateDiskSpaceLabel(tb.Text);
+        }
+
+        private void OnRecordClick(object? sender, RoutedEventArgs e)
+        {
+            _recordOpen = !_recordOpen;
+            if (this.FindControl<Button>("RecordBtn") is { } btn)
+            {
+                btn.Background = new SolidColorBrush(Color.Parse(_recordOpen ? "#C62828" : "#3B4C64"));
+                btn.Foreground = Brushes.White;
+            }
+            if (this.FindControl<Border>("RecordOverlay") is { } overlay)
+                overlay.IsVisible = _recordOpen;
+        }
+
+        private async void OnRecordDirPickClick(object? sender, RoutedEventArgs e)
+        {
+            var folder = await StorageProvider.OpenFolderPickerAsync(
+                new Avalonia.Platform.Storage.FolderPickerOpenOptions
+                {
+                    Title = GetUiText("RecordDirPickTitle"),
+                    AllowMultiple = false
+                });
+            if (folder.Count > 0 && this.FindControl<TextBox>("RecordDir") is { } tb)
+            {
+                tb.Text = folder[0].Path.LocalPath;
+                UpdateDiskSpaceLabel(tb.Text);
+            }
+        }
+
+        private void UpdateDiskSpaceLabel(string? dirPath)
+        {
+            if (this.FindControl<TextBlock>("RecordDiskSpace") is not { } lbl) return;
+            if (string.IsNullOrWhiteSpace(dirPath))
+            {
+                lbl.Text = "";
+                return;
+            }
+            try
+            {
+                var root = Path.GetPathRoot(dirPath);
+                if (root is null) { lbl.Text = ""; return; }
+                var drive = new DriveInfo(root);
+                var freeGb = drive.AvailableFreeSpace / (1024.0 * 1024.0);
+                lbl.Text = freeGb >= 1024
+                    ? $"({freeGb / 1024.0:F1} Go)"
+                    : $"({freeGb:F0} Mo)";
+            }
+            catch { lbl.Text = ""; }
+        }
+
+        private Process? _encodingProcess;
+        private CancellationTokenSource? _encodingCts;
+        private string _lastStderrLine = string.Empty;
+
+        private async void OnRecordStartClick(object? sender, RoutedEventArgs e)
+        {
+            // If encoding is running, cancel it
+            if (_encodingProcess is { HasExited: false })
+            {
+                _encodingCts?.Cancel();
+                try { _encodingProcess.Kill(entireProcessTree: true); } catch { }
+                SetRecordStartButtonState(idle: true);
+                return;
+            }
+
+            var dir = this.FindControl<TextBox>("RecordDir")?.Text?.Trim();
+            var fileName = this.FindControl<TextBox>("RecordFileName")?.Text?.Trim();
+            var encoder = (this.FindControl<ComboBox>("RecordEncoder")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "x264";
+            var container = (this.FindControl<ComboBox>("RecordContainer")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "mkv";
+
+            if (string.IsNullOrWhiteSpace(dir))
+            {
+                await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), GetUiText("RecordNoDirError"));
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), GetUiText("RecordNoFileError"));
+                return;
+            }
+
+            // Ensure output dir exists
+            try { Directory.CreateDirectory(dir); }
+            catch (Exception ex)
+            {
+                await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), ex.Message);
+                return;
+            }
+
+            // Generate a render script (preview=false, preview_half=false)
+            var renderScriptPath = GenerateRenderScript();
+            if (renderScriptPath is null)
+            {
+                await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), GetUiText("RecordNoScriptError"));
+                return;
+            }
+
+            // Find ffmpeg
+            var ffmpegPath = FindFfmpeg();
+            if (ffmpegPath is null)
+            {
+                await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), GetUiText("RecordFfmpegNotFound"));
+                return;
+            }
+
+            // Build output path and ffmpeg arguments
+            var isImageSeq = encoder is "tiff" or "png";
+            string outputPath;
+            string ffArgs;
+
+            if (isImageSeq)
+            {
+                var ext = encoder == "tiff" ? "tif" : "png";
+                outputPath = Path.Combine(dir, $"{fileName}_%06d.{ext}");
+                ffArgs = $"-progress pipe:2 -i \"{renderScriptPath}\" \"{outputPath}\"";
+            }
+            else
+            {
+                outputPath = Path.Combine(dir, $"{fileName}.{container}");
+                var codecArgs = encoder switch
+                {
+                    "x264" => "-c:v libx264 -crf 18 -preset medium",
+                    "x265" => "-c:v libx265 -crf 20 -preset medium",
+                    "ffv1" => "-c:v ffv1 -level 3 -slicecrc 1",
+                    "utvideo" => "-c:v utvideo",
+                    "prores" => "-c:v prores_ks -profile:v 3",
+                    _ => "-c:v libx264 -crf 18 -preset medium"
+                };
+                ffArgs = $"-progress pipe:2 -i \"{renderScriptPath}\" {codecArgs} -y \"{outputPath}\"";
+            }
+
+            SetRecordStartButtonState(idle: false);
+            SetRecordProgressVisible(true);
+            _encodingCts = new CancellationTokenSource();
+            _lastStderrLine = string.Empty;
+
+            // Get total duration from mpv for progress calculation
+            var totalDuration = _mpvService.Duration;
+
+            try
+            {
+                _encodingProcess = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = ffmpegPath,
+                        Arguments = ffArgs,
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        RedirectStandardError = true
+                    },
+                    EnableRaisingEvents = true
+                };
+
+                _encodingProcess.Start();
+
+                // Read stderr asynchronously to avoid deadlock and parse progress
+                var stderrTask = ReadFfmpegStderrAsync(_encodingProcess.StandardError, totalDuration, _encodingCts.Token);
+
+                // Wait for exit asynchronously
+                await _encodingProcess.WaitForExitAsync(_encodingCts.Token);
+                await stderrTask;
+
+                if (_encodingProcess.ExitCode == 0)
+                {
+                    UpdateDiskSpaceLabel(dir);
+                    UpdateRecordProgress(100, "100%");
+                    await _dialogService.ShowErrorAsync(this, GetUiText("RecordBtn"), GetUiText("RecordDoneMsg"));
+                }
+                else
+                {
+                    var msg = string.IsNullOrWhiteSpace(_lastStderrLine)
+                        ? $"ffmpeg exit code {_encodingProcess.ExitCode}"
+                        : _lastStderrLine;
+                    await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), msg);
+                }
+            }
+            catch (OperationCanceledException) { /* user cancelled */ }
+            catch (Exception ex)
+            {
+                await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), ex.Message);
+            }
+            finally
+            {
+                _encodingProcess?.Dispose();
+                _encodingProcess = null;
+                _encodingCts = null;
+                SetRecordStartButtonState(idle: true);
+                SetRecordProgressVisible(false);
+            }
+        }
+
+        private async Task ReadFfmpegStderrAsync(System.IO.StreamReader stderr, double totalDuration, CancellationToken ct)
+        {
+            try
+            {
+                while (!ct.IsCancellationRequested)
+                {
+                    var line = await stderr.ReadLineAsync(ct);
+                    if (line is null) break; // EOF
+
+                    _lastStderrLine = line;
+
+                    // Parse "-progress pipe:2" output: "out_time_us=<microseconds>"
+                    if (line.StartsWith("out_time_us=", StringComparison.Ordinal) && totalDuration > 0)
+                    {
+                        if (long.TryParse(line.AsSpan("out_time_us=".Length), out var us) && us >= 0)
+                        {
+                            var seconds = us / 1_000_000.0;
+                            var pct = Math.Min(100.0, seconds / totalDuration * 100.0);
+                            var elapsed = TimeSpan.FromSeconds(seconds);
+                            var label = $"{pct:F1}%  —  {elapsed:hh\\:mm\\:ss}";
+                            Dispatcher.UIThread.Post(() => UpdateRecordProgress(pct, label));
+                        }
+                    }
+                    // Fallback: parse classic "frame=...time=HH:MM:SS" lines
+                    else if (line.Contains("time=", StringComparison.Ordinal) && totalDuration > 0)
+                    {
+                        var idx = line.IndexOf("time=", StringComparison.Ordinal);
+                        if (idx >= 0)
+                        {
+                            var timePart = line.AsSpan(idx + 5);
+                            var spaceIdx = timePart.IndexOf(' ');
+                            if (spaceIdx > 0) timePart = timePart[..spaceIdx];
+                            if (TimeSpan.TryParse(timePart, CultureInfo.InvariantCulture, out var ts))
+                            {
+                                var pct = Math.Min(100.0, ts.TotalSeconds / totalDuration * 100.0);
+                                var label = $"{pct:F1}%  —  {ts:hh\\:mm\\:ss}";
+                                Dispatcher.UIThread.Post(() => UpdateRecordProgress(pct, label));
+                            }
+                        }
+                    }
+                }
+            }
+            catch (OperationCanceledException) { }
+            catch { }
+        }
+
+        private void UpdateRecordProgress(double percent, string label)
+        {
+            if (this.FindControl<ProgressBar>("RecordProgressBar") is { } bar)
+                bar.Value = percent;
+            if (this.FindControl<TextBlock>("RecordProgressText") is { } txt)
+                txt.Text = label;
+        }
+
+        private void SetRecordProgressVisible(bool visible)
+        {
+            if (this.FindControl<StackPanel>("RecordProgressPanel") is { } panel)
+                panel.IsVisible = visible;
+        }
+
+        private void SetRecordStartButtonState(bool idle)
+        {
+            if (this.FindControl<Button>("RecordStartBtn") is not { } btn) return;
+            if (idle)
+            {
+                btn.Content = GetUiText("RecordStartBtn");
+                btn.Background = new SolidColorBrush(Color.Parse("#35C156"));
+            }
+            else
+            {
+                btn.Content = GetUiText("RecordStopBtn");
+                btn.Background = new SolidColorBrush(Color.Parse("#C62828"));
+            }
+        }
+
+        private string? GenerateRenderScript()
+        {
+            var scriptPath = _scriptService.GetPrimaryScriptPath();
+            if (scriptPath is null || !File.Exists(scriptPath)) return null;
+
+            var renderPath = Path.Combine(
+                Path.GetDirectoryName(scriptPath)!,
+                "ScriptRender.avs");
+
+            var content = File.ReadAllText(scriptPath);
+            // Force preview=false and preview_half=false for final render
+            content = System.Text.RegularExpressions.Regex.Replace(
+                content, @"(?m)^(\s*preview\s*=\s*)true", "${1}false");
+            content = System.Text.RegularExpressions.Regex.Replace(
+                content, @"(?m)^(\s*preview_half\s*=\s*)true", "${1}false");
+
+            File.WriteAllText(renderPath, content);
+            return renderPath;
+        }
+
+        private static string? FindFfmpeg()
+        {
+            var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? string.Empty;
+
+            // Check in Plugins/ffmpeg/ (bundled)
+            var bundled = Path.Combine(exeDir, "Plugins", "ffmpeg", "ffmpeg.exe");
+            if (File.Exists(bundled)) return bundled;
+
+            // Check next to the exe
+            var local = Path.Combine(exeDir, "ffmpeg.exe");
+            if (File.Exists(local)) return local;
+
+            // Check in PATH
+            var pathDirs = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator) ?? [];
+            foreach (var d in pathDirs)
+            {
+                var candidate = Path.Combine(d.Trim(), "ffmpeg.exe");
+                if (File.Exists(candidate)) return candidate;
+            }
+            return null;
         }
 
         private bool _syncingForceSource;
