@@ -37,25 +37,25 @@
     <value>false</value>
   </data>
   <data name="enable_crop" xml:space="preserve">
-    <value>true</value>
+    <value>false</value>
   </data>
   <data name="enable_stabilize" xml:space="preserve">
     <value>false</value>
   </data>
   <data name="enable_degrain" xml:space="preserve">
-    <value>true</value>
+    <value>false</value>
   </data>
   <data name="enable_denoise" xml:space="preserve">
-    <value>true</value>
+    <value>false</value>
   </data>
   <data name="enable_luma_levels" xml:space="preserve">
-    <value>true</value>
+    <value>false</value>
   </data>
   <data name="enable_gammac" xml:space="preserve">
-    <value>true</value>
+    <value>false</value>
   </data>
   <data name="enable_sharp" xml:space="preserve">
-    <value>true</value>
+    <value>false</value>
   </data>
   <data name="preview" xml:space="preserve">
     <value>true</value>
