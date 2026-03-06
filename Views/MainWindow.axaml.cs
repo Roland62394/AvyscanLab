@@ -1057,6 +1057,8 @@ namespace CleanScan.Views
                 ("VdbStop",      "VdbStop"),
                 ("VdbNextFrame", "VdbNextFrame"),
                 ("VdbEnd",       "VdbEnd"),
+                ("SpeedBtn",     "SpeedBtn"),
+                ("HalfResBtn",   "HalfResBtn"),
             })
             {
                 if (this.FindControl<Button>(controlName) is { } btn)
@@ -2241,6 +2243,10 @@ namespace CleanScan.Views
 
         private async Task ApplyPresetValuesAsync(Dictionary<string, string> values)
         {
+            // Ignore source files and crop values from presets
+            foreach (var key in PresetService.ExcludedKeys)
+                values.Remove(key);
+
             foreach (var name in ScriptService.TextFieldNames)
             {
                 if (!values.TryGetValue(name, out var value)) continue;

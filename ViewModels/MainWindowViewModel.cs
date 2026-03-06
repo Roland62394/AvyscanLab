@@ -52,7 +52,9 @@ namespace CleanScan.ViewModels
                 ["VdbPlay"]      = "Play  (Space)",
                 ["VdbStop"]      = "Stop",
                 ["VdbNextFrame"] = "Next frame  (→)",
-                ["VdbEnd"]       = "End  (Ctrl+→)"
+                ["VdbEnd"]       = "End  (Ctrl+→)",
+                ["SpeedBtn"]     = "Playback speed",
+                ["HalfResBtn"]   = "Half-resolution preview"
             },
             ["fr"] = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -98,7 +100,9 @@ namespace CleanScan.ViewModels
                 ["VdbPlay"]      = "Lecture  (Space)",
                 ["VdbStop"]      = "Arrêt",
                 ["VdbNextFrame"] = "Image suivante  (→)",
-                ["VdbEnd"]       = "Fin  (Ctrl+→)"
+                ["VdbEnd"]       = "Fin  (Ctrl+→)",
+                ["SpeedBtn"]     = "Vitesse de lecture",
+                ["HalfResBtn"]   = "Aperçu demi-résolution"
             },
             ["de"] = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -144,7 +148,9 @@ namespace CleanScan.ViewModels
                 ["VdbPlay"]      = "Abspielen  (Space)",
                 ["VdbStop"]      = "Stopp",
                 ["VdbNextFrame"] = "Nächstes Bild  (→)",
-                ["VdbEnd"]       = "Ende  (Ctrl+→)"
+                ["VdbEnd"]       = "Ende  (Ctrl+→)",
+                ["SpeedBtn"]     = "Wiedergabegeschwindigkeit",
+                ["HalfResBtn"]   = "Vorschau halbe Auflösung"
             },
             ["es"] = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -190,7 +196,9 @@ namespace CleanScan.ViewModels
                 ["VdbPlay"]      = "Reproducir  (Space)",
                 ["VdbStop"]      = "Detener",
                 ["VdbNextFrame"] = "Fotograma siguiente  (→)",
-                ["VdbEnd"]       = "Fin  (Ctrl+→)"
+                ["VdbEnd"]       = "Fin  (Ctrl+→)",
+                ["SpeedBtn"]     = "Velocidad de reproducción",
+                ["HalfResBtn"]   = "Vista previa a media resolución"
             }
         };
 

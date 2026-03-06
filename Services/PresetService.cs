@@ -26,8 +26,19 @@ public sealed class PresetService(string filePath) : IPresetService
         File.WriteAllText(filePath, JsonSerializer.Serialize(new PresetStore(presets), JsonIndented));
     }
 
-    public Dictionary<string, string> CaptureCurrentValues(ConfigStore config) =>
-        config.Snapshot();
+    public static readonly HashSet<string> ExcludedKeys = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "source", "film", "img", "img_start", "img_end", "use_img",
+        "enable_crop", "Crop_L", "Crop_T", "Crop_R", "Crop_B"
+    };
+
+    public Dictionary<string, string> CaptureCurrentValues(ConfigStore config)
+    {
+        var snapshot = config.Snapshot();
+        foreach (var key in ExcludedKeys)
+            snapshot.Remove(key);
+        return snapshot;
+    }
 
     private static void EnsureDirectory(string path)
     {
