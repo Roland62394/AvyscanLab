@@ -70,7 +70,10 @@ namespace CleanScan.ViewModels
                 ["RecordFfmpegNotFound"] = "ffmpeg was not found. Place ffmpeg.exe next to CleanScan or install it in PATH.",
                 ["RecordDoneMsg"] = "Encoding completed successfully.",
                 ["TrialTitle"] = "Trial version",
-                ["TrialMessage"] = "This trial version limits your clip duration to 1 min."
+                ["TrialMessage"] = "This trial version limits your clip duration to 1 min.",
+                ["ResetSettingsMenuItem"] = "Reset settings",
+                ["ResetSettingsConfirm"] = "This will reset all parameters to their default values. The application will restart. Continue?",
+                ["ResetSettingsTitle"] = "Reset settings"
             },
             ["fr"] = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -134,7 +137,10 @@ namespace CleanScan.ViewModels
                 ["RecordFfmpegNotFound"] = "ffmpeg est introuvable. Placez ffmpeg.exe à côté de CleanScan ou installez-le dans le PATH.",
                 ["RecordDoneMsg"] = "Encodage terminé avec succès.",
                 ["TrialTitle"] = "Version d'essai",
-                ["TrialMessage"] = "Cette version d'essai limite la durée de votre clip à 1 min."
+                ["TrialMessage"] = "Cette version d'essai limite la durée de votre clip à 1 min.",
+                ["ResetSettingsMenuItem"] = "Réinitialiser les paramètres",
+                ["ResetSettingsConfirm"] = "Ceci va réinitialiser tous les paramètres à leurs valeurs par défaut. L'application va redémarrer. Continuer ?",
+                ["ResetSettingsTitle"] = "Réinitialisation"
             },
             ["de"] = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -198,7 +204,10 @@ namespace CleanScan.ViewModels
                 ["RecordFfmpegNotFound"] = "ffmpeg wurde nicht gefunden. Platzieren Sie ffmpeg.exe neben CleanScan oder installieren Sie es im PATH.",
                 ["RecordDoneMsg"] = "Kodierung erfolgreich abgeschlossen.",
                 ["TrialTitle"] = "Testversion",
-                ["TrialMessage"] = "Diese Testversion begrenzt die Dauer Ihres Clips auf 1 Min."
+                ["TrialMessage"] = "Diese Testversion begrenzt die Dauer Ihres Clips auf 1 Min.",
+                ["ResetSettingsMenuItem"] = "Einstellungen zurücksetzen",
+                ["ResetSettingsConfirm"] = "Alle Parameter werden auf die Standardwerte zurückgesetzt. Die Anwendung wird neu gestartet. Fortfahren?",
+                ["ResetSettingsTitle"] = "Zurücksetzen"
             },
             ["es"] = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -262,7 +271,10 @@ namespace CleanScan.ViewModels
                 ["RecordFfmpegNotFound"] = "No se encontró ffmpeg. Coloque ffmpeg.exe junto a CleanScan o instálelo en el PATH.",
                 ["RecordDoneMsg"] = "Codificación completada con éxito.",
                 ["TrialTitle"] = "Versión de prueba",
-                ["TrialMessage"] = "Esta versión de prueba limita la duración de su clip a 1 min."
+                ["TrialMessage"] = "Esta versión de prueba limita la duración de su clip a 1 min.",
+                ["ResetSettingsMenuItem"] = "Restablecer ajustes",
+                ["ResetSettingsConfirm"] = "Se restablecerán todos los parámetros a sus valores predeterminados. La aplicación se reiniciará. ¿Continuar?",
+                ["ResetSettingsTitle"] = "Restablecer"
             }
         };
 

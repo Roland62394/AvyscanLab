@@ -433,6 +433,8 @@
                                     </StackPanel>
                                 </MenuItem.Header>
                             </MenuItem>
+                            <Separator/>
+                            <MenuItem x:Name="ResetSettingsMenuItem" Header="Reset settings" Click="OnResetSettingsClick"/>
                         </MenuItem>
                         <MenuItem x:Name="AboutMenuItem" Header="A propos" DockPanel.Dock="Right" Click="OnAboutClick"/>
                         <MenuItem x:Name="LanguagesMenu" Header="Language" DockPanel.Dock="Right">

@@ -1772,6 +1772,7 @@ namespace CleanScan.Views
                 ("ScriptPreviewMenuItem", "ScriptPreviewMenuItem"),
                 ("PresetMenuItem",        "PresetMenuItem"),
                 ("AboutMenuItem",         "AboutMenuItem"),
+                ("ResetSettingsMenuItem", "ResetSettingsMenuItem"),
             })
             {
                 if (this.FindControl<MenuItem>(controlName) is { } item)
@@ -1874,6 +1875,61 @@ namespace CleanScan.Views
 
         private string GetUiText(string key) => ViewModel.GetUiText(key);
         private string GetLocalizedText(string fr, string en) => ViewModel.GetLocalizedText(fr, en);
+
+        private async void OnResetSettingsClick(object? sender, RoutedEventArgs e)
+        {
+            CloseSettingsMenu();
+
+            // Confirmation dialog with Yes/No
+            var result = false;
+            var yesButton = new Button { Content = GetUiText("OkButton"), HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center };
+            var noButton  = new Button { Content = GetUiText("GamMacCloseButton"), HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center };
+
+            var dialog = new Window
+            {
+                Title = GetUiText("ResetSettingsTitle"),
+                SizeToContent = SizeToContent.WidthAndHeight,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Content = new StackPanel
+                {
+                    Margin = new Avalonia.Thickness(16),
+                    Spacing = 12,
+                    Children =
+                    {
+                        new TextBlock { Text = GetUiText("ResetSettingsConfirm"), TextWrapping = TextWrapping.Wrap, MaxWidth = 400 },
+                        new StackPanel
+                        {
+                            Orientation = Avalonia.Layout.Orientation.Horizontal,
+                            Spacing = 8,
+                            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                            Children = { yesButton, noButton }
+                        }
+                    }
+                }
+            };
+
+            yesButton.Click += (_, _) => { result = true; dialog.Close(); };
+            noButton.Click  += (_, _) => dialog.Close();
+            await dialog.ShowDialog(this);
+
+            if (!result) return;
+
+            // Delete ScriptUser.avs and window-settings.json from AppData
+            var appDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppDataFolder);
+            foreach (var file in new[] { "ScriptUser.avs", "ScriptRender.avs", WindowSettingsFileName })
+            {
+                var path = Path.Combine(appDataDir, file);
+                try { if (File.Exists(path)) File.Delete(path); } catch { }
+            }
+
+            // Restart application
+            var exePath = Environment.ProcessPath;
+            if (exePath is not null)
+            {
+                System.Diagnostics.Process.Start(exePath);
+                Environment.Exit(0);
+            }
+        }
 
         private void CloseSettingsMenu()
         {

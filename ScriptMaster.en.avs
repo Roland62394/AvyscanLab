@@ -27,12 +27,12 @@ show_source_used = true
 enable_flip_h = false
 enable_flip_v = false
 
-enable_crop          = true
-enable_denoise       = true   # RemoveDirt/MC — STEP 1 (film dust/dirt)
-enable_degrain       = true   # MVTools2 MDegrain — STEP 2 (grain/noise)
-enable_luma_levels   = true
-enable_gammac        = true
-enable_sharp         = true   # ALWAYS LAST
+enable_crop          = false
+enable_denoise       = false  # RemoveDirt/MC — STEP 1 (film dust/dirt)
+enable_degrain       = false  # MVTools2 MDegrain — STEP 2 (grain/noise)
+enable_luma_levels   = false
+enable_gammac        = false
+enable_sharp         = false  # ALWAYS LAST
 
 preview       = true
 preview_half  = false
