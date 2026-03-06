@@ -475,7 +475,7 @@ namespace CleanScan.Views
         private bool  _sliderSync;
         private bool  _loadingSourceFallback;
 
-        private readonly Dictionary<string, (Slider Slider, SliderSpec Spec)> _sliderMap = new();
+        private readonly Dictionary<string, (Slider Slider, SliderSpec Spec)> _sliderMap = [];
         private bool  _isClosing;
         private bool  _isInitializing;
         private bool  _layoutInitialized;
@@ -706,7 +706,7 @@ namespace CleanScan.Views
                     {
                         _loadingSourceFallback = true;
                         ShowPlayerStatus($"AviSynth+ non détecté ({diag}).\nLecture directe de la source (sans filtres).");
-                        _mpvService.LoadFile(path, 0);
+                        _mpvService?.LoadFile(path, 0);
                         return;
                     }
                 }
@@ -997,10 +997,10 @@ namespace CleanScan.Views
         private void OnClosing(object? sender, WindowClosingEventArgs e)
         {
             _isClosing = true;
-            _layoutInitialized = false;
             _refreshDebouncer.Cancel();
             _config.Changed -= OnConfigChangedForSlider;
             SaveWindowSettings();
+            _layoutInitialized = false;
             _mpvService?.Dispose();
         }
 
@@ -1127,8 +1127,6 @@ namespace CleanScan.Views
                 MainGrid.RowDefinitions[2].Height = new GridLength(Math.Clamp(bph, 60, 800), GridUnitType.Pixel);
 
             _layoutInitialized = true;
-            // Sauvegarde explicite après initialisation pour garantir des coordonnées valides
-            Dispatcher.UIThread.Post(SaveWindowSettings, DispatcherPriority.Render);
         }
 
         private double GetStartupHeight(WindowSettings? saved)
@@ -1171,22 +1169,21 @@ namespace CleanScan.Views
             return new PixelPoint(x, y);
         }
 
-        private WindowSettings? _lastNormalSettings;
+        private WindowSettings? _lastGoodSettings;
+
+        private void CaptureWindowSettings()
+        {
+            if (WindowState != WindowState.Normal) return;
+            if (_isInitializing || !_layoutInitialized) return;
+            var bottomH = BottomPanel.Bounds.Height is > 0 and var bh ? (double?)bh : null;
+            _lastGoodSettings = new WindowSettings(Bounds.Width, Bounds.Height, Position.X, Position.Y, ViewModel.CurrentLanguageCode, bottomH);
+        }
 
         private void SaveWindowSettings()
         {
-            if (!IsVisible) return;
-
-            if (WindowState == WindowState.Normal)
-            {
-                var bottomH = BottomPanel.Bounds.Height is > 0 and var bh ? (double?)bh : null;
-                _lastNormalSettings = new WindowSettings(Bounds.Width, Bounds.Height, Position.X, Position.Y, ViewModel.CurrentLanguageCode, bottomH);
-            }
-
-            // Always persist — use last known normal geometry when maximized
-            var settings = _lastNormalSettings;
-            if (settings is not null)
-                _windowStateService.Save(settings with { Language = ViewModel.CurrentLanguageCode });
+            CaptureWindowSettings();
+            if (_lastGoodSettings is { } s)
+                _windowStateService.Save(s with { Language = ViewModel.CurrentLanguageCode });
         }
 
         private async void OnPositionChanged(object? sender, PixelPointEventArgs e)
@@ -1194,7 +1191,7 @@ namespace CleanScan.Views
             if (!_layoutInitialized || _isInitializing || _isClosing || WindowState != WindowState.Normal) return;
             await _windowStateDebouncer.DebounceAsync(() =>
             {
-                SaveWindowSettings();
+                CaptureWindowSettings();
                 return Task.CompletedTask;
             });
         }
@@ -1204,7 +1201,7 @@ namespace CleanScan.Views
             if (!_layoutInitialized || _isInitializing || _isClosing || WindowState != WindowState.Normal) return;
             await _windowStateDebouncer.DebounceAsync(() =>
             {
-                SaveWindowSettings();
+                CaptureWindowSettings();
                 return Task.CompletedTask;
             });
         }
@@ -1214,7 +1211,7 @@ namespace CleanScan.Views
             if (!_layoutInitialized || _isInitializing || _isClosing) return;
             await _windowStateDebouncer.DebounceAsync(() =>
             {
-                SaveWindowSettings();
+                CaptureWindowSettings();
                 return Task.CompletedTask;
             });
         }
@@ -1888,10 +1885,8 @@ namespace CleanScan.Views
         {
             if (sender is not Button btn || btn.Tag is not string targetName) return;
 
-            if (_openParamPanels.Contains(targetName))
+            if (_openParamPanels.Remove(targetName))
             {
-                // Fermer cette colonne
-                _openParamPanels.Remove(targetName);
                 if (this.FindControl<Control>(targetName) is { } panel) panel.IsVisible = false;
                 btn.Content = "▶";
                 btn.Classes.Remove("active");
