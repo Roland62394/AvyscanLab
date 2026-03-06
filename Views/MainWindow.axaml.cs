@@ -979,6 +979,7 @@ namespace CleanScan.Views
                 ApplyLanguage(ViewModel.CurrentLanguageCode, persist: false);
                 _scriptService.EnsureScriptCopiesInOutputDir();
                 ApplyConfigurationValues();
+                RestoreSessionState(settings);
                 // Régénère toujours avec la bonne langue au démarrage (indépendamment de la validation source)
                 // RegenerateScript(showValidationError: false) ne génère pas si aucune source → script resterait dans l'ancienne langue
                 _scriptService.Generate(_config.Snapshot(), ViewModel.CurrentLanguageCode);
@@ -1106,6 +1107,12 @@ namespace CleanScan.Views
         private string GetUiText(string key) => ViewModel.GetUiText(key);
         private string GetLocalizedText(string fr, string en) => ViewModel.GetLocalizedText(fr, en);
 
+        private void CloseSettingsMenu()
+        {
+            if (this.FindControl<MenuItem>("SettingsMenu") is { } menu)
+                menu.Close();
+        }
+
         #endregion
 
         #region Window settings / layout
@@ -1183,7 +1190,10 @@ namespace CleanScan.Views
         {
             CaptureWindowSettings();
             if (_lastGoodSettings is { } s)
-                _windowStateService.Save(s with { Language = ViewModel.CurrentLanguageCode });
+            {
+                var panels = _openParamPanels.Count > 0 ? _openParamPanels.ToArray() : null;
+                _windowStateService.Save(s with { Language = ViewModel.CurrentLanguageCode, OpenPanels = panels });
+            }
         }
 
         private async void OnPositionChanged(object? sender, PixelPointEventArgs e)
@@ -1266,6 +1276,41 @@ namespace CleanScan.Views
             _config.ReplaceAll(newValues);
             SyncAllSliders();
             SyncForceSourceCombo(newValues);
+        }
+
+        private void RestoreSessionState(WindowSettings? settings)
+        {
+            // Restore half-res button visual from config
+            var halfResValue = _config.Get("preview_half");
+            if (bool.TryParse(halfResValue, out var halfRes) && halfRes)
+            {
+                _halfRes = true;
+                if (this.FindControl<Button>("HalfResBtn") is { } btn)
+                {
+                    btn.Background = new SolidColorBrush(Color.Parse("#35C156"));
+                    btn.Foreground = Brushes.White;
+                }
+            }
+
+            // Restore expanded filter panels
+            if (settings?.OpenPanels is { Length: > 0 } panels)
+            {
+                foreach (var panelName in panels)
+                {
+                    if (!IsParamPanelEnabled(panelName)) continue;
+                    _openParamPanels.Add(panelName);
+                    if (this.FindControl<Control>(panelName) is { } panel) panel.IsVisible = true;
+
+                    // Update the matching expand button
+                    var btnName = panelName.Replace("Params", "ExpandBtn");
+                    if (this.FindControl<Button>(btnName) is { } expandBtn)
+                    {
+                        expandBtn.Content = "▶";
+                        expandBtn.Classes.Add("active");
+                    }
+                }
+                UpdateParamsPlaceholderVisibility();
+            }
         }
 
         private static bool IsPathField(string name) =>
@@ -1352,6 +1397,13 @@ namespace CleanScan.Views
                     threadsTextBox.Focus();
                     e.Handled = true;
                 }, RoutingStrategies.Tunnel, handledEventsToo: true);
+
+                threadsTextBox.KeyDown += (_, e) =>
+                {
+                    if (e.Key == Key.Enter)
+                        CloseSettingsMenu();
+                };
+                threadsTextBox.LostFocus += (_, _) => CloseSettingsMenu();
             }
 
             RegisterPathPickers();
@@ -2097,6 +2149,7 @@ namespace CleanScan.Views
             if (sender is not ComboBox cb || cb.SelectedItem is not ComboBoxItem item) return;
             var value = item.Tag?.ToString() ?? "";
             UpdateConfigurationValue("force_source", value);
+            CloseSettingsMenu();
         }
 
         private void OnVdbEndClick(object? sender, RoutedEventArgs e)
