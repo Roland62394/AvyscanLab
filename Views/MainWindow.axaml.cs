@@ -122,9 +122,11 @@ namespace CleanScan.Views
             ["fr"] =
                 "===========================================\n" +
                 "       CLEANSCAN  —  GUIDE UTILISATEUR\n" +
+                "       Version d'essai — enregistrement\n" +
+                "            limité à 60 s. par clip\n" +
                 "===========================================\n\n" +
 
-                "CleanScan est un outil professionnel de restauration de films argentiques\n" +
+                "CleanScan est un outil de restauration de films argentiques\n" +
                 "numérisés. Il génère un script AviSynth optimisé et offre une prévisualisation\n" +
                 "en temps réel via un lecteur vidéo intégré (libmpv).\n\n" +
 
@@ -365,9 +367,11 @@ namespace CleanScan.Views
             ["en"] =
                 "===========================================\n" +
                 "        CLEANSCAN  —  USER GUIDE\n" +
+                "       Trial version — recording\n" +
+                "          limited to 60 s. per clip\n" +
                 "===========================================\n\n" +
 
-                "CleanScan is a professional restoration tool for digitized\n" +
+                "CleanScan is a restoration tool for digitized\n" +
                 "analog film. It generates an optimized AviSynth script and\n" +
                 "provides real-time preview via an embedded video player (libmpv).\n\n" +
 
@@ -599,9 +603,11 @@ namespace CleanScan.Views
             ["de"] =
                 "===========================================\n" +
                 "     CLEANSCAN  —  BENUTZERHANDBUCH\n" +
+                "      Testversion — Aufnahme auf\n" +
+                "        60 Sek. pro Clip begrenzt\n" +
                 "===========================================\n\n" +
 
-                "CleanScan ist ein professionelles Restaurierungstool fuer\n" +
+                "CleanScan ist ein Restaurierungstool fuer\n" +
                 "digitalisierte analoge Filme. Es erzeugt ein optimiertes\n" +
                 "AviSynth-Skript und bietet Echtzeitvorschau ueber einen\n" +
                 "integrierten Videoplayer (libmpv).\n\n" +
@@ -734,9 +740,11 @@ namespace CleanScan.Views
             ["es"] =
                 "===========================================\n" +
                 "      CLEANSCAN  —  GUIA DEL USUARIO\n" +
+                "     Version de prueba — grabacion\n" +
+                "        limitada a 60 s. por clip\n" +
                 "===========================================\n\n" +
 
-                "CleanScan es una herramienta profesional de restauracion\n" +
+                "CleanScan es una herramienta de restauracion\n" +
                 "de peliculas analogicas digitalizadas. Genera un script\n" +
                 "AviSynth optimizado y ofrece vista previa en tiempo real\n" +
                 "mediante un reproductor de video integrado (libmpv).\n\n" +
