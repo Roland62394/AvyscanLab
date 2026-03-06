@@ -1830,7 +1830,7 @@ namespace CleanScan.Views
 
         #region Option toggles & column visibility
 
-        private string? _activeParamsName = null;
+        private readonly HashSet<string> _openParamPanels = new(StringComparer.Ordinal);
 
         private static readonly string[] AllParamPanels =
             ["CropParams", "DegrainParams", "DenoiseParams", "LumaParams", "GammacParams", "SharpParams"];
@@ -1853,6 +1853,7 @@ namespace CleanScan.Views
 
         private void HideAllParamPanelsAndResetExpandButtons()
         {
+            _openParamPanels.Clear();
             foreach (var name in AllParamPanels)
                 if (this.FindControl<Control>(name) is { } p) p.IsVisible = false;
 
@@ -1864,44 +1865,36 @@ namespace CleanScan.Views
             }
         }
 
-        private void UpdateParamsPlaceholderVisibility(bool hasOpenPanel)
+        private void UpdateParamsPlaceholderVisibility()
         {
             if (this.FindControl<TextBlock>("ParamsPlaceholder") is { } ph)
-                ph.IsVisible = !hasOpenPanel;
+                ph.IsVisible = _openParamPanels.Count == 0;
         }
 
         private void OnExpandButtonClick(object? sender, RoutedEventArgs e)
         {
             if (sender is not Button btn || btn.Tag is not string targetName) return;
-            if (!IsParamPanelEnabled(targetName))
+
+            if (_openParamPanels.Contains(targetName))
             {
-                if (_activeParamsName == targetName)
-                {
-                    HideAllParamPanelsAndResetExpandButtons();
-                    _activeParamsName = null;
-                    UpdateParamsPlaceholderVisibility(hasOpenPanel: false);
-                }
-                return;
-            }
-
-            bool opening = _activeParamsName != targetName;
-
-            // Tout masquer + reset flèches
-            HideAllParamPanelsAndResetExpandButtons();
-
-            if (opening)
-            {
-                if (this.FindControl<Control>(targetName) is { } panel) panel.IsVisible = true;
+                // Fermer cette colonne
+                _openParamPanels.Remove(targetName);
+                if (this.FindControl<Control>(targetName) is { } panel) panel.IsVisible = false;
                 btn.Content = "▶";
-                btn.Classes.Add("active");
-                _activeParamsName = targetName;
+                btn.Classes.Remove("active");
             }
             else
             {
-                _activeParamsName = null;
+                // N'ouvrir que si le filtre est actif
+                if (!IsParamPanelEnabled(targetName)) return;
+
+                _openParamPanels.Add(targetName);
+                if (this.FindControl<Control>(targetName) is { } panel) panel.IsVisible = true;
+                btn.Content = "▶";
+                btn.Classes.Add("active");
             }
 
-            UpdateParamsPlaceholderVisibility(hasOpenPanel: opening);
+            UpdateParamsPlaceholderVisibility();
         }
 
         private void SnapToBottomOfScreen()
@@ -1946,12 +1939,23 @@ namespace CleanScan.Views
 
         private void SyncActiveParamPanelWithFilters()
         {
-            if (_activeParamsName is null) return;
-            if (IsParamPanelEnabled(_activeParamsName)) return;
+            if (_openParamPanels.Count == 0) return;
 
-            HideAllParamPanelsAndResetExpandButtons();
-            _activeParamsName = null;
-            UpdateParamsPlaceholderVisibility(hasOpenPanel: false);
+            var toClose = _openParamPanels.Where(p => !IsParamPanelEnabled(p)).ToList();
+            foreach (var panel in toClose)
+            {
+                _openParamPanels.Remove(panel);
+                if (this.FindControl<Control>(panel) is { } c) c.IsVisible = false;
+                var idx = Array.IndexOf(AllParamPanels, panel);
+                if (idx >= 0 && idx < AllExpandBtns.Length &&
+                    this.FindControl<Button>(AllExpandBtns[idx]) is { } btn)
+                {
+                    btn.Content = "▶";
+                    btn.Classes.Remove("active");
+                }
+            }
+
+            UpdateParamsPlaceholderVisibility();
         }
 
         private void UpdateOptionColumnVisibility()

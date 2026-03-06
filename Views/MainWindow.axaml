@@ -315,7 +315,7 @@
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Margin" Value="8,0"/>
-            <Setter Property="Width" Value="216"/>
+            <Setter Property="Width" Value="120"/>
             <Setter Property="HorizontalAlignment" Value="Left"/>
             <Setter Property="IsSnapToTickEnabled" Value="False"/>
             <Setter Property="Template">
@@ -676,253 +676,278 @@
                               Background="{StaticResource BorderSubtle}"
                               Cursor="SizeWestEast"/>
 
-                <!-- ════ COL 2 — RÉGLAGES du filtre sélectionné ════ -->
+                <!-- ════ COL 2 — RÉGLAGES des filtres (multi-colonnes) ════ -->
                 <Border Grid.Column="2" Background="{StaticResource BgPanel}">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto"
-                                  HorizontalScrollBarVisibility="Disabled"
-                                  Margin="16,14,16,14">
-                        <Panel>
+                    <Grid>
+                        <TextBlock x:Name="ParamsPlaceholder"
+                                   IsVisible="True"
+                                   Text="← select a filter"
+                                   FontSize="11"
+                                   Foreground="{StaticResource TextSecondary}"
+                                   Opacity="0.4"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center"/>
 
-                            <TextBlock x:Name="ParamsPlaceholder"
-                                       IsVisible="True"
-                                       Text="← select a filter"
-                                       FontSize="11"
-                                       Foreground="{StaticResource TextSecondary}"
-                                       Opacity="0.4"
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Center"/>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Auto">
+                            <StackPanel Orientation="Horizontal">
 
-                            <!-- ── CROP ── -->
-                            <StackPanel x:Name="CropParams" IsVisible="False" Spacing="6">
-                                <TextBlock Classes="section-title" Text="CROP"/>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_Crop_L" Classes="param-label" Text="Crop_L" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_Crop_L" Classes="param-slider" Minimum="0" Maximum="500" SmallChange="1"/>
-                                    <TextBox Grid.Column="2" x:Name="Crop_L" Width="70"/>
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_Crop_T" Classes="param-label" Text="Crop_T" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_Crop_T" Classes="param-slider" Minimum="0" Maximum="500" SmallChange="1"/>
-                                    <TextBox Grid.Column="2" x:Name="Crop_T" Width="70"/>
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_Crop_R" Classes="param-label" Text="Crop_R" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_Crop_R" Classes="param-slider" Minimum="0" Maximum="500" SmallChange="1"/>
-                                    <TextBox Grid.Column="2" x:Name="Crop_R" Width="70"/>
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_Crop_B" Classes="param-label" Text="Crop_B" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_Crop_B" Classes="param-slider" Minimum="0" Maximum="500" SmallChange="1"/>
-                                    <TextBox Grid.Column="2" x:Name="Crop_B" Width="70"/>
-                                </Grid>
+                                <!-- ── CROP ── -->
+                                <Border x:Name="CropParams" IsVisible="False"
+                                        BorderBrush="{StaticResource BorderSubtle}" BorderThickness="0,0,1,0"
+                                        Padding="16,14">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Classes="section-title" Text="CROP"/>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_Crop_L" Classes="param-label" Text="Crop_L" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_Crop_L" Classes="param-slider" Minimum="0" Maximum="500" SmallChange="1"/>
+                                            <TextBox Grid.Column="2" x:Name="Crop_L" Width="70"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_Crop_T" Classes="param-label" Text="Crop_T" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_Crop_T" Classes="param-slider" Minimum="0" Maximum="500" SmallChange="1"/>
+                                            <TextBox Grid.Column="2" x:Name="Crop_T" Width="70"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_Crop_R" Classes="param-label" Text="Crop_R" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_Crop_R" Classes="param-slider" Minimum="0" Maximum="500" SmallChange="1"/>
+                                            <TextBox Grid.Column="2" x:Name="Crop_R" Width="70"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_Crop_B" Classes="param-label" Text="Crop_B" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_Crop_B" Classes="param-slider" Minimum="0" Maximum="500" SmallChange="1"/>
+                                            <TextBox Grid.Column="2" x:Name="Crop_B" Width="70"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- ── DEGRAIN ── -->
+                                <Border x:Name="DegrainParams" IsVisible="False"
+                                        BorderBrush="{StaticResource BorderSubtle}" BorderThickness="0,0,1,0"
+                                        Padding="16,14">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Classes="section-title" Text="DEGRAIN"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock x:Name="Label_degrain_preset" Classes="param-label" Text="preset"/>
+                                            <ComboBox x:Name="degrain_preset"/>
+                                        </StackPanel>
+                                        <Separator Margin="0,0,0,2"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock x:Name="Label_degrain_mode" Classes="param-label" Text="mode"/>
+                                            <ComboBox x:Name="degrain_mode"/>
+                                        </StackPanel>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_degrain_thSAD" Classes="param-label" Text="thSAD" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_degrain_thSAD" Classes="param-slider" Minimum="0" Maximum="1000" SmallChange="10"/>
+                                            <TextBox Grid.Column="2" x:Name="degrain_thSAD" Width="70"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_degrain_thSADC" Classes="param-label" Text="thSADC" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_degrain_thSADC" Classes="param-slider" Minimum="0" Maximum="1000" SmallChange="10"/>
+                                            <TextBox Grid.Column="2" x:Name="degrain_thSADC" Width="70"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_degrain_blksize" Classes="param-label" Text="blksize" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_degrain_blksize" Classes="param-slider" Minimum="4" Maximum="64" SmallChange="4"/>
+                                            <TextBox Grid.Column="2" x:Name="degrain_blksize" Width="70"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_degrain_overlap" Classes="param-label" Text="overlap" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_degrain_overlap" Classes="param-slider" Minimum="0" Maximum="32" SmallChange="1"/>
+                                            <TextBox Grid.Column="2" x:Name="degrain_overlap" Width="70"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_degrain_pel" Classes="param-label" Text="pel" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_degrain_pel" Classes="param-slider" Minimum="1" Maximum="4" SmallChange="1"/>
+                                            <TextBox Grid.Column="2" x:Name="degrain_pel" Width="70"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_degrain_search" Classes="param-label" Text="search" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_degrain_search" Classes="param-slider" Minimum="0" Maximum="5" SmallChange="1"/>
+                                            <TextBox Grid.Column="2" x:Name="degrain_search" Width="70"/>
+                                        </Grid>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock x:Name="Label_degrain_prefilter" Classes="param-label" Text="prefilter"/>
+                                            <ComboBox x:Name="degrain_prefilter"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- ── DENOISE ── -->
+                                <Border x:Name="DenoiseParams" IsVisible="False"
+                                        BorderBrush="{StaticResource BorderSubtle}" BorderThickness="0,0,1,0"
+                                        Padding="16,14">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Classes="section-title" Text="DENOISE"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock x:Name="Label_denoise_preset" Classes="param-label" Text="preset"/>
+                                            <ComboBox x:Name="denoise_preset"/>
+                                        </StackPanel>
+                                        <Separator Margin="0,0,0,2"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock x:Name="Label_denoise_mode" Classes="param-label" Text="mode"/>
+                                            <ComboBox x:Name="denoise_mode"/>
+                                        </StackPanel>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_denoise_strength" Classes="param-label" Text="strength" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_denoise_strength" Classes="param-slider" Minimum="1" Maximum="24" SmallChange="1"/>
+                                            <TextBox Grid.Column="2" x:Name="denoise_strength" Width="70"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_denoise_dist" Classes="param-label" Text="dist" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_denoise_dist" Classes="param-slider" Minimum="1" Maximum="20" SmallChange="1"/>
+                                            <TextBox Grid.Column="2" x:Name="denoise_dist" Width="70"/>
+                                        </Grid>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock x:Name="Label_denoise_grey" Classes="param-label" Text="grey"/>
+                                            <Button x:Name="denoise_grey" Width="70" Classes="toggle" Click="OnOptionToggleButtonClick"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- ── LUMA LEVELS ── -->
+                                <Border x:Name="LumaParams" IsVisible="False"
+                                        BorderBrush="{StaticResource BorderSubtle}" BorderThickness="0,0,1,0"
+                                        Padding="16,14">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Classes="section-title" Text="LUMA LEVELS"/>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_Lum_Bright" Classes="param-label" Text="Bright" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_Lum_Bright" Classes="param-slider" Minimum="-255" Maximum="255" SmallChange="1"/>
+                                            <TextBox Grid.Column="2" x:Name="Lum_Bright" Width="70"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_Lum_Contrast" Classes="param-label" Text="Contrast" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_Lum_Contrast" Classes="param-slider" Minimum="0.1" Maximum="3.0" SmallChange="0.05"/>
+                                            <TextBox Grid.Column="2" x:Name="Lum_Contrast" Width="70"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_Lum_Sat" Classes="param-label" Text="Sat" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_Lum_Sat" Classes="param-slider" Minimum="0.1" Maximum="3.0" SmallChange="0.05"/>
+                                            <TextBox Grid.Column="2" x:Name="Lum_Sat" Width="70"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_Lum_Hue" Classes="param-label" Text="Hue" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_Lum_Hue" Classes="param-slider" Minimum="-180" Maximum="180" SmallChange="1"/>
+                                            <TextBox Grid.Column="2" x:Name="Lum_Hue" Width="70"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_Lum_GammaY" Classes="param-label" Text="GammaY" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_Lum_GammaY" Classes="param-slider" Minimum="0.1" Maximum="3.0" SmallChange="0.05"/>
+                                            <TextBox Grid.Column="2" x:Name="Lum_GammaY" Width="70"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- ── GAMMAC ── -->
+                                <Border x:Name="GammacParams" IsVisible="False"
+                                        BorderBrush="{StaticResource BorderSubtle}" BorderThickness="0,0,1,0"
+                                        Padding="16,14">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Classes="section-title" Text="GAMMAC"/>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_LockChan" Classes="param-label" Text="LockChan" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_LockChan" Classes="param-slider" Minimum="-3" Maximum="2" SmallChange="1"/>
+                                            <TextBox Grid.Column="2" x:Name="LockChan" Width="70"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_LockVal" Classes="param-label" Text="LockVal" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_LockVal" Classes="param-slider" Minimum="0" Maximum="255" SmallChange="1"/>
+                                            <TextBox Grid.Column="2" x:Name="LockVal" Width="70"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_Scale" Classes="param-label" Text="Scale" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_Scale" Classes="param-slider" Minimum="0" Maximum="10" SmallChange="0.5"/>
+                                            <TextBox Grid.Column="2" x:Name="Scale" Width="70"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_Th" Classes="param-label" Text="Th" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_Th" Classes="param-slider" Minimum="0" Maximum="1" SmallChange="0.01"/>
+                                            <TextBox Grid.Column="2" x:Name="Th" Width="70"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_HiTh" Classes="param-label" Text="HiTh" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_HiTh" Classes="param-slider" Minimum="0" Maximum="1" SmallChange="0.01"/>
+                                            <TextBox Grid.Column="2" x:Name="HiTh" Width="70"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_X" Classes="param-label" Text="X" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_X" Classes="param-slider" Minimum="0" Maximum="2000" SmallChange="10"/>
+                                            <TextBox Grid.Column="2" x:Name="X" Width="70"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_Y" Classes="param-label" Text="Y" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_Y" Classes="param-slider" Minimum="0" Maximum="2000" SmallChange="10"/>
+                                            <TextBox Grid.Column="2" x:Name="Y" Width="70"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_W" Classes="param-label" Text="W" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_W" Classes="param-slider" Minimum="0" Maximum="4000" SmallChange="10"/>
+                                            <TextBox Grid.Column="2" x:Name="W" Width="70"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_H" Classes="param-label" Text="H" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_H" Classes="param-slider" Minimum="0" Maximum="4000" SmallChange="10"/>
+                                            <TextBox Grid.Column="2" x:Name="H" Width="70"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_Omin" Classes="param-label" Text="Omin" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_Omin" Classes="param-slider" Minimum="0" Maximum="255" SmallChange="1"/>
+                                            <TextBox Grid.Column="2" x:Name="Omin" Width="70"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_Omax" Classes="param-label" Text="Omax" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_Omax" Classes="param-slider" Minimum="0" Maximum="255" SmallChange="1"/>
+                                            <TextBox Grid.Column="2" x:Name="Omax" Width="70"/>
+                                        </Grid>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock x:Name="Label_ShowPreview" Classes="param-label" Text="Show"/>
+                                            <Button x:Name="ShowPreview" Width="70" Classes="toggle" Click="OnOptionToggleButtonClick"/>
+                                        </StackPanel>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_Verbosity" Classes="param-label" Text="Verbosity" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_Verbosity" Classes="param-slider" Minimum="0" Maximum="6" SmallChange="1"/>
+                                            <TextBox Grid.Column="2" x:Name="Verbosity" Width="70"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- ── SHARPEN ── -->
+                                <Border x:Name="SharpParams" IsVisible="False"
+                                        BorderBrush="{StaticResource BorderSubtle}" BorderThickness="0,0,1,0"
+                                        Padding="16,14">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Classes="section-title" Text="SHARPEN"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock x:Name="Label_sharp_preset" Classes="param-label" Text="preset"/>
+                                            <ComboBox x:Name="sharp_preset"/>
+                                        </StackPanel>
+                                        <Separator Margin="0,0,0,2"/>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_Sharp_Strength" Classes="param-label" Text="Strength" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_Sharp_Strength" Classes="param-slider" Minimum="1" Maximum="20" SmallChange="1"/>
+                                            <TextBox Grid.Column="2" x:Name="Sharp_Strength" Width="70"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_Sharp_Radius" Classes="param-label" Text="Radius" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_Sharp_Radius" Classes="param-slider" Minimum="0.5" Maximum="5.0" SmallChange="0.1"/>
+                                            <TextBox Grid.Column="2" x:Name="Sharp_Radius" Width="70"/>
+                                        </Grid>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock x:Name="Label_Sharp_Mode" Classes="param-label" Text="Mode"/>
+                                            <ComboBox x:Name="Sharp_Mode"/>
+                                        </StackPanel>
+                                        <Grid ColumnDefinitions="Auto,Auto,70">
+                                            <TextBlock Grid.Column="0" x:Name="Label_Sharp_Threshold" Classes="param-label" Text="Threshold" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <Slider Grid.Column="1" x:Name="Slide_Sharp_Threshold" Classes="param-slider" Minimum="0" Maximum="100" SmallChange="1"/>
+                                            <TextBox Grid.Column="2" x:Name="Sharp_Threshold" Width="70"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
                             </StackPanel>
-
-                            <!-- ── DEGRAIN ── -->
-                            <StackPanel x:Name="DegrainParams" IsVisible="False" Spacing="6">
-                                <TextBlock Classes="section-title" Text="DEGRAIN"/>
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock x:Name="Label_degrain_preset" Classes="param-label" Text="preset"/>
-                                    <ComboBox x:Name="degrain_preset"/>
-                                </StackPanel>
-                                <Separator Margin="0,0,0,2"/>
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock x:Name="Label_degrain_mode" Classes="param-label" Text="mode"/>
-                                    <ComboBox x:Name="degrain_mode"/>
-                                </StackPanel>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_degrain_thSAD" Classes="param-label" Text="thSAD" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_degrain_thSAD" Classes="param-slider" Minimum="0" Maximum="1000" SmallChange="10"/>
-                                    <TextBox Grid.Column="2" x:Name="degrain_thSAD" Width="70"/>
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_degrain_thSADC" Classes="param-label" Text="thSADC" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_degrain_thSADC" Classes="param-slider" Minimum="0" Maximum="1000" SmallChange="10"/>
-                                    <TextBox Grid.Column="2" x:Name="degrain_thSADC" Width="70"/>
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_degrain_blksize" Classes="param-label" Text="blksize" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_degrain_blksize" Classes="param-slider" Minimum="4" Maximum="64" SmallChange="4"/>
-                                    <TextBox Grid.Column="2" x:Name="degrain_blksize" Width="70"/>
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_degrain_overlap" Classes="param-label" Text="overlap" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_degrain_overlap" Classes="param-slider" Minimum="0" Maximum="32" SmallChange="1"/>
-                                    <TextBox Grid.Column="2" x:Name="degrain_overlap" Width="70"/>
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_degrain_pel" Classes="param-label" Text="pel" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_degrain_pel" Classes="param-slider" Minimum="1" Maximum="4" SmallChange="1"/>
-                                    <TextBox Grid.Column="2" x:Name="degrain_pel" Width="70"/>
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_degrain_search" Classes="param-label" Text="search" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_degrain_search" Classes="param-slider" Minimum="0" Maximum="5" SmallChange="1"/>
-                                    <TextBox Grid.Column="2" x:Name="degrain_search" Width="70"/>
-                                </Grid>
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock x:Name="Label_degrain_prefilter" Classes="param-label" Text="prefilter"/>
-                                    <ComboBox x:Name="degrain_prefilter"/>
-                                </StackPanel>
-                            </StackPanel>
-
-                            <!-- ── DENOISE ── -->
-                            <StackPanel x:Name="DenoiseParams" IsVisible="False" Spacing="6">
-                                <TextBlock Classes="section-title" Text="DENOISE"/>
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock x:Name="Label_denoise_preset" Classes="param-label" Text="preset"/>
-                                    <ComboBox x:Name="denoise_preset"/>
-                                </StackPanel>
-                                <Separator Margin="0,0,0,2"/>
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock x:Name="Label_denoise_mode" Classes="param-label" Text="mode"/>
-                                    <ComboBox x:Name="denoise_mode"/>
-                                </StackPanel>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_denoise_strength" Classes="param-label" Text="strength" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_denoise_strength" Classes="param-slider" Minimum="1" Maximum="24" SmallChange="1"/>
-                                    <TextBox Grid.Column="2" x:Name="denoise_strength" Width="70"/>
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_denoise_dist" Classes="param-label" Text="dist" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_denoise_dist" Classes="param-slider" Minimum="1" Maximum="20" SmallChange="1"/>
-                                    <TextBox Grid.Column="2" x:Name="denoise_dist" Width="70"/>
-                                </Grid>
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock x:Name="Label_denoise_grey" Classes="param-label" Text="grey"/>
-                                    <Button x:Name="denoise_grey" Width="70" Classes="toggle" Click="OnOptionToggleButtonClick"/>
-                                </StackPanel>
-                            </StackPanel>
-
-                            <!-- ── LUMA LEVELS ── -->
-                            <StackPanel x:Name="LumaParams" IsVisible="False" Spacing="6">
-                                <TextBlock Classes="section-title" Text="LUMA LEVELS"/>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_Lum_Bright" Classes="param-label" Text="Bright" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_Lum_Bright" Classes="param-slider" Minimum="-255" Maximum="255" SmallChange="1"/>
-                                    <TextBox Grid.Column="2" x:Name="Lum_Bright" Width="70"/>
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_Lum_Contrast" Classes="param-label" Text="Contrast" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_Lum_Contrast" Classes="param-slider" Minimum="0.1" Maximum="3.0" SmallChange="0.05"/>
-                                    <TextBox Grid.Column="2" x:Name="Lum_Contrast" Width="70"/>
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_Lum_Sat" Classes="param-label" Text="Sat" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_Lum_Sat" Classes="param-slider" Minimum="0.1" Maximum="3.0" SmallChange="0.05"/>
-                                    <TextBox Grid.Column="2" x:Name="Lum_Sat" Width="70"/>
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_Lum_Hue" Classes="param-label" Text="Hue" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_Lum_Hue" Classes="param-slider" Minimum="-180" Maximum="180" SmallChange="1"/>
-                                    <TextBox Grid.Column="2" x:Name="Lum_Hue" Width="70"/>
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_Lum_GammaY" Classes="param-label" Text="GammaY" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_Lum_GammaY" Classes="param-slider" Minimum="0.1" Maximum="3.0" SmallChange="0.05"/>
-                                    <TextBox Grid.Column="2" x:Name="Lum_GammaY" Width="70"/>
-                                </Grid>
-                            </StackPanel>
-
-                            <!-- ── GAMMAC ── -->
-                            <StackPanel x:Name="GammacParams" IsVisible="False" Spacing="6">
-                                <TextBlock Classes="section-title" Text="GAMMAC"/>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_LockChan" Classes="param-label" Text="LockChan" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_LockChan" Classes="param-slider" Minimum="-3" Maximum="2" SmallChange="1"/>
-                                    <TextBox Grid.Column="2" x:Name="LockChan" Width="70"/>
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_LockVal" Classes="param-label" Text="LockVal" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_LockVal" Classes="param-slider" Minimum="0" Maximum="255" SmallChange="1"/>
-                                    <TextBox Grid.Column="2" x:Name="LockVal" Width="70"/>
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_Scale" Classes="param-label" Text="Scale" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_Scale" Classes="param-slider" Minimum="0" Maximum="10" SmallChange="0.5"/>
-                                    <TextBox Grid.Column="2" x:Name="Scale" Width="70"/>
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_Th" Classes="param-label" Text="Th" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_Th" Classes="param-slider" Minimum="0" Maximum="1" SmallChange="0.01"/>
-                                    <TextBox Grid.Column="2" x:Name="Th" Width="70"/>
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_HiTh" Classes="param-label" Text="HiTh" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_HiTh" Classes="param-slider" Minimum="0" Maximum="1" SmallChange="0.01"/>
-                                    <TextBox Grid.Column="2" x:Name="HiTh" Width="70"/>
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_X" Classes="param-label" Text="X" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_X" Classes="param-slider" Minimum="0" Maximum="2000" SmallChange="10"/>
-                                    <TextBox Grid.Column="2" x:Name="X" Width="70"/>
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_Y" Classes="param-label" Text="Y" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_Y" Classes="param-slider" Minimum="0" Maximum="2000" SmallChange="10"/>
-                                    <TextBox Grid.Column="2" x:Name="Y" Width="70"/>
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_W" Classes="param-label" Text="W" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_W" Classes="param-slider" Minimum="0" Maximum="4000" SmallChange="10"/>
-                                    <TextBox Grid.Column="2" x:Name="W" Width="70"/>
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_H" Classes="param-label" Text="H" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_H" Classes="param-slider" Minimum="0" Maximum="4000" SmallChange="10"/>
-                                    <TextBox Grid.Column="2" x:Name="H" Width="70"/>
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_Omin" Classes="param-label" Text="Omin" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_Omin" Classes="param-slider" Minimum="0" Maximum="255" SmallChange="1"/>
-                                    <TextBox Grid.Column="2" x:Name="Omin" Width="70"/>
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_Omax" Classes="param-label" Text="Omax" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_Omax" Classes="param-slider" Minimum="0" Maximum="255" SmallChange="1"/>
-                                    <TextBox Grid.Column="2" x:Name="Omax" Width="70"/>
-                                </Grid>
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock x:Name="Label_ShowPreview" Classes="param-label" Text="Show"/>
-                                    <Button x:Name="ShowPreview" Width="70" Classes="toggle" Click="OnOptionToggleButtonClick"/>
-                                </StackPanel>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_Verbosity" Classes="param-label" Text="Verbosity" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_Verbosity" Classes="param-slider" Minimum="0" Maximum="6" SmallChange="1"/>
-                                    <TextBox Grid.Column="2" x:Name="Verbosity" Width="70"/>
-                                </Grid>
-                            </StackPanel>
-
-                            <!-- ── SHARPEN ── -->
-                            <StackPanel x:Name="SharpParams" IsVisible="False" Spacing="6">
-                                <TextBlock Classes="section-title" Text="SHARPEN"/>
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock x:Name="Label_sharp_preset" Classes="param-label" Text="preset"/>
-                                    <ComboBox x:Name="sharp_preset"/>
-                                </StackPanel>
-                                <Separator Margin="0,0,0,2"/>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_Sharp_Strength" Classes="param-label" Text="Strength" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_Sharp_Strength" Classes="param-slider" Minimum="1" Maximum="20" SmallChange="1"/>
-                                    <TextBox Grid.Column="2" x:Name="Sharp_Strength" Width="70"/>
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_Sharp_Radius" Classes="param-label" Text="Radius" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_Sharp_Radius" Classes="param-slider" Minimum="0.5" Maximum="5.0" SmallChange="0.1"/>
-                                    <TextBox Grid.Column="2" x:Name="Sharp_Radius" Width="70"/>
-                                </Grid>
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock x:Name="Label_Sharp_Mode" Classes="param-label" Text="Mode"/>
-                                    <ComboBox x:Name="Sharp_Mode"/>
-                                </StackPanel>
-                                <Grid ColumnDefinitions="Auto,Auto,70">
-                                    <TextBlock Grid.Column="0" x:Name="Label_Sharp_Threshold" Classes="param-label" Text="Threshold" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Grid.Column="1" x:Name="Slide_Sharp_Threshold" Classes="param-slider" Minimum="0" Maximum="100" SmallChange="1"/>
-                                    <TextBox Grid.Column="2" x:Name="Sharp_Threshold" Width="70"/>
-                                </Grid>
-                            </StackPanel>
-
-                        </Panel>
-                    </ScrollViewer>
+                        </ScrollViewer>
+                    </Grid>
                 </Border>
 
             </Grid>
