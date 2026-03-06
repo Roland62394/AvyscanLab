@@ -497,12 +497,15 @@ function SharpenAdvanced(clip c, string "mode", float "strength", float "radius"
   return EnsureColorspaceSafe(sharp_s, base_pix, matrix=matrix)
 }
 
-function _BuildPreview(clip src_clip, clip final_clip, int "label_size") {
+function _BuildPreview(clip src_clip, clip final_clip, int "label_size", bool "already_half") {
   label_size = Default(label_size, 28)
+  already_half = Default(already_half, false)
   src_show = Subtitle(src_clip,   "original", size=label_size, align=2)
   res_show = Subtitle(final_clip, "final",    size=label_size, align=2)
-  src_show = HalfSizeEven(src_show)
-  res_show = HalfSizeEven(res_show)
+  if (!already_half) {
+    src_show = HalfSizeEven(src_show)
+    res_show = HalfSizeEven(res_show)
+  }
   return StackHorizontal(src_show, res_show)
 }
 
@@ -527,6 +530,16 @@ if (enable_crop) {
 }
 
 src = src.KillAudio().AssumeFPS(play_speed)
+
+# Half-resolution preview: resize source BEFORE heavy processing for speed
+if (preview_half && preview) {
+  _hw = src.Width()  / 2
+  _hh = src.Height() / 2
+  _hw = _hw - _hw % 2
+  _hh = _hh - _hh % 2
+  src = src.BicubicResize(_hw, _hh)
+}
+
 src_matrix = _MatrixAuto(src)
 
 # Border padding for temporal filters (prevents out-of-range access with ImageSource).
@@ -643,14 +656,14 @@ out = preview
     \ ? _BuildPreview(
     \     EnsureColorspaceSafe(src,   "YV24", matrix=src_matrix),
     \     EnsureColorspaceSafe(final, "YV24", matrix=src_matrix),
-    \     label_size=preview_label_size)
+    \     label_size=preview_label_size,
+    \     already_half=preview_half)
     \ : final
 
 # Strip border padding added for temporal filters (image source only)
 out = (n_img_pad > 0) ? Trim(out, n_img_pad, n_img_pad + n_img_orig - 1) : out
 
-# Half-resolution preview (faster playback, does not affect final output)
-out = (preview_half && preview) ? out.BicubicResize(out.Width() / 2, out.Height() / 2) : out
+# Half-resolution: source already resized before pipeline (no late resize needed)
 
 out = out.Prefetch(threads)
 out

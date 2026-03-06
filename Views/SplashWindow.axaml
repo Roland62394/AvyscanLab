@@ -17,7 +17,7 @@
                    VerticalAlignment="Center"
                    Source="avares://CleanScan/Assets/Logo.png"
                    Stretch="None"/>
-            <TextBlock Text="Version d'essai"
+            <TextBlock Text="Trial version"
                        FontSize="16" FontWeight="SemiBold"
                        Foreground="#FFD54F"
                        HorizontalAlignment="Center"
