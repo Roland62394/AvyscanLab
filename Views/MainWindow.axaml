@@ -507,6 +507,8 @@
                         <Slider x:Name="SeekBar" Grid.Column="0"
                                 Minimum="0" Maximum="1" Value="0"
                                 IsEnabled="False"
+                                MaxWidth="800"
+                                HorizontalAlignment="Stretch"
                                 VerticalAlignment="Center"/>
                         <TextBlock x:Name="TimeLabel" Grid.Column="2"
                                    Text="–:–– / –:––"
