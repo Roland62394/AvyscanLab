@@ -419,6 +419,20 @@
                                     </StackPanel>
                                 </MenuItem.Header>
                             </MenuItem>
+                            <MenuItem StaysOpenOnClick="True" Focusable="False">
+                                <MenuItem.Header>
+                                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2">
+                                        <TextBlock Text="Source loader" VerticalAlignment="Center"/>
+                                        <ComboBox x:Name="ForceSourceCombo" MinWidth="120"
+                                                  SelectionChanged="OnForceSourceChanged">
+                                            <ComboBoxItem Content="Auto"     Tag=""/>
+                                            <ComboBoxItem Content="FFMS2"    Tag="FFMS2"/>
+                                            <ComboBoxItem Content="L-SMASH"  Tag="LSMASH"/>
+                                            <ComboBoxItem Content="LWLibav"  Tag="LWLIBAV"/>
+                                        </ComboBox>
+                                    </StackPanel>
+                                </MenuItem.Header>
+                            </MenuItem>
                         </MenuItem>
                         <MenuItem x:Name="AboutMenuItem" Header="A propos" DockPanel.Dock="Right" Click="OnAboutClick"/>
                         <MenuItem x:Name="LanguagesMenu" Header="Language" DockPanel.Dock="Right">
@@ -524,6 +538,9 @@
                         <Button x:Name="SpeedBtn" Classes="transport" Content="1x"
                                 FontSize="10" Width="38"
                                 ToolTip.Tip="Playback speed" Click="OnSpeedClick"/>
+                        <Button x:Name="HalfResBtn" Classes="transport" Content="½"
+                                FontSize="24" Width="34"
+                                ToolTip.Tip="Half-resolution preview" Click="OnHalfResClick"/>
                     </StackPanel>
 
                 </StackPanel>

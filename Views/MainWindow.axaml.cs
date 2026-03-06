@@ -17,6 +17,9 @@ using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using Avalonia.Animation;
+using Avalonia.Animation.Easings;
+using Avalonia.Styling;
 using CleanScan.Services;
 using CleanScan.ViewModels;
 
@@ -584,6 +587,7 @@ namespace CleanScan.Views
             _mpvService.PauseChanged       += p   => Dispatcher.UIThread.Post(() => OnMpvPauseChanged(p));
             _mpvService.FileLoaded         += ()  => Dispatcher.UIThread.Post(() => OnMpvFileLoaded());
 
+            _mpvService.PlaybackRestart    += ()  => Dispatcher.UIThread.Post(OnMpvPlaybackRestart);
             _mpvService.LoadFailed         += msg => Dispatcher.UIThread.Post(() => OnMpvLoadFailed(msg));
             _mpvService.UnexpectedShutdown += ()  => Dispatcher.UIThread.Post(OnMpvUnexpectedShutdown);
 
@@ -745,6 +749,44 @@ namespace CleanScan.Views
                     bar.IsEnabled = true;
                 }
             }
+        }
+
+        private CancellationTokenSource? _pulseAnimCts;
+
+        private void OnMpvPlaybackRestart()
+        {
+            _pulseAnimCts?.Cancel();
+            _pulseAnimCts = null;
+            if (this.FindControl<Button>("VdbPlay") is { } btn)
+            {
+                btn.Opacity = 1.0;
+                btn.Background = new SolidColorBrush(Color.Parse("#1A2030"));
+            }
+        }
+
+        private void SetPlayButtonProcessing()
+        {
+            if (this.FindControl<Button>("VdbPlay") is not { } btn) return;
+
+            btn.Background = new SolidColorBrush(Color.Parse("#FFCC00"));
+
+            _pulseAnimCts?.Cancel();
+            _pulseAnimCts = new CancellationTokenSource();
+            var ct = _pulseAnimCts.Token;
+
+            var anim = new Animation
+            {
+                Duration = TimeSpan.FromMilliseconds(700),
+                IterationCount = IterationCount.Infinite,
+                PlaybackDirection = PlaybackDirection.Alternate,
+                Easing = new SineEaseInOut(),
+                Children =
+                {
+                    new KeyFrame { Cue = new Cue(0.0), Setters = { new Setter(OpacityProperty, 0.45) } },
+                    new KeyFrame { Cue = new Cue(1.0), Setters = { new Setter(OpacityProperty, 1.0)  } }
+                }
+            };
+            anim.RunAsync(btn, ct);
         }
 
         private void OnMpvUnexpectedShutdown()
@@ -1213,6 +1255,7 @@ namespace CleanScan.Views
             UpdateOptionColumnVisibility();
             _config.ReplaceAll(newValues);
             SyncAllSliders();
+            SyncForceSourceCombo(newValues);
         }
 
         private static bool IsPathField(string name) =>
@@ -2003,6 +2046,47 @@ namespace CleanScan.Views
                 btn.Content = speed < 1.0 ? $"{speed:G}x" : "1x";
         }
 
+        private bool _halfRes;
+        private void OnHalfResClick(object? sender, RoutedEventArgs e)
+        {
+            _halfRes = !_halfRes;
+            if (this.FindControl<Button>("HalfResBtn") is { } btn)
+            {
+                btn.Background = new SolidColorBrush(Color.Parse(_halfRes ? "#35C156" : "#3B4C64"));
+                btn.Foreground = Brushes.White;
+            }
+            UpdateConfigurationValue("preview_half", _halfRes.ToString().ToLowerInvariant());
+        }
+
+        private bool _syncingForceSource;
+
+        private void SyncForceSourceCombo(Dictionary<string, string> values)
+        {
+            if (this.FindControl<ComboBox>("ForceSourceCombo") is not { } cb) return;
+            _syncingForceSource = true;
+            var current = values.TryGetValue("force_source", out var v) ? v.Trim().Trim('"') : "FFMS2";
+            for (var i = 0; i < cb.ItemCount; i++)
+            {
+                if (cb.Items[i] is ComboBoxItem item &&
+                    string.Equals(item.Tag?.ToString(), current, StringComparison.OrdinalIgnoreCase))
+                {
+                    cb.SelectedIndex = i;
+                    _syncingForceSource = false;
+                    return;
+                }
+            }
+            cb.SelectedIndex = 1; // default FFMS2
+            _syncingForceSource = false;
+        }
+
+        private void OnForceSourceChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            if (_syncingForceSource) return;
+            if (sender is not ComboBox cb || cb.SelectedItem is not ComboBoxItem item) return;
+            var value = item.Tag?.ToString() ?? "";
+            UpdateConfigurationValue("force_source", value);
+        }
+
         private void OnVdbEndClick(object? sender, RoutedEventArgs e)
         {
             if (_totalFrames > 0 && _fps > 0)
@@ -2087,6 +2171,7 @@ namespace CleanScan.Views
                     DebugLog($"Script ({content.Length} chars): {content[..Math.Min(400, content.Length)].Replace('\n', '|').Replace('\r', ' ')}");
                 }
                 catch (Exception ex) { DebugLog($"Script read error: {ex.Message}"); }
+                SetPlayButtonProcessing();
                 ShowPlayerStatus("Chargement…");
                 _mpvService.LoadFile(scriptPath, pos);
             }

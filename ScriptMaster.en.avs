@@ -34,7 +34,8 @@ enable_luma_levels   = true
 enable_gammac        = true
 enable_sharp         = true   # ALWAYS LAST
 
-preview  = true
+preview       = true
+preview_half  = false
 threads  = 4
 
 # ------------ PARAMS ------------
@@ -648,6 +649,8 @@ out = preview
 # Strip border padding added for temporal filters (image source only)
 out = (n_img_pad > 0) ? Trim(out, n_img_pad, n_img_pad + n_img_orig - 1) : out
 
-effective_threads = (enable_gammac) ? 1 : threads
-out = out.Prefetch(effective_threads)
+# Half-resolution preview (faster playback, does not affect final output)
+out = (preview_half && preview) ? out.BicubicResize(out.Width() / 2, out.Height() / 2) : out
+
+out = out.Prefetch(threads)
 out

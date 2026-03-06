@@ -80,8 +80,9 @@ public sealed class MpvService : IDisposable
 
     private const int EventShutdown       = 1;
     private const int EventEndFile        = 7;
-    private const int EventFileLoaded     = 8;
-    private const int EventPropertyChange = 22;
+    private const int EventFileLoaded      = 8;
+    private const int EventPlaybackRestart = 21;
+    private const int EventPropertyChange  = 22;
     private const int FormatDouble        = 5;
     private const int FormatFlag          = 3;
     private const int EndFileReasonError  = 4;
@@ -96,6 +97,7 @@ public sealed class MpvService : IDisposable
     public event Action?         FileLoaded;
     public event Action?         EndReached;
     public event Action<string>? LoadFailed;
+    public event Action?         PlaybackRestart;
 
     #endregion
 
@@ -294,6 +296,10 @@ public sealed class MpvService : IDisposable
                         catch { }
                     break;
                 }
+
+                case EventPlaybackRestart:
+                    PlaybackRestart?.Invoke();
+                    break;
 
                 case EventEndFile:
                     if (ev.Data != 0)

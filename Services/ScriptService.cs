@@ -16,7 +16,7 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
 
     public static readonly string[] TextFieldNames =
     [
-        "source", "film", "img", "img_start", "img_end", "play_speed", "threads",
+        "source", "film", "img", "img_start", "img_end", "play_speed", "threads", "force_source",
         "Crop_L", "Crop_T", "Crop_R", "Crop_B",
         "degrain_mode", "degrain_thSAD", "degrain_thSADC", "degrain_blksize", "degrain_overlap", "degrain_pel", "degrain_search", "degrain_prefilter",
         "denoise_mode", "denoise_strength", "denoise_dist",
@@ -31,7 +31,7 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
         "enable_flip_h", "enable_flip_v", "enable_crop",
         "enable_degrain", "enable_denoise", "denoise_grey",
         "enable_luma_levels", "enable_gammac", "enable_sharp",
-        "preview", "Show"
+        "preview", "preview_half", "Show"
     ];
 
     public const string UseImageConfigName    = "use_img";
@@ -217,9 +217,6 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
     {
         var updated = scriptContents;
 
-        // Force l'utilisation de LWLIBAV dans le ScriptUser généré.
-        updated = ReplaceConfigValue(updated, ForceSourceConfigName, $"\"{ForceSourceValue}\"");
-
         foreach (var pair in configValues)
             updated = ReplaceConfigValue(updated, GetScriptConfigName(pair.Key), FormatValueForScript(pair.Key, pair.Value));
 
@@ -262,7 +259,8 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
         if (string.Equals(name, "Sharp_Mode", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(name, "degrain_mode", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(name, "degrain_prefilter", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(name, "denoise_mode", StringComparison.OrdinalIgnoreCase))
+            string.Equals(name, "denoise_mode", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(name, "force_source", StringComparison.OrdinalIgnoreCase))
             return $"\"{NormalizeChoiceValue(value)}\"";
 
         return SanitizeScriptValue(name, value);

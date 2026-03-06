@@ -33,8 +33,16 @@ public sealed class MpvHost : NativeControlHost
     [DllImport("shell32.dll")]
     private static extern void DragFinish(nint hDrop);
 
-    private const int  GWLP_WNDPROC = -4;
-    private const uint WM_DROPFILES = 0x0233;
+    [DllImport("user32.dll")]
+    private static extern nint LoadCursor(nint hInstance, int lpCursorName);
+
+    [DllImport("user32.dll", EntryPoint = "SetClassLongPtrW")]
+    private static extern nint SetClassLongPtr(nint hWnd, int nIndex, nint dwNewLong);
+
+    private const int  GWLP_WNDPROC  = -4;
+    private const int  GCLP_HCURSOR  = -12;
+    private const int  IDC_ARROW     = 32512;
+    private const uint WM_DROPFILES  = 0x0233;
 
     // Keep the delegate alive — GC must not collect it while the window exists.
     private WndProcDelegate? _wndProcDelegate;
@@ -52,6 +60,9 @@ public sealed class MpvHost : NativeControlHost
         _wndProcDelegate = WndProc;
         _origWndProc     = SetWindowLongPtr(hwnd, GWLP_WNDPROC,
                                Marshal.GetFunctionPointerForDelegate(_wndProcDelegate));
+
+        // Set the native window cursor to a standard arrow (default is hourglass).
+        SetClassLongPtr(hwnd, GCLP_HCURSOR, LoadCursor(0, IDC_ARROW));
 
         HandleReady?.Invoke(hwnd);
         return handle;
