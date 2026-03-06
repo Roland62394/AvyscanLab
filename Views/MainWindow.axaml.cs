@@ -1297,8 +1297,6 @@ namespace CleanScan.Views
                     DebugLog($"TryValidateSourceSelection={srcOk}");
                     if (!srcOk)
                     {
-                        if (avsCheck.Contains("chargeable OK", StringComparison.Ordinal))
-                            ShowPlayerStatus("Aucune source configurée.\nGlissez un fichier vidéo sur le player ou renseignez le champ SOURCE.");
                         return;
                     }
                     _ = LoadScriptAsync();
@@ -1460,6 +1458,10 @@ namespace CleanScan.Views
             {
                 banner.IsVisible = false;
             }
+
+            if (this.FindControl<TextBlock>("DropHintBar") is { } dropHint)
+                dropHint.IsVisible = false;
+
 
             if (this.FindControl<Slider>("SeekBar") is { } s) s.Value = _pendingSeekPos;
 
@@ -1783,6 +1785,10 @@ namespace CleanScan.Views
             ApplyParamTooltips(languageCode);
             ApplyTransportTooltips();
             ApplyRecordLabels();
+
+
+            if (this.FindControl<TextBlock>("DropHintBar") is { IsVisible: true } dropBar)
+                dropBar.Text = GetUiText("DropHintBar");
 
             if (persist && IsVisible)
             {
@@ -3305,7 +3311,6 @@ namespace CleanScan.Views
             {
                 if (!TryValidateSourceSelection(out _))
                 {
-                    ShowPlayerStatus("Aucune source valide.\nRenseignez le champ SOURCE avec un fichier existant.");
                     return;
                 }
 

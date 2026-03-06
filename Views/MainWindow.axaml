@@ -552,11 +552,37 @@
                 </StackPanel>
             </Border>
 
+            <!-- Drop hint (above player, blinks) -->
+            <TextBlock x:Name="DropHintBar"
+                       Text="&#x25BC;  Glisse ton fichier ici  &#x25BC;"
+                       FontSize="17" FontWeight="SemiBold"
+                       Foreground="#FFD54F"
+                       Background="{StaticResource BgDeep}"
+                       HorizontalAlignment="Center"
+                       Padding="16,4"
+                       DockPanel.Dock="Top">
+                <TextBlock.Styles>
+                    <Style Selector="TextBlock#DropHintBar">
+                        <Style.Animations>
+                            <Animation Duration="0:0:1" IterationCount="INFINITE"
+                                       PlaybackDirection="Alternate">
+                                <KeyFrame Cue="0%">
+                                    <Setter Property="Opacity" Value="1.0"/>
+                                </KeyFrame>
+                                <KeyFrame Cue="100%">
+                                    <Setter Property="Opacity" Value="0.2"/>
+                                </KeyFrame>
+                            </Animation>
+                        </Style.Animations>
+                    </Style>
+                </TextBlock.Styles>
+            </TextBlock>
+
             <!-- Lecteur vidéo mpv — remplit l'espace restant -->
             <Border Background="Black" MinHeight="100">
                 <Grid>
                     <local:MpvHost x:Name="VideoHost"/>
-                    <Border x:Name="PlayerErrorBanner" IsVisible="False"
+<Border x:Name="PlayerErrorBanner" IsVisible="False"
                             Background="#DD111111" VerticalAlignment="Center"
                             HorizontalAlignment="Stretch" Padding="16,12">
                         <TextBlock x:Name="PlayerErrorText"
