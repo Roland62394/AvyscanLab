@@ -103,6 +103,16 @@ namespace CleanScan.Views
                 ["degrain_blksize"] = "8",  ["degrain_overlap"] = "4", ["degrain_pel"] = "2", ["degrain_search"] = "3", ["degrain_prefilter"] = "remgrain" },
         };
 
+        private static readonly Dictionary<string, string> FieldToFilterPresetCombo = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Sharp_Mode"] = "sharp_preset", ["Sharp_Strength"] = "sharp_preset",
+            ["Sharp_Radius"] = "sharp_preset", ["Sharp_Threshold"] = "sharp_preset",
+            ["denoise_mode"] = "denoise_preset", ["denoise_strength"] = "denoise_preset", ["denoise_dist"] = "denoise_preset",
+            ["degrain_mode"] = "degrain_preset", ["degrain_thSAD"] = "degrain_preset", ["degrain_thSADC"] = "degrain_preset",
+            ["degrain_blksize"] = "degrain_preset", ["degrain_overlap"] = "degrain_preset", ["degrain_pel"] = "degrain_preset",
+            ["degrain_search"] = "degrain_preset", ["degrain_prefilter"] = "degrain_preset",
+        };
+
         private static readonly Dictionary<string, string> OptionButtonLabels = new(StringComparer.OrdinalIgnoreCase)
         {
             ["preview"]           = "Preview",
@@ -1211,6 +1221,12 @@ namespace CleanScan.Views
         private bool  _sourceValidationErrorVisible;
         private Grid? _mainGrid;
 
+        private readonly List<string> _clipPaths = new();
+        private readonly List<Dictionary<string, string>> _clipConfigs = new();
+        private readonly List<string?> _clipPresetNames = new();
+        private bool _applyingPreset;
+        private int _activeClipIndex = -1;
+
 
         private MainWindowViewModel ViewModel => (MainWindowViewModel)DataContext!;
 
@@ -1271,6 +1287,7 @@ namespace CleanScan.Views
             InitSliders();
             InitRecordPanel();
             InitPlayerControls();
+            RefreshClipPresetCombo();
         }
 
         private void InitPlayerControls()
@@ -1306,7 +1323,7 @@ namespace CleanScan.Views
                     }
                     _ = LoadScriptAsync();
                 };
-                host.FileDropped += OnPlayerFileDrop;
+                host.FilesDropped += OnPlayerFilesDropped;
             }
             else
             {
@@ -1618,12 +1635,10 @@ namespace CleanScan.Views
             if (this.FindControl<TextBlock>("TimeLabel") is { } lbl)
                 lbl.Text = $"{Fmt(pos)} / {Fmt(dur)}";
 
-            if (this.FindControl<TextBlock>("FrameLabel") is { } fl && _mpvService is not null)
+            if (this.FindControl<TextBlock>("FrameLabel") is { } fl)
             {
-                var fps = _mpvService.GetFps();
-                var currentFrame = fps > 0 ? (int)(pos * fps) : 0;
-                var totalFrames = _mpvService.GetTotalFrames();
-                fl.Text = $"{currentFrame} / {totalFrames}";
+                var currentFrame = _fps > 0 ? (int)(pos * _fps) : 0;
+                fl.Text = $"{currentFrame} / {_totalFrames}";
             }
         }
 
@@ -2389,6 +2404,7 @@ namespace CleanScan.Views
         {
             if (!SharpPresets.TryGetValue(preset, out var values)) return;
 
+            _applyingPreset = true;
             _suppressTextEvents = true;
             try
             {
@@ -2408,13 +2424,16 @@ namespace CleanScan.Views
 
             foreach (var kv in values)
                 UpdateConfigurationValue(kv.Key, kv.Value, showValidationError: false);
+            _config.Set("sharp_preset", preset);
+            _applyingPreset = false;
+            MarkClipAsPerso();
         }
 
         private void ApplyDegrainPreset(string preset)
         {
             if (!DegrainPresets.TryGetValue(preset, out var values)) return;
 
-            // Mettre à jour les contrôles UI sans déclencher les handlers individuels
+            _applyingPreset = true;
             _suppressTextEvents = true;
             try
             {
@@ -2432,15 +2451,18 @@ namespace CleanScan.Views
                 _suppressTextEvents = false;
             }
 
-            // Mettre à jour la configuration et régénérer le script en une passe par paramètre
             foreach (var kv in values)
                 UpdateConfigurationValue(kv.Key, kv.Value, showValidationError: false);
+            _config.Set("degrain_preset", preset);
+            _applyingPreset = false;
+            MarkClipAsPerso();
         }
 
         private void ApplyDenoisePreset(string preset)
         {
             if (!DenoisePresets.TryGetValue(preset, out var values)) return;
 
+            _applyingPreset = true;
             _suppressTextEvents = true;
             try
             {
@@ -2460,26 +2482,31 @@ namespace CleanScan.Views
 
             foreach (var kv in values)
                 UpdateConfigurationValue(kv.Key, kv.Value, showValidationError: false);
+            _config.Set("denoise_preset", preset);
+            _applyingPreset = false;
+            MarkClipAsPerso();
         }
 
-        private void RegisterPathPickers() =>
-            RegisterSourcePicker("source", GetUiText("PickSourceTitle"));
-
-        private void RegisterSourcePicker(string name, string title)
+        /// <summary>Renames the active clip to the next "persoN" if it isn't already one.</summary>
+        private void MarkClipAsPerso()
         {
-            if (this.FindControl<TextBox>(name) is not { } textBox) return;
-
-            textBox.AddHandler(InputElement.PointerPressedEvent, async (_, e) =>
-            {
-                var chosen = await PromptForSourceAsync(textBox, title);
-                if (chosen is not null)
-                    await ApplyDetectedSourceAndRefreshAsync(chosen);
-                e.Handled = true;
-            }, RoutingStrategies.Tunnel, handledEventsToo: true);
-
-            textBox.AddHandler(DragDrop.DragOverEvent, OnSourceDragOver, RoutingStrategies.Bubble);
-            textBox.AddHandler(DragDrop.DropEvent,     OnSourceDrop,     RoutingStrategies.Bubble);
+            if (_activeClipIndex < 0 || _activeClipIndex >= _clipPresetNames.Count) return;
+            var currentName = _clipPresetNames[_activeClipIndex];
+            if (currentName is not null && currentName.StartsWith("perso", StringComparison.OrdinalIgnoreCase)) return;
+            _clipPresetNames[_activeClipIndex] = GetNextPersoName();
+            RestoreClipPresetCombo();
+            RebuildClipTabs();
         }
+
+        private void RegisterPathPickers()
+        {
+            if (this.FindControl<Border>("ClipTabsContainer") is { } container)
+            {
+                container.AddHandler(DragDrop.DragOverEvent, OnSourceDragOver, RoutingStrategies.Bubble);
+                container.AddHandler(DragDrop.DropEvent,     OnSourceDrop,     RoutingStrategies.Bubble);
+            }
+        }
+
 
         #endregion
 
@@ -2549,71 +2576,91 @@ namespace CleanScan.Views
 
         private void OnSourceDragOver(object? sender, DragEventArgs e)
         {
-            e.DragEffects = GetDroppedFilePath(e) is not null ? DragDropEffects.Copy : DragDropEffects.None;
+            e.DragEffects = GetDroppedFilePaths(e).Count > 0 ? DragDropEffects.Copy : DragDropEffects.None;
             e.Handled = true;
         }
 
         private async void OnSourceDrop(object? sender, DragEventArgs e)
         {
-            var path = GetDroppedFilePath(e);
-            if (path is null)
+            var paths = GetDroppedFilePaths(e);
+            if (paths.Count == 0)
             {
                 await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), GetUiText("DropInvalidFileType"));
                 return;
             }
-            await ApplyDetectedSourceAndRefreshAsync(path);
+
+            // Activate the first dropped file
+            await ApplyDetectedSourceAndRefreshAsync(paths[0]);
+
+            // Add remaining dropped files without activating
+            for (int i = 1; i < paths.Count; i++)
+            {
+                var normalized = _sourceService.NormalizeConfiguredPath(NormalizeSourceValue(paths[i]));
+                if (!_clipPaths.Any(p => string.Equals(p, normalized, StringComparison.OrdinalIgnoreCase)))
+                {
+                    _clipPaths.Add(normalized);
+                    _clipConfigs.Add(CaptureClipConfig());
+                    _clipPresetNames.Add(null);
+
+                }
+            }
+            if (paths.Count > 1)
+                RebuildClipTabs();
         }
 
-        private async void OnPlayerFileDrop(string path)
+        private async void OnPlayerFilesDropped(List<string> paths)
         {
-            var ext = Path.GetExtension(path);
-            if (string.IsNullOrWhiteSpace(ext)) return;
-            if (!VideoExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase) &&
-                !ImageExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase)) return;
-            await ApplyDetectedSourceAndRefreshAsync(path);
+            var valid = paths.Where(p =>
+            {
+                var ext = Path.GetExtension(p);
+                return !string.IsNullOrWhiteSpace(ext) &&
+                       (VideoExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase) ||
+                        ImageExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase));
+            }).ToList();
+
+            if (valid.Count == 0) return;
+
+            // Activate the first dropped file
+            await ApplyDetectedSourceAndRefreshAsync(valid[0]);
+
+            // Add remaining files without activating
+            for (int i = 1; i < valid.Count; i++)
+            {
+                var normalized = _sourceService.NormalizeConfiguredPath(NormalizeSourceValue(valid[i]));
+                if (!_clipPaths.Any(p => string.Equals(p, normalized, StringComparison.OrdinalIgnoreCase)))
+                {
+                    _clipPaths.Add(normalized);
+                    _clipConfigs.Add(CaptureClipConfig());
+                    _clipPresetNames.Add(null);
+
+                }
+            }
+            if (valid.Count > 1)
+                RebuildClipTabs();
         }
 
-        private static string? GetDroppedFilePath(DragEventArgs e)
+        private static List<string> GetDroppedFilePaths(DragEventArgs e)
         {
 #pragma warning disable CS0618
-            if (!e.Data.Contains(DataFormats.Files)) return null;
+            if (!e.Data.Contains(DataFormats.Files)) return [];
             var items = e.Data.GetFiles()?.ToList();
 #pragma warning restore CS0618
-            if (items is null || items.Count != 1) return null;
-            var path = items[0].TryGetLocalPath();
-            if (string.IsNullOrWhiteSpace(path)) return null;
-            var ext = Path.GetExtension(path);
-            return !string.IsNullOrWhiteSpace(ext) &&
-                   (VideoExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase) ||
-                    ImageExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase))
-                ? path : null;
-        }
+            if (items is null || items.Count == 0) return [];
 
-        private async Task<string?> PromptForSourceAsync(TextBox textBox, string title)
-        {
-            if (StorageProvider is not { } sp) return null;
-
-            var suggestedLocation = await GetSuggestedStartLocationAsync(sp, textBox.Text);
-            var filter = BuildSourceFileTypeFilter(textBox.Text);
-            var results = await sp.OpenFilePickerAsync(new FilePickerOpenOptions
+            var paths = new List<string>();
+            foreach (var item in items)
             {
-                Title             = title,
-                AllowMultiple     = false,
-                SuggestedStartLocation = suggestedLocation,
-                FileTypeFilter    = filter
-            });
-
-            var filePath = results.Count > 0 ? results[0].TryGetLocalPath() : null;
-            if (string.IsNullOrWhiteSpace(filePath)) return null;
-
-            var displayedPath = _sourceService.IsImageSource(filePath)
-                ? _sourceService.BuildImageSequenceSourcePath(filePath)
-                : filePath;
-
-            textBox.Text = string.Empty;
-            textBox.Text = displayedPath;
-            return displayedPath;
+                var path = item.TryGetLocalPath();
+                if (string.IsNullOrWhiteSpace(path)) continue;
+                var ext = Path.GetExtension(path);
+                if (!string.IsNullOrWhiteSpace(ext) &&
+                    (VideoExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase) ||
+                     ImageExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase)))
+                    paths.Add(path);
+            }
+            return paths;
         }
+
 
         private static IReadOnlyList<FilePickerFileType> BuildSourceFileTypeFilter(string? currentValue)
         {
@@ -2694,6 +2741,312 @@ namespace CleanScan.Views
 
             if (this.FindControl<TextBox>("source") is { } tb)
                 SetTextSafely(tb, normalized);
+
+            AddOrActivateClip(normalized);
+        }
+
+        private void AddOrActivateClip(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return;
+            var idx = _clipPaths.FindIndex(p => string.Equals(p, path, StringComparison.OrdinalIgnoreCase));
+            if (idx >= 0)
+                _activeClipIndex = idx;
+            else
+            {
+                _clipPaths.Add(path);
+                // New clip inherits the current config snapshot (filters, not source/crop)
+                _clipConfigs.Add(CaptureClipConfig());
+                _clipPresetNames.Add(null);
+                _activeClipIndex = _clipPaths.Count - 1;
+            }
+            RebuildClipTabs();
+        }
+
+        /// <summary>Captures the current filter config (excludes source/crop fields).</summary>
+        private Dictionary<string, string> CaptureClipConfig()
+        {
+            var snap = _config.Snapshot();
+            // Keep only filter-related keys (same exclusions as presets)
+            foreach (var key in PresetService.ExcludedKeys)
+                snap.Remove(key);
+            return snap;
+        }
+
+        /// <summary>Saves the current config into the active clip's config slot.</summary>
+        private void SaveActiveClipConfig()
+        {
+            if (_activeClipIndex >= 0 && _activeClipIndex < _clipConfigs.Count)
+                _clipConfigs[_activeClipIndex] = CaptureClipConfig();
+        }
+
+        /// <summary>Restores a clip's filter config into _config and refreshes all UI controls.</summary>
+        private void RestoreClipConfig(int index)
+        {
+            if (index < 0 || index >= _clipConfigs.Count) return;
+            var clipCfg = _clipConfigs[index];
+
+            _suppressTextEvents = true;
+            _applyingPreset = true;
+            try
+            {
+                foreach (var name in ScriptService.TextFieldNames)
+                {
+                    if (PresetService.ExcludedKeys.Contains(name)) continue;
+                    if (!clipCfg.TryGetValue(name, out var value)) continue;
+
+                    if (this.FindControl<Control>(name) is TextBox tb) tb.Text = value;
+                    else if (this.FindControl<Control>(name) is ComboBox cb) ApplyComboChoice(cb, name, value);
+
+                    _config.Set(name, value);
+                }
+
+                foreach (var name in ScriptService.BoolFieldNames)
+                {
+                    if (!clipCfg.TryGetValue(name, out var v) || !bool.TryParse(v, out var parsed)) continue;
+                    SetOptionToggleValue(name, parsed);
+                    _config.Set(name, parsed.ToString().ToLowerInvariant());
+                }
+
+                // Restore filter preset combo selections
+                foreach (var presetKey in new[] { "sharp_preset", "degrain_preset", "denoise_preset" })
+                {
+                    if (this.FindControl<ComboBox>(presetKey) is { } presetCombo)
+                    {
+                        if (clipCfg.TryGetValue(presetKey, out var presetVal) && !string.IsNullOrEmpty(presetVal))
+                            presetCombo.SelectedItem = presetVal;
+                        else
+                            presetCombo.SelectedIndex = -1;
+                    }
+                }
+            }
+            finally
+            {
+                _suppressTextEvents = false;
+                _applyingPreset = false;
+            }
+
+            SyncAllSliders();
+            UpdateOptionColumnVisibility();
+        }
+
+        private void RebuildClipTabs()
+        {
+            if (this.FindControl<WrapPanel>("ClipTabsPanel") is not { } panel) return;
+
+            // Keep only the "+" button (last child)
+            var addBtn = this.FindControl<Button>("AddClipBtn");
+            panel.Children.Clear();
+
+            for (int i = 0; i < _clipPaths.Count; i++)
+            {
+                var index = i;
+                var path = _clipPaths[i];
+                var filename = Path.GetFileName(path);
+                if (string.IsNullOrWhiteSpace(filename)) filename = path;
+                var isActive = i == _activeClipIndex;
+
+                var presetName = i < _clipPresetNames.Count ? _clipPresetNames[i] : null;
+                var presetSuffix = presetName is not null
+                    ? $"  [{presetName}]"
+                    : string.Empty;
+
+                var label = new TextBlock
+                {
+                    Text = filename + presetSuffix,
+                    FontSize = 11,
+                    VerticalAlignment = VerticalAlignment.Center,
+                };
+                if (isActive)
+                    label.Foreground = Brushes.White;
+
+                var closeBtn = new Button
+                {
+                    Content = "\u00d7",
+                    FontSize = 12,
+                    Background = Brushes.Transparent,
+                    Foreground = isActive
+                        ? new SolidColorBrush(Color.Parse("#FFFFFFA0"))
+                        : new SolidColorBrush(Color.Parse("#7984A5")),
+                    BorderThickness = new Thickness(0),
+                    Padding = new Thickness(4, 0, 0, 0),
+                    Cursor = new Cursor(StandardCursorType.Hand),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    MinWidth = 0,
+                    MinHeight = 0,
+                };
+                closeBtn.Click += (_, _) => RemoveClip(index);
+
+                var stack = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Spacing = 4,
+                };
+                stack.Children.Add(label);
+                stack.Children.Add(closeBtn);
+
+                var tab = new Border
+                {
+                    Background = isActive
+                        ? new SolidColorBrush(Color.Parse("#3B82C4"))
+                        : new SolidColorBrush(Color.Parse("#1A2030")),
+                    BorderBrush = isActive
+                        ? new SolidColorBrush(Color.Parse("#4A9AD4"))
+                        : new SolidColorBrush(Color.Parse("#3A4660")),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(4),
+                    Padding = new Thickness(10, 4),
+                    Margin = new Thickness(0, 0, 6, 4),
+                    Cursor = new Cursor(StandardCursorType.Hand),
+                    Child = stack,
+                };
+                tab.PointerPressed += (_, _) => SwitchToClip(index);
+                ToolTip.SetTip(tab, path);
+
+                panel.Children.Add(tab);
+            }
+
+            // Re-add the "+" button at the end
+            if (addBtn is not null)
+                panel.Children.Add(addBtn);
+        }
+
+        private async void SwitchToClip(int index)
+        {
+            if (index < 0 || index >= _clipPaths.Count || index == _activeClipIndex) return;
+
+            // Save current clip's filter config
+            SaveActiveClipConfig();
+
+            // Switch source (this sets _activeClipIndex via AddOrActivateClip)
+            await ApplyDetectedSourceAndRefreshAsync(_clipPaths[index]);
+
+            // Restore the target clip's filter config
+            RestoreClipConfig(_activeClipIndex);
+
+            // Restore per-clip preset selection
+            RestoreClipPresetCombo();
+
+            RegenerateScript(showValidationError: false);
+
+            if (TryValidateSourceSelection(out _))
+                await LoadScriptAsync();
+        }
+
+        /// <summary>Restores the per-clip preset ComboBox selection without triggering the change handler.</summary>
+        private void RestoreClipPresetCombo()
+        {
+            if (this.FindControl<ComboBox>("ClipPresetCombo") is not { } combo) return;
+            _suppressClipPresetChange = true;
+            try
+            {
+                var presetName = _activeClipIndex >= 0 && _activeClipIndex < _clipPresetNames.Count
+                    ? _clipPresetNames[_activeClipIndex]
+                    : null;
+
+                var isPerso = presetName?.StartsWith("perso", StringComparison.OrdinalIgnoreCase) == true;
+
+                var presets = _presetService.LoadPresets()
+                    .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+                    .Select(p => p.Name)
+                    .ToList();
+                combo.ItemsSource = presets;
+
+                if (presetName is not null && !isPerso && presets.Contains(presetName, StringComparer.OrdinalIgnoreCase))
+                {
+                    combo.SelectedItem = presetName;
+                    combo.PlaceholderText = null;
+                }
+                else
+                {
+                    combo.SelectedIndex = -1;
+                    combo.PlaceholderText = presetName; // shows "perso2" as placeholder
+                }
+            }
+            finally { _suppressClipPresetChange = false; }
+        }
+
+        private async void RemoveClip(int index)
+        {
+            if (index < 0 || index >= _clipPaths.Count) return;
+
+            bool removedActive = index == _activeClipIndex;
+            _clipPaths.RemoveAt(index);
+            if (index < _clipConfigs.Count) _clipConfigs.RemoveAt(index);
+            if (index < _clipPresetNames.Count) _clipPresetNames.RemoveAt(index);
+
+            if (_clipPaths.Count == 0)
+            {
+                _activeClipIndex = -1;
+                RebuildClipTabs();
+                await ApplyDetectedSourceAndRefreshAsync(string.Empty);
+                return;
+            }
+
+            if (removedActive)
+            {
+                _activeClipIndex = Math.Min(index, _clipPaths.Count - 1);
+                await ApplyDetectedSourceAndRefreshAsync(_clipPaths[_activeClipIndex]);
+                RestoreClipConfig(_activeClipIndex);
+                RestoreClipPresetCombo();
+                RegenerateScript(showValidationError: false);
+                if (TryValidateSourceSelection(out _))
+                    await LoadScriptAsync();
+            }
+            else
+            {
+                if (index < _activeClipIndex)
+                    _activeClipIndex--;
+                RebuildClipTabs();
+            }
+        }
+
+        private async void OnAddClipClick(object? sender, RoutedEventArgs e)
+        {
+            if (StorageProvider is not { } sp) return;
+
+            var currentSource = _config.Get("source");
+            var suggestedLocation = await GetSuggestedStartLocationAsync(sp, currentSource);
+            var filter = BuildSourceFileTypeFilter(currentSource);
+            var results = await sp.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = GetUiText("PickSourceTitle"),
+                AllowMultiple = true,
+                SuggestedStartLocation = suggestedLocation,
+                FileTypeFilter = filter
+            });
+
+            if (results.Count == 0) return;
+
+            var newPaths = new List<string>();
+            foreach (var file in results)
+            {
+                var filePath = file.TryGetLocalPath();
+                if (string.IsNullOrWhiteSpace(filePath)) continue;
+                var displayPath = _sourceService.IsImageSource(filePath)
+                    ? _sourceService.BuildImageSequenceSourcePath(filePath)
+                    : filePath;
+                newPaths.Add(displayPath);
+            }
+
+            if (newPaths.Count == 0) return;
+
+            // Activate the first selected file
+            await ApplyDetectedSourceAndRefreshAsync(newPaths[0]);
+
+            // Add remaining files without activating
+            for (int i = 1; i < newPaths.Count; i++)
+            {
+                var normalized = _sourceService.NormalizeConfiguredPath(NormalizeSourceValue(newPaths[i]));
+                if (!_clipPaths.Any(p => string.Equals(p, normalized, StringComparison.OrdinalIgnoreCase)))
+                {
+                    _clipPaths.Add(normalized);
+                    _clipConfigs.Add(CaptureClipConfig());
+                    _clipPresetNames.Add(null);
+
+                }
+            }
+            if (newPaths.Count > 1)
+                RebuildClipTabs();
         }
 
         private void UpdateImageRangeFields(string directory)
@@ -2753,6 +3106,30 @@ namespace CleanScan.Views
 
             if (!changed && !string.Equals(key, "source", StringComparison.OrdinalIgnoreCase))
                 return;
+
+            // Rename the active clip's preset to a unique "persoN" when a filter value is manually changed
+            if (changed && !_applyingPreset && !IsPathField(key)
+                && !PresetService.ExcludedKeys.Contains(key)
+                && _activeClipIndex >= 0 && _activeClipIndex < _clipPresetNames.Count)
+            {
+                var currentName = _clipPresetNames[_activeClipIndex];
+                if (currentName is null || !currentName.StartsWith("perso", StringComparison.OrdinalIgnoreCase))
+                {
+                    _clipPresetNames[_activeClipIndex] = GetNextPersoName();
+                    RestoreClipPresetCombo();
+                    RebuildClipTabs();
+                }
+
+                // Deselect filter preset combo when a field belonging to that filter is manually changed
+                if (FieldToFilterPresetCombo.TryGetValue(key, out var filterPresetCombo)
+                    && this.FindControl<ComboBox>(filterPresetCombo) is { } filterCombo)
+                {
+                    _suppressTextEvents = true;
+                    try { filterCombo.SelectedIndex = -1; }
+                    finally { _suppressTextEvents = false; }
+                    _config.Set(filterPresetCombo, string.Empty);
+                }
+            }
 
             if (key.Equals("source", StringComparison.OrdinalIgnoreCase))
             {
@@ -3846,11 +4223,35 @@ namespace CleanScan.Views
 
         #region Presets
 
-        private async void OnPresetClick(object? sender, RoutedEventArgs e) =>
-            await _dialogService.ShowPresetDialogAsync(this, _presetService, _config, ApplyPresetValuesAsync, ViewModel);
+        private async void OnPresetClick(object? sender, RoutedEventArgs e)
+        {
+            await _dialogService.ShowPresetDialogAsync(this, _presetService, _config, ApplyPresetToAllClipsAsync, ViewModel);
+            RefreshClipPresetCombo();
+            RestoreClipPresetCombo();
+            RebuildClipTabs();
+        }
 
+        /// <summary>Applies preset values to the current UI/config AND propagates to all clip configs.</summary>
+        private async Task ApplyPresetToAllClipsAsync(string presetName, Dictionary<string, string> values)
+        {
+            await ApplyPresetValuesAsync(values);
+
+            // Propagate to all clip configs
+            var filterSnap = CaptureClipConfig();
+            for (int i = 0; i < _clipConfigs.Count; i++)
+                _clipConfigs[i] = new Dictionary<string, string>(filterSnap, StringComparer.OrdinalIgnoreCase);
+
+            // Set the preset name on all clips
+            for (int i = 0; i < _clipPresetNames.Count; i++)
+                _clipPresetNames[i] = presetName;
+        }
+
+        /// <summary>Applies preset values to the current UI/config only (per-clip).</summary>
         private async Task ApplyPresetValuesAsync(Dictionary<string, string> values)
         {
+            _applyingPreset = true;
+            try
+            {
             // Ignore source files and crop values from presets
             foreach (var key in PresetService.ExcludedKeys)
                 values.Remove(key);
@@ -3875,11 +4276,64 @@ namespace CleanScan.Views
             var useImage = values.TryGetValue(UseImageConfigName, out var uiv)
                 && bool.TryParse(uiv, out var parsedUseImage) && parsedUseImage;
             UpdateSourceSelection(isFilmSelected: !useImage, updateConfig: true);
+            SyncAllSliders();
             RegenerateScript(showValidationError: true);
             UpdateOptionColumnVisibility();
 
+            // Save into current clip config
+            SaveActiveClipConfig();
+
             if (TryValidateSourceSelection(out _))
                 await _refreshDebouncer.DebounceAsync(() => LoadScriptAsync());
+            }
+            finally { _applyingPreset = false; }
+        }
+
+        /// <summary>Returns a unique "persoN" name not already used by another clip.</summary>
+        private string GetNextPersoName()
+        {
+            int n = 1;
+            while (_clipPresetNames.Contains($"perso{n}", StringComparer.OrdinalIgnoreCase))
+                n++;
+            return $"perso{n}";
+        }
+
+        /// <summary>Populates the per-clip preset ComboBox from saved presets.</summary>
+        private void RefreshClipPresetCombo()
+        {
+            if (this.FindControl<ComboBox>("ClipPresetCombo") is not { } combo) return;
+            var presets = _presetService.LoadPresets()
+                .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(p => p.Name)
+                .ToList();
+
+            var current = combo.SelectedItem as string;
+            combo.ItemsSource = presets;
+            if (current is not null && presets.Contains(current))
+                combo.SelectedItem = current;
+            else
+                combo.SelectedIndex = -1;
+        }
+
+        private bool _suppressClipPresetChange;
+
+        private async void OnClipPresetChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            if (_suppressClipPresetChange) return;
+            if (sender is not ComboBox combo) return;
+            var name = combo.SelectedItem as string;
+            if (string.IsNullOrWhiteSpace(name)) return;
+
+            var preset = _presetService.LoadPresets()
+                .FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+            if (preset?.Values is null) return;
+
+            // Store preset name for this clip
+            if (_activeClipIndex >= 0 && _activeClipIndex < _clipPresetNames.Count)
+                _clipPresetNames[_activeClipIndex] = name;
+
+            await ApplyPresetValuesAsync(new Dictionary<string, string>(preset.Values, StringComparer.OrdinalIgnoreCase));
+            RebuildClipTabs();
         }
 
         #endregion

@@ -139,7 +139,7 @@ public sealed class DialogService : IDialogService
         Window owner,
         IPresetService presets,
         ConfigStore config,
-        Func<Dictionary<string, string>, Task> applyCallback,
+        Func<string, Dictionary<string, string>, Task> applyCallback,
         MainWindowViewModel vm)
     {
         var presetList = presets.LoadPresets();
@@ -193,7 +193,6 @@ public sealed class DialogService : IDialogService
         };
 
         var saveButton = MakePresetActionButton(vm.GetUiText("PresetSaveButton"));
-        var updateButton = MakePresetActionButton(vm.GetUiText("PresetUpdateButton"));
         var deleteButton = MakePresetActionButton(vm.GetUiText("PresetDeleteButton"));
         var loadButton = MakePresetActionButton(vm.GetUiText("PresetLoadButton"));
         var closeButton = MakePresetActionButton(vm.GetUiText("GamMacCloseButton"));
@@ -237,6 +236,23 @@ public sealed class DialogService : IDialogService
                             LetterSpacing = 1.5,
                             FontFamily = monoFont
                         },
+                        new Border
+                        {
+                            Background = new SolidColorBrush(Color.Parse("#1E2A3A")),
+                            BorderBrush = new SolidColorBrush(Color.Parse("#3B82C4")),
+                            BorderThickness = new Thickness(1),
+                            CornerRadius = new CornerRadius(4),
+                            Padding = new Thickness(10, 6),
+                            Margin = new Thickness(0, 2, 0, 4),
+                            Child = new TextBlock
+                            {
+                                Text = vm.GetUiText("PresetGlobalWarning"),
+                                Foreground = new SolidColorBrush(Color.Parse("#7EB8E0")),
+                                FontSize = 11,
+                                FontFamily = monoFont,
+                                TextWrapping = TextWrapping.Wrap
+                            }
+                        },
                         comboBox,
                         new TextBlock
                         {
@@ -255,7 +271,7 @@ public sealed class DialogService : IDialogService
                             Orientation = Orientation.Horizontal,
                             HorizontalAlignment = HorizontalAlignment.Right,
                             Spacing = 8,
-                            Children = { saveButton, updateButton, deleteButton, loadButton, closeButton }
+                            Children = { saveButton, deleteButton, loadButton, closeButton }
                         }
                     }
                 }
@@ -270,21 +286,17 @@ public sealed class DialogService : IDialogService
         saveButton.Click += (_, _) =>
         {
             var name = TrimmedName();
-            if (string.IsNullOrWhiteSpace(name) || presetList.Any(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase))) return;
-            presetList.Add(new Preset(name, presets.CaptureCurrentValues(config)));
+            if (string.IsNullOrWhiteSpace(name)) return;
+
+            var existing = presetList.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+            if (existing is not null)
+                existing.Values = presets.CaptureCurrentValues(config);
+            else
+                presetList.Add(new Preset(name, presets.CaptureCurrentValues(config)));
+
             presets.SavePresets(presetList);
             RefreshCombo();
             comboBox.SelectedItem = ordered.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
-        };
-
-        updateButton.Click += (_, _) =>
-        {
-            var existing = presetList.FirstOrDefault(p => string.Equals(p.Name, TrimmedName(), StringComparison.OrdinalIgnoreCase));
-            if (existing is null) return;
-            existing.Values = presets.CaptureCurrentValues(config);
-            presets.SavePresets(presetList);
-            RefreshCombo();
-            comboBox.SelectedItem = ordered.FirstOrDefault(p => string.Equals(p.Name, existing.Name, StringComparison.OrdinalIgnoreCase));
         };
 
         deleteButton.Click += (_, _) =>
@@ -301,7 +313,8 @@ public sealed class DialogService : IDialogService
         loadButton.Click += async (_, _) =>
         {
             var target = FindPreset();
-            if (target is not null) await applyCallback(target.Values);
+            if (target?.Values is not null)
+                await applyCallback(target.Name, new Dictionary<string, string>(target.Values, StringComparer.OrdinalIgnoreCase));
         };
 
         closeButton.Click += (_, _) => dialog.Close();

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Avalonia.Controls;
 using Avalonia.Platform;
@@ -14,7 +15,7 @@ namespace CleanScan.Views;
 public sealed class MpvHost : NativeControlHost
 {
     public event Action<nint>?   HandleReady;
-    public event Action<string>? FileDropped;
+    public event Action<List<string>>? FilesDropped;
 
     // ── Win32 P/Invoke ───────────────────────────────────────────────────────
 
@@ -87,15 +88,20 @@ public sealed class MpvHost : NativeControlHost
             var count = DragQueryFile(hDrop, 0xFFFFFFFF, null, 0);
             if (count == 0) return;
 
-            // Only process the first dropped item.
-            var len = DragQueryFile(hDrop, 0, null, 0);
-            if (len == 0) return;
-            var buf = new char[len + 1];
-            DragQueryFile(hDrop, 0, buf, len + 1);
-            var path = new string(buf, 0, (int)len);
+            var paths = new List<string>();
+            for (uint i = 0; i < count; i++)
+            {
+                var len = DragQueryFile(hDrop, i, null, 0);
+                if (len == 0) continue;
+                var buf = new char[len + 1];
+                DragQueryFile(hDrop, i, buf, len + 1);
+                var path = new string(buf, 0, (int)len);
+                if (!string.IsNullOrEmpty(path))
+                    paths.Add(path);
+            }
 
-            if (!string.IsNullOrEmpty(path))
-                Dispatcher.UIThread.Post(() => FileDropped?.Invoke(path));
+            if (paths.Count > 0)
+                Dispatcher.UIThread.Post(() => FilesDropped?.Invoke(paths));
         }
         finally
         {
