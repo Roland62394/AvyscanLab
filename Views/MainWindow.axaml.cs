@@ -34,6 +34,9 @@ namespace CleanScan.Views
         private const string WindowSettingsFileName = "window-settings.json";
         private const string PresetsFileName        = "presets.json";
         private const string EncodingPresetsFileName = "encoding_presets.json";
+
+        /// <summary>Trial: max recording duration per clip in seconds. 0 = unlimited (full version).</summary>
+        private const int TrialMaxSeconds = 30;
         private const string UseImageConfigName     = ScriptService.UseImageConfigName;
 
         #endregion
@@ -379,7 +382,7 @@ namespace CleanScan.Views
                 "===========================================\n" +
                 "        CLEANSCAN  —  USER GUIDE\n" +
                 "       Trial version — recording\n" +
-                "          limited to 60 s. per clip\n" +
+                "          limited to 30 s. per clip\n" +
                 "===========================================\n\n" +
 
                 "CleanScan is a restoration tool for digitized\n" +
@@ -1226,6 +1229,10 @@ namespace CleanScan.Views
         private readonly List<string?> _clipPresetNames = new();
         private bool _applyingPreset;
         private int _activeClipIndex = -1;
+
+        // Batch encoding state
+        private readonly List<bool> _clipBatchSelected = new();
+        private readonly List<string?> _clipBatchEncodingPreset = new();
 
 
         private MainWindowViewModel ViewModel => (MainWindowViewModel)DataContext!;
@@ -2601,7 +2608,8 @@ namespace CleanScan.Views
                     _clipPaths.Add(normalized);
                     _clipConfigs.Add(CaptureClipConfig());
                     _clipPresetNames.Add(null);
-
+                    _clipBatchSelected.Add(true);
+                    _clipBatchEncodingPreset.Add(null);
                 }
             }
             if (paths.Count > 1)
@@ -2632,7 +2640,8 @@ namespace CleanScan.Views
                     _clipPaths.Add(normalized);
                     _clipConfigs.Add(CaptureClipConfig());
                     _clipPresetNames.Add(null);
-
+                    _clipBatchSelected.Add(true);
+                    _clipBatchEncodingPreset.Add(null);
                 }
             }
             if (valid.Count > 1)
@@ -2757,6 +2766,8 @@ namespace CleanScan.Views
                 // New clip inherits the current config snapshot (filters, not source/crop)
                 _clipConfigs.Add(CaptureClipConfig());
                 _clipPresetNames.Add(null);
+                _clipBatchSelected.Add(true);
+                _clipBatchEncodingPreset.Add(null);
                 _activeClipIndex = _clipPaths.Count - 1;
             }
             RebuildClipTabs();
@@ -2973,6 +2984,8 @@ namespace CleanScan.Views
             _clipPaths.RemoveAt(index);
             if (index < _clipConfigs.Count) _clipConfigs.RemoveAt(index);
             if (index < _clipPresetNames.Count) _clipPresetNames.RemoveAt(index);
+            if (index < _clipBatchSelected.Count) _clipBatchSelected.RemoveAt(index);
+            if (index < _clipBatchEncodingPreset.Count) _clipBatchEncodingPreset.RemoveAt(index);
 
             if (_clipPaths.Count == 0)
             {
@@ -3042,7 +3055,8 @@ namespace CleanScan.Views
                     _clipPaths.Add(normalized);
                     _clipConfigs.Add(CaptureClipConfig());
                     _clipPresetNames.Add(null);
-
+                    _clipBatchSelected.Add(true);
+                    _clipBatchEncodingPreset.Add(null);
                 }
             }
             if (newPaths.Count > 1)
@@ -3458,6 +3472,21 @@ namespace CleanScan.Views
                 };
 
             RefreshEncodingPresetCombo();
+
+            if (this.FindControl<ComboBox>("RecordPresetCombo") is { } presetCombo)
+                presetCombo.SelectionChanged += OnRecordPresetSelectionChanged;
+        }
+
+        private void OnRecordPresetSelectionChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            if (sender is not ComboBox combo) return;
+            var name = combo.SelectedItem as string;
+            if (string.IsNullOrWhiteSpace(name)) return;
+
+            var preset = _encodingPresetService.LoadPresets()
+                .FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+            if (preset?.Values is not null)
+                ApplyEncodingValues(preset.Values);
         }
 
         private void OnRecordEncoderChanged(object? sender, SelectionChangedEventArgs e)
@@ -3710,6 +3739,65 @@ namespace CleanScan.Views
             }
             if (this.FindControl<Border>("RecordOverlay") is { } overlay)
                 overlay.IsVisible = _recordOpen;
+            if (_recordOpen)
+                RebuildBatchClipList();
+        }
+
+        private void RebuildBatchClipList()
+        {
+            if (this.FindControl<StackPanel>("BatchClipList") is not { } panel) return;
+            panel.Children.Clear();
+
+            // Sync batch selection list
+            while (_clipBatchSelected.Count < _clipPaths.Count) _clipBatchSelected.Add(true);
+
+            var monoFont = new FontFamily("Consolas,Cascadia Code,monospace");
+
+            for (int i = 0; i < _clipPaths.Count; i++)
+            {
+                var index = i;
+                var filename = Path.GetFileName(_clipPaths[i]);
+                if (string.IsNullOrWhiteSpace(filename)) filename = _clipPaths[i];
+
+                var presetName = _clipPresetNames.Count > i ? _clipPresetNames[i] : null;
+                var presetSuffix = presetName is not null ? $"  [{presetName}]" : "";
+
+                var cb = new CheckBox
+                {
+                    IsChecked = _clipBatchSelected[i],
+                    Content = filename + presetSuffix,
+                    FontSize = 11,
+                    FontFamily = monoFont,
+                    Foreground = new SolidColorBrush(Color.Parse("#C8D0E0")),
+                    VerticalContentAlignment = VerticalAlignment.Center,
+                };
+                cb.Click += (_, _) =>
+                {
+                    if (index < _clipBatchSelected.Count)
+                        _clipBatchSelected[index] = cb.IsChecked == true;
+                };
+                panel.Children.Add(cb);
+            }
+
+            // Update localized labels
+            if (this.FindControl<TextBlock>("BatchClipListLabel") is { } lbl)
+                lbl.Text = GetUiText("BatchClipListLabel");
+            if (this.FindControl<CheckBox>("BatchSelectAllCheck") is { } allCb)
+                allCb.Content = GetUiText("BatchSelectAll");
+            if (this.FindControl<CheckBox>("ShutdownCheckBox") is { } shutCb)
+                shutCb.Content = GetUiText("ShutdownCheckBox");
+        }
+
+        private void OnBatchSelectAllClick(object? sender, RoutedEventArgs e)
+        {
+            if (sender is not CheckBox allCb) return;
+            var selected = allCb.IsChecked == true;
+            for (int i = 0; i < _clipBatchSelected.Count; i++)
+                _clipBatchSelected[i] = selected;
+            RebuildBatchClipList();
+            // Re-sync the select-all checkbox state
+            if (this.FindControl<CheckBox>("BatchSelectAllCheck") is { } cb)
+                cb.IsChecked = selected;
         }
 
         private async void OnRecordDirPickClick(object? sender, RoutedEventArgs e)
@@ -3722,8 +3810,12 @@ namespace CleanScan.Views
                 });
             if (folder.Count > 0 && this.FindControl<TextBox>("RecordDir") is { } tb)
             {
-                tb.Text = folder[0].Path.LocalPath;
-                UpdateDiskSpaceLabel(tb.Text);
+                try
+                {
+                    tb.Text = folder[0].Path.LocalPath;
+                    UpdateDiskSpaceLabel(tb.Text);
+                }
+                catch { /* guard against invalid URI for root drives */ }
             }
         }
 
@@ -3738,12 +3830,13 @@ namespace CleanScan.Views
             try
             {
                 var root = Path.GetPathRoot(dirPath);
-                if (root is null) { lbl.Text = ""; return; }
+                if (string.IsNullOrWhiteSpace(root)) { lbl.Text = ""; return; }
                 var drive = new DriveInfo(root);
-                var freeGb = drive.AvailableFreeSpace / (1024.0 * 1024.0);
-                lbl.Text = freeGb >= 1024
-                    ? $"({freeGb / 1024.0:F1} Go)"
-                    : $"({freeGb:F0} Mo)";
+                if (!drive.IsReady) { lbl.Text = ""; return; }
+                var freeMb = drive.AvailableFreeSpace / (1024.0 * 1024.0);
+                lbl.Text = freeMb >= 1024
+                    ? $"({freeMb / 1024.0:F1} Go)"
+                    : $"({freeMb:F0} Mo)";
             }
             catch { lbl.Text = ""; }
         }
@@ -3751,103 +3844,53 @@ namespace CleanScan.Views
         private Process? _encodingProcess;
         private CancellationTokenSource? _encodingCts;
         private string _lastStderrLine = string.Empty;
+        private readonly List<string> _stderrLines = new();
 
-        private async void OnRecordStartClick(object? sender, RoutedEventArgs e)
+        /// <summary>Builds ffmpeg arguments from encoding values dictionary.</summary>
+        private readonly HashSet<string> _usedOutputPaths = new(StringComparer.OrdinalIgnoreCase);
+
+        private (string ffArgs, string outputPath)? BuildFfmpegArgs(
+            Dictionary<string, string> encVals, string renderScriptPath, string outputDir, string sourceFileName)
         {
-            // If encoding is running, cancel it
-            if (_encodingProcess is { HasExited: false })
-            {
-                _encodingCts?.Cancel();
-                try { _encodingProcess.Kill(entireProcessTree: true); } catch { }
-                SetRecordStartButtonState(idle: true);
-                return;
-            }
+            var encoder   = encVals.GetValueOrDefault("encoder", "x264");
+            var container = encVals.GetValueOrDefault("container", "mkv");
+            var qualityMode = encVals.GetValueOrDefault("quality_mode", "crf");
+            var crfValue  = encVals.GetValueOrDefault("crf", "18");
+            var bitrateText = encVals.GetValueOrDefault("bitrate", "20");
+            var chroma    = encVals.GetValueOrDefault("chroma", "yuv420p");
+            var resize    = encVals.GetValueOrDefault("resize", "original");
 
-            var dir = this.FindControl<TextBox>("RecordDir")?.Text?.Trim();
-            var fileName = this.FindControl<TextBox>("RecordFileName")?.Text?.Trim();
-            var encoder = (this.FindControl<ComboBox>("RecordEncoder")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "x264";
-            var container = (this.FindControl<ComboBox>("RecordContainer")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "mkv";
-
-            if (string.IsNullOrWhiteSpace(dir))
-            {
-                await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), GetUiText("RecordNoDirError"));
-                return;
-            }
-            if (string.IsNullOrWhiteSpace(fileName))
-            {
-                await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), GetUiText("RecordNoFileError"));
-                return;
-            }
-
-            // Ensure output dir exists
-            try { Directory.CreateDirectory(dir); }
-            catch (Exception ex)
-            {
-                await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), ex.Message);
-                return;
-            }
-
-            // Generate a render script (preview=false, preview_half=false)
-            var renderScriptPath = GenerateRenderScript();
-            if (renderScriptPath is null)
-            {
-                await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), GetUiText("RecordNoScriptError"));
-                return;
-            }
-
-            // Find ffmpeg
-            var ffmpegPath = FindFfmpeg();
-            if (ffmpegPath is null)
-            {
-                await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), GetUiText("RecordFfmpegNotFound"));
-                return;
-            }
-
-            // Build output path and ffmpeg arguments
+            var scaleFilter = resize != "original" ? $"-vf scale=-2:{resize}" : "";
             var isImageSeq = encoder is "tiff" or "png";
+            // Trial limit applied directly in compiled code (not in script)
+            var durationLimit = TrialMaxSeconds > 0 ? $"-t {TrialMaxSeconds}" : "";
+            // Use -f avisynth to explicitly tell ffmpeg to use the AviSynth demuxer
+            var inputArgs = $"-f avisynth -i \"{renderScriptPath}\"";
+
             string outputPath;
             string ffArgs;
-
-            // Read new encoding parameters
-            var qualityMode = (this.FindControl<ComboBox>("RecordQualityMode")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "crf";
-            var crfValue = (int)(this.FindControl<Slider>("RecordCrfSlider")?.Value ?? 18);
-            var bitrateText = this.FindControl<TextBox>("RecordBitrate")?.Text?.Trim() ?? "20";
-            var chroma = (this.FindControl<ComboBox>("RecordChroma")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "yuv420p";
-            var resize = (this.FindControl<ComboBox>("RecordResize")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "original";
-
-            // Enforce minimum bitrate based on chroma + resolution
-            if (qualityMode == "bitrate" && encoder is "x264" or "x265")
-            {
-                var minBr = ComputeMinBitrate();
-                if (!int.TryParse(bitrateText, out var brVal) || brVal < minBr)
-                {
-                    bitrateText = minBr.ToString();
-                    if (this.FindControl<TextBox>("RecordBitrate") is { } brTb)
-                        brTb.Text = bitrateText;
-                }
-            }
-
-            // Build scale filter for resize (preserves aspect ratio, dimensions divisible by 2)
-            var scaleFilter = resize != "original" ? $"-vf scale=-2:{resize}" : "";
 
             if (isImageSeq)
             {
                 var ext = encoder == "tiff" ? "tif" : "png";
-                var seqDir = Path.Combine(dir, fileName);
-                try { Directory.CreateDirectory(seqDir); }
-                catch (Exception ex)
-                {
-                    await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), ex.Message);
-                    return;
-                }
+                var seqDir = Path.Combine(outputDir, sourceFileName);
+                try { Directory.CreateDirectory(seqDir); } catch { return null; }
                 outputPath = Path.Combine(seqDir, $"%05d.{ext}");
-                ffArgs = $"-progress pipe:2 -t 60 -i \"{renderScriptPath}\" {scaleFilter} \"{outputPath}\"";
+                ffArgs = $"-progress pipe:2 {inputArgs} {durationLimit} {scaleFilter} \"{outputPath}\"";
             }
             else
             {
-                outputPath = Path.Combine(dir, $"{fileName}.{container}");
+                // Deduplicate output filenames (e.g. two clips named "video.avi" in different folders)
+                var baseName = sourceFileName;
+                outputPath = Path.Combine(outputDir, $"{baseName}.{container}");
+                int dup = 2;
+                while (_usedOutputPaths.Contains(outputPath))
+                {
+                    outputPath = Path.Combine(outputDir, $"{baseName}_{dup}.{container}");
+                    dup++;
+                }
+                _usedOutputPaths.Add(outputPath);
 
-                // Build quality argument (CRF or bitrate) for lossy encoders
                 var qualityArgs = "";
                 if (encoder is "x264" or "x265")
                 {
@@ -3865,56 +3908,226 @@ namespace CleanScan.Views
                     "prores"  => $"-c:v prores_ks -profile:v 3 -pix_fmt {chroma}",
                     _         => $"-c:v libx264 {qualityArgs} -preset medium -pix_fmt {chroma}"
                 };
-                ffArgs = $"-progress pipe:2 -t 60 -i \"{renderScriptPath}\" {scaleFilter} {codecArgs} -y \"{outputPath}\"";
+                // -movflags +faststart: move moov atom to start for seekable MP4/MOV
+                var movFlags = container is "mp4" or "mov" ? "-movflags +faststart" : "";
+                ffArgs = $"-progress pipe:2 {inputArgs} {durationLimit} {scaleFilter} {codecArgs} {movFlags} -y \"{outputPath}\"";
             }
+
+            return (ffArgs, outputPath);
+        }
+
+        /// <summary>Prepares config for a specific clip and regenerates the AVS script.</summary>
+        private string? PrepareClipForEncoding(int clipIndex)
+        {
+            if (clipIndex < 0 || clipIndex >= _clipPaths.Count) return null;
+
+            var sourcePath = _clipPaths[clipIndex];
+            var normalized = _sourceService.NormalizeConfiguredPath(sourcePath);
+
+            // Set source
+            _config.Set("source", normalized);
+            _config.Set("film", normalized);
+            _config.Set("img", normalized);
+
+            // Restore filter config
+            if (clipIndex < _clipConfigs.Count)
+            {
+                var clipCfg = _clipConfigs[clipIndex];
+                foreach (var kv in clipCfg)
+                    _config.Set(kv.Key, kv.Value);
+            }
+
+            // Reset crop
+            foreach (var cropField in new[] { "Crop_L", "Crop_T", "Crop_R", "Crop_B" })
+                _config.Set(cropField, "0");
+            _config.Set("enable_crop", "false");
+
+            // Set source type
+            var isFilm = _sourceService.IsVideoSource(sourcePath);
+            _config.Set("use_img", (!isFilm).ToString().ToLowerInvariant());
+
+            // Generate script
+            _scriptService.Generate(_config.Snapshot(), ViewModel.CurrentLanguageCode);
+
+            return GenerateRenderScript();
+        }
+
+        private async void OnRecordStartClick(object? sender, RoutedEventArgs e)
+        {
+            // If encoding is running, cancel it
+            if (_encodingProcess is { HasExited: false })
+            {
+                _encodingCts?.Cancel();
+                try { _encodingProcess.Kill(entireProcessTree: true); } catch { }
+                SetRecordStartButtonState(idle: true);
+                return;
+            }
+
+            var dir = this.FindControl<TextBox>("RecordDir")?.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(dir))
+            {
+                await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), GetUiText("RecordNoDirError"));
+                return;
+            }
+
+            // Collect selected clips
+            var jobs = new List<int>();
+            for (int i = 0; i < _clipPaths.Count; i++)
+            {
+                if (i < _clipBatchSelected.Count && _clipBatchSelected[i])
+                    jobs.Add(i);
+            }
+            if (jobs.Count == 0)
+            {
+                await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), GetUiText("RecordNoClipSelected"));
+                return;
+            }
+
+            // Ensure output dir exists
+            try
+            {
+                // Root paths like "E:\" already exist — CreateDirectory is fine
+                if (!Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+            }
+            catch (Exception ex)
+            {
+                await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), ex.Message);
+                return;
+            }
+
+            // Find ffmpeg
+            var ffmpegPath = FindFfmpeg();
+            if (ffmpegPath is null)
+            {
+                await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), GetUiText("RecordFfmpegNotFound"));
+                return;
+            }
+
+            // Verify ffmpeg has AviSynth support
+            var avsSupported = await CheckFfmpegAviSynthSupport(ffmpegPath);
+            if (!avsSupported)
+            {
+                await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"),
+                    "ffmpeg does not support AviSynth input.\nPlease use a ffmpeg build with AviSynth support (e.g. gyan.dev full build).");
+                return;
+            }
+
+            var shutdownAfter = this.FindControl<CheckBox>("ShutdownCheckBox")?.IsChecked == true;
+            var defaultEncoding = CaptureEncodingValues();
+
+            // Save current state for restoration after batch
+            SaveActiveClipConfig();
+            var savedConfig = _config.Snapshot();
+            var savedClipIndex = _activeClipIndex;
 
             SetRecordStartButtonState(idle: false);
             SetRecordProgressVisible(true);
+            _usedOutputPaths.Clear();
             _encodingCts = new CancellationTokenSource();
-            _lastStderrLine = string.Empty;
 
-            // Get total duration from mpv for progress calculation
-            var totalDuration = _mpvService.Duration;
+            int successCount = 0;
+            var errors = new List<string>();
 
             try
             {
-                _encodingProcess = new Process
+                for (int jobIdx = 0; jobIdx < jobs.Count; jobIdx++)
                 {
-                    StartInfo = new ProcessStartInfo
+                    if (_encodingCts.IsCancellationRequested) break;
+
+                    var clipIndex = jobs[jobIdx];
+                    var sourceFileName = Path.GetFileNameWithoutExtension(_clipPaths[clipIndex]);
+                    var batchLabel = string.Format(GetUiText("BatchProgress"), jobIdx + 1, jobs.Count);
+                    UpdateRecordProgress(0, $"{batchLabel} — {sourceFileName}");
+
+                    // Prepare clip's AVS script
+                    var renderScriptPath = PrepareClipForEncoding(clipIndex);
+                    if (renderScriptPath is null || !File.Exists(renderScriptPath))
                     {
-                        FileName = ffmpegPath,
-                        Arguments = ffArgs,
-                        UseShellExecute = false,
-                        CreateNoWindow = true,
-                        RedirectStandardError = true
-                    },
-                    EnableRaisingEvents = true
-                };
+                        DebugLog($"Render script missing for clip {clipIndex}: {renderScriptPath}");
+                        errors.Add($"{sourceFileName}: {GetUiText("RecordNoScriptError")}");
+                        continue;
+                    }
+                    DebugLog($"Render script ready: {renderScriptPath} ({new FileInfo(renderScriptPath).Length} bytes)");
 
-                _encodingProcess.Start();
+                    // Build ffmpeg args
+                    var result = BuildFfmpegArgs(defaultEncoding, renderScriptPath, dir, sourceFileName);
+                    if (result is null)
+                    {
+                        errors.Add($"{sourceFileName}: failed to build output path");
+                        continue;
+                    }
 
-                // Read stderr asynchronously to avoid deadlock and parse progress
-                var stderrTask = ReadFfmpegStderrAsync(_encodingProcess.StandardError, totalDuration, _encodingCts.Token);
+                    var (ffArgs, outputPath) = result.Value;
+                    _lastStderrLine = string.Empty;
+                    _stderrLines.Clear();
+                    DebugLog($"ffmpeg: {ffmpegPath} {ffArgs}");
 
-                // Wait for exit asynchronously
-                await _encodingProcess.WaitForExitAsync(_encodingCts.Token);
-                await stderrTask;
+                    try
+                    {
+                        var psi = new ProcessStartInfo
+                        {
+                            FileName = ffmpegPath,
+                            Arguments = ffArgs,
+                            UseShellExecute = false,
+                            CreateNoWindow = true,
+                            RedirectStandardError = true,
+                            WorkingDirectory = Path.GetDirectoryName(renderScriptPath) ?? ""
+                        };
 
-                if (_encodingProcess.ExitCode == 0)
-                {
-                    UpdateDiskSpaceLabel(dir);
-                    UpdateRecordProgress(100, "100%");
-                    await _dialogService.ShowErrorAsync(this, GetUiText("RecordBtn"), GetUiText("RecordDoneMsg"));
-                    await _dialogService.ShowErrorAsync(this,
-                        GetUiText("TrialTitle"),
-                        GetUiText("TrialMessage"));
-                }
-                else
-                {
-                    var msg = string.IsNullOrWhiteSpace(_lastStderrLine)
-                        ? $"ffmpeg exit code {_encodingProcess.ExitCode}"
-                        : _lastStderrLine;
-                    await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), msg);
+                        // Ensure AviSynth DLLs sit next to ffmpeg.exe
+                        // (LoadLibrary searches app dir, not PATH)
+                        EnsureAviSynthNextToFfmpeg(ffmpegPath);
+
+                        _encodingProcess = new Process
+                        {
+                            StartInfo = psi,
+                            EnableRaisingEvents = true
+                        };
+
+                        _encodingProcess.Start();
+
+                        // Use trial limit as known duration for progress bar (0 = unlimited)
+                        var stderrTask = ReadFfmpegStderrAsync(
+                            _encodingProcess.StandardError, TrialMaxSeconds, _encodingCts.Token,
+                            batchLabel);
+
+                        await _encodingProcess.WaitForExitAsync(_encodingCts.Token);
+                        await stderrTask;
+
+                        if (_encodingProcess.ExitCode == 0)
+                        {
+                            successCount++;
+                        }
+                        else
+                        {
+                            // Extract meaningful error lines from stderr
+                            var errorLines = _stderrLines
+                                .Where(l => !l.StartsWith("out_time", StringComparison.Ordinal)
+                                         && !l.StartsWith("bitrate=", StringComparison.Ordinal)
+                                         && !l.StartsWith("total_size=", StringComparison.Ordinal)
+                                         && !l.StartsWith("speed=", StringComparison.Ordinal)
+                                         && !l.StartsWith("progress=", StringComparison.Ordinal)
+                                         && !l.StartsWith("frame=", StringComparison.Ordinal)
+                                         && !l.StartsWith("fps=", StringComparison.Ordinal)
+                                         && !l.StartsWith("stream_", StringComparison.Ordinal)
+                                         && !l.StartsWith("dup_frames=", StringComparison.Ordinal)
+                                         && !l.StartsWith("drop_frames=", StringComparison.Ordinal)
+                                         && !string.IsNullOrWhiteSpace(l))
+                                .TakeLast(5)
+                                .ToList();
+                            var msg = errorLines.Count > 0
+                                ? string.Join("\n", errorLines)
+                                : $"ffmpeg exit code {_encodingProcess.ExitCode}";
+                            DebugLog($"ffmpeg error for {sourceFileName}:\n{string.Join("\n", _stderrLines)}");
+                            errors.Add($"{sourceFileName}: {msg}");
+                        }
+                    }
+                    finally
+                    {
+                        _encodingProcess?.Dispose();
+                        _encodingProcess = null;
+                    }
                 }
             }
             catch (OperationCanceledException) { /* user cancelled */ }
@@ -3924,15 +4137,35 @@ namespace CleanScan.Views
             }
             finally
             {
-                _encodingProcess?.Dispose();
-                _encodingProcess = null;
                 _encodingCts = null;
                 SetRecordStartButtonState(idle: true);
                 SetRecordProgressVisible(false);
+
+                // Restore original state
+                _config.ReplaceAll(savedConfig);
+                if (savedClipIndex >= 0 && savedClipIndex < _clipPaths.Count)
+                {
+                    _activeClipIndex = savedClipIndex;
+                    RestoreClipConfig(_activeClipIndex);
+                }
+                RegenerateScript(showValidationError: false);
+            }
+
+            // Show result
+            UpdateDiskSpaceLabel(dir);
+            var doneMsg = string.Format(GetUiText("BatchDoneMsg"), successCount, jobs.Count);
+            if (errors.Count > 0)
+                doneMsg += "\n\n" + string.Join("\n", errors);
+            await _dialogService.ShowErrorAsync(this, GetUiText("RecordBtn"), doneMsg);
+
+            if (shutdownAfter && successCount > 0 && errors.Count == 0)
+            {
+                await _dialogService.ShowErrorAsync(this, GetUiText("RecordBtn"), GetUiText("BatchShutdownMsg"));
+                Process.Start("shutdown", "/s /t 60");
             }
         }
 
-        private async Task ReadFfmpegStderrAsync(System.IO.StreamReader stderr, double totalDuration, CancellationToken ct)
+        private async Task ReadFfmpegStderrAsync(System.IO.StreamReader stderr, double totalDuration, CancellationToken ct, string? batchLabel = null)
         {
             try
             {
@@ -3942,21 +4175,35 @@ namespace CleanScan.Views
                     if (line is null) break; // EOF
 
                     _lastStderrLine = line;
+                    // Keep last 30 lines for error diagnostics
+                    _stderrLines.Add(line);
+                    if (_stderrLines.Count > 30) _stderrLines.RemoveAt(0);
 
                     // Parse "-progress pipe:2" output: "out_time_us=<microseconds>"
-                    if (line.StartsWith("out_time_us=", StringComparison.Ordinal) && totalDuration > 0)
+                    if (line.StartsWith("out_time_us=", StringComparison.Ordinal))
                     {
                         if (long.TryParse(line.AsSpan("out_time_us=".Length), out var us) && us >= 0)
                         {
                             var seconds = us / 1_000_000.0;
-                            var pct = Math.Min(100.0, seconds / totalDuration * 100.0);
                             var elapsed = TimeSpan.FromSeconds(seconds);
-                            var label = $"{pct:F1}%  —  {elapsed:hh\\:mm\\:ss}";
+                            string label;
+                            double pct;
+                            if (totalDuration > 0)
+                            {
+                                pct = Math.Min(100.0, seconds / totalDuration * 100.0);
+                                label = $"{pct:F1}%  —  {elapsed:hh\\:mm\\:ss}";
+                            }
+                            else
+                            {
+                                pct = 0;
+                                label = $"{elapsed:hh\\:mm\\:ss}";
+                            }
+                            if (batchLabel is not null) label = $"{batchLabel}  {label}";
                             Dispatcher.UIThread.Post(() => UpdateRecordProgress(pct, label));
                         }
                     }
                     // Fallback: parse classic "frame=...time=HH:MM:SS" lines
-                    else if (line.Contains("time=", StringComparison.Ordinal) && totalDuration > 0)
+                    else if (line.Contains("time=", StringComparison.Ordinal))
                     {
                         var idx = line.IndexOf("time=", StringComparison.Ordinal);
                         if (idx >= 0)
@@ -3966,8 +4213,19 @@ namespace CleanScan.Views
                             if (spaceIdx > 0) timePart = timePart[..spaceIdx];
                             if (TimeSpan.TryParse(timePart, CultureInfo.InvariantCulture, out var ts))
                             {
-                                var pct = Math.Min(100.0, ts.TotalSeconds / totalDuration * 100.0);
-                                var label = $"{pct:F1}%  —  {ts:hh\\:mm\\:ss}";
+                                string label;
+                                double pct;
+                                if (totalDuration > 0)
+                                {
+                                    pct = Math.Min(100.0, ts.TotalSeconds / totalDuration * 100.0);
+                                    label = $"{pct:F1}%  —  {ts:hh\\:mm\\:ss}";
+                                }
+                                else
+                                {
+                                    pct = 0;
+                                    label = $"{ts:hh\\:mm\\:ss}";
+                                }
+                                if (batchLabel is not null) label = $"{batchLabel}  {label}";
                                 Dispatcher.UIThread.Post(() => UpdateRecordProgress(pct, label));
                             }
                         }
@@ -4047,6 +4305,53 @@ namespace CleanScan.Views
                 if (File.Exists(candidate)) return candidate;
             }
             return null;
+        }
+
+        private static void EnsureAviSynthNextToFfmpeg(string ffmpegPath)
+        {
+            var ffmpegDir = Path.GetDirectoryName(ffmpegPath);
+            if (string.IsNullOrWhiteSpace(ffmpegDir)) return;
+
+            var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? "";
+            var avsDir = Path.Combine(exeDir, "Plugins", "AviSynth");
+            if (!Directory.Exists(avsDir)) return;
+
+            // Copy avisynth.dll + DevIL.dll next to ffmpeg.exe if not already there
+            foreach (var dll in new[] { "AviSynth.dll", "DevIL.dll" })
+            {
+                var src = Path.Combine(avsDir, dll);
+                var dst = Path.Combine(ffmpegDir, dll);
+                if (File.Exists(src) && !File.Exists(dst))
+                {
+                    try { File.Copy(src, dst, overwrite: false); }
+                    catch { /* another process may have copied it */ }
+                }
+            }
+        }
+
+        private static async Task<bool> CheckFfmpegAviSynthSupport(string ffmpegPath)
+        {
+            try
+            {
+                var proc = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = ffmpegPath,
+                        Arguments = "-demuxers",
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true
+                    }
+                };
+                proc.Start();
+                var output = await proc.StandardOutput.ReadToEndAsync();
+                await proc.WaitForExitAsync();
+                proc.Dispose();
+                return output.Contains("avisynth", StringComparison.OrdinalIgnoreCase);
+            }
+            catch { return false; }
         }
 
         private bool _syncingForceSource;

@@ -15,7 +15,10 @@
       "Bash(do sed:*)",
       "Bash(rm:*)",
       "Read(//c/Windows/System32/**)",
-      "Read(//c/Windows/SysWOW64/**)"
+      "Read(//c/Windows/SysWOW64/**)",
+      "Bash(taskkill:*)",
+      "Bash(export:*)",
+      "Bash(cp:*)"
     ]
   }
 }

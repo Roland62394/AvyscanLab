@@ -1018,170 +1018,212 @@
                 <Border x:Name="RecordOverlay" IsVisible="False"
                         Grid.Column="0" Grid.ColumnSpan="3"
                         Background="#F0181C28" ZIndex="10"
-                        Padding="24,16">
-                    <StackPanel VerticalAlignment="Top" HorizontalAlignment="Center"
-                                Spacing="16" MinWidth="620" MaxWidth="820">
+                        Padding="20,12">
+                    <DockPanel HorizontalAlignment="Stretch" Margin="24,0">
+
+                        <!-- ── Title ── -->
                         <TextBlock x:Name="RecordOverlayTitle"
+                                   DockPanel.Dock="Top"
                                    Text="⏺ Record"
-                                   FontSize="16" FontWeight="Bold"
+                                   FontSize="15" FontWeight="Bold"
                                    Foreground="White"
                                    HorizontalAlignment="Center"
-                                   Margin="0,0,0,2"/>
+                                   Margin="0,0,0,8"/>
 
-                        <!-- Encoding presets -->
-                        <Grid ColumnDefinitions="Auto,16,*,20,Auto,14,Auto,14,Auto">
-                            <TextBlock x:Name="RecordPresetLabel" Grid.Column="0"
-                                       Text="Preset" FontSize="12"
-                                       Foreground="{StaticResource TextLabel}"
-                                       VerticalAlignment="Center"/>
-                            <ComboBox x:Name="RecordPresetCombo" Grid.Column="2"
-                                      FontSize="12" HorizontalAlignment="Stretch"
-                                      IsEditable="True"/>
-                            <Button x:Name="RecordPresetLoadBtn" Grid.Column="4"
-                                    Content="Load" FontSize="11" Height="28" MinWidth="70" Padding="12,0"
-                                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                                    Click="OnRecordPresetLoadClick"/>
-                            <Button x:Name="RecordPresetSaveBtn" Grid.Column="6"
-                                    Content="Save" FontSize="11" Height="28" MinWidth="70" Padding="12,0"
-                                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                                    Click="OnRecordPresetSaveClick"/>
-                            <Button x:Name="RecordPresetDeleteBtn" Grid.Column="8"
-                                    Content="Del" FontSize="11" Height="28" MinWidth="70" Padding="12,0"
-                                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                                    Click="OnRecordPresetDeleteClick"/>
-                        </Grid>
-
-                        <!-- Row 1: Output directory + File name -->
-                        <Grid ColumnDefinitions="2*,8,Auto,28,*">
-                            <StackPanel Grid.Column="0" Spacing="4">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <TextBlock x:Name="RecordDirLabel" Text="Output directory"
-                                               FontSize="12" Foreground="{StaticResource TextLabel}"/>
-                                    <TextBlock x:Name="RecordDiskSpace" Text=""
-                                               FontSize="10" Foreground="{StaticResource TextSecondary}"
-                                               VerticalAlignment="Center"/>
-                                </StackPanel>
-                                <TextBox x:Name="RecordDir" FontSize="12" Height="28"
-                                         Watermark="C:\output"/>
+                        <!-- ── Bottom bar: Progress + Shutdown + Start ── -->
+                        <StackPanel DockPanel.Dock="Bottom" Spacing="6" Margin="0,8,0,0">
+                            <StackPanel x:Name="RecordProgressPanel" Spacing="2" IsVisible="False">
+                                <ProgressBar x:Name="RecordProgressBar" Minimum="0" Maximum="100"
+                                             Value="0" Height="10" Foreground="#3B82C4"/>
+                                <TextBlock x:Name="RecordProgressText" Text=""
+                                           FontSize="11" Foreground="{StaticResource TextSecondary}"
+                                           HorizontalAlignment="Center"/>
                             </StackPanel>
-                            <Button Grid.Column="2" Content="…" FontSize="13"
-                                    Width="30" Height="28" VerticalAlignment="Bottom"
-                                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                                    Click="OnRecordDirPickClick"/>
-                            <StackPanel Grid.Column="4" Spacing="4">
-                                <TextBlock x:Name="RecordFileLabel" Text="File name"
-                                           FontSize="12" Foreground="{StaticResource TextLabel}"/>
-                                <TextBox x:Name="RecordFileName" FontSize="12" Height="28"
-                                         Watermark="output"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="20">
+                                <CheckBox x:Name="ShutdownCheckBox" Content="Shutdown after completion"
+                                          FontSize="11" Foreground="{StaticResource TextSecondary}"
+                                          VerticalAlignment="Center"/>
+                                <Button x:Name="RecordStartBtn"
+                                        Content="▶ Start encoding"
+                                        FontSize="13" FontWeight="SemiBold"
+                                        Padding="20,5"
+                                        HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                        Background="#35C156" Foreground="White"
+                                        Click="OnRecordStartClick"/>
                             </StackPanel>
-                        </Grid>
-
-                        <!-- Row 2: Encoder + Container + Resolution -->
-                        <Grid ColumnDefinitions="*,28,*,28,*">
-                            <StackPanel Grid.Column="0" Spacing="4">
-                                <TextBlock x:Name="RecordEncoderLabel" Text="Encoder"
-                                           FontSize="12" Foreground="{StaticResource TextLabel}"/>
-                                <ComboBox x:Name="RecordEncoder" FontSize="12"
-                                          HorizontalAlignment="Stretch" SelectedIndex="0">
-                                    <ComboBoxItem Content="x264" Tag="x264"/>
-                                    <ComboBoxItem Content="x265" Tag="x265"/>
-                                    <ComboBoxItem Content="FFV1 (lossless)" Tag="ffv1"/>
-                                    <ComboBoxItem Content="UT Video (lossless)" Tag="utvideo"/>
-                                    <ComboBoxItem Content="ProRes" Tag="prores"/>
-                                    <ComboBoxItem Content="TIFF sequence" Tag="tiff"/>
-                                    <ComboBoxItem Content="PNG sequence" Tag="png"/>
-                                </ComboBox>
-                            </StackPanel>
-                            <StackPanel Grid.Column="2" Spacing="4">
-                                <TextBlock x:Name="RecordContainerLabel" Text="Container"
-                                           FontSize="12" Foreground="{StaticResource TextLabel}"/>
-                                <ComboBox x:Name="RecordContainer" FontSize="12"
-                                          HorizontalAlignment="Stretch" SelectedIndex="0">
-                                    <ComboBoxItem Content="MKV" Tag="mkv"/>
-                                    <ComboBoxItem Content="MP4" Tag="mp4"/>
-                                    <ComboBoxItem Content="AVI" Tag="avi"/>
-                                    <ComboBoxItem Content="MOV" Tag="mov"/>
-                                </ComboBox>
-                            </StackPanel>
-                            <StackPanel Grid.Column="4" Spacing="4">
-                                <TextBlock x:Name="RecordResizeLabel" Text="Resolution"
-                                           FontSize="12" Foreground="{StaticResource TextLabel}"/>
-                                <ComboBox x:Name="RecordResize" FontSize="12"
-                                          HorizontalAlignment="Stretch" SelectedIndex="0">
-                                    <ComboBoxItem Content="Original" Tag="original"/>
-                                    <ComboBoxItem Content="1080p" Tag="1080"/>
-                                    <ComboBoxItem Content="720p" Tag="720"/>
-                                    <ComboBoxItem Content="576p" Tag="576"/>
-                                    <ComboBoxItem Content="480p" Tag="480"/>
-                                </ComboBox>
-                            </StackPanel>
-                        </Grid>
-
-                        <!-- Row 3: Quality mode + CRF/Bitrate + Chroma (hidden for lossless) -->
-                        <Grid x:Name="RecordQualityPanel" ColumnDefinitions="*,28,*,28,*">
-                            <StackPanel Grid.Column="0" Spacing="4">
-                                <TextBlock x:Name="RecordQualityModeLabel" Text="Quality mode"
-                                           FontSize="12" Foreground="{StaticResource TextLabel}"/>
-                                <ComboBox x:Name="RecordQualityMode" FontSize="12"
-                                          HorizontalAlignment="Stretch" SelectedIndex="0">
-                                    <ComboBoxItem Content="CRF" Tag="crf"/>
-                                    <ComboBoxItem Content="Bitrate (Mb/s)" Tag="bitrate"/>
-                                </ComboBox>
-                            </StackPanel>
-                            <StackPanel x:Name="RecordCrfPanel" Grid.Column="2" Spacing="4">
-                                <TextBlock x:Name="RecordCrfLabel" Text="CRF"
-                                           FontSize="12" Foreground="{StaticResource TextLabel}"/>
-                                <Grid ColumnDefinitions="*,6,Auto">
-                                    <Slider x:Name="RecordCrfSlider" Grid.Column="0"
-                                            Minimum="0" Maximum="51" Value="18"
-                                            IsSnapToTickEnabled="True" TickFrequency="1"
-                                            VerticalAlignment="Center"/>
-                                    <TextBlock x:Name="RecordCrfValue" Grid.Column="2"
-                                               Text="18" FontSize="12" MinWidth="20"
-                                               Foreground="{StaticResource TextSecondary}"
-                                               HorizontalAlignment="Right"
-                                               VerticalAlignment="Center"/>
-                                </Grid>
-                            </StackPanel>
-                            <StackPanel x:Name="RecordBitratePanel" Grid.Column="2" Spacing="4"
-                                        IsVisible="False">
-                                <TextBlock x:Name="RecordBitrateLabel" Text="Bitrate (Mb/s)"
-                                           FontSize="12" Foreground="{StaticResource TextLabel}"/>
-                                <TextBox x:Name="RecordBitrate" FontSize="12" Height="28"
-                                         Watermark="20"/>
-                            </StackPanel>
-                            <StackPanel x:Name="RecordChromaPanel" Grid.Column="4" Spacing="4">
-                                <TextBlock x:Name="RecordChromaLabel" Text="Chroma"
-                                           FontSize="12" Foreground="{StaticResource TextLabel}"/>
-                                <ComboBox x:Name="RecordChroma" FontSize="12"
-                                          HorizontalAlignment="Stretch" SelectedIndex="0">
-                                    <ComboBoxItem Content="4:2:0" Tag="yuv420p"/>
-                                    <ComboBoxItem Content="4:2:2" Tag="yuv422p"/>
-                                    <ComboBoxItem Content="4:4:4" Tag="yuv444p"/>
-                                </ComboBox>
-                            </StackPanel>
-                        </Grid>
-
-                        <!-- Progress -->
-                        <StackPanel x:Name="RecordProgressPanel" Spacing="2" IsVisible="False">
-                            <ProgressBar x:Name="RecordProgressBar" Minimum="0" Maximum="100"
-                                         Value="0" Height="12" Foreground="#3B82C4"/>
-                            <TextBlock x:Name="RecordProgressText" Text=""
-                                       FontSize="11" Foreground="{StaticResource TextSecondary}"
-                                       HorizontalAlignment="Center"/>
                         </StackPanel>
 
-                        <!-- Start button -->
-                        <Button x:Name="RecordStartBtn"
-                                Content="▶ Start encoding"
-                                FontSize="13" FontWeight="SemiBold"
-                                Padding="20,6"
-                                HorizontalAlignment="Center"
-                                HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                                Margin="0,4,0,0"
-                                Background="#35C156" Foreground="White"
-                                Click="OnRecordStartClick"/>
-                    </StackPanel>
+                        <!-- ── Main area: two columns ── -->
+                        <Grid ColumnDefinitions="*,28,*" Margin="0,4,0,0">
+
+                            <!-- ══ LEFT: Clip list ══ -->
+                            <DockPanel Grid.Column="0">
+                                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10"
+                                            Margin="0,0,0,6">
+                                    <TextBlock x:Name="BatchClipListLabel" Text="Clips to encode"
+                                               FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextLabel}"
+                                               VerticalAlignment="Center"/>
+                                    <CheckBox x:Name="BatchSelectAllCheck" Content="Select all"
+                                              FontSize="11" Foreground="{StaticResource TextSecondary}"
+                                              VerticalAlignment="Center"
+                                              Click="OnBatchSelectAllClick"/>
+                                </StackPanel>
+                                <Border Background="#1A2030" BorderBrush="{StaticResource BorderSubtle}"
+                                        BorderThickness="1" CornerRadius="4" Padding="4">
+                                    <ScrollViewer>
+                                        <StackPanel x:Name="BatchClipList" Spacing="2"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </DockPanel>
+
+                            <!-- ══ RIGHT: Encoding settings (preset + params grouped) ══ -->
+                            <Border Grid.Column="2"
+                                    Background="#10FFFFFF" BorderBrush="{StaticResource BorderSubtle}"
+                                    BorderThickness="1" CornerRadius="6" Padding="10,8">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel Spacing="8">
+
+                                    <!-- Encoding preset -->
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Name="RecordPresetLabel" Text="Preset"
+                                                   FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextLabel}"/>
+                                        <Grid ColumnDefinitions="*,8,Auto,6,Auto,6,Auto">
+                                            <ComboBox x:Name="RecordPresetCombo" Grid.Column="0"
+                                                      FontSize="12" HorizontalAlignment="Stretch"
+                                                      IsEditable="True"/>
+                                            <Button x:Name="RecordPresetLoadBtn" Grid.Column="2"
+                                                    Content="Load" FontSize="11" Height="26" MinWidth="50" Padding="8,0"
+                                                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                                    Click="OnRecordPresetLoadClick"/>
+                                            <Button x:Name="RecordPresetSaveBtn" Grid.Column="4"
+                                                    Content="Save" FontSize="11" Height="26" MinWidth="50" Padding="8,0"
+                                                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                                    Click="OnRecordPresetSaveClick"/>
+                                            <Button x:Name="RecordPresetDeleteBtn" Grid.Column="6"
+                                                    Content="Del" FontSize="11" Height="26" MinWidth="42" Padding="8,0"
+                                                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                                    Click="OnRecordPresetDeleteClick"/>
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <Border Height="1" Background="{StaticResource BorderSubtle}" Margin="0,2"/>
+
+                                    <!-- Output directory -->
+                                    <StackPanel Spacing="4">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <TextBlock x:Name="RecordDirLabel" Text="Output directory"
+                                                       FontSize="12" Foreground="{StaticResource TextLabel}"/>
+                                            <TextBlock x:Name="RecordDiskSpace" Text=""
+                                                       FontSize="10" Foreground="{StaticResource TextSecondary}"
+                                                       VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <Grid ColumnDefinitions="*,6,Auto">
+                                            <TextBox x:Name="RecordDir" Grid.Column="0" FontSize="12" Height="28"
+                                                     Watermark="C:\output"/>
+                                            <Button Grid.Column="2" Content="…" FontSize="13"
+                                                    Width="28" Height="28"
+                                                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                                    Click="OnRecordDirPickClick"/>
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <!-- Encoder + Container -->
+                                    <Grid ColumnDefinitions="*,10,*">
+                                        <StackPanel Grid.Column="0" Spacing="3">
+                                            <TextBlock x:Name="RecordEncoderLabel" Text="Encoder"
+                                                       FontSize="12" Foreground="{StaticResource TextLabel}"/>
+                                            <ComboBox x:Name="RecordEncoder" FontSize="12"
+                                                      HorizontalAlignment="Stretch" SelectedIndex="0">
+                                                <ComboBoxItem Content="x264" Tag="x264"/>
+                                                <ComboBoxItem Content="x265" Tag="x265"/>
+                                                <ComboBoxItem Content="FFV1 (lossless)" Tag="ffv1"/>
+                                                <ComboBoxItem Content="UT Video (lossless)" Tag="utvideo"/>
+                                                <ComboBoxItem Content="ProRes" Tag="prores"/>
+                                                <ComboBoxItem Content="TIFF sequence" Tag="tiff"/>
+                                                <ComboBoxItem Content="PNG sequence" Tag="png"/>
+                                            </ComboBox>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Spacing="3">
+                                            <TextBlock x:Name="RecordContainerLabel" Text="Container"
+                                                       FontSize="12" Foreground="{StaticResource TextLabel}"/>
+                                            <ComboBox x:Name="RecordContainer" FontSize="12"
+                                                      HorizontalAlignment="Stretch" SelectedIndex="0">
+                                                <ComboBoxItem Content="MKV" Tag="mkv"/>
+                                                <ComboBoxItem Content="MP4" Tag="mp4"/>
+                                                <ComboBoxItem Content="AVI" Tag="avi"/>
+                                                <ComboBoxItem Content="MOV" Tag="mov"/>
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- Resolution + Chroma -->
+                                    <Grid ColumnDefinitions="*,10,*">
+                                        <StackPanel Grid.Column="0" Spacing="3">
+                                            <TextBlock x:Name="RecordResizeLabel" Text="Resolution"
+                                                       FontSize="12" Foreground="{StaticResource TextLabel}"/>
+                                            <ComboBox x:Name="RecordResize" FontSize="12"
+                                                      HorizontalAlignment="Stretch" SelectedIndex="0">
+                                                <ComboBoxItem Content="Original" Tag="original"/>
+                                                <ComboBoxItem Content="1080p" Tag="1080"/>
+                                                <ComboBoxItem Content="720p" Tag="720"/>
+                                                <ComboBoxItem Content="576p" Tag="576"/>
+                                                <ComboBoxItem Content="480p" Tag="480"/>
+                                            </ComboBox>
+                                        </StackPanel>
+                                        <StackPanel x:Name="RecordChromaPanel" Grid.Column="2" Spacing="3">
+                                            <TextBlock x:Name="RecordChromaLabel" Text="Chroma"
+                                                       FontSize="12" Foreground="{StaticResource TextLabel}"/>
+                                            <ComboBox x:Name="RecordChroma" FontSize="12"
+                                                      HorizontalAlignment="Stretch" SelectedIndex="0">
+                                                <ComboBoxItem Content="4:2:0" Tag="yuv420p"/>
+                                                <ComboBoxItem Content="4:2:2" Tag="yuv422p"/>
+                                                <ComboBoxItem Content="4:4:4" Tag="yuv444p"/>
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- Quality mode + CRF/Bitrate (hidden for lossless) -->
+                                    <Grid x:Name="RecordQualityPanel" ColumnDefinitions="*,10,*">
+                                        <StackPanel Grid.Column="0" Spacing="3">
+                                            <TextBlock x:Name="RecordQualityModeLabel" Text="Quality mode"
+                                                       FontSize="12" Foreground="{StaticResource TextLabel}"/>
+                                            <ComboBox x:Name="RecordQualityMode" FontSize="12"
+                                                      HorizontalAlignment="Stretch" SelectedIndex="0">
+                                                <ComboBoxItem Content="CRF" Tag="crf"/>
+                                                <ComboBoxItem Content="Bitrate (Mb/s)" Tag="bitrate"/>
+                                            </ComboBox>
+                                        </StackPanel>
+                                        <StackPanel x:Name="RecordCrfPanel" Grid.Column="2" Spacing="3">
+                                            <TextBlock x:Name="RecordCrfLabel" Text="CRF"
+                                                       FontSize="12" Foreground="{StaticResource TextLabel}"/>
+                                            <Grid ColumnDefinitions="*,6,Auto">
+                                                <Slider x:Name="RecordCrfSlider" Grid.Column="0"
+                                                        Minimum="0" Maximum="51" Value="18"
+                                                        IsSnapToTickEnabled="True" TickFrequency="1"
+                                                        VerticalAlignment="Center"/>
+                                                <TextBlock x:Name="RecordCrfValue" Grid.Column="2"
+                                                           Text="18" FontSize="12" MinWidth="20"
+                                                           Foreground="{StaticResource TextSecondary}"
+                                                           HorizontalAlignment="Right"
+                                                           VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </StackPanel>
+                                        <StackPanel x:Name="RecordBitratePanel" Grid.Column="2" Spacing="3"
+                                                    IsVisible="False">
+                                            <TextBlock x:Name="RecordBitrateLabel" Text="Bitrate (Mb/s)"
+                                                       FontSize="12" Foreground="{StaticResource TextLabel}"/>
+                                            <TextBox x:Name="RecordBitrate" FontSize="12" Height="28"
+                                                     Watermark="20"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                </StackPanel>
+                                </ScrollViewer>
+                            </Border>
+                        </Grid>
+                    </DockPanel>
                 </Border>
 
             </Grid>
