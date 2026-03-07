@@ -1255,6 +1255,7 @@ namespace CleanScan.Views
 
         private void InitializeWindow()
         {
+            EnsureAviSynthAvailable();
             InitializeComponent();
             DataContext = new MainWindowViewModel();
             ConfigureMenuBar();
@@ -1368,8 +1369,76 @@ namespace CleanScan.Views
         private static readonly string _logPath =
             Path.Combine(Path.GetTempPath(), "cleanscan_debug.txt");
 
+        private static bool _avsUsingBundled;
+        private static nint _avsBundledHandle;
+
+        [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, SetLastError = true)]
+        private static extern bool SetDllDirectoryW(string lpPathName);
+
+        /// <summary>
+        /// Called once at startup. If AviSynth+ is installed system-wide, do nothing.
+        /// Otherwise, pre-load the bundled avisynth.dll into the process and configure
+        /// the DLL search path so that mpv and ffmpeg find it (and DevIL.dll).
+        /// </summary>
+        private static void EnsureAviSynthAvailable()
+        {
+            // 1. Check system install (System32)
+            var system32 = Environment.GetFolderPath(Environment.SpecialFolder.System);
+            var systemDll = Path.Combine(system32, "avisynth.dll");
+            if (File.Exists(systemDll))
+            {
+                try
+                {
+                    if (System.Runtime.InteropServices.NativeLibrary.TryLoad(systemDll, out var h))
+                    {
+                        System.Runtime.InteropServices.NativeLibrary.Free(h);
+                        return; // System AviSynth is fine, use it
+                    }
+                }
+                catch { }
+            }
+
+            // 2. Fallback: bundled AviSynth in Plugins/AviSynth/
+            var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? string.Empty;
+            var bundledDir = Path.Combine(exeDir, "Plugins", "AviSynth");
+            var bundledDll = Path.Combine(bundledDir, "avisynth.dll");
+            if (!File.Exists(bundledDll)) return;
+
+            // Add bundled dir to DLL search path (for DevIL.dll and other dependencies)
+            SetDllDirectoryW(bundledDir);
+
+            // Also prepend to PATH (for ffmpeg subprocess)
+            var currentPath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+            Environment.SetEnvironmentVariable("PATH", bundledDir + Path.PathSeparator + currentPath);
+
+            // Pre-load avisynth.dll and keep the handle alive for the entire process lifetime.
+            // When mpv internally calls LoadLibrary("avisynth"), Windows will find it already loaded.
+            if (System.Runtime.InteropServices.NativeLibrary.TryLoad(bundledDll, out _avsBundledHandle))
+                _avsUsingBundled = true;
+        }
+
         private static string GetAviSynthDiagnostic()
         {
+            // If using bundled version, check it
+            if (_avsUsingBundled)
+            {
+                var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? string.Empty;
+                var bundledDll = Path.Combine(exeDir, "Plugins", "AviSynth", "avisynth.dll");
+                if (!File.Exists(bundledDll))
+                    return "AviSynth.dll bundlé introuvable";
+                try
+                {
+                    if (System.Runtime.InteropServices.NativeLibrary.TryLoad(bundledDll, out var h))
+                    {
+                        System.Runtime.InteropServices.NativeLibrary.Free(h);
+                        return "AviSynth.dll (bundlé) chargeable OK";
+                    }
+                    return "AviSynth.dll (bundlé) non chargeable (mauvaise architecture ?)";
+                }
+                catch (Exception ex) { return $"AviSynth.dll (bundlé) erreur : {ex.Message}"; }
+            }
+
+            // System install
             var system32 = Environment.GetFolderPath(Environment.SpecialFolder.System);
             var dllPath  = Path.Combine(system32, "AviSynth.dll");
             if (!File.Exists(dllPath))
@@ -1379,9 +1448,9 @@ namespace CleanScan.Views
                 if (System.Runtime.InteropServices.NativeLibrary.TryLoad(dllPath, out var h))
                 {
                     System.Runtime.InteropServices.NativeLibrary.Free(h);
-                    return $"AviSynth.dll présent et chargeable OK";
+                    return "AviSynth.dll présent et chargeable OK";
                 }
-                return $"AviSynth.dll présent dans System32 mais non chargeable (mauvaise architecture ?)";
+                return "AviSynth.dll présent dans System32 mais non chargeable (mauvaise architecture ?)";
             }
             catch (Exception ex) { return $"AviSynth.dll erreur : {ex.Message}"; }
         }

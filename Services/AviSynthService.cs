@@ -11,11 +11,20 @@ public sealed class AviSynthService : IAviSynthService
     public bool IsAviSynthInstalled()
     {
         if (!OperatingSystem.IsWindows()) return true;
-        return IsAviSynthPlusInstalledFromRegistry() || IsAviSynthPlusDllPresent() || IsAviSynthPlusX64();
+        return IsBundledAviSynthPresent()
+            || IsAviSynthPlusInstalledFromRegistry()
+            || IsAviSynthPlusDllPresent()
+            || IsAviSynthPlusX64();
     }
 
     public bool IsAviSynthInstalledForVirtualDub(string? _) =>
         !OperatingSystem.IsWindows() || IsAviSynthInstalled();
+
+    private static bool IsBundledAviSynthPresent()
+    {
+        var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? string.Empty;
+        return File.Exists(Path.Combine(exeDir, "Plugins", "AviSynth", "avisynth.dll"));
+    }
 
     [SupportedOSPlatform("windows")]
     private static bool IsAviSynthPlusInstalledFromRegistry()

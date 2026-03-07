@@ -69,7 +69,7 @@
     </Content>
   </ItemGroup>
 
-  <!-- ✅ UNE SEULE règle pour tout Plugins -->
+  <!-- ✅ UNE SEULE règle pour tout Plugins (inclut Plugins/AviSynth/ bundlé) -->
   <ItemGroup>
     <!-- Copie tout le contenu Plugins (dll, avsi, etc.) en gardant l'arborescence -->
     <Content Include="Plugins\**\*" Exclude="Plugins\**\VirtualDub2.exe;Plugins\**\vdub2.exe">

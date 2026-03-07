@@ -13,7 +13,9 @@
       "WebFetch(domain:forum.selur.net)",
       "Bash(cd:*)",
       "Bash(do sed:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Read(//c/Windows/System32/**)",
+      "Read(//c/Windows/SysWOW64/**)"
     ]
   }
 }

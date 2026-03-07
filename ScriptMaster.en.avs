@@ -187,6 +187,9 @@ TryLoadPlugin(pluginRoot + "RemoveDirt/RemoveDirt.dll")
 TryLoadPlugin(pluginRoot + "GamMac/GamMac_x64.dll")
 TryLoadPlugin(pluginRoot + "FFMS2/ffms2.dll")
 
+# ImageSeq — needed for ImageSource (bundled AviSynth fallback)
+TryLoadPlugin(pluginRoot + "AviSynth/ImageSeq.dll")
+
 # MVTools2 — REQUIRED for MDegrain (download from avisynth.nl)
 TryLoadPlugin(pluginRoot + "MVTools2/mvtools2.dll")
 
