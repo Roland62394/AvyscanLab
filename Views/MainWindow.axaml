@@ -501,8 +501,8 @@
                     Background="{StaticResource BgHeader}"
                     BorderBrush="{StaticResource BorderSubtle}"
                     BorderThickness="0,1,0,0"
-                    Padding="16,10">
-                <StackPanel Spacing="8">
+                    Padding="16,0,16,16">
+                <StackPanel Spacing="3">
 
                     <!-- Slider de position + temps -->
                     <Grid ColumnDefinitions="*,10,Auto">
@@ -512,13 +512,20 @@
                                 MaxWidth="800"
                                 HorizontalAlignment="Stretch"
                                 VerticalAlignment="Center"/>
-                        <TextBlock x:Name="TimeLabel" Grid.Column="2"
-                                   Text="–:–– / –:––"
-                                   FontFamily="Consolas,Cascadia Code,monospace"
-                                   FontSize="11"
-                                   Foreground="{StaticResource TextSecondary}"
-                                   VerticalAlignment="Center"
-                                   MinWidth="110"/>
+                        <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="0">
+                            <TextBlock x:Name="FrameLabel"
+                                       Text="– / –"
+                                       FontFamily="Consolas,Cascadia Code,monospace"
+                                       FontSize="11"
+                                       Foreground="{StaticResource TextSecondary}"
+                                       MinWidth="110"/>
+                            <TextBlock x:Name="TimeLabel"
+                                       Text="–:–– / –:––"
+                                       FontFamily="Consolas,Cascadia Code,monospace"
+                                       FontSize="11"
+                                       Foreground="{StaticResource TextSecondary}"
+                                       MinWidth="110"/>
+                        </StackPanel>
                     </Grid>
 
                     <!-- Boutons -->

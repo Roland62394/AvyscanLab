@@ -1617,6 +1617,14 @@ namespace CleanScan.Views
                 TimeSpan.FromSeconds(s).ToString(s >= 3600 ? @"h\:mm\:ss" : @"m\:ss");
             if (this.FindControl<TextBlock>("TimeLabel") is { } lbl)
                 lbl.Text = $"{Fmt(pos)} / {Fmt(dur)}";
+
+            if (this.FindControl<TextBlock>("FrameLabel") is { } fl && _mpvService is not null)
+            {
+                var fps = _mpvService.GetFps();
+                var currentFrame = fps > 0 ? (int)(pos * fps) : 0;
+                var totalFrames = _mpvService.GetTotalFrames();
+                fl.Text = $"{currentFrame} / {totalFrames}";
+            }
         }
 
         private void InitSliders()
