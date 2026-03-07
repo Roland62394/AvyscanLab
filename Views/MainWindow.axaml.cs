@@ -33,6 +33,7 @@ namespace CleanScan.Views
         private const string AppDataFolder         = "CleanScan";
         private const string WindowSettingsFileName = "window-settings.json";
         private const string PresetsFileName        = "presets.json";
+        private const string EncodingPresetsFileName = "encoding_presets.json";
         private const string UseImageConfigName     = ScriptService.UseImageConfigName;
 
         #endregion
@@ -1184,6 +1185,7 @@ namespace CleanScan.Views
         private readonly SourceService        _sourceService;
         private readonly IScriptService       _scriptService;
         private readonly IPresetService       _presetService;
+        private readonly PresetService        _encodingPresetService;
         private readonly IWindowStateService  _windowStateService;
         private readonly IDialogService       _dialogService;
         private readonly IAviService          _aviService;
@@ -1223,6 +1225,7 @@ namespace CleanScan.Views
             _aviService         = new AviService();
             _scriptService      = new ScriptService(_sourceService);
             _presetService      = new PresetService(GetAppDataPath(PresetsFileName));
+            _encodingPresetService = new PresetService(GetAppDataPath(EncodingPresetsFileName));
             _windowStateService = new WindowStateService(GetAppDataPath(WindowSettingsFileName));
             _dialogService      = new DialogService();
 
@@ -1242,6 +1245,7 @@ namespace CleanScan.Views
             _sourceService      = sourceService;
             _scriptService      = scriptService;
             _presetService      = presetService;
+            _encodingPresetService = new PresetService(GetAppDataPath(EncodingPresetsFileName));
             _windowStateService = windowStateService;
             _dialogService      = dialogService;
             _aviService         = aviService;
@@ -1832,6 +1836,24 @@ namespace CleanScan.Views
                 encLbl.Text = GetUiText("RecordEncoderLabel");
             if (this.FindControl<TextBlock>("RecordContainerLabel") is { } cntLbl)
                 cntLbl.Text = GetUiText("RecordContainerLabel");
+            if (this.FindControl<TextBlock>("RecordQualityModeLabel") is { } qmLbl)
+                qmLbl.Text = GetUiText("RecordQualityModeLabel");
+            if (this.FindControl<TextBlock>("RecordCrfLabel") is { } crfLbl)
+                crfLbl.Text = GetUiText("RecordCrfLabel");
+            if (this.FindControl<TextBlock>("RecordBitrateLabel") is { } brLbl)
+                brLbl.Text = GetUiText("RecordBitrateLabel");
+            if (this.FindControl<TextBlock>("RecordChromaLabel") is { } chLbl)
+                chLbl.Text = GetUiText("RecordChromaLabel");
+            if (this.FindControl<TextBlock>("RecordResizeLabel") is { } rsLbl)
+                rsLbl.Text = GetUiText("RecordResizeLabel");
+            if (this.FindControl<TextBlock>("RecordPresetLabel") is { } prLbl)
+                prLbl.Text = GetUiText("RecordPresetLabel");
+            if (this.FindControl<Button>("RecordPresetSaveBtn") is { } prSave)
+                prSave.Content = GetUiText("RecordPresetSaveBtn");
+            if (this.FindControl<Button>("RecordPresetLoadBtn") is { } prLoad)
+                prLoad.Content = GetUiText("RecordPresetLoadBtn");
+            if (this.FindControl<Button>("RecordPresetDeleteBtn") is { } prDel)
+                prDel.Content = GetUiText("RecordPresetDeleteBtn");
             if (this.FindControl<Button>("RecordStartBtn") is { } startBtn)
                 startBtn.Content = GetUiText("RecordStartBtn");
         }
@@ -2954,6 +2976,34 @@ namespace CleanScan.Views
 
             if (this.FindControl<ComboBox>("RecordEncoder") is { } enc)
                 enc.SelectionChanged += OnRecordEncoderChanged;
+
+            if (this.FindControl<ComboBox>("RecordQualityMode") is { } qm)
+                qm.SelectionChanged += OnRecordQualityModeChanged;
+
+            if (this.FindControl<ComboBox>("RecordChroma") is { } ch)
+                ch.SelectionChanged += OnRecordChromaChanged;
+
+            if (this.FindControl<ComboBox>("RecordResize") is { } rs)
+                rs.SelectionChanged += (_, _) => UpdateBitrateHint();
+
+            if (this.FindControl<TextBox>("RecordBitrate") is { } brTb)
+            {
+                brTb.LostFocus += (_, _) => OnBitrateValidated();
+                brTb.KeyDown += (_, args) =>
+                {
+                    if (args.Key == Avalonia.Input.Key.Enter) OnBitrateValidated();
+                };
+            }
+
+            if (this.FindControl<Slider>("RecordCrfSlider") is { } slider)
+                slider.PropertyChanged += (_, args) =>
+                {
+                    if (args.Property == Slider.ValueProperty &&
+                        this.FindControl<TextBlock>("RecordCrfValue") is { } lbl)
+                        lbl.Text = ((int)slider.Value).ToString();
+                };
+
+            RefreshEncodingPresetCombo();
         }
 
         private void OnRecordEncoderChanged(object? sender, SelectionChangedEventArgs e)
@@ -2961,8 +3011,239 @@ namespace CleanScan.Views
             if (this.FindControl<ComboBox>("RecordEncoder") is not { } enc) return;
             var tag = (enc.SelectedItem as ComboBoxItem)?.Tag?.ToString();
             var isImageSeq = tag is "tiff" or "png";
+            var isLossless = tag is "ffv1" or "utvideo" or "tiff" or "png";
+
             if (this.FindControl<ComboBox>("RecordContainer") is { } cnt)
                 cnt.IsEnabled = !isImageSeq;
+
+            // Hide quality/chroma controls for lossless encoders
+            if (this.FindControl<Grid>("RecordQualityPanel") is { } qp)
+                qp.IsVisible = !isLossless;
+            if (this.FindControl<StackPanel>("RecordChromaPanel") is { } cp)
+                cp.IsVisible = !isLossless;
+        }
+
+        private void OnRecordQualityModeChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            if (this.FindControl<ComboBox>("RecordQualityMode") is not { } qm) return;
+            var tag = (qm.SelectedItem as ComboBoxItem)?.Tag?.ToString();
+            var isCrf = tag == "crf";
+            if (this.FindControl<StackPanel>("RecordCrfPanel") is { } crfP)
+                crfP.IsVisible = isCrf;
+            if (this.FindControl<StackPanel>("RecordBitratePanel") is { } brP)
+                brP.IsVisible = !isCrf;
+        }
+
+        /// <summary>
+        /// Chroma multiplier relative to 4:2:0.
+        /// 4:2:0 = 12 bits/pixel, 4:2:2 = 16 bits/pixel (×1.33), 4:4:4 = 24 bits/pixel (×2.0).
+        /// </summary>
+        private static double ChromaBitrateMultiplier(string chroma) => chroma switch
+        {
+            "yuv422p" => 16.0 / 12.0,  // ×1.33
+            "yuv444p" => 24.0 / 12.0,  // ×2.00
+            _         => 1.0           // 4:2:0 baseline
+        };
+
+        /// <summary>
+        /// Computes a recommended minimum bitrate (Mb/s) based on resolution and chroma.
+        /// Base reference: ~15 Mb/s for 1080p 4:2:0 (good quality with x264/x265).
+        /// Scales linearly with pixel count and chroma data ratio.
+        /// </summary>
+        private int ComputeMinBitrate()
+        {
+            var chroma = (this.FindControl<ComboBox>("RecordChroma")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "yuv420p";
+            var resize = (this.FindControl<ComboBox>("RecordResize")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "original";
+
+            // Reference: 1080p = 1920×1080 = 2_073_600 pixels → 15 Mb/s for 4:2:0
+            double refPixels = 2_073_600;
+            double refBitrate = 15.0;
+
+            double pixels = resize switch
+            {
+                "1080" => 1920.0 * 1080,
+                "720"  => 1280.0 * 720,
+                "576"  => 1024.0 * 576,
+                "480"  => 854.0 * 480,
+                _      => 1920.0 * 1080  // original: assume ~1080p as safe default
+            };
+
+            var bitrate = refBitrate * (pixels / refPixels) * ChromaBitrateMultiplier(chroma);
+            return Math.Max(1, (int)Math.Ceiling(bitrate));
+        }
+
+        private bool _syncingBitrateChroma;
+
+        private void UpdateBitrateHint()
+        {
+            if (_syncingBitrateChroma) return;
+            if (this.FindControl<TextBox>("RecordBitrate") is not { } tb) return;
+            var min = ComputeMinBitrate();
+            tb.Watermark = $"{min}";
+        }
+
+        private void OnRecordChromaChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            if (_syncingBitrateChroma) return;
+            _syncingBitrateChroma = true;
+            try
+            {
+                UpdateBitrateHint();
+                // If current bitrate is below the new minimum, bump it up
+                if (this.FindControl<TextBox>("RecordBitrate") is { } tb
+                    && int.TryParse(tb.Text?.Trim(), out var current))
+                {
+                    var min = ComputeMinBitrate();
+                    if (current < min) tb.Text = min.ToString();
+                }
+            }
+            finally { _syncingBitrateChroma = false; }
+        }
+
+        /// <summary>
+        /// When the user validates a bitrate (Enter or LostFocus), adjust
+        /// chroma to the highest level the bitrate can support.
+        /// Does NOT touch the bitrate value itself.
+        /// </summary>
+        private void OnBitrateValidated()
+        {
+            if (_syncingBitrateChroma) return;
+            _syncingBitrateChroma = true;
+            try
+            {
+                if (this.FindControl<TextBox>("RecordBitrate") is not { } tb) return;
+                if (this.FindControl<ComboBox>("RecordChroma") is not { } combo) return;
+                if (!int.TryParse(tb.Text?.Trim(), out var bitrate) || bitrate <= 0) return;
+
+                var resize = (this.FindControl<ComboBox>("RecordResize")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "original";
+                double pixels = resize switch
+                {
+                    "1080" => 1920.0 * 1080,
+                    "720"  => 1280.0 * 720,
+                    "576"  => 1024.0 * 576,
+                    "480"  => 854.0 * 480,
+                    _      => 1920.0 * 1080
+                };
+                double refPixels = 2_073_600;
+                double refBitrate = 15.0;
+
+                // Find the best chroma the bitrate can afford (try highest first)
+                string[] chromaOptions = ["yuv444p", "yuv422p", "yuv420p"];
+                string bestChroma = "yuv420p";
+                foreach (var ch in chromaOptions)
+                {
+                    var minBr = (int)Math.Ceiling(refBitrate * (pixels / refPixels) * ChromaBitrateMultiplier(ch));
+                    if (bitrate >= minBr) { bestChroma = ch; break; }
+                }
+
+                // Only change if different from current
+                var currentChroma = (combo.SelectedItem as ComboBoxItem)?.Tag?.ToString();
+                if (currentChroma == bestChroma) return;
+
+                foreach (var item in combo.Items)
+                    if (item is ComboBoxItem ci && ci.Tag?.ToString() == bestChroma)
+                    {
+                        combo.SelectedItem = ci;
+                        break;
+                    }
+            }
+            finally { _syncingBitrateChroma = false; }
+        }
+
+        // ── Encoding presets ──
+
+        private static readonly string[] EncodingPresetKeys =
+            ["encoder", "container", "quality_mode", "crf", "bitrate", "chroma", "resize"];
+
+        private Dictionary<string, string> CaptureEncodingValues()
+        {
+            var d = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            d["encoder"]      = (this.FindControl<ComboBox>("RecordEncoder")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "x264";
+            d["container"]    = (this.FindControl<ComboBox>("RecordContainer")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "mkv";
+            d["quality_mode"] = (this.FindControl<ComboBox>("RecordQualityMode")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "crf";
+            d["crf"]          = ((int)(this.FindControl<Slider>("RecordCrfSlider")?.Value ?? 18)).ToString();
+            d["bitrate"]      = this.FindControl<TextBox>("RecordBitrate")?.Text?.Trim() ?? "20";
+            d["chroma"]       = (this.FindControl<ComboBox>("RecordChroma")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "yuv420p";
+            d["resize"]       = (this.FindControl<ComboBox>("RecordResize")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "original";
+            return d;
+        }
+
+        private void ApplyEncodingValues(Dictionary<string, string> vals)
+        {
+            void SelectByTag(string controlName, string? tag)
+            {
+                if (this.FindControl<ComboBox>(controlName) is not { } combo || tag is null) return;
+                foreach (var item in combo.Items)
+                    if (item is ComboBoxItem ci && ci.Tag?.ToString() == tag) { combo.SelectedItem = ci; break; }
+            }
+
+            if (vals.TryGetValue("encoder", out var enc))      SelectByTag("RecordEncoder", enc);
+            if (vals.TryGetValue("container", out var cnt))    SelectByTag("RecordContainer", cnt);
+            if (vals.TryGetValue("quality_mode", out var qm))  SelectByTag("RecordQualityMode", qm);
+            if (vals.TryGetValue("crf", out var crf) && int.TryParse(crf, out var crfVal))
+            {
+                if (this.FindControl<Slider>("RecordCrfSlider") is { } slider) slider.Value = crfVal;
+            }
+            if (vals.TryGetValue("bitrate", out var br))
+            {
+                if (this.FindControl<TextBox>("RecordBitrate") is { } tb) tb.Text = br;
+            }
+            if (vals.TryGetValue("chroma", out var ch))        SelectByTag("RecordChroma", ch);
+            if (vals.TryGetValue("resize", out var rs))        SelectByTag("RecordResize", rs);
+        }
+
+        private void RefreshEncodingPresetCombo()
+        {
+            if (this.FindControl<ComboBox>("RecordPresetCombo") is not { } combo) return;
+            var list = _encodingPresetService.LoadPresets()
+                .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(p => p.Name)
+                .ToList();
+            combo.ItemsSource = list;
+        }
+
+        private void OnRecordPresetSaveClick(object? sender, RoutedEventArgs e)
+        {
+            if (this.FindControl<ComboBox>("RecordPresetCombo") is not { } combo) return;
+            // Use typed text (editable combo) or selected item
+            var name = (combo.Text ?? combo.SelectedItem?.ToString())?.Trim();
+            if (string.IsNullOrWhiteSpace(name)) return;
+
+            var presets = _encodingPresetService.LoadPresets();
+            var existing = presets.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+            if (existing is not null)
+                existing.Values = CaptureEncodingValues();
+            else
+                presets.Add(new Preset(name, CaptureEncodingValues()));
+
+            _encodingPresetService.SavePresets(presets);
+            RefreshEncodingPresetCombo();
+            combo.SelectedItem = name;
+        }
+
+        private void OnRecordPresetLoadClick(object? sender, RoutedEventArgs e)
+        {
+            if (this.FindControl<ComboBox>("RecordPresetCombo") is not { } combo) return;
+            var name = combo.SelectedItem?.ToString();
+            if (string.IsNullOrWhiteSpace(name)) return;
+
+            var preset = _encodingPresetService.LoadPresets()
+                .FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+            if (preset is not null)
+                ApplyEncodingValues(preset.Values);
+        }
+
+        private void OnRecordPresetDeleteClick(object? sender, RoutedEventArgs e)
+        {
+            if (this.FindControl<ComboBox>("RecordPresetCombo") is not { } combo) return;
+            var name = combo.SelectedItem?.ToString();
+            if (string.IsNullOrWhiteSpace(name)) return;
+
+            var presets = _encodingPresetService.LoadPresets();
+            presets.RemoveAll(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+            _encodingPresetService.SavePresets(presets);
+            RefreshEncodingPresetCombo();
+            combo.SelectedItem = null;
         }
 
         private void OnRecordClick(object? sender, RoutedEventArgs e)
@@ -3073,6 +3354,28 @@ namespace CleanScan.Views
             string outputPath;
             string ffArgs;
 
+            // Read new encoding parameters
+            var qualityMode = (this.FindControl<ComboBox>("RecordQualityMode")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "crf";
+            var crfValue = (int)(this.FindControl<Slider>("RecordCrfSlider")?.Value ?? 18);
+            var bitrateText = this.FindControl<TextBox>("RecordBitrate")?.Text?.Trim() ?? "20";
+            var chroma = (this.FindControl<ComboBox>("RecordChroma")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "yuv420p";
+            var resize = (this.FindControl<ComboBox>("RecordResize")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "original";
+
+            // Enforce minimum bitrate based on chroma + resolution
+            if (qualityMode == "bitrate" && encoder is "x264" or "x265")
+            {
+                var minBr = ComputeMinBitrate();
+                if (!int.TryParse(bitrateText, out var brVal) || brVal < minBr)
+                {
+                    bitrateText = minBr.ToString();
+                    if (this.FindControl<TextBox>("RecordBitrate") is { } brTb)
+                        brTb.Text = bitrateText;
+                }
+            }
+
+            // Build scale filter for resize (preserves aspect ratio, dimensions divisible by 2)
+            var scaleFilter = resize != "original" ? $"-vf scale=-2:{resize}" : "";
+
             if (isImageSeq)
             {
                 var ext = encoder == "tiff" ? "tif" : "png";
@@ -3084,21 +3387,31 @@ namespace CleanScan.Views
                     return;
                 }
                 outputPath = Path.Combine(seqDir, $"%05d.{ext}");
-                ffArgs = $"-progress pipe:2 -t 60 -i \"{renderScriptPath}\" \"{outputPath}\"";
+                ffArgs = $"-progress pipe:2 -t 60 -i \"{renderScriptPath}\" {scaleFilter} \"{outputPath}\"";
             }
             else
             {
                 outputPath = Path.Combine(dir, $"{fileName}.{container}");
+
+                // Build quality argument (CRF or bitrate) for lossy encoders
+                var qualityArgs = "";
+                if (encoder is "x264" or "x265")
+                {
+                    qualityArgs = qualityMode == "bitrate"
+                        ? $"-b:v {bitrateText}M"
+                        : $"-crf {crfValue}";
+                }
+
                 var codecArgs = encoder switch
                 {
-                    "x264" => "-c:v libx264 -crf 18 -preset medium",
-                    "x265" => "-c:v libx265 -crf 20 -preset medium",
-                    "ffv1" => "-c:v ffv1 -level 3 -slicecrc 1",
+                    "x264"    => $"-c:v libx264 {qualityArgs} -preset medium -pix_fmt {chroma}",
+                    "x265"    => $"-c:v libx265 {qualityArgs} -preset medium -pix_fmt {chroma}",
+                    "ffv1"    => "-c:v ffv1 -level 3 -slicecrc 1",
                     "utvideo" => "-c:v utvideo",
-                    "prores" => "-c:v prores_ks -profile:v 3",
-                    _ => "-c:v libx264 -crf 18 -preset medium"
+                    "prores"  => $"-c:v prores_ks -profile:v 3 -pix_fmt {chroma}",
+                    _         => $"-c:v libx264 {qualityArgs} -preset medium -pix_fmt {chroma}"
                 };
-                ffArgs = $"-progress pipe:2 -t 60 -i \"{renderScriptPath}\" {codecArgs} -y \"{outputPath}\"";
+                ffArgs = $"-progress pipe:2 -t 60 -i \"{renderScriptPath}\" {scaleFilter} {codecArgs} -y \"{outputPath}\"";
             }
 
             SetRecordStartButtonState(idle: false);
