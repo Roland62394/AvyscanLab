@@ -4286,8 +4286,11 @@ namespace CleanScan.Views
 
         private void OnUserGuideClick(object? sender, RoutedEventArgs e)
         {
+            var lang = ViewModel.CurrentLanguageCode;
             var exeDir = AppContext.BaseDirectory;
-            var guidePath = System.IO.Path.Combine(exeDir, "UserGuide.txt");
+            var guidePath = System.IO.Path.Combine(exeDir, "Users Guide", $"CleanScan_Guide_{lang}.pdf");
+            if (!System.IO.File.Exists(guidePath))
+                guidePath = System.IO.Path.Combine(exeDir, "Users Guide", "CleanScan_Guide_en.pdf");
             if (System.IO.File.Exists(guidePath))
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                     { FileName = guidePath, UseShellExecute = true });
