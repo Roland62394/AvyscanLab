@@ -436,6 +436,7 @@
                             <Separator/>
                             <MenuItem x:Name="ResetSettingsMenuItem" Header="Reset settings" Click="OnResetSettingsClick"/>
                         </MenuItem>
+                        <MenuItem x:Name="FeedbackMenuItem" Header="Feedback" Click="OnFeedbackClick"/>
                         <MenuItem x:Name="AboutMenuItem" Header="A propos" DockPanel.Dock="Right" Click="OnAboutClick"/>
                         <MenuItem x:Name="LanguagesMenu" Header="Language" DockPanel.Dock="Right">
                             <MenuItem x:Name="LanguageEnglishMenuItem" Header="English"  Tag="en" Click="OnLanguageClick"/>

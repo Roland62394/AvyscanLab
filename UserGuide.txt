@@ -1,0 +1,462 @@
+
+                              C L E A N S C A N
+                            Guide de l'utilisateur
+
+                                ScanFilm SNC
+                               www.scanfilm.ch
+
+              Version d'essai - encodage limite a 60 secondes par clip.
+
+
+=============================================================================================
+                                 TABLE DES MATIERES
+=============================================================================================
+
+    1.  Presentation                         8.  Encodage et rendu
+    2.  Prerequis et installation            9.  Reglages de l'application
+    3.  Interface generale                  10.  Apercu du script
+    4.  Selection de la source              11.  Retour d'experience (Feedback)
+    5.  Lecteur video et navigation         12.  Workflow recommande
+    6.  Panneau de filtres                  13.  Astuces et raccourcis
+    7.  Prereglages (Presets)               14.  Fichiers et emplacements
+
+
+=============================================================================================
+                                  1.  PRESENTATION
+=============================================================================================
+
+CleanScan est un logiciel de restauration de films argentiques numerises (8 mm, Super 8,
+9,5 mm, 16 mm). Il permet de :
+
+    - Reduire le grain de pellicule
+    - Supprimer poussieres et rayures
+    - Corriger luminosite, contraste et couleurs
+    - Recadrer l'image
+    - Renforcer la nettete
+
+Le logiciel genere un script AviSynth+ optimise et offre une previsualisation en temps reel
+via un lecteur video integre (libmpv). L'encodage final est assure par FFmpeg.
+
+
+=============================================================================================
+                           2.  PREREQUIS ET INSTALLATION
+=============================================================================================
+
+Systeme requis :
+    - Windows 10 ou 11 (64 bits)
+    - 4 Go de RAM minimum (8 Go recommande)
+    - Espace disque suffisant pour les fichiers source et les rendus
+
+Composants :
+    - AviSynth+ 64 bits doit etre installe. Si absent, CleanScan le detecte au demarrage
+      et propose un lien de telechargement. Une version embarquee est utilisee en secours.
+    - FFmpeg est fourni avec l'application (dossier Plugins/ffmpeg/).
+    - Le lecteur mpv est fourni avec l'application (dossier mpv/).
+
+Aucune installation supplementaire n'est requise. Il suffit de decompresser l'archive
+et de lancer l'executable CleanScan.exe.
+
+
+=============================================================================================
+                              3.  INTERFACE GENERALE
+=============================================================================================
+
+L'interface est organisee en trois zones :
+
+    ZONE SUPERIEURE
+    -----------------------------------------------------------------------------------------
+    Barre de menus : Infos, Preset, Settings, Feedback, Language, A propos.
+    Barre de source : champs de selection du fichier source, mode image, FPS.
+    Onglets clips : chaque clip charge apparait sous forme d'onglet. Cliquez sur un onglet
+    pour basculer entre les clips. Le bouton + permet d'ajouter un clip.
+    Barre de transport : commandes de lecture, barre de progression, bouton Record.
+
+    ZONE CENTRALE
+    -----------------------------------------------------------------------------------------
+    Lecteur video mpv : affiche la previsualisation du script AviSynth en temps reel.
+
+    ZONE INFERIEURE
+    -----------------------------------------------------------------------------------------
+    Panneau de filtres : divise en deux colonnes separees par un separateur redimensionnable.
+    La hauteur du panneau est ajustable.
+
+
+=============================================================================================
+                            4.  SELECTION DE LA SOURCE
+=============================================================================================
+
+Fichier video
+    Glissez-deposez un fichier video sur la zone de lecture, ou cliquez sur le champ "source".
+    Formats supportes : .avi  .mp4  .mov  .mkv  .wmv  .m4v  .mpeg  .mpg  .webm
+
+Sequence d'images
+    Activez le mode image (bouton bascule), puis renseignez le chemin du dossier dans
+    le champ "img". Formats supportes : .tif  .tiff  .jpg  .jpeg  .png  .bmp
+    Specifiez la premiere et la derniere image avec les champs "start" et "end".
+
+Cadence de lecture (FPS)
+    Le champ "fps" definit la cadence de lecture.
+    Valeurs courantes : 16 fps (8 mm), 18 fps (Super 8), 24 fps (16 mm).
+
+Multi-clips
+    Vous pouvez charger plusieurs fichiers. Chaque clip dispose de ses propres reglages
+    de filtres. Glissez-deposez plusieurs fichiers a la fois ou utilisez le bouton +
+    pour en ajouter.
+
+
+=============================================================================================
+                         5.  LECTEUR VIDEO ET NAVIGATION
+=============================================================================================
+
+Le lecteur integre affiche le resultat du script AviSynth en temps reel. Toute modification
+de parametre regenere automatiquement le script et rafraichit l'apercu.
+
+Raccourcis clavier :
+
+    Touche                    Action
+    -----------------------------------------------------------------------------------------
+    Espace                    Lecture / Pause
+    Fleche gauche             Image precedente
+    Fleche droite             Image suivante
+    Ctrl + Gauche             Aller au debut
+    Ctrl + Droite             Aller a la fin
+
+Barre de transport :
+
+    Bouton     Action
+    -----------------------------------------------------------------------------------------
+    |<         Debut du clip
+    <<         Image precedente
+    >          Lecture / Pause
+    >>         Image suivante
+    >|         Fin du clip
+    1x         Vitesse (0.25x, 0.5x, 1x)
+    1/2        Demi-resolution (plus rapide)
+
+La barre de progression (seek) affiche la position courante et la duree totale. Cliquez
+ou glissez pour naviguer.
+
+Preset par clip :
+    Le menu deroulant a droite de la barre de transport permet d'appliquer un preset
+    de filtres uniquement au clip actif.
+
+
+=============================================================================================
+                              6.  PANNEAU DE FILTRES
+=============================================================================================
+
+Le panneau inferieur est divise en deux colonnes :
+    Colonne gauche : boutons d'activation
+    Colonne droite : parametres detailles
+
+Chaque filtre possede :
+    - Un bouton ON/OFF (vert = actif)
+    - Un bouton d'expansion (>) qui affiche son panneau de parametres detailles
+
+Survolez chaque parametre pour afficher une infobulle avec les plages recommandees.
+
+    OPTIONS GENERALES
+    -----------------------------------------------------------------------------------------
+    preview            Previsualisation AviSynth
+    enable_flip_h      Retournement horizontal
+    enable_flip_v      Retournement vertical
+
+    CROP (Recadrage)
+    -----------------------------------------------------------------------------------------
+    Supprime des pixels sur les bords.
+
+    Parametre       Plage          Defaut
+    Crop_L          0-500 px       0
+    Crop_T          0-500 px       0
+    Crop_R          0-500 px       0
+    Crop_B          0-500 px       0
+
+    DEGRAIN (Reduction du grain)
+    -----------------------------------------------------------------------------------------
+    Reduction temporelle du grain de pellicule via MVTools2.
+    Presets : faible, standard, moyen, fort, tres fort.
+    Selectionnez un preset puis affinez manuellement.
+
+    Parametre              Plage                        Defaut
+    degrain_mode           mdegrain1/2/3/temporal       mdegrain2
+    degrain_thSAD          0-1000                       350
+    degrain_thSADC         0-1000                       250
+    degrain_blksize        8/16/32                      16
+    degrain_overlap        auto                         blksize/2
+    degrain_pel            1 ou 2                       2
+    degrain_search         0/2/3                        2
+    degrain_prefilter      remgrain/blur/none           remgrain
+
+    Notes :
+    - mdegrain2 : 2 references temporelles (recommande)
+    - mdegrain3 : 3 references (meilleur, plus lent)
+    - mdegrain1 : 1 reference (rapide)
+    - temporal  : TemporalSoften (sans MVTools2)
+
+    DENOISE (Suppression des poussieres)
+    -----------------------------------------------------------------------------------------
+    Detection et suppression temporelle des poussieres et rayures.
+    Presets : faible, standard, moyen, fort, tres fort.
+
+    Parametre              Plage                        Defaut
+    denoise_mode           removedirtmc/removedirt      removedirtmc
+    denoise_strength       1-24                         10
+    denoise_dist           1-20                         3
+    denoise_grey           true/false                   false
+
+    Note : removedirtmc (avec compensation de mouvement) est recommande.
+
+    LUMA LEVELS (Niveaux de luminosite)
+    -----------------------------------------------------------------------------------------
+    Ajustement global de l'image.
+
+    Parametre       Plage              Defaut
+    Lum_Bright      -255 a 255         0
+    Lum_Contrast    0.1 a 3.0          1.05
+    Lum_Sat         0.1 a 3.0          1.10
+    Lum_Hue         -180 a 180         0
+    Lum_GammaY      0.1 a 3.0          1.30
+
+    Note : GammaY > 1 eclaircit, < 1 assombrit.
+
+    GAMMAC (Correction colorimetrique)
+    -----------------------------------------------------------------------------------------
+    Correction automatique des derives de couleur entre canaux RGB.
+
+    Parametre       Plage              Defaut
+    LockChan        -3 a 2             1 (Vert)
+    LockVal         1-255              250
+    Scale           0-2                2
+    Th              0-1                0
+    HiTh            0-1                1
+    X, Y, W, H     0-...              0 (tout)
+    Omin            0-255              0
+    Omax            0-255              255
+    Show            true/false         false
+    Verbosity       0-6                0
+
+    LockChan : 0=Rouge, 1=Vert, 2=Bleu, -1=valeur cible, -2=moyenne, -3=median.
+
+    SHARPEN (Nettete)
+    -----------------------------------------------------------------------------------------
+    Renforcement de la nettete de l'image.
+    Presets : leger, standard, moyen, fort, tres fort.
+
+    Parametre              Plage              Defaut
+    Sharp_Mode             simple/edge        simple
+    Sharp_Strength         1-20               8
+    Sharp_Radius           0.5-5.0            1.5
+    Sharp_Threshold        0-100              0
+
+    Notes :
+    - simple : Sharpen() global, efficace mais peut amplifier le grain residuel.
+    - edge : contours uniquement via masque Sobel + gamma (technique LimitedSharpenFaster).
+      Preserve les zones lisses.
+
+
+=============================================================================================
+                            7.  PREREGLAGES (PRESETS)
+=============================================================================================
+
+Le menu Preset permet de sauvegarder et restaurer vos configurations de filtres completes.
+
+    Action              Description
+    -----------------------------------------------------------------------------------------
+    Sauvegarder         Enregistre les reglages actuels sous un nom
+    Charger             Applique un preset existant
+    Supprimer           Efface un preset
+
+Les champs source, film, img, start, end et crop ne sont PAS inclus dans les presets.
+
+Emplacement de stockage : %AppData%\CleanScan\presets.json
+
+
+=============================================================================================
+                              8.  ENCODAGE ET RENDU
+=============================================================================================
+
+Cliquez sur le bouton REC (rouge) dans la barre de transport pour ouvrir le panneau
+d'encodage. Ce panneau se superpose au panneau de filtres et contient deux colonnes :
+    - A gauche : liste des clips a encoder
+    - A droite : parametres d'encodage
+
+    ETAPE 1 - Selection des clips
+    -----------------------------------------------------------------------------------------
+    Cochez les clips a encoder dans la liste. Utilisez "Tout selectionner" pour les
+    encoder tous en une seule fois (batch).
+
+    ETAPE 2 - Reglage de la sortie
+    -----------------------------------------------------------------------------------------
+    Dossier de destination : cliquez sur le bouton parcourir ou saisissez le chemin.
+    L'espace disque disponible est affiche.
+
+    ETAPE 3 - Choix de l'encodeur
+    -----------------------------------------------------------------------------------------
+    Encodeur       Type             Usage
+    x264           Lossy            Diffusion (H.264)
+    x265           Lossy            Diffusion (HEVC)
+    FFV1           Lossless         Archivage pro
+    UT Video       Lossless         Edition rapide
+    ProRes         Lossy HQ         Post-production
+    TIFF seq.      Lossless         Images individuelles
+    PNG seq.       Lossless         Images individuelles
+
+    ETAPE 4 - Conteneur
+    -----------------------------------------------------------------------------------------
+    MKV, MP4, AVI ou MOV (pour les codecs video). Ignore pour les sequences d'images.
+
+    ETAPE 5 - Parametres avances (codecs lossy uniquement)
+    -----------------------------------------------------------------------------------------
+    Mode qualite :
+        - CRF : qualite constante (defaut). Plus la valeur est basse, meilleure est la
+          qualite. Valeurs typiques : 18-23.
+        - Bitrate : debit fixe en kbps.
+
+    Sous-echantillonnage chroma :
+        - 4:2:0 : standard (plus petit fichier)
+        - 4:2:2 : meilleure qualite couleur
+        - 4:4:4 : qualite maximale (gros fichier)
+
+    Resolution de sortie :
+        - Original : resolution source conservee
+        - 1080p, 720p, 576p, 480p : redimensionnement
+
+    PRESETS D'ENCODAGE
+    -----------------------------------------------------------------------------------------
+    Sauvegardez vos combinaisons frequentes (encodeur + conteneur + qualite + chroma
+    + resolution) via le champ Preset.
+    Emplacement de stockage : %AppData%\CleanScan\encoding_presets.json
+
+    PENDANT L'ENCODAGE
+    -----------------------------------------------------------------------------------------
+    - La lecture video est automatiquement arretee
+    - L'interface est verrouillee (filtres, transport, menus, onglets clips)
+    - Seul le bouton "Arreter" reste actif
+    - Une barre de progression affiche le pourcentage d'avancement
+    - La fermeture de l'application stoppe automatiquement l'encodage en cours
+
+    Option "Eteindre apres encodage" : cochez cette case pour arreter l'ordinateur
+    automatiquement apres un encodage reussi.
+
+    Note technique : l'encodage utilise un script de rendu dedie (ScriptRender.avs) ou
+    le mode preview est desactive, garantissant la qualite finale maximale.
+
+
+=============================================================================================
+                          9.  REGLAGES DE L'APPLICATION
+=============================================================================================
+
+Menu Reglages :
+
+    Parametre              Description
+    -----------------------------------------------------------------------------------------
+    Threads                Nombre de threads AviSynth. Augmentez pour exploiter tous les
+                           coeurs du CPU.
+    Chargeur source        Plugin de decodage video :
+        Auto               Detection auto (defaut)
+        FFMS2              FFmpegSource2 (MP4/MKV)
+        L-SMASH            LSmashSource (MP4/MOV)
+        LWLibav            LWLibavVideoSource
+    Reset settings         Reinitialise tous les reglages par defaut
+
+Menu Langue :
+    Francais, English, Deutsch, Espanol.
+    Le script AviSynth et l'interface sont regeneres dans la langue choisie.
+
+
+=============================================================================================
+                              10.  APERCU DU SCRIPT
+=============================================================================================
+
+Menu Infos > Apercu du script ouvre une fenetre affichant le contenu complet du fichier
+ScriptUser.avs genere par CleanScan.
+
+Le bouton "Recharger" relit le fichier depuis le disque et rafraichit la previsualisation.
+Cela permet de verifier le script AviSynth produit et de le copier pour un usage externe.
+
+
+=============================================================================================
+                       11.  RETOUR D'EXPERIENCE (FEEDBACK)
+=============================================================================================
+
+Le menu "Votre retour d'experience" ouvre un formulaire de contact integre permettant
+d'envoyer directement au developpeur :
+    - Un signalement de bug
+    - Une demande de fonctionnalite
+    - Un avis general avec notation (etoiles)
+
+Le formulaire est transmis par internet. Le nom et l'email sont optionnels mais recommandes
+si vous souhaitez une reponse.
+
+
+=============================================================================================
+                             12.  WORKFLOW RECOMMANDE
+=============================================================================================
+
+    1. Ouvrez votre source (glisser-deposer ou champ source).
+
+    2. Naviguez jusqu'a une image representative (ni trop sombre, ni trop claire).
+
+    3. Activez les filtres un par un :
+       a) Crop       — Supprimez les bordures noires ou ajustez le cadrage.
+       b) Degrain    — Commencez par le preset "standard", puis augmentez thSAD
+                       si le grain persiste.
+       c) Denoise    — Supprimez les poussieres. Le preset "standard" convient
+                       dans la plupart des cas.
+       d) Luma       — Ajustez luminosite et contraste. GammaY est souvent le
+                       parametre le plus utile.
+       e) GamMac     — Corrigez les derives de couleur (jaunissement, dominante bleue, etc.)
+       f) Sharpen    — Renforcez la nettete en derniere etape. Le mode "edge" preserve
+                       mieux les zones lisses.
+
+    4. Utilisez les presets de chaque filtre pour un reglage rapide, puis affinez.
+
+    5. Verifiez le resultat en parcourant plusieurs passages du film.
+
+    6. Sauvegardez votre configuration en preset.
+
+    7. Ouvrez le panneau Record et lancez l'encodage final.
+
+
+=============================================================================================
+                           13.  ASTUCES ET RACCOURCIS
+=============================================================================================
+
+    - La molette de souris sur les champs numeriques ajuste la valeur par pas.
+    - Le mode demi-resolution (bouton 1/2) accelere considerablement la previsualisation
+      sur les machines lentes.
+    - Tous les parametres sont sauvegardes automatiquement dans ScriptUser.avs a chaque
+      modification.
+    - La position, la taille de la fenetre et l'etat des panneaux sont memorises entre
+      les sessions.
+    - Le panneau Record est restaure a l'ouverture s'il etait ouvert a la fermeture.
+    - Les infobulles (survol) sur chaque parametre affichent les plages et des conseils.
+    - Le glisser-deposer de plusieurs fichiers cree automatiquement un clip par fichier.
+
+
+=============================================================================================
+                          14.  FICHIERS ET EMPLACEMENTS
+=============================================================================================
+
+    Fichier / Dossier              Emplacement
+    -----------------------------------------------------------------------------------------
+    ScriptUser.avs                 Dossier de l'exe
+    ScriptMaster.xx.avs            Dossier de l'exe
+    ScriptRender.avs               Dossier de l'exe
+    presets.json                   %AppData%\CleanScan
+    encoding_presets.json          %AppData%\CleanScan
+    window_settings.json           %AppData%\CleanScan
+    session.json                   %AppData%\CleanScan
+    Plugins/                       Dossier de l'exe
+    mpv/                           Dossier de l'exe
+
+
+=============================================================================================
+
+                              C L E A N S C A N
+                                ScanFilm SNC
+                               www.scanfilm.ch
+
+             Support : utilisez le formulaire Feedback integre dans l'application.
+
+=============================================================================================

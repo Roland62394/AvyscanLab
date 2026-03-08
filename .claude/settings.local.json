@@ -19,7 +19,8 @@
       "Bash(taskkill:*)",
       "Bash(export:*)",
       "Bash(cp:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(sed:*)"
     ]
   }
 }

@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -359,6 +362,237 @@ public sealed class DialogService : IDialogService
 
         // Return true: caller decides whether AviSynth is now installed
         return true;
+    }
+
+    public async Task ShowFeedbackDialogAsync(Window owner, MainWindowViewModel vm)
+    {
+        const string FormspreeEndpoint = "https://formspree.io/f/mvzwglbv";
+
+        var lang = vm.CurrentLanguageCode;
+        string L(string en, string fr, string de, string es) => lang switch
+        {
+            "fr" => fr, "de" => de, "es" => es, _ => en
+        };
+
+        var monoFont = new FontFamily("Consolas,Cascadia Code,monospace");
+        var bgField = new SolidColorBrush(Color.Parse("#1A2030"));
+        var fgField = new SolidColorBrush(Color.Parse("#DBDBDB"));
+        var borderField = new SolidColorBrush(Color.Parse("#252E42"));
+        var fgLabel = new SolidColorBrush(Color.Parse("#F6F6F6"));
+
+        TextBlock MakeLabel(string text) => new()
+        {
+            Text = text, Foreground = fgLabel, FontSize = 11,
+            FontWeight = FontWeight.SemiBold, FontFamily = monoFont,
+            Margin = new Thickness(0, 4, 0, 2)
+        };
+
+        TextBox MakeField(string placeholder = "", int height = 30) => new()
+        {
+            Watermark = placeholder, Height = height,
+            Background = bgField, Foreground = fgField,
+            BorderBrush = borderField, BorderThickness = new Thickness(1),
+            FontFamily = monoFont, Padding = new Thickness(8, 4),
+            VerticalContentAlignment = VerticalAlignment.Center
+        };
+
+        var nameBox = MakeField(L("Your name", "Votre nom", "Ihr Name", "Su nombre"));
+        var emailBox = MakeField(L("Your email", "Votre email", "Ihre E-Mail", "Su email"));
+
+        // Category
+        var categoryCombo = new ComboBox
+        {
+            Height = 30, HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = bgField, Foreground = fgField,
+            BorderBrush = borderField, BorderThickness = new Thickness(1),
+            FontFamily = monoFont,
+            ItemsSource = new[]
+            {
+                L("Bug report", "Signalement de bug", "Fehlerbericht", "Reporte de error"),
+                L("Feature request", "Demande de fonctionnalité", "Funktionswunsch", "Solicitud de función"),
+                L("General feedback", "Avis général", "Allgemeines Feedback", "Comentario general")
+            },
+            SelectedIndex = 0
+        };
+
+        // Star rating
+        var starButtons = new Button[5];
+        var starPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2 };
+        int selectedRating = 0;
+
+        void UpdateStars(int rating)
+        {
+            selectedRating = rating;
+            for (int i = 0; i < 5; i++)
+                starButtons[i].Content = i < rating ? "★" : "☆";
+        }
+
+        for (int i = 0; i < 5; i++)
+        {
+            int starIndex = i + 1;
+            starButtons[i] = new Button
+            {
+                Content = "☆", FontSize = 22, Padding = new Thickness(2, 0),
+                Background = Brushes.Transparent, Foreground = new SolidColorBrush(Color.Parse("#FFD700")),
+                BorderThickness = new Thickness(0), Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand)
+            };
+            starButtons[i].Click += (_, _) => UpdateStars(starIndex);
+            starPanel.Children.Add(starButtons[i]);
+        }
+
+        // Message
+        var messageBox = new TextBox
+        {
+            Height = 120, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap,
+            Watermark = L("Describe your issue or suggestion...",
+                          "Décrivez votre problème ou suggestion...",
+                          "Beschreiben Sie Ihr Problem oder Ihren Vorschlag...",
+                          "Describa su problema o sugerencia..."),
+            Background = bgField, Foreground = fgField,
+            BorderBrush = borderField, BorderThickness = new Thickness(1),
+            FontFamily = monoFont, Padding = new Thickness(8, 6),
+            VerticalContentAlignment = VerticalAlignment.Top
+        };
+
+        // Status text
+        var statusText = new TextBlock
+        {
+            Text = "", FontSize = 11, FontFamily = monoFont,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(0, 4, 0, 0)
+        };
+
+        var sendButton = new Button
+        {
+            Content = L("Send", "Envoyer", "Senden", "Enviar"),
+            MinWidth = 120, Height = 32, Padding = new Thickness(16, 0),
+            Background = new SolidColorBrush(Color.Parse("#35C156")),
+            Foreground = Brushes.White, FontWeight = FontWeight.SemiBold,
+            FontFamily = monoFont,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center
+        };
+
+        var closeButton = new Button
+        {
+            Content = L("Close", "Fermer", "Schließen", "Cerrar"),
+            MinWidth = 96, Height = 32, Padding = new Thickness(16, 0),
+            Background = new SolidColorBrush(Color.Parse("#1C2333")),
+            Foreground = fgField, FontFamily = monoFont,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center
+        };
+
+        var dialog = new Window
+        {
+            Title = L("Feedback", "Retour d'expérience", "Feedback", "Comentarios"),
+            Width = 480, SizeToContent = SizeToContent.Height,
+            Background = new SolidColorBrush(Color.Parse("#0F1319")),
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Content = new Border
+            {
+                Margin = new Thickness(16), Padding = new Thickness(14),
+                Background = new SolidColorBrush(Color.Parse("#161B24")),
+                BorderBrush = borderField, BorderThickness = new Thickness(1),
+                Child = new StackPanel
+                {
+                    Spacing = 6,
+                    Children =
+                    {
+                        MakeLabel(L("Name", "Nom", "Name", "Nombre")),
+                        nameBox,
+                        MakeLabel(L("Email", "Email", "E-Mail", "Email")),
+                        emailBox,
+                        MakeLabel(L("Category", "Catégorie", "Kategorie", "Categoría")),
+                        categoryCombo,
+                        MakeLabel(L("Rating", "Note", "Bewertung", "Valoración")),
+                        starPanel,
+                        MakeLabel(L("Message", "Message", "Nachricht", "Mensaje")),
+                        messageBox,
+                        statusText,
+                        new StackPanel
+                        {
+                            Orientation = Orientation.Horizontal,
+                            HorizontalAlignment = HorizontalAlignment.Right,
+                            Spacing = 8, Margin = new Thickness(0, 8, 0, 0),
+                            Children = { sendButton, closeButton }
+                        }
+                    }
+                }
+            }
+        };
+
+        sendButton.Click += async (_, _) =>
+        {
+            var name = nameBox.Text?.Trim() ?? "";
+            var email = emailBox.Text?.Trim() ?? "";
+            var message = messageBox.Text?.Trim() ?? "";
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                statusText.Foreground = new SolidColorBrush(Color.Parse("#C62828"));
+                statusText.Text = L("Please enter a message.", "Veuillez saisir un message.",
+                    "Bitte geben Sie eine Nachricht ein.", "Por favor, introduzca un mensaje.");
+                return;
+            }
+
+            sendButton.IsEnabled = false;
+            statusText.Foreground = new SolidColorBrush(Color.Parse("#7984A5"));
+            statusText.Text = L("Sending...", "Envoi en cours...", "Wird gesendet...", "Enviando...");
+
+            try
+            {
+                var category = categoryCombo.SelectedItem?.ToString() ?? "";
+                var stars = selectedRating > 0 ? new string('★', selectedRating) + new string('☆', 5 - selectedRating) : "—";
+
+                using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+                var payload = new Dictionary<string, string>
+                {
+                    ["_subject"] = $"CleanScan Feedback: {category}",
+                    ["name"] = string.IsNullOrWhiteSpace(name) ? "Anonymous" : name,
+                    ["email"] = string.IsNullOrWhiteSpace(email) ? "noreply@cleanscan.app" : email,
+                    ["category"] = category,
+                    ["rating"] = stars,
+                    ["message"] = message
+                };
+
+                var json = JsonSerializer.Serialize(payload);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var response = await http.PostAsync(FormspreeEndpoint, content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    statusText.Foreground = new SolidColorBrush(Color.Parse("#35C156"));
+                    statusText.Text = L("Sent successfully! Thank you.",
+                        "Envoyé avec succès ! Merci.",
+                        "Erfolgreich gesendet! Danke.",
+                        "Enviado con éxito! Gracias.");
+                    sendButton.Content = L("Sent", "Envoyé", "Gesendet", "Enviado");
+                }
+                else
+                {
+                    var body = await response.Content.ReadAsStringAsync();
+                    statusText.Foreground = new SolidColorBrush(Color.Parse("#C62828"));
+                    statusText.Text = L($"Send failed ({response.StatusCode}). {body}",
+                        $"Échec de l'envoi ({response.StatusCode}). {body}",
+                        $"Senden fehlgeschlagen ({response.StatusCode}). {body}",
+                        $"Error al enviar ({response.StatusCode}). {body}");
+                    sendButton.IsEnabled = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                statusText.Foreground = new SolidColorBrush(Color.Parse("#C62828"));
+                statusText.Text = L($"Connection error: {ex.Message}",
+                    $"Erreur de connexion : {ex.Message}",
+                    $"Verbindungsfehler: {ex.Message}",
+                    $"Error de conexión: {ex.Message}");
+                sendButton.IsEnabled = true;
+            }
+        };
+
+        closeButton.Click += (_, _) => dialog.Close();
+        await dialog.ShowDialog(owner);
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────
