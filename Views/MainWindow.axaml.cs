@@ -34,6 +34,7 @@ namespace CleanScan.Views
         private const string WindowSettingsFileName = "window-settings.json";
         private const string PresetsFileName        = "presets.json";
         private const string EncodingPresetsFileName = "encoding_presets.json";
+        private const string SessionFileName         = "session.json";
 
         /// <summary>Trial: max recording duration per clip in seconds. 0 = unlimited (full version).</summary>
         private const int TrialMaxSeconds = 30;
@@ -1202,6 +1203,7 @@ namespace CleanScan.Views
         private readonly IWindowStateService  _windowStateService;
         private readonly IDialogService       _dialogService;
         private readonly IAviService          _aviService;
+        private readonly SessionService      _sessionService;
         private readonly Debouncer            _refreshDebouncer = new(TimeSpan.FromMilliseconds(400));
         private readonly Debouncer            _windowStateDebouncer = new(TimeSpan.FromMilliseconds(120));
         private readonly SemaphoreSlim        _refreshGate      = new(1, 1);
@@ -1234,6 +1236,11 @@ namespace CleanScan.Views
         private readonly List<bool> _clipBatchSelected = new();
         private readonly List<string?> _clipBatchEncodingPreset = new();
 
+        // Encoding preset auto-save
+        private bool _autoSaveEncodingPreset;
+        private bool _isLoadingEncodingPreset;
+        private bool _pendingEncodingPresetPrompt;
+
 
         private MainWindowViewModel ViewModel => (MainWindowViewModel)DataContext!;
 
@@ -1250,6 +1257,7 @@ namespace CleanScan.Views
             _presetService      = new PresetService(GetAppDataPath(PresetsFileName));
             _encodingPresetService = new PresetService(GetAppDataPath(EncodingPresetsFileName));
             _windowStateService = new WindowStateService(GetAppDataPath(WindowSettingsFileName));
+            _sessionService     = new SessionService(GetAppDataPath(SessionFileName));
             _dialogService      = new DialogService();
 
             InitializeWindow();
@@ -1270,6 +1278,7 @@ namespace CleanScan.Views
             _presetService      = presetService;
             _encodingPresetService = new PresetService(GetAppDataPath(EncodingPresetsFileName));
             _windowStateService = windowStateService;
+            _sessionService     = new SessionService(GetAppDataPath(SessionFileName));
             _dialogService      = dialogService;
             _aviService         = aviService;
 
@@ -1827,8 +1836,11 @@ namespace CleanScan.Views
                 _scriptService.EnsureScriptCopiesInOutputDir();
                 ApplyConfigurationValues();
                 RestoreSessionState(settings);
+
+                // Restore saved session (clips + per-clip configs)
+                RestoreSessionClips();
+
                 // Régénère toujours avec la bonne langue au démarrage (indépendamment de la validation source)
-                // RegenerateScript(showValidationError: false) ne génère pas si aucune source → script resterait dans l'ancienne langue
                 _scriptService.Generate(_config.Snapshot(), ViewModel.CurrentLanguageCode);
             }
             finally
@@ -1847,7 +1859,14 @@ namespace CleanScan.Views
             _isClosing = true;
             _refreshDebouncer.Cancel();
             _config.Changed -= OnConfigChangedForSlider;
+
+            // Kill any running encoding process
+            _encodingCts?.Cancel();
+            if (_encodingProcess is { HasExited: false } proc)
+                try { proc.Kill(entireProcessTree: true); } catch { }
+
             SaveWindowSettings();
+            SaveSession();
             _layoutInitialized = false;
             _mpvService?.Dispose();
         }
@@ -2138,7 +2157,7 @@ namespace CleanScan.Views
             {
                 var panels = _openParamPanels.Count > 0 ? _openParamPanels.ToArray() : null;
                 var lastDir = this.FindControl<TextBox>("RecordDir")?.Text?.Trim();
-                _windowStateService.Save(s with { Language = ViewModel.CurrentLanguageCode, OpenPanels = panels, LastOutputDir = lastDir });
+                _windowStateService.Save(s with { Language = ViewModel.CurrentLanguageCode, OpenPanels = panels, LastOutputDir = lastDir, AutoSaveEncodingPreset = _autoSaveEncodingPreset ? true : null, RecordPanelOpen = _recordOpen ? true : null });
             }
         }
 
@@ -2263,6 +2282,121 @@ namespace CleanScan.Views
             {
                 if (this.FindControl<TextBox>("RecordDir") is { } dirTb)
                     dirTb.Text = settings.LastOutputDir;
+            }
+
+            // Restore "auto-save encoding preset" preference
+            if (settings?.AutoSaveEncodingPreset == true)
+                _autoSaveEncodingPreset = true;
+
+            // Restore Record panel visibility
+            if (settings?.RecordPanelOpen == true)
+            {
+                _recordOpen = true;
+                if (this.FindControl<Button>("RecordBtn") is { } recBtn)
+                {
+                    recBtn.Background = new SolidColorBrush(Color.Parse("#C62828"));
+                    recBtn.Foreground = Brushes.White;
+                }
+                if (this.FindControl<Border>("RecordOverlay") is { } overlay)
+                    overlay.IsVisible = true;
+                RebuildBatchClipList();
+                UpdateDiskSpaceLabel(this.FindControl<TextBox>("RecordDir")?.Text);
+            }
+        }
+
+        /// <summary>Called by App on unhandled exceptions to save session state before crash.</summary>
+        public void EmergencySaveSession()
+        {
+            try { SaveSession(); } catch { }
+        }
+
+        private void SaveSession()
+        {
+            // Ensure the active clip's config is up to date
+            SaveActiveClipConfig();
+
+            var clips = new List<ClipSession>();
+            for (int i = 0; i < _clipPaths.Count; i++)
+            {
+                clips.Add(new ClipSession(
+                    Path:               _clipPaths[i],
+                    FilterConfig:       i < _clipConfigs.Count ? _clipConfigs[i] : new(),
+                    PresetName:         i < _clipPresetNames.Count ? _clipPresetNames[i] : null,
+                    BatchSelected:      i < _clipBatchSelected.Count && _clipBatchSelected[i],
+                    BatchEncodingPreset: i < _clipBatchEncodingPreset.Count ? _clipBatchEncodingPreset[i] : null));
+            }
+
+            var encPresetName = (this.FindControl<ComboBox>("RecordPresetCombo")?.SelectedItem as string)?.Trim();
+            _sessionService.Save(new SessionState(_activeClipIndex, clips, CaptureEncodingValues(), encPresetName));
+        }
+
+        private void RestoreSessionClips()
+        {
+            var session = _sessionService.Load();
+            if (session?.Clips is not { Count: > 0 } clips) return;
+
+            // Filter out clips whose source files no longer exist
+            var validClips = new List<(ClipSession Clip, int OriginalIndex)>();
+            for (int i = 0; i < clips.Count; i++)
+            {
+                if (File.Exists(clips[i].Path))
+                    validClips.Add((clips[i], i));
+            }
+            if (validClips.Count == 0) return;
+
+            // Rebuild clip state from session
+            _clipPaths.Clear();
+            _clipConfigs.Clear();
+            _clipPresetNames.Clear();
+            _clipBatchSelected.Clear();
+            _clipBatchEncodingPreset.Clear();
+
+            foreach (var (clip, _) in validClips)
+            {
+                _clipPaths.Add(clip.Path);
+                _clipConfigs.Add(new Dictionary<string, string>(clip.FilterConfig, StringComparer.OrdinalIgnoreCase));
+                _clipPresetNames.Add(clip.PresetName);
+                _clipBatchSelected.Add(clip.BatchSelected);
+                _clipBatchEncodingPreset.Add(clip.BatchEncodingPreset);
+            }
+
+            // Determine the active clip index
+            var targetIndex = session.ActiveClipIndex;
+            var newIndex = validClips.FindIndex(v => v.OriginalIndex == targetIndex);
+            if (newIndex < 0) newIndex = 0;
+            _activeClipIndex = newIndex;
+
+            // Restore active clip's filter config into _config and UI
+            RestoreClipConfig(_activeClipIndex);
+
+            // Set source directly (without going through ApplyDetectedSourceAndRefreshAsync
+            // which calls AddOrActivateClip and would corrupt the restored clip lists)
+            var sourcePath = _clipPaths[_activeClipIndex];
+            var normalized = _sourceService.NormalizeConfiguredPath(sourcePath);
+            _config.Set("source", normalized);
+            _config.Set("film",   normalized);
+            _config.Set("img",    normalized);
+            if (this.FindControl<TextBox>("source") is { } srcTb)
+                SetTextSafely(srcTb, normalized);
+
+            // Detect film vs image mode
+            var isImage = _sourceService.IsImageSource(normalized);
+            UpdateSourceSelection(isFilmSelected: !isImage);
+
+            // Rebuild UI
+            RestoreClipPresetCombo();
+            RebuildClipTabs();
+
+            // Restore encoding parameters
+            if (session.EncodingValues is { Count: > 0 } encVals)
+                ApplyEncodingValues(encVals);
+
+            // Restore encoding preset combo selection
+            if (!string.IsNullOrWhiteSpace(session.EncodingPresetName)
+                && this.FindControl<ComboBox>("RecordPresetCombo") is { } encCombo)
+            {
+                RefreshEncodingPresetCombo();
+                encCombo.SelectedItem = session.EncodingPresetName;
             }
         }
 
@@ -3444,6 +3578,7 @@ namespace CleanScan.Views
             UpdateConfigurationValue("preview_half", _halfRes.ToString().ToLowerInvariant());
         }
 
+        private bool _isEncoding;
         private bool _recordOpen;
         private void InitRecordPanel()
         {
@@ -3462,8 +3597,11 @@ namespace CleanScan.Views
             if (this.FindControl<ComboBox>("RecordChroma") is { } ch)
                 ch.SelectionChanged += OnRecordChromaChanged;
 
+            if (this.FindControl<ComboBox>("RecordContainer") is { } ct)
+                ct.SelectionChanged += (_, _) => OnEncodingSettingChanged();
+
             if (this.FindControl<ComboBox>("RecordResize") is { } rs)
-                rs.SelectionChanged += (_, _) => UpdateBitrateHint();
+                rs.SelectionChanged += (_, _) => { UpdateBitrateHint(); OnEncodingSettingChanged(); };
 
             if (this.FindControl<TextBox>("RecordBitrate") is { } brTb)
             {
@@ -3506,6 +3644,7 @@ namespace CleanScan.Views
                     crfDragging = false;
                     e.Pointer.Capture(null);
                     e.Handled = true;
+                    OnEncodingSettingChanged();
                 }, RoutingStrategies.Bubble, handledEventsToo: true);
             }
 
@@ -3523,8 +3662,11 @@ namespace CleanScan.Views
 
             var preset = _encodingPresetService.LoadPresets()
                 .FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
-            if (preset?.Values is not null)
-                ApplyEncodingValues(preset.Values);
+            if (preset?.Values is null) return;
+
+            _isLoadingEncodingPreset = true;
+            try { ApplyEncodingValues(preset.Values); }
+            finally { _isLoadingEncodingPreset = false; }
         }
 
         private void OnRecordEncoderChanged(object? sender, SelectionChangedEventArgs e)
@@ -3542,6 +3684,8 @@ namespace CleanScan.Views
                 qp.IsVisible = !isLossless;
             if (this.FindControl<StackPanel>("RecordChromaPanel") is { } cp)
                 cp.IsVisible = !isLossless;
+
+            OnEncodingSettingChanged();
         }
 
         private void OnRecordQualityModeChanged(object? sender, SelectionChangedEventArgs e)
@@ -3553,6 +3697,8 @@ namespace CleanScan.Views
                 crfP.IsVisible = isCrf;
             if (this.FindControl<StackPanel>("RecordBitratePanel") is { } brP)
                 brP.IsVisible = !isCrf;
+
+            OnEncodingSettingChanged();
         }
 
         /// <summary>
@@ -3619,6 +3765,8 @@ namespace CleanScan.Views
                 }
             }
             finally { _syncingBitrateChroma = false; }
+
+            OnEncodingSettingChanged();
         }
 
         /// <summary>
@@ -3669,6 +3817,8 @@ namespace CleanScan.Views
                     }
             }
             finally { _syncingBitrateChroma = false; }
+
+            OnEncodingSettingChanged();
         }
 
         // ── Encoding presets ──
@@ -3743,8 +3893,16 @@ namespace CleanScan.Views
                 presets.Add(new Preset(name, CaptureEncodingValues()));
 
             _encodingPresetService.SavePresets(presets);
-            RefreshEncodingPresetCombo();
-            combo.SelectedItem = name;
+
+            // Guard: refreshing the combo + re-selecting triggers OnRecordPresetSelectionChanged
+            // which would re-apply values and fire visibility handlers (hiding controls).
+            _isLoadingEncodingPreset = true;
+            try
+            {
+                RefreshEncodingPresetCombo();
+                combo.SelectedItem = name;
+            }
+            finally { _isLoadingEncodingPreset = false; }
         }
 
         private void OnRecordPresetLoadClick(object? sender, RoutedEventArgs e)
@@ -3755,8 +3913,10 @@ namespace CleanScan.Views
 
             var preset = _encodingPresetService.LoadPresets()
                 .FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
-            if (preset is not null)
-                ApplyEncodingValues(preset.Values);
+            if (preset is null) return;
+            _isLoadingEncodingPreset = true;
+            try { ApplyEncodingValues(preset.Values); }
+            finally { _isLoadingEncodingPreset = false; }
         }
 
         private void OnRecordPresetDeleteClick(object? sender, RoutedEventArgs e)
@@ -3768,8 +3928,134 @@ namespace CleanScan.Views
             var presets = _encodingPresetService.LoadPresets();
             presets.RemoveAll(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
             _encodingPresetService.SavePresets(presets);
-            RefreshEncodingPresetCombo();
-            combo.SelectedItem = null;
+
+            _isLoadingEncodingPreset = true;
+            try
+            {
+                RefreshEncodingPresetCombo();
+                combo.SelectedItem = null;
+                combo.Text = string.Empty;
+            }
+            finally { _isLoadingEncodingPreset = false; }
+        }
+
+        private async void OnEncodingSettingChanged()
+        {
+            if (_isLoadingEncodingPreset || _isInitializing || _isClosing) return;
+            if (_pendingEncodingPresetPrompt) return;
+            if (this.FindControl<ComboBox>("RecordPresetCombo") is not { } combo) return;
+            var presetName = combo.SelectedItem as string;
+            if (string.IsNullOrWhiteSpace(presetName)) return;
+
+            // Auto-save without asking if user checked "don't ask again"
+            if (_autoSaveEncodingPreset)
+            {
+                SaveEncodingPresetByName(presetName);
+                return;
+            }
+
+            _pendingEncodingPresetPrompt = true;
+            try
+            {
+                var result = await ShowEncodingPresetModifiedDialog(presetName);
+                if (result == true)
+                {
+                    SaveEncodingPresetByName(presetName);
+                }
+                else if (result == false)
+                {
+                    // Clear preset selection to avoid confusion
+                    combo.SelectedItem = null;
+                }
+                // null = dialog closed without choosing → do nothing
+            }
+            finally { _pendingEncodingPresetPrompt = false; }
+        }
+
+        private void SaveEncodingPresetByName(string name)
+        {
+            var presets = _encodingPresetService.LoadPresets();
+            var existing = presets.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+            if (existing is not null)
+                existing.Values = CaptureEncodingValues();
+            else
+                presets.Add(new Preset(name, CaptureEncodingValues()));
+            _encodingPresetService.SavePresets(presets);
+        }
+
+        /// <summary>
+        /// Shows a dialog asking if the user wants to save changes to the active encoding preset.
+        /// Returns true=save, false=discard, null=cancelled.
+        /// </summary>
+        private async Task<bool?> ShowEncodingPresetModifiedDialog(string presetName)
+        {
+            bool? dialogResult = null;
+
+            var checkBox = new CheckBox
+            {
+                Content = GetUiText("PresetModifiedDontAsk"),
+                Margin = new Thickness(0, 4, 0, 0),
+                Foreground = new SolidColorBrush(Color.Parse("#AAAAAA")),
+                FontSize = 11
+            };
+
+            var yesButton = new Button
+            {
+                Content = GetUiText("YesButton"),
+                MinWidth = 80,
+                HorizontalContentAlignment = HorizontalAlignment.Center
+            };
+            var noButton = new Button
+            {
+                Content = GetUiText("NoButton"),
+                MinWidth = 80,
+                HorizontalContentAlignment = HorizontalAlignment.Center
+            };
+
+            var dialog = new Window
+            {
+                Title = GetUiText("PresetModifiedTitle"),
+                SizeToContent = SizeToContent.WidthAndHeight,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Content = new StackPanel
+                {
+                    Margin = new Thickness(20),
+                    Spacing = 12,
+                    Children =
+                    {
+                        new TextBlock
+                        {
+                            Text = string.Format(GetUiText("PresetModifiedMsg"), presetName),
+                            TextWrapping = TextWrapping.Wrap,
+                            MaxWidth = 400
+                        },
+                        checkBox,
+                        new StackPanel
+                        {
+                            Orientation = Orientation.Horizontal,
+                            Spacing = 8,
+                            HorizontalAlignment = HorizontalAlignment.Center,
+                            Children = { yesButton, noButton }
+                        }
+                    }
+                }
+            };
+
+            yesButton.Click += (_, _) =>
+            {
+                dialogResult = true;
+                if (checkBox.IsChecked == true)
+                    _autoSaveEncodingPreset = true;
+                dialog.Close();
+            };
+            noButton.Click += (_, _) =>
+            {
+                dialogResult = false;
+                dialog.Close();
+            };
+
+            await dialog.ShowDialog(this);
+            return dialogResult;
         }
 
         private void OnRecordClick(object? sender, RoutedEventArgs e)
@@ -4090,6 +4376,7 @@ namespace CleanScan.Views
 
             SetRecordStartButtonState(idle: false);
             SetRecordProgressVisible(true);
+            SetEncodingLock(true);
             _usedOutputPaths.Clear();
             _encodingCts = new CancellationTokenSource();
 
@@ -4207,6 +4494,7 @@ namespace CleanScan.Views
                 _encodingCts = null;
                 SetRecordStartButtonState(idle: true);
                 SetRecordProgressVisible(false);
+                SetEncodingLock(false);
 
                 // Restore original state
                 _config.ReplaceAll(savedConfig);
@@ -4330,6 +4618,46 @@ namespace CleanScan.Views
                 btn.Content = GetUiText("RecordStopBtn");
                 btn.Background = new SolidColorBrush(Color.Parse("#C62828"));
             }
+        }
+
+        private void SetEncodingLock(bool locked)
+        {
+            _isEncoding = locked;
+
+            // Stop mpv playback when encoding starts
+            if (locked)
+                _mpvService?.Stop();
+
+            // Disable/enable transport buttons (including Record toggle)
+            foreach (var name in new[] { "VdbBeginning", "VdbPrevFrame", "VdbPlay", "VdbNextFrame", "VdbEnd", "SpeedBtn", "HalfResBtn", "RecordBtn" })
+            {
+                if (this.FindControl<Button>(name) is { } btn)
+                {
+                    btn.IsEnabled = !locked;
+                    if (name == "RecordBtn")
+                        btn.Opacity = locked ? 0.4 : 1.0;
+                }
+            }
+            if (this.FindControl<Slider>("SeekBar") is { } seek)
+                seek.IsEnabled = !locked;
+
+            // Disable/enable clip preset combo in transport bar
+            if (this.FindControl<ComboBox>("ClipPresetCombo") is { } clipPreset)
+                clipPreset.IsEnabled = !locked;
+
+            // Disable/enable clip tabs (file selection)
+            if (this.FindControl<Border>("ClipTabsContainer") is { } clipTabs)
+                clipTabs.IsEnabled = !locked;
+
+            // Disable/enable top menu bar (Infos, Preset, Settings, Language, About)
+            if (this.FindControl<Menu>("MainMenu") is { } menu)
+                menu.IsEnabled = !locked;
+
+            // Disable/enable encoding settings (clip list, params) but not Stop button
+            if (this.FindControl<Grid>("RecordSettingsGrid") is { } recGrid)
+                recGrid.IsEnabled = !locked;
+            if (this.FindControl<CheckBox>("ShutdownCheckBox") is { } shutCb)
+                shutCb.IsEnabled = !locked;
         }
 
         private string? GenerateRenderScript()
@@ -4462,6 +4790,7 @@ namespace CleanScan.Views
         // ── Raccourcis clavier transport ────────────────────────────────
         private void OnWindowKeyDown(object? sender, KeyEventArgs e)
         {
+            if (_isEncoding) return;
             if (FocusManager?.GetFocusedElement() is TextBox) return;
 
             switch ((e.Key, e.KeyModifiers))

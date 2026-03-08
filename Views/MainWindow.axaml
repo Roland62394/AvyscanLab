@@ -399,7 +399,7 @@
 
                 <!-- Menu strip -->
                 <Border Background="{StaticResource BgHeader}" Padding="0">
-                    <Menu HorizontalAlignment="Stretch">
+                    <Menu x:Name="MainMenu" HorizontalAlignment="Stretch">
                         <Menu.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <DockPanel LastChildFill="False" HorizontalAlignment="Stretch"/>
@@ -1057,7 +1057,7 @@
                         </StackPanel>
 
                         <!-- ── Main area: two columns (centered, 2/3 width) ── -->
-                        <Grid ColumnDefinitions="*,2*,20,2*,*" Margin="0,4,0,0">
+                        <Grid x:Name="RecordSettingsGrid" ColumnDefinitions="*,2*,20,2*,*" Margin="0,4,0,0">
 
                             <!-- ══ LEFT: Clip list ══ -->
                             <DockPanel Grid.Column="1">

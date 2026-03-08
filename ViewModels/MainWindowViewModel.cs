@@ -89,7 +89,12 @@ namespace CleanScan.ViewModels
                 ["TrialMessage"] = "This trial version limits recording to 30 s. per clip.",
                 ["ResetSettingsMenuItem"] = "Reset settings",
                 ["ResetSettingsConfirm"] = "This will reset all parameters to their default values. The application will restart. Continue?",
-                ["ResetSettingsTitle"] = "Reset settings"
+                ["ResetSettingsTitle"] = "Reset settings",
+                ["PresetModifiedTitle"] = "Preset modified",
+                ["PresetModifiedMsg"] = "Save this change to preset \"{0}\"?",
+                ["PresetModifiedDontAsk"] = "Don't ask me again (always save)",
+                ["YesButton"] = "Yes",
+                ["NoButton"] = "No"
             },
             ["fr"] = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -172,7 +177,12 @@ namespace CleanScan.ViewModels
                 ["TrialMessage"] = "Cette version d'essai limite l'enregistrement à 30 s. par clip.",
                 ["ResetSettingsMenuItem"] = "Réinitialiser les paramètres",
                 ["ResetSettingsConfirm"] = "Ceci va réinitialiser tous les paramètres à leurs valeurs par défaut. L'application va redémarrer. Continuer ?",
-                ["ResetSettingsTitle"] = "Réinitialisation"
+                ["ResetSettingsTitle"] = "Réinitialisation",
+                ["PresetModifiedTitle"] = "Preset modifié",
+                ["PresetModifiedMsg"] = "Enregistrer cette modification dans le preset « {0} » ?",
+                ["PresetModifiedDontAsk"] = "Ne plus me demander (toujours enregistrer)",
+                ["YesButton"] = "Oui",
+                ["NoButton"] = "Non"
             },
             ["de"] = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -255,7 +265,12 @@ namespace CleanScan.ViewModels
                 ["TrialMessage"] = "Diese Testversion begrenzt die Aufnahme auf 30 s. pro Clip.",
                 ["ResetSettingsMenuItem"] = "Einstellungen zurücksetzen",
                 ["ResetSettingsConfirm"] = "Alle Parameter werden auf die Standardwerte zurückgesetzt. Die Anwendung wird neu gestartet. Fortfahren?",
-                ["ResetSettingsTitle"] = "Zurücksetzen"
+                ["ResetSettingsTitle"] = "Zurücksetzen",
+                ["PresetModifiedTitle"] = "Preset geändert",
+                ["PresetModifiedMsg"] = "Diese \u00c4nderung im Preset \u201e{0}\u201c speichern?",
+                ["PresetModifiedDontAsk"] = "Nicht mehr fragen (immer speichern)",
+                ["YesButton"] = "Ja",
+                ["NoButton"] = "Nein"
             },
             ["es"] = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -338,7 +353,12 @@ namespace CleanScan.ViewModels
                 ["TrialMessage"] = "Esta versión de prueba limita la grabación a 30 s. por clip.",
                 ["ResetSettingsMenuItem"] = "Restablecer ajustes",
                 ["ResetSettingsConfirm"] = "Se restablecerán todos los parámetros a sus valores predeterminados. La aplicación se reiniciará. ¿Continuar?",
-                ["ResetSettingsTitle"] = "Restablecer"
+                ["ResetSettingsTitle"] = "Restablecer",
+                ["PresetModifiedTitle"] = "Preset modificado",
+                ["PresetModifiedMsg"] = "¿Guardar este cambio en el preset «{0}»?",
+                ["PresetModifiedDontAsk"] = "No volver a preguntar (guardar siempre)",
+                ["YesButton"] = "Sí",
+                ["NoButton"] = "No"
             }
         };
 

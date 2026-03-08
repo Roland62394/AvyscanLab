@@ -18,7 +18,8 @@
       "Read(//c/Windows/SysWOW64/**)",
       "Bash(taskkill:*)",
       "Bash(export:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(grep:*)"
     ]
   }
 }

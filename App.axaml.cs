@@ -29,10 +29,34 @@ namespace CleanScan
                 // Avoid duplicate validations from both Avalonia and the CommunityToolkit.
                 // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
                 DisableAvaloniaDataAnnotationValidation();
+
+                // Emergency session save on unhandled exceptions
+                AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+                {
+                    TrySaveSessionOnCrash(desktop);
+                    if (args.ExceptionObject is Exception ex)
+                        TryLogStartupException(ex);
+                };
+                TaskScheduler.UnobservedTaskException += (_, args) =>
+                {
+                    TrySaveSessionOnCrash(desktop);
+                    TryLogStartupException(args.Exception);
+                };
+
                 _ = ShowSplashThenMainAsync(desktop);
             }
 
             base.OnFrameworkInitializationCompleted();
+        }
+
+        private static void TrySaveSessionOnCrash(IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            try
+            {
+                if (desktop.MainWindow is MainWindow mainWindow)
+                    mainWindow.EmergencySaveSession();
+            }
+            catch { /* Must never throw during crash handling */ }
         }
 
         private void DisableAvaloniaDataAnnotationValidation()
