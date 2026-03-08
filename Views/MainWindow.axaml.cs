@@ -1955,6 +1955,8 @@ namespace CleanScan.Views
                 prDel.Content = GetUiText("RecordPresetDeleteBtn");
             if (this.FindControl<Button>("RecordStartBtn") is { } startBtn)
                 startBtn.Content = GetUiText("RecordStartBtn");
+            if (this.FindControl<CheckBox>("ShutdownCheckBox") is { } shutCb)
+                shutCb.Content = GetUiText("ShutdownCheckBox");
         }
 
         private void ApplyParamTooltips(string lang)
