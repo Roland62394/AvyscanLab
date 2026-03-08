@@ -1949,8 +1949,6 @@ namespace CleanScan.Views
                 prLbl.Text = GetUiText("RecordPresetLabel");
             if (this.FindControl<Button>("RecordPresetSaveBtn") is { } prSave)
                 prSave.Content = GetUiText("RecordPresetSaveBtn");
-            if (this.FindControl<Button>("RecordPresetLoadBtn") is { } prLoad)
-                prLoad.Content = GetUiText("RecordPresetLoadBtn");
             if (this.FindControl<Button>("RecordPresetDeleteBtn") is { } prDel)
                 prDel.Content = GetUiText("RecordPresetDeleteBtn");
             if (this.FindControl<Button>("RecordStartBtn") is { } startBtn)
@@ -2139,7 +2137,8 @@ namespace CleanScan.Views
             if (_lastGoodSettings is { } s)
             {
                 var panels = _openParamPanels.Count > 0 ? _openParamPanels.ToArray() : null;
-                _windowStateService.Save(s with { Language = ViewModel.CurrentLanguageCode, OpenPanels = panels });
+                var lastDir = this.FindControl<TextBox>("RecordDir")?.Text?.Trim();
+                _windowStateService.Save(s with { Language = ViewModel.CurrentLanguageCode, OpenPanels = panels, LastOutputDir = lastDir });
             }
         }
 
@@ -2257,6 +2256,13 @@ namespace CleanScan.Views
                     }
                 }
                 UpdateParamsPlaceholderVisibility();
+            }
+
+            // Restore last output directory
+            if (!string.IsNullOrWhiteSpace(settings?.LastOutputDir))
+            {
+                if (this.FindControl<TextBox>("RecordDir") is { } dirTb)
+                    dirTb.Text = settings.LastOutputDir;
             }
         }
 
@@ -3469,12 +3475,39 @@ namespace CleanScan.Views
             }
 
             if (this.FindControl<Slider>("RecordCrfSlider") is { } slider)
+            {
                 slider.PropertyChanged += (_, args) =>
                 {
                     if (args.Property == Slider.ValueProperty &&
                         this.FindControl<TextBlock>("RecordCrfValue") is { } lbl)
                         lbl.Text = ((int)slider.Value).ToString();
                 };
+
+                var crfDragging = false;
+                slider.AddHandler(PointerPressedEvent, (_, e) =>
+                {
+                    if (!e.GetCurrentPoint(slider).Properties.IsLeftButtonPressed) return;
+                    crfDragging = true;
+                    e.Pointer.Capture(slider);
+                    MoveSliderToPointer(slider, e);
+                    e.Handled = true;
+                }, RoutingStrategies.Bubble, handledEventsToo: true);
+
+                slider.AddHandler(PointerMovedEvent, (_, e) =>
+                {
+                    if (!crfDragging) return;
+                    MoveSliderToPointer(slider, e);
+                    e.Handled = true;
+                }, RoutingStrategies.Bubble, handledEventsToo: true);
+
+                slider.AddHandler(PointerReleasedEvent, (_, e) =>
+                {
+                    if (!crfDragging) return;
+                    crfDragging = false;
+                    e.Pointer.Capture(null);
+                    e.Handled = true;
+                }, RoutingStrategies.Bubble, handledEventsToo: true);
+            }
 
             RefreshEncodingPresetCombo();
 
@@ -3825,11 +3858,32 @@ namespace CleanScan.Views
             {
                 try
                 {
-                    tb.Text = folder[0].Path.LocalPath;
+                    var picked = folder[0].Path.LocalPath;
+                    // Normalize root drives: "E:" → "E:\"
+                    if (picked.Length == 2 && picked[1] == ':')
+                        picked += "\\";
+                    tb.Text = picked;
                     UpdateDiskSpaceLabel(tb.Text);
                 }
-                catch { /* guard against invalid URI for root drives */ }
+                catch
+                {
+                    // Fallback: TryGetLocalPath may work when Path.LocalPath throws on root drives
+                    if (folder[0].TryGetLocalPath() is { } fallback)
+                    {
+                        if (fallback.Length == 2 && fallback[1] == ':')
+                            fallback += "\\";
+                        tb.Text = fallback;
+                        UpdateDiskSpaceLabel(tb.Text);
+                    }
+                }
             }
+        }
+
+        private void OnRecordDirOpenClick(object? sender, RoutedEventArgs e)
+        {
+            var dir = this.FindControl<TextBox>("RecordDir")?.Text?.Trim();
+            if (!string.IsNullOrWhiteSpace(dir) && Directory.Exists(dir))
+                Process.Start(new ProcessStartInfo(dir) { UseShellExecute = true });
         }
 
         private void UpdateDiskSpaceLabel(string? dirPath)

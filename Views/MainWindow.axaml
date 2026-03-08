@@ -1092,19 +1092,15 @@
                                         <TextBlock x:Name="RecordPresetLabel" Text="Preset"
                                                    FontSize="12" FontWeight="SemiBold"
                                                    Foreground="{StaticResource TextLabel}"/>
-                                        <Grid ColumnDefinitions="400,8,Auto,6,Auto,6,Auto">
+                                        <Grid ColumnDefinitions="*,6,Auto,6,Auto">
                                             <ComboBox x:Name="RecordPresetCombo" Grid.Column="0"
                                                       FontSize="12" HorizontalAlignment="Stretch"
                                                       IsEditable="True"/>
-                                            <Button x:Name="RecordPresetLoadBtn" Grid.Column="2"
-                                                    Content="Load" FontSize="11" Height="26" MinWidth="50" Padding="8,0"
-                                                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                                                    Click="OnRecordPresetLoadClick"/>
-                                            <Button x:Name="RecordPresetSaveBtn" Grid.Column="4"
+                                            <Button x:Name="RecordPresetSaveBtn" Grid.Column="2"
                                                     Content="Save" FontSize="11" Height="26" MinWidth="50" Padding="8,0"
                                                     HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                                                     Click="OnRecordPresetSaveClick"/>
-                                            <Button x:Name="RecordPresetDeleteBtn" Grid.Column="6"
+                                            <Button x:Name="RecordPresetDeleteBtn" Grid.Column="4"
                                                     Content="Del" FontSize="11" Height="26" MinWidth="42" Padding="8,0"
                                                     HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                                                     Click="OnRecordPresetDeleteClick"/>
@@ -1122,13 +1118,18 @@
                                                        FontSize="10" Foreground="{StaticResource TextSecondary}"
                                                        VerticalAlignment="Center"/>
                                         </StackPanel>
-                                        <Grid ColumnDefinitions="400,6,Auto">
+                                        <Grid ColumnDefinitions="400,6,Auto,4,Auto">
                                             <TextBox x:Name="RecordDir" Grid.Column="0" FontSize="12" Height="28" TextAlignment="Left"
                                                      Watermark="C:\output"/>
                                             <Button Grid.Column="2" Content="…" FontSize="13"
                                                     Width="28" Height="28"
                                                     HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                                                     Click="OnRecordDirPickClick"/>
+                                            <Button Grid.Column="4" Content="📂" FontSize="13"
+                                                    Width="28" Height="28"
+                                                    ToolTip.Tip="Open directory"
+                                                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                                    Click="OnRecordDirOpenClick"/>
                                         </Grid>
                                     </StackPanel>
 
