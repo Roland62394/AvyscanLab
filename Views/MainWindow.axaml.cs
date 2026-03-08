@@ -3440,7 +3440,10 @@ namespace CleanScan.Views
         private void InitRecordPanel()
         {
             if (this.FindControl<TextBox>("RecordDir") is { } tb)
+            {
                 tb.LostFocus += (_, _) => UpdateDiskSpaceLabel(tb.Text);
+                tb.TextChanged += (_, _) => UpdateDiskSpaceLabel(tb.Text);
+            }
 
             if (this.FindControl<ComboBox>("RecordEncoder") is { } enc)
                 enc.SelectionChanged += OnRecordEncoderChanged;
@@ -3745,7 +3748,10 @@ namespace CleanScan.Views
             if (this.FindControl<Border>("RecordOverlay") is { } overlay)
                 overlay.IsVisible = _recordOpen;
             if (_recordOpen)
+            {
                 RebuildBatchClipList();
+                UpdateDiskSpaceLabel(this.FindControl<TextBox>("RecordDir")?.Text);
+            }
         }
 
         private void RebuildBatchClipList()

@@ -1201,11 +1201,14 @@
                                         <StackPanel x:Name="RecordCrfPanel" Grid.Column="2" Spacing="2">
                                             <TextBlock x:Name="RecordCrfLabel" Text="CRF"
                                                        FontSize="12" Foreground="{StaticResource TextLabel}"/>
-                                            <Grid ColumnDefinitions="*,6,Auto">
+                                            <Grid ColumnDefinitions="*,6,Auto" Height="28">
                                                 <Slider x:Name="RecordCrfSlider" Grid.Column="0"
                                                         Minimum="0" Maximum="51" Value="18"
                                                         IsSnapToTickEnabled="True" TickFrequency="1"
-                                                        VerticalAlignment="Center"/>
+                                                        VerticalAlignment="Top"
+                                                        HorizontalAlignment="Left"
+                                                        MinWidth="200" MaxWidth="200"
+                                                        Padding="10" Margin="0,-10,0,0"/>
                                                 <TextBlock x:Name="RecordCrfValue" Grid.Column="2"
                                                            Text="18" FontSize="12" MinWidth="20"
                                                            Foreground="{StaticResource TextSecondary}"
