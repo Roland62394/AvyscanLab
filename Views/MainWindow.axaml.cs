@@ -1309,13 +1309,9 @@ namespace CleanScan.Views
 
             if (!result) return;
 
-            // Delete ScriptUser.avs and window-settings.json from AppData
+            // Delete entire AppData\CleanScan folder so the app leaves no trace
             var appDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppDataFolder);
-            foreach (var file in new[] { "ScriptUser.avs", "ScriptRender.avs", WindowSettingsFileName })
-            {
-                var path = Path.Combine(appDataDir, file);
-                try { if (File.Exists(path)) File.Delete(path); } catch { }
-            }
+            try { if (Directory.Exists(appDataDir)) Directory.Delete(appDataDir, recursive: true); } catch { }
 
             // Restart application
             var exePath = Environment.ProcessPath;
@@ -4299,7 +4295,7 @@ namespace CleanScan.Views
         private void OnUserGuideClick(object? sender, RoutedEventArgs e)
         {
             var lang = ViewModel.CurrentLanguageCode;
-            var exeDir = AppContext.BaseDirectory;
+            var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? string.Empty;
             var guidePath = System.IO.Path.Combine(exeDir, "Users Guide", $"CleanScan_Guide_{lang}.pdf");
             if (!System.IO.File.Exists(guidePath))
                 guidePath = System.IO.Path.Combine(exeDir, "Users Guide", "CleanScan_Guide_en.pdf");
