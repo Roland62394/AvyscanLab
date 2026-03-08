@@ -1033,8 +1033,11 @@
                         <!-- ── Bottom bar: Progress + Shutdown + Start ── -->
                         <StackPanel DockPanel.Dock="Bottom" Spacing="6" Margin="0,8,0,0">
                             <StackPanel x:Name="RecordProgressPanel" Spacing="2" IsVisible="False">
-                                <ProgressBar x:Name="RecordProgressBar" Minimum="0" Maximum="100"
-                                             Value="0" Height="10" Foreground="#3B82C4"/>
+                                <Grid ColumnDefinitions="*,*,*" HorizontalAlignment="Stretch">
+                                    <ProgressBar x:Name="RecordProgressBar" Grid.Column="1"
+                                                 Minimum="0" Maximum="100"
+                                                 Value="0" Height="10" Foreground="#3B82C4"/>
+                                </Grid>
                                 <TextBlock x:Name="RecordProgressText" Text=""
                                            FontSize="11" Foreground="{StaticResource TextSecondary}"
                                            HorizontalAlignment="Center"/>
@@ -1053,11 +1056,11 @@
                             </StackPanel>
                         </StackPanel>
 
-                        <!-- ── Main area: two columns ── -->
-                        <Grid ColumnDefinitions="*,28,*" Margin="0,4,0,0">
+                        <!-- ── Main area: two columns (centered, 2/3 width) ── -->
+                        <Grid ColumnDefinitions="*,2*,20,2*,*" Margin="0,4,0,0">
 
                             <!-- ══ LEFT: Clip list ══ -->
-                            <DockPanel Grid.Column="0">
+                            <DockPanel Grid.Column="1">
                                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10"
                                             Margin="0,0,0,6">
                                     <TextBlock x:Name="BatchClipListLabel" Text="Clips to encode"
@@ -1078,18 +1081,18 @@
                             </DockPanel>
 
                             <!-- ══ RIGHT: Encoding settings (preset + params grouped) ══ -->
-                            <Border Grid.Column="2"
+                            <Border Grid.Column="3"
                                     Background="#10FFFFFF" BorderBrush="{StaticResource BorderSubtle}"
-                                    BorderThickness="1" CornerRadius="6" Padding="10,8">
+                                    BorderThickness="1" CornerRadius="6" Padding="20,8">
                                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                <StackPanel Spacing="8">
+                                <StackPanel Spacing="10">
 
                                     <!-- Encoding preset -->
                                     <StackPanel Spacing="4">
                                         <TextBlock x:Name="RecordPresetLabel" Text="Preset"
                                                    FontSize="12" FontWeight="SemiBold"
                                                    Foreground="{StaticResource TextLabel}"/>
-                                        <Grid ColumnDefinitions="*,8,Auto,6,Auto,6,Auto">
+                                        <Grid ColumnDefinitions="400,8,Auto,6,Auto,6,Auto">
                                             <ComboBox x:Name="RecordPresetCombo" Grid.Column="0"
                                                       FontSize="12" HorizontalAlignment="Stretch"
                                                       IsEditable="True"/>
@@ -1111,16 +1114,16 @@
                                     <Border Height="1" Background="{StaticResource BorderSubtle}" Margin="0,2"/>
 
                                     <!-- Output directory -->
-                                    <StackPanel Spacing="4">
-                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <StackPanel Spacing="2">
+                                        <StackPanel Orientation="Horizontal" Spacing="4">
                                             <TextBlock x:Name="RecordDirLabel" Text="Output directory"
-                                                       FontSize="12" Foreground="{StaticResource TextLabel}"/>
+                                                       FontSize="12" Foreground="{StaticResource TextLabel}" />
                                             <TextBlock x:Name="RecordDiskSpace" Text=""
                                                        FontSize="10" Foreground="{StaticResource TextSecondary}"
                                                        VerticalAlignment="Center"/>
                                         </StackPanel>
-                                        <Grid ColumnDefinitions="*,6,Auto">
-                                            <TextBox x:Name="RecordDir" Grid.Column="0" FontSize="12" Height="28"
+                                        <Grid ColumnDefinitions="400,6,Auto">
+                                            <TextBox x:Name="RecordDir" Grid.Column="0" FontSize="12" Height="28" TextAlignment="Left"
                                                      Watermark="C:\output"/>
                                             <Button Grid.Column="2" Content="…" FontSize="13"
                                                     Width="28" Height="28"
@@ -1130,8 +1133,8 @@
                                     </StackPanel>
 
                                     <!-- Encoder + Container -->
-                                    <Grid ColumnDefinitions="*,10,*">
-                                        <StackPanel Grid.Column="0" Spacing="3">
+                                    <Grid ColumnDefinitions="*,40,*">
+                                        <StackPanel Grid.Column="0" Spacing="2">
                                             <TextBlock x:Name="RecordEncoderLabel" Text="Encoder"
                                                        FontSize="12" Foreground="{StaticResource TextLabel}"/>
                                             <ComboBox x:Name="RecordEncoder" FontSize="12"
@@ -1145,7 +1148,7 @@
                                                 <ComboBoxItem Content="PNG sequence" Tag="png"/>
                                             </ComboBox>
                                         </StackPanel>
-                                        <StackPanel Grid.Column="2" Spacing="3">
+                                        <StackPanel Grid.Column="2" Spacing="2">
                                             <TextBlock x:Name="RecordContainerLabel" Text="Container"
                                                        FontSize="12" Foreground="{StaticResource TextLabel}"/>
                                             <ComboBox x:Name="RecordContainer" FontSize="12"
@@ -1159,8 +1162,8 @@
                                     </Grid>
 
                                     <!-- Resolution + Chroma -->
-                                    <Grid ColumnDefinitions="*,10,*">
-                                        <StackPanel Grid.Column="0" Spacing="3">
+                                    <Grid ColumnDefinitions="*,40,*">
+                                        <StackPanel Grid.Column="0" Spacing="2">
                                             <TextBlock x:Name="RecordResizeLabel" Text="Resolution"
                                                        FontSize="12" Foreground="{StaticResource TextLabel}"/>
                                             <ComboBox x:Name="RecordResize" FontSize="12"
@@ -1172,7 +1175,7 @@
                                                 <ComboBoxItem Content="480p" Tag="480"/>
                                             </ComboBox>
                                         </StackPanel>
-                                        <StackPanel x:Name="RecordChromaPanel" Grid.Column="2" Spacing="3">
+                                        <StackPanel x:Name="RecordChromaPanel" Grid.Column="2" Spacing="2">
                                             <TextBlock x:Name="RecordChromaLabel" Text="Chroma"
                                                        FontSize="12" Foreground="{StaticResource TextLabel}"/>
                                             <ComboBox x:Name="RecordChroma" FontSize="12"
@@ -1185,8 +1188,8 @@
                                     </Grid>
 
                                     <!-- Quality mode + CRF/Bitrate (hidden for lossless) -->
-                                    <Grid x:Name="RecordQualityPanel" ColumnDefinitions="*,10,*">
-                                        <StackPanel Grid.Column="0" Spacing="3">
+                                    <Grid x:Name="RecordQualityPanel" ColumnDefinitions="*,40,*">
+                                        <StackPanel Grid.Column="0" Spacing="2">
                                             <TextBlock x:Name="RecordQualityModeLabel" Text="Quality mode"
                                                        FontSize="12" Foreground="{StaticResource TextLabel}"/>
                                             <ComboBox x:Name="RecordQualityMode" FontSize="12"
@@ -1195,7 +1198,7 @@
                                                 <ComboBoxItem Content="Bitrate (Mb/s)" Tag="bitrate"/>
                                             </ComboBox>
                                         </StackPanel>
-                                        <StackPanel x:Name="RecordCrfPanel" Grid.Column="2" Spacing="3">
+                                        <StackPanel x:Name="RecordCrfPanel" Grid.Column="2" Spacing="2">
                                             <TextBlock x:Name="RecordCrfLabel" Text="CRF"
                                                        FontSize="12" Foreground="{StaticResource TextLabel}"/>
                                             <Grid ColumnDefinitions="*,6,Auto">
@@ -1210,7 +1213,7 @@
                                                            VerticalAlignment="Center"/>
                                             </Grid>
                                         </StackPanel>
-                                        <StackPanel x:Name="RecordBitratePanel" Grid.Column="2" Spacing="3"
+                                        <StackPanel x:Name="RecordBitratePanel" Grid.Column="2" Spacing="2"
                                                     IsVisible="False">
                                             <TextBlock x:Name="RecordBitrateLabel" Text="Bitrate (Mb/s)"
                                                        FontSize="12" Foreground="{StaticResource TextLabel}"/>

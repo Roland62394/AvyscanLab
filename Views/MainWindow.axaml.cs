@@ -3636,7 +3636,7 @@ namespace CleanScan.Views
         // ── Encoding presets ──
 
         private static readonly string[] EncodingPresetKeys =
-            ["encoder", "container", "quality_mode", "crf", "bitrate", "chroma", "resize"];
+            ["encoder", "container", "quality_mode", "crf", "bitrate", "chroma", "resize", "output_dir"];
 
         private Dictionary<string, string> CaptureEncodingValues()
         {
@@ -3648,6 +3648,7 @@ namespace CleanScan.Views
             d["bitrate"]      = this.FindControl<TextBox>("RecordBitrate")?.Text?.Trim() ?? "20";
             d["chroma"]       = (this.FindControl<ComboBox>("RecordChroma")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "yuv420p";
             d["resize"]       = (this.FindControl<ComboBox>("RecordResize")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "original";
+            d["output_dir"]   = this.FindControl<TextBox>("RecordDir")?.Text?.Trim() ?? "";
             return d;
         }
 
@@ -3673,6 +3674,10 @@ namespace CleanScan.Views
             }
             if (vals.TryGetValue("chroma", out var ch))        SelectByTag("RecordChroma", ch);
             if (vals.TryGetValue("resize", out var rs))        SelectByTag("RecordResize", rs);
+            if (vals.TryGetValue("output_dir", out var dir) && !string.IsNullOrWhiteSpace(dir))
+            {
+                if (this.FindControl<TextBox>("RecordDir") is { } dirTb) dirTb.Text = dir;
+            }
         }
 
         private void RefreshEncodingPresetCombo()
