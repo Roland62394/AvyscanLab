@@ -1137,6 +1137,7 @@ namespace CleanScan.Views
                 ("PresetMenuItem",        "PresetMenuItem"),
                 ("AboutMenuItem",         "AboutMenuItem"),
                 ("FeedbackMenuItem",     "FeedbackMenuItem"),
+                ("SettingsMenu",         "SettingsMenu"),
                 ("ResetSettingsMenuItem", "ResetSettingsMenuItem"),
             })
             {
@@ -1146,6 +1147,17 @@ namespace CleanScan.Views
 
             if (this.FindControl<MenuItem>("LanguagesMenu") is { } langMenu)
                 langMenu.Header = languageCode.ToUpper();
+
+            if (this.FindControl<TextBlock>("ThreadsLabel") is { } threadsLbl)
+                threadsLbl.Text = GetUiText("ThreadsLabel");
+            if (this.FindControl<TextBlock>("SourceLoaderLabel") is { } srcLbl)
+                srcLbl.Text = GetUiText("SourceLoaderLabel");
+
+            foreach (var expandName in new[] { "CropExpandBtn", "GammacExpandBtn", "DenoiseExpandBtn", "DegrainExpandBtn", "LumaExpandBtn", "SharpExpandBtn" })
+            {
+                if (this.FindControl<Button>(expandName) is { } expandBtn)
+                    ToolTip.SetTip(expandBtn, GetUiText("ExpandBtnTooltip"));
+            }
 
             SetLanguageMenuChecks();
             ApplyParamTooltips(languageCode);

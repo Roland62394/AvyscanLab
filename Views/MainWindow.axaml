@@ -414,7 +414,7 @@
                             <MenuItem StaysOpenOnClick="True" Focusable="False">
                                 <MenuItem.Header>
                                     <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2">
-                                        <TextBlock Text="threads" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="ThreadsLabel" Text="threads" VerticalAlignment="Center"/>
                                         <TextBox x:Name="threads" Width="44" TextAlignment="Center"/>
                                     </StackPanel>
                                 </MenuItem.Header>
@@ -422,7 +422,7 @@
                             <MenuItem StaysOpenOnClick="True" Focusable="False">
                                 <MenuItem.Header>
                                     <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2">
-                                        <TextBlock Text="Source loader" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="SourceLoaderLabel" Text="Source loader" VerticalAlignment="Center"/>
                                         <ComboBox x:Name="ForceSourceCombo" MinWidth="120"
                                                   SelectionChanged="OnForceSourceChanged">
                                             <ComboBoxItem Content="Auto"     Tag=""/>
