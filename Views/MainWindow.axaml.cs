@@ -1919,6 +1919,7 @@ namespace CleanScan.Views
 
             if (string.IsNullOrWhiteSpace(rawValue))
             {
+                _mpvService?.Unload();
                 RegenerateScript(showValidationError: false);
                 return;
             }

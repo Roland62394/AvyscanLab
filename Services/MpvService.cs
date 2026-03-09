@@ -176,6 +176,13 @@ public sealed class MpvService : IDisposable
         mpv_set_property_string(_ctx, "pause", "yes");
     }
 
+    /// <summary>Unloads the current file, leaving mpv idle (black screen).</summary>
+    public void Unload()
+    {
+        if (_ctx == 0) return;
+        mpv_command(_ctx, ["stop", null]);
+    }
+
     public void TogglePlayPause()
     {
         if (_ctx == 0) return;
