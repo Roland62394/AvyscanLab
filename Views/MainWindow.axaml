@@ -408,6 +408,7 @@
                         <MenuItem x:Name="InfosMenu" Header="Infos">
                             <MenuItem x:Name="UserGuideMenuItem"     Header="User guide"     Click="OnUserGuideClick"/>
                             <MenuItem x:Name="ScriptPreviewMenuItem" Header="Script preview" Click="OnScriptPreviewClick"/>
+                            <MenuItem x:Name="GuidedTourMenuItem"    Header="Guided tour"    Click="OnGuidedTourClick"/>
                         </MenuItem>
                         <MenuItem x:Name="PresetMenuItem" Header="Preset" Click="OnPresetClick"/>
                         <MenuItem x:Name="SettingsMenu" Header="Settings">

@@ -1134,6 +1134,7 @@ namespace CleanScan.Views
                 ("InfosMenu",             "InfosMenu"),
                 ("UserGuideMenuItem",     "UserGuideMenuItem"),
                 ("ScriptPreviewMenuItem", "ScriptPreviewMenuItem"),
+                ("GuidedTourMenuItem",   "GuidedTourMenuItem"),
                 ("PresetMenuItem",        "PresetMenuItem"),
                 ("AboutMenuItem",         "AboutMenuItem"),
                 ("FeedbackMenuItem",     "FeedbackMenuItem"),
@@ -1342,6 +1343,8 @@ namespace CleanScan.Views
 
             if (saved is { X: var sx, Y: var sy } && IsSavedPositionVisible(sx, sy))
                 Position = new PixelPoint(sx, sy);
+            else if (saved is null)
+                CenterOnScreen();   // First launch → centre the window nicely
             else
                 SnapToBottomOfScreen();
 
@@ -1349,6 +1352,9 @@ namespace CleanScan.Views
                 MainGrid.RowDefinitions[2].Height = new GridLength(Math.Clamp(bph, 60, 800), GridUnitType.Pixel);
 
             _layoutInitialized = true;
+
+            if (saved?.TourCompleted != true)
+                Dispatcher.UIThread.Post(() => _ = ShowGuidedTourAsync(), DispatcherPriority.Background);
         }
 
         private double GetStartupHeight(WindowSettings? saved)
@@ -1364,6 +1370,14 @@ namespace CleanScan.Views
             if (saved is not null)
                 return ClampWindowWidth(saved.Width);
 
+            // First launch: use ~2/3 of screen width
+            var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
+            if (screen is not null)
+            {
+                var available = screen.WorkingArea.Width / screen.Scaling;
+                var target = available * 2.0 / 3.0;
+                return Math.Clamp(target, MinWidth, available);
+            }
             return Width;
         }
 
@@ -1375,7 +1389,31 @@ namespace CleanScan.Views
 
         private double GetCompactStartupHeight()
         {
+            // First launch: use ~70% of screen height for a comfortable view
+            var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
+            if (screen is not null)
+            {
+                var available = screen.WorkingArea.Height / screen.Scaling;
+                var target = available * 0.70;
+                return Math.Clamp(target, MinHeight, available);
+            }
             return MinHeight;
+        }
+
+        private void CenterOnScreen()
+        {
+            var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
+            if (screen is null) { SnapToBottomOfScreen(); return; }
+
+            var wa      = screen.WorkingArea;
+            var scaling = screen.Scaling;
+            // Use Width/Height properties (Bounds may not be updated yet)
+            var w = (int)Math.Ceiling(Width * scaling);
+            var h = (int)Math.Ceiling(Height * scaling);
+
+            var x = wa.X + Math.Max(0, (wa.Width  - w) / 2);
+            var y = wa.Y + Math.Max(0, (wa.Height - h) / 2);
+            Position = new PixelPoint(x, y);
         }
 
         private PixelPoint GetBottomAnchoredPosition(Screen screen, int requestedX)
@@ -1408,7 +1446,8 @@ namespace CleanScan.Views
             {
                 var panels = _openParamPanels.Count > 0 ? _openParamPanels.ToArray() : null;
                 var lastDir = this.FindControl<TextBox>("RecordDir")?.Text?.Trim();
-                _windowStateService.Save(s with { Language = ViewModel.CurrentLanguageCode, OpenPanels = panels, LastOutputDir = lastDir, AutoSaveEncodingPreset = _autoSaveEncodingPreset ? true : null, RecordPanelOpen = _recordOpen ? true : null });
+                var prevTour = _windowStateService.Load()?.TourCompleted;
+                _windowStateService.Save(s with { Language = ViewModel.CurrentLanguageCode, OpenPanels = panels, LastOutputDir = lastDir, AutoSaveEncodingPreset = _autoSaveEncodingPreset ? true : null, RecordPanelOpen = _recordOpen ? true : null, TourCompleted = prevTour });
             }
         }
 
@@ -2647,14 +2686,25 @@ namespace CleanScan.Views
 
             if (_openParamPanels.Remove(targetName))
             {
+                // Panel is open → collapse it
                 if (this.FindControl<Control>(targetName) is { } panel) panel.IsVisible = false;
                 btn.Content = "▶";
                 btn.Classes.Remove("active");
             }
             else
             {
-                // N'ouvrir que si le filtre est actif
-                if (!IsParamPanelEnabled(targetName)) return;
+                // Panel is closed → if filter is off, activate it first
+                if (!IsParamPanelEnabled(targetName))
+                {
+                    if (ParamPanelToOptionToggle.TryGetValue(targetName, out var toggleName) &&
+                        this.FindControl<Button>(toggleName) is { } toggleBtn)
+                    {
+                        toggleBtn.Tag = true;
+                        UpdateToggleButtonPresentation(toggleBtn, true);
+                        UpdateConfigurationValue(toggleName, "true", showValidationError: true);
+                        UpdateOptionColumnVisibility();
+                    }
+                }
 
                 _openParamPanels.Add(targetName);
                 if (this.FindControl<Control>(targetName) is { } panel) panel.IsVisible = true;
@@ -4371,6 +4421,412 @@ namespace CleanScan.Views
 
         private static string GetAppDataPath(string fileName) =>
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppDataFolder, fileName);
+
+        private void OnGuidedTourClick(object? sender, RoutedEventArgs e)
+        {
+            _ = ShowGuidedTourAsync();
+        }
+
+        #endregion
+
+        #region Guided Tour
+
+        private static readonly (string? TargetName, string TitleKey, string BodyKey, string Emoji, bool MustClick)[] TourSteps =
+        [
+            (null,            "TourWelcomeTitle",  "TourWelcomeBody",  "\ud83c\udfac", false),
+            ("AddClipBtn",    "TourAddClipTitle",  "TourAddClipBody",  "\u2795",       true),
+            ("CropExpandBtn", "TourParamsTitle",   "TourParamsBody",   "\ud83d\udd27", true),
+            ("Slide_Crop_L",  "TourSliderTitle",   "TourSliderBody",   "\ud83c\udf9a", false),
+            ("Label_Crop_L",  "TourTooltipTitle",  "TourTooltipBody",  "\ud83d\udcac", false),
+            ("VdbPlay",       "TourPreviewTitle",  "TourPreviewBody",  "\u25b6\ufe0f", true),
+            ("RecordBtn",     "TourRecordTitle",   "TourRecordBody",   "\ud83d\udcbe", true),
+        ];
+
+        private async Task ShowGuidedTourAsync()
+        {
+            await Task.Delay(800); // let the main window finish rendering
+
+            int step = 0;
+
+            // ── Build all UI elements once ──────────────────────────────
+
+            var darkOverlay = new Border
+            {
+                Background          = new SolidColorBrush(Color.FromArgb(120, 10, 14, 20)),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment   = VerticalAlignment.Stretch,
+            };
+
+            var spotlight = new Border
+            {
+                Background      = Brushes.Transparent,   // needed for hit-testing the full area
+                BorderBrush     = new SolidColorBrush(Color.Parse("#3B82F6")),
+                BorderThickness = new Thickness(2),
+                CornerRadius    = new CornerRadius(6),
+                BoxShadow       = BoxShadows.Parse("0 0 16 4 #603B82F6"),
+                IsVisible       = false,
+                IsHitTestVisible = true,
+                Cursor          = new Cursor(StandardCursorType.Hand),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment   = VerticalAlignment.Top,
+            };
+
+            // Click on the spotlight area → simulate a click on the real control & advance
+            string? currentTargetName = null;
+            Action? advanceStep = null;
+            spotlight.PointerPressed += (_, _) =>
+            {
+                if (currentTargetName is not null && this.FindControl<Button>(currentTargetName) is { } realBtn)
+                    realBtn.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                advanceStep?.Invoke();
+            };
+
+            var titleTb = new TextBlock
+            {
+                FontSize            = 18,
+                FontWeight          = FontWeight.SemiBold,
+                Foreground          = new SolidColorBrush(Color.Parse("#F6F6F6")),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin              = new Thickness(0, 0, 0, 12),
+            };
+
+            var bodyTb = new TextBlock
+            {
+                FontSize      = 13,
+                TextWrapping  = TextWrapping.Wrap,
+                TextAlignment = TextAlignment.Center,
+                Foreground    = new SolidColorBrush(Color.Parse("#CCCCCC")),
+                MaxWidth      = 360,
+                LineHeight    = 20,
+                Margin        = new Thickness(0, 0, 0, 20),
+            };
+
+            // Step indicator dots (created once)
+            var dots = new Border[TourSteps.Length];
+            var dotsPanel = new StackPanel
+            {
+                Orientation         = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Spacing             = 6,
+                Margin              = new Thickness(0, 0, 0, 18),
+            };
+            for (int i = 0; i < TourSteps.Length; i++)
+            {
+                dots[i] = new Border { Width = 8, Height = 8, CornerRadius = new CornerRadius(4) };
+                dotsPanel.Children.Add(dots[i]);
+            }
+
+            // Navigation buttons
+            var skipBtn = new Button
+            {
+                MinWidth                   = 70,
+                Background                 = Brushes.Transparent,
+                Foreground                 = new SolidColorBrush(Color.Parse("#8899AA")),
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                Cursor                     = new Cursor(StandardCursorType.Hand),
+            };
+            var prevBtn = new Button
+            {
+                MinWidth                   = 80,
+                Background                 = new SolidColorBrush(Color.Parse("#252E42")),
+                Foreground                 = new SolidColorBrush(Color.Parse("#CCCCCC")),
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                Cursor                     = new Cursor(StandardCursorType.Hand),
+            };
+            var nextBtn = new Button
+            {
+                MinWidth                   = 100,
+                Background                 = new SolidColorBrush(Color.Parse("#3B82F6")),
+                Foreground                 = Brushes.White,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                Cursor                     = new Cursor(StandardCursorType.Hand),
+            };
+
+            var buttonsRow = new StackPanel
+            {
+                Orientation         = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Spacing             = 10,
+            };
+            buttonsRow.Children.Add(skipBtn);
+            buttonsRow.Children.Add(prevBtn);
+            buttonsRow.Children.Add(nextBtn);
+
+            var stepLabel = new TextBlock
+            {
+                FontSize            = 11,
+                Foreground          = new SolidColorBrush(Color.Parse("#556677")),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin              = new Thickness(0, 12, 0, 0),
+            };
+
+            var clickHintTb = new TextBlock
+            {
+                FontSize            = 12,
+                FontStyle           = FontStyle.Italic,
+                Foreground          = new SolidColorBrush(Color.Parse("#5A9FD4")),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin              = new Thickness(0, 10, 0, 0),
+                IsVisible           = false,
+            };
+
+            // ── Language selector (visible only on welcome step) ────────
+            var langLabel = new TextBlock
+            {
+                FontSize   = 12,
+                Foreground = new SolidColorBrush(Color.Parse("#8899AA")),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            var langRow = new StackPanel
+            {
+                Orientation         = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Spacing             = 6,
+                Margin              = new Thickness(0, 0, 0, 14),
+            };
+            langRow.Children.Add(langLabel);
+
+            foreach (var (code, label) in new[] { ("en", "English"), ("fr", "Français"), ("de", "Deutsch"), ("es", "Español") })
+            {
+                var langBtn = new Button
+                {
+                    Content    = label,
+                    Tag        = code,
+                    MinWidth   = 70,
+                    FontSize   = 12,
+                    HorizontalContentAlignment = HorizontalAlignment.Center,
+                    Cursor     = new Cursor(StandardCursorType.Hand),
+                    Foreground = new SolidColorBrush(Color.Parse("#CCCCCC")),
+                };
+                langRow.Children.Add(langBtn);
+            }
+
+            // Will be set in UpdateStep
+            Action? refreshStep = null;
+
+            foreach (var child in langRow.Children)
+            {
+                if (child is not Button lb) continue;
+                lb.Click += (s, _) =>
+                {
+                    if (s is Button { Tag: string code })
+                    {
+                        ApplyLanguage(code, persist: true);
+                        refreshStep?.Invoke();
+                    }
+                };
+            }
+
+            var callout = new Border
+            {
+                Background      = new SolidColorBrush(Color.Parse("#1A2233")),
+                BorderBrush     = new SolidColorBrush(Color.Parse("#3B82F6")),
+                BorderThickness = new Thickness(1),
+                CornerRadius    = new CornerRadius(10),
+                Padding         = new Thickness(32, 28),
+                MinWidth        = 360,
+                MaxWidth        = 420,
+                BoxShadow       = BoxShadows.Parse("0 8 30 0 #A0000000"),
+                IsHitTestVisible = true,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment   = VerticalAlignment.Center,
+                Child = new StackPanel
+                {
+                    Spacing = 0,
+                    Children = { titleTb, bodyTb, langRow, dotsPanel, buttonsRow, stepLabel, clickHintTb }
+                }
+            };
+
+            var rootPanel = new Panel();
+            rootPanel.Children.Add(darkOverlay);
+            rootPanel.Children.Add(spotlight);
+            rootPanel.Children.Add(callout);
+
+            // ── Tour overlay window ─────────────────────────────────────
+
+            var tourWin = new Window
+            {
+                SystemDecorations     = SystemDecorations.None,
+                Background            = Brushes.Transparent,
+                TransparencyLevelHint = [WindowTransparencyLevel.Transparent],
+                ShowInTaskbar         = false,
+                CanResize             = false,
+                Content               = rootPanel,
+            };
+
+            // ── UpdateStep: refresh all elements for current step ───────
+
+            void UpdateStep()
+            {
+                var (targetName, titleKey, bodyKey, emoji, mustClick) = TourSteps[step];
+                currentTargetName = mustClick ? targetName : null;
+                bool isFirst = step == 0;
+                bool isLast  = step == TourSteps.Length - 1;
+
+                titleTb.Text    = $"{emoji}  {GetUiText(titleKey)}";
+                bodyTb.Text     = GetUiText(bodyKey);
+                skipBtn.Content = GetUiText("TourSkipBtn");
+                prevBtn.Content = GetUiText("TourPrevBtn");
+                prevBtn.IsVisible = !isFirst;
+                nextBtn.Content = isLast ? GetUiText("TourFinishBtn") : GetUiText("TourNextBtn");
+                stepLabel.Text  = $"{step + 1} / {TourSteps.Length}";
+
+                // When the step requires a click on the target, hide Next
+                nextBtn.IsVisible     = !mustClick;
+                clickHintTb.IsVisible = mustClick;
+                clickHintTb.Text      = GetUiText("TourClickHint");
+
+                // Language selector: visible only on the welcome step
+                langRow.IsVisible = isFirst;
+                if (isFirst)
+                {
+                    langLabel.Text = GetUiText("TourLanguageLabel");
+                    var currentLang = ViewModel.CurrentLanguageCode;
+                    foreach (var child in langRow.Children)
+                    {
+                        if (child is not Button lb || lb.Tag is not string code) continue;
+                        var isCurrent = string.Equals(code, currentLang, StringComparison.OrdinalIgnoreCase);
+                        lb.Background = new SolidColorBrush(Color.Parse(isCurrent ? "#3B82F6" : "#252E42"));
+                        lb.Foreground = new SolidColorBrush(Color.Parse(isCurrent ? "#FFFFFF" : "#CCCCCC"));
+                    }
+                }
+
+                for (int i = 0; i < dots.Length; i++)
+                    dots[i].Background = new SolidColorBrush(
+                        i == step  ? Color.Parse("#3B82F6")
+                      : i < step   ? Color.Parse("#6AA3D8")
+                      :              Color.Parse("#3A3A3A"));
+
+                // Resize / reposition overlay to match main window's client area
+                tourWin.Width  = ClientSize.Width;
+                tourWin.Height = ClientSize.Height;
+                var origin = this.PointToScreen(new Point(0, 0));
+                tourWin.Position = new PixelPoint(origin.X, origin.Y);
+
+                double ww = ClientSize.Width;
+                double wh = ClientSize.Height;
+
+                // Spotlight: clickable only on must-click steps
+                spotlight.Cursor          = mustClick ? new Cursor(StandardCursorType.Hand) : Cursor.Default;
+                spotlight.IsHitTestVisible = mustClick;
+
+                // Spotlight + cutout
+                if (targetName is not null && this.FindControl<Control>(targetName) is { } target)
+                {
+                    var pos = target.TranslatePoint(new Point(0, 0), this);
+                    if (pos.HasValue)
+                    {
+                        double tx = pos.Value.X, ty = pos.Value.Y;
+                        double tw = target.Bounds.Width, th = target.Bounds.Height;
+                        double pad = 6;
+
+                        // Spotlight border
+                        spotlight.IsVisible = true;
+                        spotlight.Width     = tw + pad * 2;
+                        spotlight.Height    = th + pad * 2;
+                        spotlight.Margin    = new Thickness(tx - pad, ty - pad, 0, 0);
+
+                        // Dark overlay with rectangular cutout
+                        darkOverlay.Clip = new CombinedGeometry(
+                            GeometryCombineMode.Exclude,
+                            new RectangleGeometry(new Rect(0, 0, ww, wh)),
+                            new RectangleGeometry(new Rect(tx - pad, ty - pad, tw + pad * 2, th + pad * 2)));
+
+                        // Callout placement: measure actual size, avoid overlapping spotlight
+                        callout.HorizontalAlignment = HorizontalAlignment.Left;
+                        callout.VerticalAlignment   = VerticalAlignment.Top;
+
+                        callout.Measure(new Size(ww, wh));
+                        double calloutW = Math.Max(callout.DesiredSize.Width,  360);
+                        double calloutH = Math.Max(callout.DesiredSize.Height, 100);
+                        double gap = 24;
+                        double spotLeft   = tx - pad;
+                        double spotTop    = ty - pad;
+                        double spotRight  = tx + tw + pad;
+                        double spotBottom = ty + th + pad;
+
+                        double cLeft, cTop;
+
+                        // 1) Right of the spotlight
+                        if (spotRight + gap + calloutW + 10 <= ww)
+                        {
+                            cLeft = spotRight + gap;
+                            cTop  = Math.Clamp(spotTop + (spotBottom - spotTop) / 2 - calloutH / 2,
+                                               10, Math.Max(10, wh - calloutH - 10));
+                        }
+                        // 2) Below the spotlight
+                        else if (spotBottom + gap + calloutH + 10 <= wh)
+                        {
+                            cTop  = spotBottom + gap;
+                            cLeft = Math.Clamp(spotLeft + (spotRight - spotLeft) / 2 - calloutW / 2,
+                                               10, Math.Max(10, ww - calloutW - 10));
+                        }
+                        // 3) Above the spotlight
+                        else if (spotTop - gap - calloutH >= 0)
+                        {
+                            cTop  = spotTop - gap - calloutH;
+                            cLeft = Math.Clamp(spotLeft + (spotRight - spotLeft) / 2 - calloutW / 2,
+                                               10, Math.Max(10, ww - calloutW - 10));
+                        }
+                        // 4) Left of the spotlight
+                        else if (spotLeft - gap - calloutW >= 0)
+                        {
+                            cLeft = spotLeft - gap - calloutW;
+                            cTop  = Math.Clamp(spotTop + (spotBottom - spotTop) / 2 - calloutH / 2,
+                                               10, Math.Max(10, wh - calloutH - 10));
+                        }
+                        // 5) Fallback: center in the largest free area
+                        else
+                        {
+                            cLeft = Math.Max(10, (ww - calloutW) / 2);
+                            cTop  = Math.Max(10, (wh - calloutH) / 2);
+                        }
+
+                        callout.Margin = new Thickness(cLeft, cTop, 0, 0);
+                        return;
+                    }
+                }
+
+                // No target or TranslatePoint failed → center everything
+                spotlight.IsVisible = false;
+                darkOverlay.Clip    = null;
+                callout.HorizontalAlignment = HorizontalAlignment.Center;
+                callout.VerticalAlignment   = VerticalAlignment.Center;
+                callout.Margin = new Thickness(0);
+            }
+
+            // ── Wire navigation ─────────────────────────────────────────
+
+            nextBtn.Click += (_, _) =>
+            {
+                step++;
+                if (step >= TourSteps.Length) tourWin.Close();
+                else UpdateStep();
+            };
+            prevBtn.Click += (_, _) =>
+            {
+                if (step > 0) { step--; UpdateStep(); }
+            };
+            skipBtn.Click += (_, _) => tourWin.Close();
+
+            advanceStep = () =>
+            {
+                step++;
+                if (step >= TourSteps.Length) tourWin.Close();
+                else UpdateStep();
+            };
+
+            // ── Show ────────────────────────────────────────────────────
+
+            refreshStep = UpdateStep;
+            UpdateStep();
+            await tourWin.ShowDialog(this);
+
+            // Mark completed
+            var settings = _windowStateService.Load();
+            if (settings is not null)
+                _windowStateService.Save(settings with { TourCompleted = true });
+        }
 
         #endregion
     }
