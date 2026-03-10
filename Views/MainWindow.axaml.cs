@@ -4440,13 +4440,13 @@ namespace CleanScan.Views
         [
             (null,            "TourWelcomeTitle",  "TourWelcomeBody",  "\ud83c\udfac", null),
             ("AddClipBtn",    "TourAddClipTitle",  "TourAddClipBody",  "\u2795",       null),
-            ("CropExpandBtn", "TourParamsTitle",   "TourParamsBody",   "\ud83d\udd27", "OpenCrop"),
+            ("CropExpandBtn", "TourParamsTitle",   "TourParamsBody",   "\ud83d\udd27", null),
             ("Slide_Crop_L",  "TourSliderTitle",   "TourSliderBody",   "\ud83c\udf9a", "OpenCrop"),
             ("Label_Crop_L",  "TourTooltipTitle",  "TourTooltipBody",  "\ud83d\udcac", "OpenCrop"),
             ("VdbPlay",       "TourPreviewTitle",  "TourPreviewBody",  "\u25b6\ufe0f", null),
             ("RecordBtn",       "TourRecordTitle",        "TourRecordBody",        "\ud83d\udcbe", null),
-            ("RecordDirPickBtn", "TourOutputDirTitle",   "TourOutputDirBody",     "\ud83d\udcc1", null),
-            ("RecordStartBtn", "TourStartEncodingTitle", "TourStartEncodingBody", "\ud83d\ude80", null),
+            ("RecordDirPickBtn", "TourOutputDirTitle",   "TourOutputDirBody",     "\ud83d\udcc1", "OpenRecord"),
+            ("RecordStartBtn", "TourStartEncodingTitle", "TourStartEncodingBody", "\ud83d\ude80", "OpenRecord"),
         ];
 
         private bool _tourActive;
@@ -4458,6 +4458,10 @@ namespace CleanScan.Views
             _tourActive = true;
             try
             {
+                // Ensure the record panel is closed so the main UI is visible
+                if (_recordOpen)
+                    OnRecordClick(null, new RoutedEventArgs());
+
                 // Let the window finish layout/render before placing the floating card.
                 await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
                 await Task.Delay(300);
@@ -4624,25 +4628,59 @@ namespace CleanScan.Views
                 IBrush? addClipFg = null;
                 IBrush? addClipBorder = null;
 
+                // Auto-advance timer for steps 3–4
+                CancellationTokenSource? tooltipHoverCts = null;
+                EventHandler<Avalonia.Input.PointerEventArgs>? tooltipEnterHandler = null;
+                EventHandler<Avalonia.Input.PointerEventArgs>? tooltipLeaveHandler = null;
+                EventHandler<RangeBaseValueChangedEventArgs>? sliderValueHandler = null;
+                EventHandler<RoutedEventArgs>? buttonClickHandler = null;
+                Control? tooltipTarget = null;
+
                 int GetStepVerticalNudge(int currentStep) => currentStep switch
                 {
-                    1 => 70,  // Add clip: lower the card
-                    2 => 70,  // Parameters: lower the card
-                    3 => 50,  // Slider: slightly lower the card
-                    4 => -60, // Tooltip: raise the card
+                    1 => 70,   // Add clip: lower the card
+                    2 => 70,   // Parameters: lower the card
+                    3 => 50,   // Slider: slightly lower the card
+                    4 => -60,  // Tooltip: raise the card
+                    7 => -100, // Output dir: raise the card
                     _ => 0,
                 };
 
                 int GetStepHorizontalNudge(int currentStep) => currentStep switch
                 {
-                    3 => 120, // Window 3: move to the right
+                    0 => 120,  // Welcome: nudge right
+                    1 => 80,   // Add clip: nudge right
+                    3 => 120,  // Slider: move to the right
+                    7 => -120, // Output dir: move to the left
                     _ => 0,
                 };
 
                 EventHandler<PointerPressedEventArgs>? highlightedClickHandler = null;
 
+                void ClearTooltipHover()
+                {
+                    tooltipHoverCts?.Cancel();
+                    tooltipHoverCts = null;
+                    if (tooltipTarget is not null)
+                    {
+                        if (tooltipEnterHandler is not null) tooltipTarget.PointerEntered -= tooltipEnterHandler;
+                        if (tooltipLeaveHandler is not null) tooltipTarget.PointerExited  -= tooltipLeaveHandler;
+                        if (sliderValueHandler is not null && tooltipTarget is Slider sl)
+                            sl.ValueChanged -= sliderValueHandler;
+                        if (buttonClickHandler is not null && tooltipTarget is Button btn)
+                            btn.Click -= buttonClickHandler;
+                        tooltipEnterHandler = null;
+                        tooltipLeaveHandler = null;
+                        sliderValueHandler = null;
+                        buttonClickHandler = null;
+                        tooltipTarget = null;
+                    }
+                }
+
                 void ClearHighlight()
                 {
+                    ClearTooltipHover();
+
                     if (highlightedTarget is Button { Name: "AddClipBtn" } addClip)
                     {
                         if (addClipBg is not null) addClip.Background = addClipBg;
@@ -4654,7 +4692,8 @@ namespace CleanScan.Views
 
                     if (highlightedClickHandler is not null)
                     {
-                        highlightedTarget.PointerPressed -= highlightedClickHandler;
+                        highlightedTarget.RemoveHandler(Avalonia.Input.InputElement.PointerPressedEvent,
+                            highlightedClickHandler);
                         highlightedClickHandler = null;
                     }
 
@@ -4670,16 +4709,26 @@ namespace CleanScan.Views
                 bool isFirst = step == 0;
                 bool isLast  = step == TourSteps.Length - 1;
 
-                // Pre-action: open CropParams if needed
+                // Pre-action: open/close panels as needed
                 if (beforeAction == "OpenCrop")
                 {
-                    if (this.FindControl<Control>("CropParams") is { IsVisible: false } cropPanel)
+                    // Close record panel if open
+                    if (_recordOpen) OnRecordClick(null, new RoutedEventArgs());
+
+                    if (this.FindControl<Control>("CropParams") is { IsVisible: false }
+                        && this.FindControl<Button>("CropExpandBtn") is { } expandBtn)
                     {
-                        cropPanel.IsVisible = true;
-                        _openParamPanels.Add("CropParams");
-                        if (this.FindControl<Button>("CropExpandBtn") is { } expandBtn)
-                            expandBtn.Classes.Add("active");
+                        OnExpandButtonClick(expandBtn, new RoutedEventArgs());
                     }
+                }
+                else if (beforeAction == "OpenRecord")
+                {
+                    if (!_recordOpen) OnRecordClick(null, new RoutedEventArgs());
+                }
+                else if (beforeAction is null)
+                {
+                    // Steps without BeforeAction: close record panel if open
+                    if (_recordOpen) OnRecordClick(null, new RoutedEventArgs());
                 }
 
                 // Update text
@@ -4729,15 +4778,19 @@ namespace CleanScan.Views
                     target.Classes.Add("tour-highlight");
                     highlightedTarget = target;
 
-                    if (step >= 2)
+                    if (step >= 2 && step is not (2 or 3 or 4 or 5 or 6 or 7 or 8))
                     {
-                        highlightedClickHandler = (_, _) =>
+                        highlightedClickHandler = (_, e) =>
                         {
+                            // Prevent the click from triggering the control's own handler
+                            // (e.g. CropExpandBtn toggling the panel closed)
+                            e.Handled = true;
                             step++;
                             if (step >= TourSteps.Length) CloseTour();
                             else UpdateStep();
                         };
-                        target.PointerPressed += highlightedClickHandler;
+                        target.AddHandler(Avalonia.Input.InputElement.PointerPressedEvent,
+                            highlightedClickHandler, Avalonia.Interactivity.RoutingStrategies.Tunnel);
                     }
 
                     if (target is Button { Name: "AddClipBtn" } addClip)
@@ -4810,6 +4863,74 @@ namespace CleanScan.Views
                         else UpdateStep();
                     }
                     : null;
+
+                // Steps 2–7: auto-advance after interacting with the target
+                if (step is >= 2 and <= 7 && targetName is not null
+                    && this.FindControl<Control>(targetName) is { } ttTarget)
+                {
+                    var capturedStep = step;
+                    tooltipTarget = ttTarget;
+
+                    void AdvanceAfterDelay()
+                    {
+                        if (tooltipHoverCts is not null) return; // already running
+                        tooltipHoverCts = new CancellationTokenSource();
+                        var token = tooltipHoverCts.Token;
+                        _ = Task.Delay(8000, token).ContinueWith(_ =>
+                        {
+                            Dispatcher.UIThread.Post(() =>
+                            {
+                                if (!_tourActive || step != capturedStep || token.IsCancellationRequested) return;
+                                step++;
+                                if (step >= TourSteps.Length) CloseTour();
+                                else UpdateStep();
+                            });
+                        }, TaskContinuationOptions.OnlyOnRanToCompletion);
+                    }
+
+                    if (step == 3 && ttTarget is Slider sl)
+                    {
+                        // Step 3 (slider): start 4s timer on first manipulation
+                        sliderValueHandler = (_, _) => AdvanceAfterDelay();
+                        sl.ValueChanged += sliderValueHandler;
+                    }
+                    else if (step == 5 && ttTarget is Button bt)
+                    {
+                        // Step 5 (play button): start 4s timer on click
+                        buttonClickHandler = (_, _) => AdvanceAfterDelay();
+                        bt.Click += buttonClickHandler;
+                    }
+                    else if (step is 2 or 6 or 7 && ttTarget is Button clickBtn)
+                    {
+                        // Steps 2/6/7: advance immediately on click
+                        buttonClickHandler = (_, _) =>
+                        {
+                            if (!_tourActive) return;
+                            step++;
+                            if (step >= TourSteps.Length) CloseTour();
+                            else UpdateStep();
+                        };
+                        clickBtn.Click += buttonClickHandler;
+                    }
+                    else if (step == 8 && ttTarget is Button lastBtn)
+                    {
+                        // Step 8 (start encoding): close tour immediately on click
+                        buttonClickHandler = (_, _) => { if (_tourActive) CloseTour(); };
+                        lastBtn.Click += buttonClickHandler;
+                    }
+                    else
+                    {
+                        // Step 4 (label): start 4s timer on hover, cancel on leave
+                        tooltipEnterHandler = (_, _) => AdvanceAfterDelay();
+                        tooltipLeaveHandler = (_, _) =>
+                        {
+                            tooltipHoverCts?.Cancel();
+                            tooltipHoverCts = null;
+                        };
+                        ttTarget.PointerEntered += tooltipEnterHandler;
+                        ttTarget.PointerExited  += tooltipLeaveHandler;
+                    }
+                }
 
                 tourPopup.IsOpen = true;
             }

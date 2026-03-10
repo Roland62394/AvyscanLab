@@ -382,21 +382,55 @@
 
         <!-- ─── Guided tour target highlight ─── -->
         <Style Selector="Button.tour-highlight">
-            <Setter Property="BorderBrush" Value="#3B82F6"/>
-            <Setter Property="Background" Value="#2A3755"/>
+            <Setter Property="BorderBrush" Value="#5BA0F5"/>
+            <Setter Property="BorderThickness" Value="3"/>
+            <Setter Property="Background" Value="#1A3A6B"/>
             <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Style.Animations>
+                <Animation Duration="0:0:0.8" IterationCount="INFINITE" PlaybackDirection="Alternate" Easing="SineEaseInOut">
+                    <KeyFrame Cue="0%">
+                        <Setter Property="Opacity" Value="0.35"/>
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                        <Setter Property="Opacity" Value="1.0"/>
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
         </Style>
         <Style Selector="Slider.tour-highlight /template/ Thumb Ellipse">
             <Setter Property="Fill" Value="#8AB8FF"/>
             <Setter Property="Stroke" Value="#FFFFFF"/>
-            <Setter Property="StrokeThickness" Value="2"/>
+            <Setter Property="StrokeThickness" Value="3"/>
         </Style>
         <Style Selector="Slider.tour-highlight /template/ RepeatButton#PART_DecreaseButton Border">
             <Setter Property="Background" Value="#6AA3D8"/>
         </Style>
+        <Style Selector="Slider.tour-highlight">
+            <Style.Animations>
+                <Animation Duration="0:0:0.8" IterationCount="INFINITE" PlaybackDirection="Alternate" Easing="SineEaseInOut">
+                    <KeyFrame Cue="0%">
+                        <Setter Property="Opacity" Value="0.35"/>
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                        <Setter Property="Opacity" Value="1.0"/>
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
         <Style Selector="TextBlock.tour-highlight">
             <Setter Property="Foreground" Value="#8AB8FF"/>
             <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Style.Animations>
+                <Animation Duration="0:0:0.8" IterationCount="INFINITE" PlaybackDirection="Alternate" Easing="SineEaseInOut">
+                    <KeyFrame Cue="0%">
+                        <Setter Property="Opacity" Value="0.35"/>
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                        <Setter Property="Opacity" Value="1.0"/>
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
         </Style>
 
     </Window.Styles>
