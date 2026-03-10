@@ -4444,7 +4444,9 @@ namespace CleanScan.Views
             ("Slide_Crop_L",  "TourSliderTitle",   "TourSliderBody",   "\ud83c\udf9a", "OpenCrop"),
             ("Label_Crop_L",  "TourTooltipTitle",  "TourTooltipBody",  "\ud83d\udcac", "OpenCrop"),
             ("VdbPlay",       "TourPreviewTitle",  "TourPreviewBody",  "\u25b6\ufe0f", null),
-            ("RecordBtn",     "TourRecordTitle",   "TourRecordBody",   "\ud83d\udcbe", null),
+            ("RecordBtn",       "TourRecordTitle",        "TourRecordBody",        "\ud83d\udcbe", null),
+            ("RecordDirPickBtn", "TourOutputDirTitle",   "TourOutputDirBody",     "\ud83d\udcc1", null),
+            ("RecordStartBtn", "TourStartEncodingTitle", "TourStartEncodingBody", "\ud83d\ude80", null),
         ];
 
         private bool _tourActive;

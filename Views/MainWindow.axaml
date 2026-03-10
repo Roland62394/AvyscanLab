@@ -1143,7 +1143,7 @@
                                         <Grid ColumnDefinitions="400,6,Auto,4,Auto">
                                             <TextBox x:Name="RecordDir" Grid.Column="0" FontSize="12" Height="28" TextAlignment="Left"
                                                      Watermark="C:\output"/>
-                                            <Button Grid.Column="2" Content="…" FontSize="13"
+                                            <Button x:Name="RecordDirPickBtn" Grid.Column="2" Content="…" FontSize="13"
                                                     Width="28" Height="28"
                                                     HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                                                     Click="OnRecordDirPickClick"/>
