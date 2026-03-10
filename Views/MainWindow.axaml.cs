@@ -816,6 +816,8 @@ namespace CleanScan.Views
             // Query exact frame count and fps to set an accurate slider maximum.
             // This prevents seeking past the last valid frame, which would crash AviSynth
             // (ImageSource has no file for out-of-range indices) and freeze video players at EOF.
+            _tourAdvanceOnClipLoaded?.Invoke();
+
             if (_mpvService is { IsReady: true })
             {
                 _totalFrames = _mpvService.GetTotalFrames();
@@ -4446,6 +4448,7 @@ namespace CleanScan.Views
         ];
 
         private bool _tourActive;
+        private Action? _tourAdvanceOnClipLoaded;
 
         private async Task ShowGuidedTourAsync()
         {
@@ -4628,6 +4631,14 @@ namespace CleanScan.Views
                     _ => 0,
                 };
 
+                int GetStepHorizontalNudge(int currentStep) => currentStep switch
+                {
+                    3 => 120, // Window 3: move to the right
+                    _ => 0,
+                };
+
+                EventHandler<PointerPressedEventArgs>? highlightedClickHandler = null;
+
                 void ClearHighlight()
                 {
                     if (highlightedTarget is Button { Name: "AddClipBtn" } addClip)
@@ -4638,6 +4649,13 @@ namespace CleanScan.Views
                     }
 
                     if (highlightedTarget is null) return;
+
+                    if (highlightedClickHandler is not null)
+                    {
+                        highlightedTarget.PointerPressed -= highlightedClickHandler;
+                        highlightedClickHandler = null;
+                    }
+
                     highlightedTarget.Classes.Remove("tour-highlight");
                     highlightedTarget = null;
                 }
@@ -4709,6 +4727,17 @@ namespace CleanScan.Views
                     target.Classes.Add("tour-highlight");
                     highlightedTarget = target;
 
+                    if (step >= 2)
+                    {
+                        highlightedClickHandler = (_, _) =>
+                        {
+                            step++;
+                            if (step >= TourSteps.Length) CloseTour();
+                            else UpdateStep();
+                        };
+                        target.PointerPressed += highlightedClickHandler;
+                    }
+
                     if (target is Button { Name: "AddClipBtn" } addClip)
                     {
                         addClipBg ??= addClip.Background;
@@ -4752,7 +4781,9 @@ namespace CleanScan.Views
                         cTop  = Math.Max(10, (wh - cardH) / 2);
                     }
 
+                    var xNudge = GetStepHorizontalNudge(step);
                     var yNudge = GetStepVerticalNudge(step);
+                    cLeft = Math.Clamp(cLeft + xNudge, 10, Math.Max(10, ww - cardW - 10));
                     cTop = Math.Clamp(cTop + yNudge, 10, Math.Max(10, wh - cardH - 10));
                     SetPopupOffset(cLeft, cTop);
                 }
@@ -4761,10 +4792,22 @@ namespace CleanScan.Views
                     // No target → center in window
                     double cLeft = Math.Max(10, (ww - cardW) / 2);
                     double cTop  = Math.Max(10, (wh - cardH) / 2);
+                    var xNudge = GetStepHorizontalNudge(step);
                     var yNudge = GetStepVerticalNudge(step);
+                    cLeft = Math.Clamp(cLeft + xNudge, 10, Math.Max(10, ww - cardW - 10));
                     cTop = Math.Clamp(cTop + yNudge, 10, Math.Max(10, wh - cardH - 10));
                     SetPopupOffset(cLeft, cTop);
                 }
+
+                _tourAdvanceOnClipLoaded = step == 1
+                    ? () =>
+                    {
+                        if (!_tourActive || step != 1) return;
+                        step++;
+                        if (step >= TourSteps.Length) CloseTour();
+                        else UpdateStep();
+                    }
+                    : null;
 
                 tourPopup.IsOpen = true;
             }
@@ -4774,6 +4817,7 @@ namespace CleanScan.Views
             void CloseTour()
             {
                 ClearHighlight();
+                _tourAdvanceOnClipLoaded = null;
                 tourPopup.IsOpen = false;
                 // Mark completed
                 var settings = _windowStateService.Load();
@@ -4804,6 +4848,7 @@ namespace CleanScan.Views
             }
             finally
             {
+                _tourAdvanceOnClipLoaded = null;
                 _tourActive = false;
             }
         }
