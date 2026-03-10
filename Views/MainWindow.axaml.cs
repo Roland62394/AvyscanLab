@@ -4451,13 +4451,16 @@ namespace CleanScan.Views
         {
             if (_tourActive) return;
             _tourActive = true;
+            try
+            {
+                // Let the window finish layout/render before placing the floating card.
+                await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
+                await Task.Delay(300);
 
-            await Task.Delay(600);
+                int step = 0;
+                var tourDone = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            int step = 0;
-            var tourDone = new TaskCompletionSource();
-
-            // ── Build callout content (created once, updated per step) ───
+                // ── Build callout content (created once, updated per step) ───
 
             var titleTb = new TextBlock
             {
@@ -4593,10 +4596,16 @@ namespace CleanScan.Views
                 }
             };
 
-            // Add the card directly to MainGrid — Grid ignores extra children
-            // without Grid.Row/Column, they just overlay at (0,0).
-            // We position it manually via Margin.
-            var mainGrid = this.FindControl<Grid>("MainGrid")!;
+                // Add the card directly to MainGrid — Grid ignores extra children
+                // without Grid.Row/Column, they just overlay at (0,0).
+                // We position it manually via Margin.
+                var mainGrid = this.FindControl<Grid>("MainGrid");
+                if (mainGrid is null)
+                {
+                    tourDone.TrySetResult();
+                    return;
+                }
+
             Grid.SetRowSpan(card, 3);   // span all rows so it can float anywhere
             Grid.SetColumnSpan(card, 1);
             mainGrid.Children.Add(card);
@@ -4716,7 +4725,6 @@ namespace CleanScan.Views
             {
                 card.IsVisible = false;
                 mainGrid.Children.Remove(card);
-                _tourActive = false;
                 // Mark completed
                 var settings = _windowStateService.Load();
                 if (settings is not null)
@@ -4739,6 +4747,15 @@ namespace CleanScan.Views
             refreshStep = UpdateStep;
             UpdateStep();
             await tourDone.Task;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Guided tour failed: {ex}");
+            }
+            finally
+            {
+                _tourActive = false;
+            }
         }
 
         #endregion
