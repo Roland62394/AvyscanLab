@@ -3517,7 +3517,13 @@ namespace CleanScan.Views
             var chroma    = encVals.GetValueOrDefault("chroma", "yuv420p");
             var resize    = encVals.GetValueOrDefault("resize", "original");
 
-            var scaleFilter = resize != "original" ? $"-vf scale=-2:{resize}" : "";
+            // x264/x265 require even dimensions; pad to nearest even if needed
+            var needsEvenDim = encoder is "x264" or "x265";
+            var scaleFilter = resize != "original"
+                ? $"-vf scale=-2:{resize}"
+                : needsEvenDim
+                    ? "-vf pad=ceil(iw/2)*2:ceil(ih/2)*2"
+                    : "";
             var isImageSeq = encoder is "tiff" or "png";
             // Trial limit applied directly in compiled code (not in script)
             var durationLimit = TrialMaxSeconds > 0 ? $"-t {TrialMaxSeconds}" : "";
