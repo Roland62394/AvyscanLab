@@ -4615,8 +4615,28 @@ namespace CleanScan.Views
                 }
 
                 Control? highlightedTarget = null;
+                IBrush? addClipBg = null;
+                IBrush? addClipFg = null;
+                IBrush? addClipBorder = null;
+
+                int GetStepVerticalNudge(int currentStep) => currentStep switch
+                {
+                    1 => 70,  // Add clip: lower the card
+                    2 => 70,  // Parameters: lower the card
+                    3 => 50,  // Slider: slightly lower the card
+                    4 => -60, // Tooltip: raise the card
+                    _ => 0,
+                };
+
                 void ClearHighlight()
                 {
+                    if (highlightedTarget is Button { Name: "AddClipBtn" } addClip)
+                    {
+                        if (addClipBg is not null) addClip.Background = addClipBg;
+                        if (addClipFg is not null) addClip.Foreground = addClipFg;
+                        if (addClipBorder is not null) addClip.BorderBrush = addClipBorder;
+                    }
+
                     if (highlightedTarget is null) return;
                     highlightedTarget.Classes.Remove("tour-highlight");
                     highlightedTarget = null;
@@ -4689,6 +4709,16 @@ namespace CleanScan.Views
                     target.Classes.Add("tour-highlight");
                     highlightedTarget = target;
 
+                    if (target is Button { Name: "AddClipBtn" } addClip)
+                    {
+                        addClipBg ??= addClip.Background;
+                        addClipFg ??= addClip.Foreground;
+                        addClipBorder ??= addClip.BorderBrush;
+                        addClip.Background = new SolidColorBrush(Color.Parse("#2A3755"));
+                        addClip.Foreground = Brushes.White;
+                        addClip.BorderBrush = new SolidColorBrush(Color.Parse("#3B82F6"));
+                    }
+
                     var pos = target.TranslatePoint(new Point(0, 0), mainGrid);
                     double tx = pos?.X ?? 0;
                     double ty = pos?.Y ?? 0;
@@ -4722,7 +4752,7 @@ namespace CleanScan.Views
                         cTop  = Math.Max(10, (wh - cardH) / 2);
                     }
 
-                    var yNudge = step is 2 or 3 ? -120 : 0;
+                    var yNudge = GetStepVerticalNudge(step);
                     cTop = Math.Clamp(cTop + yNudge, 10, Math.Max(10, wh - cardH - 10));
                     SetPopupOffset(cLeft, cTop);
                 }
@@ -4731,7 +4761,7 @@ namespace CleanScan.Views
                     // No target → center in window
                     double cLeft = Math.Max(10, (ww - cardW) / 2);
                     double cTop  = Math.Max(10, (wh - cardH) / 2);
-                    var yNudge = step is 2 or 3 ? -120 : 0;
+                    var yNudge = GetStepVerticalNudge(step);
                     cTop = Math.Clamp(cTop + yNudge, 10, Math.Max(10, wh - cardH - 10));
                     SetPopupOffset(cLeft, cTop);
                 }
