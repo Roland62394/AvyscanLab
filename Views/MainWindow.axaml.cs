@@ -4451,13 +4451,16 @@ namespace CleanScan.Views
         {
             if (_tourActive) return;
             _tourActive = true;
+            try
+            {
+                // Let the window finish layout/render before placing the floating card.
+                await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
+                await Task.Delay(300);
 
-            await Task.Delay(600);
+                int step = 0;
+                var tourDone = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            int step = 0;
-            var tourDone = new TaskCompletionSource();
-
-            // ── Build callout content (created once, updated per step) ───
+                // ── Build callout content (created once, updated per step) ───
 
             var titleTb = new TextBlock
             {
@@ -4571,7 +4574,7 @@ namespace CleanScan.Views
                 };
             }
 
-            // ── Callout card — a simple Border, no Popup ─────────────────
+            // ── Callout card (shown in a Popup so it stays above NativeControlHost) ──
             var card = new Border
             {
                 Background        = new SolidColorBrush(Color.Parse("#1A2233")),
@@ -4582,10 +4585,6 @@ namespace CleanScan.Views
                 MinWidth          = 340,
                 MaxWidth          = 400,
                 BoxShadow         = BoxShadows.Parse("0 8 30 0 #A0000000"),
-                HorizontalAlignment = HorizontalAlignment.Left,
-                VerticalAlignment   = VerticalAlignment.Top,
-                ZIndex            = 10000,
-                IsVisible         = false,
                 Child = new StackPanel
                 {
                     Spacing = 0,
@@ -4593,13 +4592,27 @@ namespace CleanScan.Views
                 }
             };
 
-            // Add the card directly to MainGrid — Grid ignores extra children
-            // without Grid.Row/Column, they just overlay at (0,0).
-            // We position it manually via Margin.
-            var mainGrid = this.FindControl<Grid>("MainGrid")!;
-            Grid.SetRowSpan(card, 3);   // span all rows so it can float anywhere
-            Grid.SetColumnSpan(card, 1);
-            mainGrid.Children.Add(card);
+                var mainGrid = this.FindControl<Grid>("MainGrid");
+                if (mainGrid is null)
+                {
+                    tourDone.TrySetResult();
+                    return;
+                }
+
+                var tourPopup = new Popup
+                {
+                    PlacementTarget = mainGrid,
+                    Placement = PlacementMode.TopEdgeAlignedLeft,
+                    IsLightDismissEnabled = false,
+                    Child = card,
+                };
+
+                void SetPopupOffset(double x, double y)
+                {
+                    // TopEdgeAlignedLeft uses the target's top-left as reference.
+                    tourPopup.HorizontalOffset = x;
+                    tourPopup.VerticalOffset = y;
+                }
 
             // ── UpdateStep ───────────────────────────────────────────────
 
@@ -4697,26 +4710,24 @@ namespace CleanScan.Views
                         cTop  = Math.Max(10, (wh - cardH) / 2);
                     }
 
-                    card.Margin = new Thickness(cLeft, cTop, 0, 0);
+                    SetPopupOffset(cLeft, cTop);
                 }
                 else
                 {
                     // No target → center in window
                     double cLeft = Math.Max(10, (ww - cardW) / 2);
                     double cTop  = Math.Max(10, (wh - cardH) / 2);
-                    card.Margin = new Thickness(cLeft, cTop, 0, 0);
+                    SetPopupOffset(cLeft, cTop);
                 }
 
-                card.IsVisible = true;
+                tourPopup.IsOpen = true;
             }
 
             // ── Navigation ───────────────────────────────────────────────
 
             void CloseTour()
             {
-                card.IsVisible = false;
-                mainGrid.Children.Remove(card);
-                _tourActive = false;
+                tourPopup.IsOpen = false;
                 // Mark completed
                 var settings = _windowStateService.Load();
                 if (settings is not null)
@@ -4739,6 +4750,15 @@ namespace CleanScan.Views
             refreshStep = UpdateStep;
             UpdateStep();
             await tourDone.Task;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Guided tour failed: {ex}");
+            }
+            finally
+            {
+                _tourActive = false;
+            }
         }
 
         #endregion
