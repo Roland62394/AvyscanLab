@@ -4602,10 +4602,17 @@ namespace CleanScan.Views
                 var tourPopup = new Popup
                 {
                     PlacementTarget = mainGrid,
-                    Placement = PlacementMode.Top,
+                    Placement = PlacementMode.TopEdgeAlignedLeft,
                     IsLightDismissEnabled = false,
                     Child = card,
                 };
+
+                void SetPopupOffset(double x, double y)
+                {
+                    // TopEdgeAlignedLeft uses the target's top-left as reference.
+                    tourPopup.HorizontalOffset = x;
+                    tourPopup.VerticalOffset = y;
+                }
 
             // ── UpdateStep ───────────────────────────────────────────────
 
@@ -4703,16 +4710,14 @@ namespace CleanScan.Views
                         cTop  = Math.Max(10, (wh - cardH) / 2);
                     }
 
-                    tourPopup.HorizontalOffset = cLeft;
-                    tourPopup.VerticalOffset = cTop;
+                    SetPopupOffset(cLeft, cTop);
                 }
                 else
                 {
                     // No target → center in window
                     double cLeft = Math.Max(10, (ww - cardW) / 2);
                     double cTop  = Math.Max(10, (wh - cardH) / 2);
-                    tourPopup.HorizontalOffset = cLeft;
-                    tourPopup.VerticalOffset = cTop;
+                    SetPopupOffset(cLeft, cTop);
                 }
 
                 tourPopup.IsOpen = true;
