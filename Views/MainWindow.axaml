@@ -379,6 +379,26 @@
             <Setter Property="Fill" Value="#2870B8"/>
         </Style>
 
+
+        <!-- ─── Guided tour target highlight ─── -->
+        <Style Selector="Button.tour-highlight">
+            <Setter Property="BorderBrush" Value="#3B82F6"/>
+            <Setter Property="Background" Value="#2A3755"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+        </Style>
+        <Style Selector="Slider.tour-highlight /template/ Thumb Ellipse">
+            <Setter Property="Fill" Value="#8AB8FF"/>
+            <Setter Property="Stroke" Value="#FFFFFF"/>
+            <Setter Property="StrokeThickness" Value="2"/>
+        </Style>
+        <Style Selector="Slider.tour-highlight /template/ RepeatButton#PART_DecreaseButton Border">
+            <Setter Property="Background" Value="#6AA3D8"/>
+        </Style>
+        <Style Selector="TextBlock.tour-highlight">
+            <Setter Property="Foreground" Value="#8AB8FF"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+
     </Window.Styles>
 
     <Design.DataContext>
@@ -1123,7 +1143,7 @@
                                         <Grid ColumnDefinitions="400,6,Auto,4,Auto">
                                             <TextBox x:Name="RecordDir" Grid.Column="0" FontSize="12" Height="28" TextAlignment="Left"
                                                      Watermark="C:\output"/>
-                                            <Button Grid.Column="2" Content="…" FontSize="13"
+                                            <Button x:Name="RecordDirPickBtn" Grid.Column="2" Content="…" FontSize="13"
                                                     Width="28" Height="28"
                                                     HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                                                     Click="OnRecordDirPickClick"/>

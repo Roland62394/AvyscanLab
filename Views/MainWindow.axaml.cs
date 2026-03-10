@@ -816,6 +816,8 @@ namespace CleanScan.Views
             // Query exact frame count and fps to set an accurate slider maximum.
             // This prevents seeking past the last valid frame, which would crash AviSynth
             // (ImageSource has no file for out-of-range indices) and freeze video players at EOF.
+            _tourAdvanceOnClipLoaded?.Invoke();
+
             if (_mpvService is { IsReady: true })
             {
                 _totalFrames = _mpvService.GetTotalFrames();
@@ -4442,22 +4444,28 @@ namespace CleanScan.Views
             ("Slide_Crop_L",  "TourSliderTitle",   "TourSliderBody",   "\ud83c\udf9a", "OpenCrop"),
             ("Label_Crop_L",  "TourTooltipTitle",  "TourTooltipBody",  "\ud83d\udcac", "OpenCrop"),
             ("VdbPlay",       "TourPreviewTitle",  "TourPreviewBody",  "\u25b6\ufe0f", null),
-            ("RecordBtn",     "TourRecordTitle",   "TourRecordBody",   "\ud83d\udcbe", null),
+            ("RecordBtn",       "TourRecordTitle",        "TourRecordBody",        "\ud83d\udcbe", null),
+            ("RecordDirPickBtn", "TourOutputDirTitle",   "TourOutputDirBody",     "\ud83d\udcc1", null),
+            ("RecordStartBtn", "TourStartEncodingTitle", "TourStartEncodingBody", "\ud83d\ude80", null),
         ];
 
         private bool _tourActive;
+        private Action? _tourAdvanceOnClipLoaded;
 
         private async Task ShowGuidedTourAsync()
         {
             if (_tourActive) return;
             _tourActive = true;
+            try
+            {
+                // Let the window finish layout/render before placing the floating card.
+                await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
+                await Task.Delay(300);
 
-            await Task.Delay(600);
+                int step = 0;
+                var tourDone = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            int step = 0;
-            var tourDone = new TaskCompletionSource();
-
-            // ── Build callout content (created once, updated per step) ───
+                // ── Build callout content (created once, updated per step) ───
 
             var titleTb = new TextBlock
             {
@@ -4571,7 +4579,7 @@ namespace CleanScan.Views
                 };
             }
 
-            // ── Callout card — a simple Border, no Popup ─────────────────
+            // ── Callout card (shown in a Popup so it stays above NativeControlHost) ──
             var card = new Border
             {
                 Background        = new SolidColorBrush(Color.Parse("#1A2233")),
@@ -4582,10 +4590,6 @@ namespace CleanScan.Views
                 MinWidth          = 340,
                 MaxWidth          = 400,
                 BoxShadow         = BoxShadows.Parse("0 8 30 0 #A0000000"),
-                HorizontalAlignment = HorizontalAlignment.Left,
-                VerticalAlignment   = VerticalAlignment.Top,
-                ZIndex            = 10000,
-                IsVisible         = false,
                 Child = new StackPanel
                 {
                     Spacing = 0,
@@ -4593,13 +4597,70 @@ namespace CleanScan.Views
                 }
             };
 
-            // Add the card directly to MainGrid — Grid ignores extra children
-            // without Grid.Row/Column, they just overlay at (0,0).
-            // We position it manually via Margin.
-            var mainGrid = this.FindControl<Grid>("MainGrid")!;
-            Grid.SetRowSpan(card, 3);   // span all rows so it can float anywhere
-            Grid.SetColumnSpan(card, 1);
-            mainGrid.Children.Add(card);
+                var mainGrid = this.FindControl<Grid>("MainGrid");
+                if (mainGrid is null)
+                {
+                    tourDone.TrySetResult();
+                    return;
+                }
+
+                var tourPopup = new Popup
+                {
+                    PlacementTarget = mainGrid,
+                    Placement = PlacementMode.TopEdgeAlignedLeft,
+                    IsLightDismissEnabled = false,
+                    Child = card,
+                };
+
+                void SetPopupOffset(double x, double y)
+                {
+                    // TopEdgeAlignedLeft uses the target's top-left as reference.
+                    tourPopup.HorizontalOffset = x;
+                    tourPopup.VerticalOffset = y;
+                }
+
+                Control? highlightedTarget = null;
+                IBrush? addClipBg = null;
+                IBrush? addClipFg = null;
+                IBrush? addClipBorder = null;
+
+                int GetStepVerticalNudge(int currentStep) => currentStep switch
+                {
+                    1 => 70,  // Add clip: lower the card
+                    2 => 70,  // Parameters: lower the card
+                    3 => 50,  // Slider: slightly lower the card
+                    4 => -60, // Tooltip: raise the card
+                    _ => 0,
+                };
+
+                int GetStepHorizontalNudge(int currentStep) => currentStep switch
+                {
+                    3 => 120, // Window 3: move to the right
+                    _ => 0,
+                };
+
+                EventHandler<PointerPressedEventArgs>? highlightedClickHandler = null;
+
+                void ClearHighlight()
+                {
+                    if (highlightedTarget is Button { Name: "AddClipBtn" } addClip)
+                    {
+                        if (addClipBg is not null) addClip.Background = addClipBg;
+                        if (addClipFg is not null) addClip.Foreground = addClipFg;
+                        if (addClipBorder is not null) addClip.BorderBrush = addClipBorder;
+                    }
+
+                    if (highlightedTarget is null) return;
+
+                    if (highlightedClickHandler is not null)
+                    {
+                        highlightedTarget.PointerPressed -= highlightedClickHandler;
+                        highlightedClickHandler = null;
+                    }
+
+                    highlightedTarget.Classes.Remove("tour-highlight");
+                    highlightedTarget = null;
+                }
 
             // ── UpdateStep ───────────────────────────────────────────────
 
@@ -4662,8 +4723,33 @@ namespace CleanScan.Views
                 double cardH = Math.Max(card.DesiredSize.Height, 100);
                 double gap = 16;
 
+                ClearHighlight();
                 if (targetName is not null && this.FindControl<Control>(targetName) is { } target)
                 {
+                    target.Classes.Add("tour-highlight");
+                    highlightedTarget = target;
+
+                    if (step >= 2)
+                    {
+                        highlightedClickHandler = (_, _) =>
+                        {
+                            step++;
+                            if (step >= TourSteps.Length) CloseTour();
+                            else UpdateStep();
+                        };
+                        target.PointerPressed += highlightedClickHandler;
+                    }
+
+                    if (target is Button { Name: "AddClipBtn" } addClip)
+                    {
+                        addClipBg ??= addClip.Background;
+                        addClipFg ??= addClip.Foreground;
+                        addClipBorder ??= addClip.BorderBrush;
+                        addClip.Background = new SolidColorBrush(Color.Parse("#2A3755"));
+                        addClip.Foreground = Brushes.White;
+                        addClip.BorderBrush = new SolidColorBrush(Color.Parse("#3B82F6"));
+                    }
+
                     var pos = target.TranslatePoint(new Point(0, 0), mainGrid);
                     double tx = pos?.X ?? 0;
                     double ty = pos?.Y ?? 0;
@@ -4697,26 +4783,44 @@ namespace CleanScan.Views
                         cTop  = Math.Max(10, (wh - cardH) / 2);
                     }
 
-                    card.Margin = new Thickness(cLeft, cTop, 0, 0);
+                    var xNudge = GetStepHorizontalNudge(step);
+                    var yNudge = GetStepVerticalNudge(step);
+                    cLeft = Math.Clamp(cLeft + xNudge, 10, Math.Max(10, ww - cardW - 10));
+                    cTop = Math.Clamp(cTop + yNudge, 10, Math.Max(10, wh - cardH - 10));
+                    SetPopupOffset(cLeft, cTop);
                 }
                 else
                 {
                     // No target → center in window
                     double cLeft = Math.Max(10, (ww - cardW) / 2);
                     double cTop  = Math.Max(10, (wh - cardH) / 2);
-                    card.Margin = new Thickness(cLeft, cTop, 0, 0);
+                    var xNudge = GetStepHorizontalNudge(step);
+                    var yNudge = GetStepVerticalNudge(step);
+                    cLeft = Math.Clamp(cLeft + xNudge, 10, Math.Max(10, ww - cardW - 10));
+                    cTop = Math.Clamp(cTop + yNudge, 10, Math.Max(10, wh - cardH - 10));
+                    SetPopupOffset(cLeft, cTop);
                 }
 
-                card.IsVisible = true;
+                _tourAdvanceOnClipLoaded = step == 1
+                    ? () =>
+                    {
+                        if (!_tourActive || step != 1) return;
+                        step++;
+                        if (step >= TourSteps.Length) CloseTour();
+                        else UpdateStep();
+                    }
+                    : null;
+
+                tourPopup.IsOpen = true;
             }
 
             // ── Navigation ───────────────────────────────────────────────
 
             void CloseTour()
             {
-                card.IsVisible = false;
-                mainGrid.Children.Remove(card);
-                _tourActive = false;
+                ClearHighlight();
+                _tourAdvanceOnClipLoaded = null;
+                tourPopup.IsOpen = false;
                 // Mark completed
                 var settings = _windowStateService.Load();
                 if (settings is not null)
@@ -4739,6 +4843,16 @@ namespace CleanScan.Views
             refreshStep = UpdateStep;
             UpdateStep();
             await tourDone.Task;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Guided tour failed: {ex}");
+            }
+            finally
+            {
+                _tourAdvanceOnClipLoaded = null;
+                _tourActive = false;
+            }
         }
 
         #endregion
