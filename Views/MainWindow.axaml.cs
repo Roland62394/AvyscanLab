@@ -4614,6 +4614,14 @@ namespace CleanScan.Views
                     tourPopup.VerticalOffset = y;
                 }
 
+                Control? highlightedTarget = null;
+                void ClearHighlight()
+                {
+                    if (highlightedTarget is null) return;
+                    highlightedTarget.Classes.Remove("tour-highlight");
+                    highlightedTarget = null;
+                }
+
             // ── UpdateStep ───────────────────────────────────────────────
 
             void UpdateStep()
@@ -4675,8 +4683,12 @@ namespace CleanScan.Views
                 double cardH = Math.Max(card.DesiredSize.Height, 100);
                 double gap = 16;
 
+                ClearHighlight();
                 if (targetName is not null && this.FindControl<Control>(targetName) is { } target)
                 {
+                    target.Classes.Add("tour-highlight");
+                    highlightedTarget = target;
+
                     var pos = target.TranslatePoint(new Point(0, 0), mainGrid);
                     double tx = pos?.X ?? 0;
                     double ty = pos?.Y ?? 0;
@@ -4710,6 +4722,8 @@ namespace CleanScan.Views
                         cTop  = Math.Max(10, (wh - cardH) / 2);
                     }
 
+                    var yNudge = step is 2 or 3 ? -120 : 0;
+                    cTop = Math.Clamp(cTop + yNudge, 10, Math.Max(10, wh - cardH - 10));
                     SetPopupOffset(cLeft, cTop);
                 }
                 else
@@ -4717,6 +4731,8 @@ namespace CleanScan.Views
                     // No target → center in window
                     double cLeft = Math.Max(10, (ww - cardW) / 2);
                     double cTop  = Math.Max(10, (wh - cardH) / 2);
+                    var yNudge = step is 2 or 3 ? -120 : 0;
+                    cTop = Math.Clamp(cTop + yNudge, 10, Math.Max(10, wh - cardH - 10));
                     SetPopupOffset(cLeft, cTop);
                 }
 
@@ -4727,6 +4743,7 @@ namespace CleanScan.Views
 
             void CloseTour()
             {
+                ClearHighlight();
                 tourPopup.IsOpen = false;
                 // Mark completed
                 var settings = _windowStateService.Load();
