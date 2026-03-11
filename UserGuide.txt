@@ -5,20 +5,21 @@
                                 ScanFilm SNC
                                www.scanfilm.ch
 
-              Version d'essai - encodage limite a 60 secondes par clip.
+              Version d'essai — Beta 5.0
 
 
 =============================================================================================
                                  TABLE DES MATIERES
 =============================================================================================
 
-    1.  Presentation                         8.  Encodage et rendu
-    2.  Prerequis et installation            9.  Reglages de l'application
-    3.  Interface generale                  10.  Apercu du script
-    4.  Selection de la source              11.  Retour d'experience (Feedback)
-    5.  Lecteur video et navigation         12.  Workflow recommande
-    6.  Panneau de filtres                  13.  Astuces et raccourcis
-    7.  Prereglages (Presets)               14.  Fichiers et emplacements
+    1.  Presentation                         9.  Encodage et rendu
+    2.  Prerequis et installation           10.  Reglages de l'application
+    3.  Interface generale                  11.  Apercu du script
+    4.  Selection de la source              12.  Retour d'experience (Feedback)
+    5.  Lecteur video et navigation         13.  Workflow recommande
+    6.  Panneau de filtres                  14.  Astuces et raccourcis
+    7.  Prereglages (Presets)               15.  Fichiers et emplacements
+    8.  Filtres personnalises (Custom)      16.  Contenu de l'application
 
 
 =============================================================================================
@@ -272,7 +273,77 @@ Emplacement de stockage : %AppData%\CleanScan\presets.json
 
 
 =============================================================================================
-                              8.  ENCODAGE ET RENDU
+                        8.  FILTRES PERSONNALISES (CUSTOM)
+=============================================================================================
+
+CleanScan permet de creer vos propres filtres AviSynth et de les integrer dans le pipeline
+de restauration. Les filtres personnalises sont affiches dans la section "CUSTOM" du panneau
+de filtres (colonne gauche).
+
+    CREER UN FILTRE PERSONNALISE
+    -----------------------------------------------------------------------------------------
+
+    1. Cliquez sur le bouton "+" a droite du titre "CUSTOM" dans le panneau de filtres.
+       Le formulaire de filtre personnalise s'ouvre.
+
+    2. Renseignez le nom du filtre et la position dans le pipeline :
+       - BeforePipeline : avant tous les filtres
+       - AfterGamMac    : apres la correction colorimetrique
+       - AfterDenoise   : apres la suppression des poussieres
+       - AfterDegrain   : apres la reduction du grain
+       - AfterLuma      : apres les niveaux de luminosite
+       - AfterSharpen   : apres la nettete (fin du pipeline)
+
+    3. Si votre filtre necessite un plugin AviSynth externe (.dll), cliquez sur
+       "+ Ajouter DLL..." pour l'ajouter. Les DLLs sont chargees via TryLoadPlugin()
+       et les doublons sont automatiquement elimines.
+
+    4. Ecrivez le code AviSynth dans l'editeur. Utilisez "c" comme variable clip :
+           c = MonFiltre(c, force={sigma})
+       Les mots entre accolades {nom} sont detectes automatiquement comme parametres.
+
+    5. Pour chaque parametre detecte, configurez le type de controle :
+       - slider   : curseur avec Min, Max, Step et Defaut
+       - combo    : liste deroulante avec valeurs separees par virgule
+       - checkbox : case a cocher avec valeurs On/Off
+       - text     : champ texte libre
+
+    6. Utilisez le bouton "Apercu" pour tester le filtre en temps reel sans quitter
+       le formulaire.
+
+    7. Cliquez sur "Enregistrer" pour sauvegarder.
+
+    UTILISER UN FILTRE PERSONNALISE
+    -----------------------------------------------------------------------------------------
+
+    Le filtre apparait dans la section CUSTOM avec un bouton ON/OFF. Cliquez dessus pour
+    l'activer ou le desactiver. Le bouton fleche (>) ouvre le panneau de parametres ou
+    vous pouvez ajuster les valeurs definies. Le bouton crayon ouvre le formulaire d'edition.
+
+    EXPORTER / IMPORTER UN FILTRE
+    -----------------------------------------------------------------------------------------
+
+    Exporter : dans le formulaire d'edition, cliquez sur "Exporter". Le filtre est sauvegarde
+    dans un fichier .json que vous pouvez partager avec d'autres utilisateurs.
+
+    Importer : dans le panneau de filtres, cliquez sur le bouton fleche vers le bas a cote
+    du "+" dans la section CUSTOM. Selectionnez un fichier .json exporte. Les filtres
+    importes recoivent un nouvel identifiant pour eviter les doublons.
+
+    Note : les chemins DLL sont absolus. Si le filtre utilise un plugin externe, assurez-vous
+    que la DLL est presente au meme emplacement sur la machine cible, ou editez le filtre
+    apres importation pour corriger le chemin.
+
+    SUPPRIMER UN FILTRE
+    -----------------------------------------------------------------------------------------
+
+    Ouvrez le formulaire d'edition (bouton crayon) et cliquez sur "Supprimer".
+
+Emplacement de stockage : %AppData%\CleanScan\custom_filters.json
+
+
+=============================================================================================
+                              9.  ENCODAGE ET RENDU
 =============================================================================================
 
 Cliquez sur le bouton REC (rouge) dans la barre de transport pour ouvrir le panneau
@@ -343,7 +414,7 @@ d'encodage. Ce panneau se superpose au panneau de filtres et contient deux colon
 
 
 =============================================================================================
-                          9.  REGLAGES DE L'APPLICATION
+                         10.  REGLAGES DE L'APPLICATION
 =============================================================================================
 
 Menu Reglages :
@@ -365,7 +436,7 @@ Menu Langue :
 
 
 =============================================================================================
-                              10.  APERCU DU SCRIPT
+                              11.  APERCU DU SCRIPT
 =============================================================================================
 
 Menu Infos > Apercu du script ouvre une fenetre affichant le contenu complet du fichier
@@ -376,7 +447,7 @@ Cela permet de verifier le script AviSynth produit et de le copier pour un usage
 
 
 =============================================================================================
-                       11.  RETOUR D'EXPERIENCE (FEEDBACK)
+                       12.  RETOUR D'EXPERIENCE (FEEDBACK)
 =============================================================================================
 
 Le menu "Votre retour d'experience" ouvre un formulaire de contact integre permettant
@@ -390,7 +461,7 @@ si vous souhaitez une reponse.
 
 
 =============================================================================================
-                             12.  WORKFLOW RECOMMANDE
+                             13.  WORKFLOW RECOMMANDE
 =============================================================================================
 
     1. Ouvrez votre source (glisser-deposer ou champ source).
@@ -419,7 +490,7 @@ si vous souhaitez une reponse.
 
 
 =============================================================================================
-                           13.  ASTUCES ET RACCOURCIS
+                           14.  ASTUCES ET RACCOURCIS
 =============================================================================================
 
     - La molette de souris sur les champs numeriques ajuste la valeur par pas.
@@ -435,7 +506,7 @@ si vous souhaitez une reponse.
 
 
 =============================================================================================
-                          14.  FICHIERS ET EMPLACEMENTS
+                          15.  FICHIERS ET EMPLACEMENTS
 =============================================================================================
 
     Fichier / Dossier              Emplacement
@@ -445,10 +516,81 @@ si vous souhaitez une reponse.
     ScriptRender.avs               Dossier de l'exe
     presets.json                   %AppData%\CleanScan
     encoding_presets.json          %AppData%\CleanScan
+    custom_filters.json            %AppData%\CleanScan
     window_settings.json           %AppData%\CleanScan
     session.json                   %AppData%\CleanScan
     Plugins/                       Dossier de l'exe
     mpv/                           Dossier de l'exe
+
+
+=============================================================================================
+                          16.  CONTENU DE L'APPLICATION
+=============================================================================================
+
+Arborescence des fichiers distribues avec CleanScan :
+
+    CleanScan.exe                           Executable principal
+    ScriptMaster.en.avs                     Modele de script AviSynth
+    UserGuide.txt                           Guide texte (source)
+
+    Assets/
+      Ico.ico                               Icone de l'application
+      Logo.png                              Logo
+
+    mpv/
+      libmpv-2.dll                          Lecteur video (libmpv)
+
+    Users Guide/
+      CleanScan_Guide_en.pdf                Guide utilisateur (anglais)
+      CleanScan_Guide_fr.pdf                Guide utilisateur (francais)
+      CleanScan_Guide_de.pdf                Guide utilisateur (allemand)
+      CleanScan_Guide_es.pdf                Guide utilisateur (espagnol)
+
+    Plugins/
+      Avisynth/
+        AviSynth.dll                        Moteur AviSynth+ embarque
+        DevIL.dll                           Chargement d'images (dependance)
+        ImageSeq.dll                        Support des sequences d'images
+
+      Dual/L-Smash-Works/
+        LSMASHSource.dll                    Decodeur L-SMASH (MP4/MOV)
+        LSMASHSource_indexing.exe            Outil d'indexation
+
+      ffmpeg/
+        ffmpeg.exe                          Encodeur video
+        ffprobe.exe                         Analyse de fichiers video
+        avcodec-62.dll                      Codec FFmpeg
+        avdevice-62.dll                     Peripheriques FFmpeg
+        avfilter-11.dll                     Filtres FFmpeg
+        avformat-62.dll                     Formats FFmpeg
+        avutil-60.dll                       Utilitaires FFmpeg
+        swresample-6.dll                    Reechantillonnage audio
+        swscale-9.dll                       Mise a l'echelle video
+
+      FFMS2/
+        ffms2.dll                           Decodeur FFMS2
+
+      GamMac/
+        GamMac_x64.dll                      Correction colorimetrique GamMac
+
+      Masktools2/
+        masktools2.dll                      Operations sur les masques
+
+      MVTools2/
+        mvtools2.dll                        Estimation et compensation de mouvement
+        DePan.dll                           Stabilisation DePan
+        DePanEstimate.dll                   Estimation DePan
+        Documentation/                      Documentation HTML de MVTools2
+
+      RemoveDirt/
+        RemoveDirt.dll                      Suppression des poussieres
+
+      RgTools/
+        RgTools.dll                         Outils de suppression de grain
+
+      Scripts/
+        FFMS2.avsi                          Script d'import FFMS2
+        RemoveDirt.avsi                     Script d'import RemoveDirt
 
 
 =============================================================================================

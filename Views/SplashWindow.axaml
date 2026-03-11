@@ -23,7 +23,7 @@
                        HorizontalAlignment="Center"
                        VerticalAlignment="Bottom"
                        Margin="0,0,0,36"/>
-            <TextBlock Text="Vers.  Beta 4.0"
+            <TextBlock Text="Vers.  Beta 5.0"
                        FontSize="14"
                        Foreground="White"
                        HorizontalAlignment="Left"
