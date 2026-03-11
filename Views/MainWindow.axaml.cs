@@ -21,6 +21,7 @@ using Avalonia.Threading;
 using Avalonia.Animation;
 using Avalonia.Animation.Easings;
 using Avalonia.Styling;
+using CleanScan.Models;
 using CleanScan.Services;
 using CleanScan.ViewModels;
 
@@ -35,6 +36,7 @@ namespace CleanScan.Views
         private const string PresetsFileName        = "presets.json";
         private const string EncodingPresetsFileName = "encoding_presets.json";
         private const string SessionFileName         = "session.json";
+        private const string CustomFiltersFileName   = "custom_filters.json";
 
         /// <summary>Trial: max recording duration per clip in seconds. 0 = unlimited (full version).</summary>
         private const int TrialMaxSeconds = 30;
@@ -446,6 +448,7 @@ namespace CleanScan.Views
         private readonly IDialogService       _dialogService;
         private readonly IAviService          _aviService;
         private readonly SessionService      _sessionService;
+        private readonly CustomFilterService _customFilterService;
         private readonly Debouncer            _refreshDebouncer = new(TimeSpan.FromMilliseconds(400));
         private readonly Debouncer            _windowStateDebouncer = new(TimeSpan.FromMilliseconds(120));
         private readonly SemaphoreSlim        _refreshGate      = new(1, 1);
@@ -500,6 +503,7 @@ namespace CleanScan.Views
             _encodingPresetService = new PresetService(GetAppDataPath(EncodingPresetsFileName));
             _windowStateService = new WindowStateService(GetAppDataPath(WindowSettingsFileName));
             _sessionService     = new SessionService(GetAppDataPath(SessionFileName));
+            _customFilterService = new CustomFilterService(GetAppDataPath(CustomFiltersFileName));
             _dialogService      = new DialogService();
 
             InitializeWindow();
@@ -521,6 +525,7 @@ namespace CleanScan.Views
             _encodingPresetService = new PresetService(GetAppDataPath(EncodingPresetsFileName));
             _windowStateService = windowStateService;
             _sessionService     = new SessionService(GetAppDataPath(SessionFileName));
+            _customFilterService = new CustomFilterService(GetAppDataPath(CustomFiltersFileName));
             _dialogService      = dialogService;
             _aviService         = aviService;
 
@@ -545,6 +550,7 @@ namespace CleanScan.Views
             InitSliders();
             InitRecordPanel();
             InitPlayerControls();
+            RebuildCustomFilterUI();
             RefreshClipPresetCombo();
         }
 
@@ -1085,7 +1091,7 @@ namespace CleanScan.Views
                 RestoreSessionClips();
 
                 // Régénère toujours avec la bonne langue au démarrage (indépendamment de la validation source)
-                _scriptService.Generate(_config.Snapshot(), ViewModel.CurrentLanguageCode);
+                _scriptService.Generate(_config.Snapshot(), _customFilterService.Filters, ViewModel.CurrentLanguageCode);
             }
             finally
             {
@@ -1171,9 +1177,12 @@ namespace CleanScan.Views
             if (this.FindControl<TextBlock>("DropHintBar") is { IsVisible: true } dropBar)
                 dropBar.Text = GetUiText("DropHintBar");
 
+            if (this.FindControl<Button>("ImportCustomFilterBtn") is { } importBtn)
+                ToolTip.SetTip(importBtn, GetUiText("CfDlgImportTitle"));
+
             if (persist && IsVisible)
             {
-                _scriptService.Generate(_config.Snapshot(), ViewModel.CurrentLanguageCode);
+                _scriptService.Generate(_config.Snapshot(), _customFilterService.Filters, ViewModel.CurrentLanguageCode);
                 SaveWindowSettings();
             }
         }
@@ -1556,7 +1565,7 @@ namespace CleanScan.Views
                 {
                     if (!IsParamPanelEnabled(panelName)) continue;
                     _openParamPanels.Add(panelName);
-                    if (this.FindControl<Control>(panelName) is { } panel) panel.IsVisible = true;
+                    if (FindPanelByName(panelName) is { } panel) panel.IsVisible = true;
 
                     // Update the matching expand button
                     var btnName = panelName.Replace("Params", "ExpandBtn");
@@ -2634,7 +2643,7 @@ namespace CleanScan.Views
                 return;
             }
 
-            _scriptService.Generate(_config.Snapshot(), ViewModel.CurrentLanguageCode);
+            _scriptService.Generate(_config.Snapshot(), _customFilterService.Filters, ViewModel.CurrentLanguageCode);
         }
 
         #endregion
@@ -2682,6 +2691,9 @@ namespace CleanScan.Views
                 ph.IsVisible = _openParamPanels.Count == 0;
         }
 
+        private Control? FindPanelByName(string name) =>
+            this.FindControl<Control>(name);
+
         private void OnExpandButtonClick(object? sender, RoutedEventArgs e)
         {
             if (sender is not Button btn || btn.Tag is not string targetName) return;
@@ -2689,7 +2701,7 @@ namespace CleanScan.Views
             if (_openParamPanels.Remove(targetName))
             {
                 // Panel is open → collapse it
-                if (this.FindControl<Control>(targetName) is { } panel) panel.IsVisible = false;
+                if (FindPanelByName(targetName) is { } panel) panel.IsVisible = false;
                 btn.Content = "▶";
                 btn.Classes.Remove("active");
             }
@@ -2709,7 +2721,7 @@ namespace CleanScan.Views
                 }
 
                 _openParamPanels.Add(targetName);
-                if (this.FindControl<Control>(targetName) is { } panel) panel.IsVisible = true;
+                if (FindPanelByName(targetName) is { } panel) panel.IsVisible = true;
                 btn.Content = "▶";
                 btn.Classes.Add("active");
             }
@@ -2765,7 +2777,7 @@ namespace CleanScan.Views
             foreach (var panel in toClose)
             {
                 _openParamPanels.Remove(panel);
-                if (this.FindControl<Control>(panel) is { } c) c.IsVisible = false;
+                if (FindPanelByName(panel) is { } c) c.IsVisible = false;
                 var idx = Array.IndexOf(AllParamPanels, panel);
                 if (idx >= 0 && idx < AllExpandBtns.Length &&
                     this.FindControl<Button>(AllExpandBtns[idx]) is { } btn)
@@ -2820,8 +2832,10 @@ namespace CleanScan.Views
 
         private static void UpdateToggleButtonPresentation(Button btn, bool isEnabled)
         {
-            var label = btn.Name is { Length: > 0 } n && OptionButtonLabels.TryGetValue(n, out var l) ? l : btn.Name ?? string.Empty;
-            btn.Content     = label;
+            if (btn.Name is { Length: > 0 } n && OptionButtonLabels.TryGetValue(n, out var l))
+                btn.Content = l;
+            // else: keep existing Content (e.g. custom filter name set by caller)
+
             btn.Background  = new SolidColorBrush(Color.Parse(isEnabled ? "#35C156" : "#3B4C64"));
             btn.BorderBrush = new SolidColorBrush(Color.Parse("#3B4C64"));
             btn.Foreground  = Brushes.White;
@@ -2840,6 +2854,487 @@ namespace CleanScan.Views
 
         private static string GetBoolControlName(string name) =>
             string.Equals(name, "Show", StringComparison.OrdinalIgnoreCase) ? "ShowPreview" : name;
+
+        #endregion
+
+        #region Custom filters
+
+        private void RebuildCustomFilterUI()
+        {
+            var list = this.FindControl<StackPanel>("CustomFiltersList");
+            if (list is null) return;
+
+            list.Children.Clear();
+
+            // Clear all custom param panels in Col 2
+            var container = this.FindControl<StackPanel>("CustomParamPanels");
+            container?.Children.Clear();
+
+            foreach (var filter in _customFilterService.Filters)
+            {
+                AddCustomFilterRow(filter, list);
+
+                // Re-open param panel if it was expanded
+                var panelName = $"CustomPanel_{filter.Id}";
+                if (_openParamPanels.Contains(panelName))
+                    BuildCustomParamPanel(filter);
+            }
+        }
+
+        private void AddCustomFilterRow(CustomFilter filter, StackPanel list)
+        {
+            // Same layout as built-in filters: toggle | spacing | expand ▶
+            // Plus a small ✕ delete button
+            var row = new Grid
+            {
+                ColumnDefinitions = ColumnDefinitions.Parse("*,10,28,4,20"),
+                Tag = filter.Id
+            };
+
+            // Toggle on/off
+            var toggleBtn = new Button
+            {
+                Content = filter.Name,
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+                Classes = { "toggle" },
+                Tag = filter.Enabled
+            };
+            UpdateToggleButtonPresentation(toggleBtn, filter.Enabled);
+            toggleBtn.Click += (_, _) =>
+            {
+                filter.Enabled = !filter.Enabled;
+                toggleBtn.Tag = filter.Enabled;
+                UpdateToggleButtonPresentation(toggleBtn, filter.Enabled);
+                _customFilterService.Save();
+                RegenerateScript(showValidationError: false);
+                _ = LoadScriptAsync();
+            };
+            Grid.SetColumn(toggleBtn, 0);
+            row.Children.Add(toggleBtn);
+
+            // Expand ▶ (settings panel — TODO)
+            var expandBtn = new Button
+            {
+                Content = "▶",
+                Classes = { "expand-btn" },
+                Tag = $"CustomPanel_{filter.Id}"
+            };
+            expandBtn.Click += OnCustomExpandClick;
+            Grid.SetColumn(expandBtn, 2);
+            row.Children.Add(expandBtn);
+
+            // Edit ✎
+            var editBtn = new Button
+            {
+                Content = "✎",
+                FontSize = 12,
+                Width = 20, Height = 20,
+                Padding = new Thickness(0),
+                HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                Background = Brushes.Transparent,
+                Foreground = new SolidColorBrush(Color.Parse("#7984A5")),
+                BorderThickness = new Thickness(0)
+            };
+            editBtn.Click += async (_, _) => await OpenCustomFilterDialog(filter);
+            Grid.SetColumn(editBtn, 4);
+            row.Children.Add(editBtn);
+
+            list.Children.Add(row);
+        }
+
+        private void OnCustomExpandClick(object? sender, RoutedEventArgs e)
+        {
+            if (sender is not Button btn || btn.Tag is not string panelName) return;
+
+            // Extract filter id from "CustomPanel_{id}"
+            var filterId = panelName.Replace("CustomPanel_", "");
+            var filter = _customFilterService.GetById(filterId);
+            if (filter is null) return;
+
+            // Toggle panel visibility (same pattern as built-in expand)
+            if (_openParamPanels.Remove(panelName))
+            {
+                // Collapse
+                RemoveCustomParamPanel(panelName);
+                btn.Content = "▶";
+                btn.Classes.Remove("active");
+            }
+            else
+            {
+                // Expand
+                _openParamPanels.Add(panelName);
+                BuildCustomParamPanel(filter);
+                btn.Content = "▶";
+                btn.Classes.Add("active");
+            }
+
+            UpdateParamsPlaceholderVisibility();
+        }
+
+        private void BuildCustomParamPanel(CustomFilter filter)
+        {
+            var panelName = $"CustomPanel_{filter.Id}";
+            var container = this.FindControl<StackPanel>("CustomParamPanels");
+            if (container is null) return;
+
+            // Remove existing if any
+            RemoveCustomParamPanel(panelName);
+
+            if (filter.Controls.Count == 0) return;
+
+            var border = new Border
+            {
+                Name = panelName,
+                BorderBrush = new SolidColorBrush(Color.Parse("#252E42")),
+                BorderThickness = new Thickness(0, 0, 1, 0),
+                Padding = new Thickness(16, 14),
+                MinWidth = 200
+            };
+
+            var stack = new StackPanel { Spacing = 6 };
+            stack.Children.Add(new TextBlock
+            {
+                Text = filter.Name.ToUpperInvariant(),
+                Classes = { "section-title" }
+            });
+
+            foreach (var ctrl in filter.Controls)
+            {
+                var configKey = ScriptService.GetCustomFilterConfigKey(filter.Id, ctrl.Placeholder);
+
+                // Initialize config with default if not set
+                if (string.IsNullOrEmpty(_config.Get(configKey)))
+                    _config.Set(configKey, ctrl.Default);
+
+                switch (ctrl.Type)
+                {
+                    case "slider":
+                        stack.Children.Add(BuildCustomSlider(ctrl, configKey));
+                        break;
+                    case "combo":
+                        stack.Children.Add(BuildCustomCombo(ctrl, configKey));
+                        break;
+                    case "checkbox":
+                        stack.Children.Add(BuildCustomCheckbox(ctrl, configKey));
+                        break;
+                    default:
+                        stack.Children.Add(BuildCustomTextBox(ctrl, configKey));
+                        break;
+                }
+            }
+
+            border.Child = stack;
+            container.Children.Add(border);
+        }
+
+        private void RemoveCustomParamPanel(string panelName)
+        {
+            var container = this.FindControl<StackPanel>("CustomParamPanels");
+            if (container is null) return;
+            for (var i = container.Children.Count - 1; i >= 0; i--)
+            {
+                if (container.Children[i] is Border b && b.Name == panelName)
+                    container.Children.RemoveAt(i);
+            }
+        }
+
+        private Grid BuildCustomSlider(CustomFilterControl ctrl, string configKey)
+        {
+            var grid = new Grid { ColumnDefinitions = ColumnDefinitions.Parse("Auto,Auto,70") };
+
+            var label = new TextBlock
+            {
+                Text = ctrl.Placeholder,
+                Classes = { "param-label" },
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 8, 0)
+            };
+            Grid.SetColumn(label, 0);
+            grid.Children.Add(label);
+
+            var isFloat = ctrl.Step < 1 || ctrl.Step != Math.Floor(ctrl.Step);
+            var slider = new Slider
+            {
+                Minimum = ctrl.Min,
+                Maximum = ctrl.Max,
+                SmallChange = ctrl.Step,
+                LargeChange = ctrl.Step * 10,
+                Classes = { "param-slider" },
+                Value = ParseDouble(_config.Get(configKey) ?? ctrl.Default, ctrl.Min)
+            };
+            Grid.SetColumn(slider, 1);
+            grid.Children.Add(slider);
+
+            var textBox = new TextBox
+            {
+                Text = FormatSliderValue(slider.Value, isFloat),
+                Width = 70
+            };
+            Grid.SetColumn(textBox, 2);
+            grid.Children.Add(textBox);
+
+            // Slider → TextBox (on every value change during drag)
+            var syncing = false;
+            slider.ValueChanged += (_, args) =>
+            {
+                if (syncing) return;
+                syncing = true;
+                textBox.Text = FormatSliderValue(args.NewValue, isFloat);
+                syncing = false;
+            };
+
+            // Custom pointer handlers (same pattern as built-in sliders)
+            var pressing = false;
+            slider.AddHandler(PointerPressedEvent, (_, e) =>
+            {
+                if (!e.GetCurrentPoint(slider).Properties.IsLeftButtonPressed) return;
+                pressing = true;
+                e.Pointer.Capture(slider);
+                MoveSliderToPointer(slider, e);
+                e.Handled = true;
+            }, RoutingStrategies.Bubble, handledEventsToo: true);
+
+            slider.AddHandler(PointerMovedEvent, (_, e) =>
+            {
+                if (!pressing) return;
+                MoveSliderToPointer(slider, e);
+                e.Handled = true;
+            }, RoutingStrategies.Bubble, handledEventsToo: true);
+
+            slider.AddHandler(PointerReleasedEvent, (_, e) =>
+            {
+                if (!pressing) return;
+                pressing = false;
+                e.Pointer.Capture(null);
+                var val = FormatSliderValue(slider.Value, isFloat);
+                _config.Set(configKey, val);
+                RegenerateScript(showValidationError: false);
+                _ = LoadScriptAsync();
+                e.Handled = true;
+            }, RoutingStrategies.Bubble, handledEventsToo: true);
+
+            // TextBox → Slider + commit
+            textBox.LostFocus += (_, _) =>
+            {
+                if (syncing) return;
+                syncing = true;
+                var parsed = ParseDouble(textBox.Text ?? "", ctrl.Min);
+                parsed = Math.Clamp(parsed, ctrl.Min, ctrl.Max);
+                slider.Value = parsed;
+                var val = FormatSliderValue(parsed, isFloat);
+                textBox.Text = val;
+                _config.Set(configKey, val);
+                syncing = false;
+                RegenerateScript(showValidationError: false);
+                _ = LoadScriptAsync();
+            };
+
+            // Mouse wheel on TextBox
+            textBox.PointerWheelChanged += (_, e) =>
+            {
+                e.Handled = true;
+                var delta = e.Delta.Y > 0 ? ctrl.Step : -ctrl.Step;
+                slider.Value = Math.Clamp(slider.Value + delta, ctrl.Min, ctrl.Max);
+                var val = FormatSliderValue(slider.Value, isFloat);
+                _config.Set(configKey, val);
+                RegenerateScript(showValidationError: false);
+                _ = LoadScriptAsync();
+            };
+
+            return grid;
+        }
+
+        private StackPanel BuildCustomCombo(CustomFilterControl ctrl, string configKey)
+        {
+            var row = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 8 };
+            row.Children.Add(new TextBlock
+            {
+                Text = ctrl.Placeholder,
+                Classes = { "param-label" },
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+            });
+
+            var combo = new ComboBox();
+            foreach (var opt in ctrl.Options)
+                combo.Items.Add(opt);
+
+            var current = _config.Get(configKey) ?? ctrl.Default;
+            combo.SelectedItem = ctrl.Options.Contains(current) ? current : ctrl.Options.FirstOrDefault();
+
+            combo.SelectionChanged += (_, _) =>
+            {
+                if (combo.SelectedItem is string val)
+                {
+                    _config.Set(configKey, val);
+                    RegenerateScript(showValidationError: false);
+                    _ = LoadScriptAsync();
+                }
+            };
+            row.Children.Add(combo);
+            return row;
+        }
+
+        private StackPanel BuildCustomCheckbox(CustomFilterControl ctrl, string configKey)
+        {
+            var row = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 8 };
+            row.Children.Add(new TextBlock
+            {
+                Text = ctrl.Placeholder,
+                Classes = { "param-label" },
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+            });
+
+            var current = _config.Get(configKey) ?? ctrl.Default;
+            var isOn = string.Equals(current, ctrl.OnValue, StringComparison.OrdinalIgnoreCase);
+
+            var toggleBtn = new Button
+            {
+                Width = 70,
+                Classes = { "toggle" },
+                Content = isOn ? ctrl.OnValue : ctrl.OffValue,
+                Tag = isOn
+            };
+            UpdateToggleButtonPresentation(toggleBtn, isOn);
+            toggleBtn.Content = isOn ? ctrl.OnValue : ctrl.OffValue; // re-set after presentation
+
+            toggleBtn.Click += (_, _) =>
+            {
+                isOn = !isOn;
+                toggleBtn.Tag = isOn;
+                toggleBtn.Content = isOn ? ctrl.OnValue : ctrl.OffValue;
+                UpdateToggleButtonPresentation(toggleBtn, isOn);
+                toggleBtn.Content = isOn ? ctrl.OnValue : ctrl.OffValue; // re-set
+                _config.Set(configKey, isOn ? ctrl.OnValue : ctrl.OffValue);
+                RegenerateScript(showValidationError: false);
+                _ = LoadScriptAsync();
+            };
+            row.Children.Add(toggleBtn);
+            return row;
+        }
+
+        private StackPanel BuildCustomTextBox(CustomFilterControl ctrl, string configKey)
+        {
+            var row = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 8 };
+            row.Children.Add(new TextBlock
+            {
+                Text = ctrl.Placeholder,
+                Classes = { "param-label" },
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+            });
+
+            var textBox = new TextBox
+            {
+                Text = _config.Get(configKey) ?? ctrl.Default,
+                Width = 120
+            };
+            textBox.LostFocus += (_, _) =>
+            {
+                _config.Set(configKey, textBox.Text ?? "");
+                RegenerateScript(showValidationError: false);
+                _ = LoadScriptAsync();
+            };
+            row.Children.Add(textBox);
+            return row;
+        }
+
+        private void OnCustomFilterPreview(CustomFilter filter)
+        {
+            // The dialog already updated the filter's fields — just regenerate
+            RegenerateScript(showValidationError: false);
+            _ = LoadScriptAsync();
+        }
+
+        private static string FormatSliderValue(double value, bool isFloat) =>
+            isFloat
+                ? value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)
+                : ((int)Math.Round(value)).ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+        private static double ParseDouble(string text, double fallback)
+        {
+            var normalized = (text ?? "").Trim().Replace(',', '.');
+            return double.TryParse(normalized, System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : fallback;
+        }
+
+        private async Task OpenCustomFilterDialog(CustomFilter filter)
+        {
+            var dialog = new CustomFilterDialog(filter, vm: ViewModel, ownerHeight: Bounds.Height);
+            dialog.OnPreview = OnCustomFilterPreview;
+            await dialog.ShowDialog(this);
+
+            if (dialog.Deleted)
+            {
+                _customFilterService.Remove(filter.Id);
+                RebuildCustomFilterUI();
+                RegenerateScript(showValidationError: false);
+                await LoadScriptAsync();
+            }
+            else if (dialog.Saved)
+            {
+                _customFilterService.Save();
+                RebuildCustomFilterUI();
+                RegenerateScript(showValidationError: false);
+                await LoadScriptAsync();
+            }
+            else
+            {
+                // Cancelled — reload original state (undo preview changes)
+                _customFilterService.Load();
+                RegenerateScript(showValidationError: false);
+                _ = LoadScriptAsync();
+            }
+        }
+
+        private async void OnAddCustomFilterClick(object? sender, RoutedEventArgs e)
+        {
+            var filter = new CustomFilter { Name = "Custom " + _customFilterService.Filters.Count };
+            var dialog = new CustomFilterDialog(filter, isNew: true, vm: ViewModel, ownerHeight: Bounds.Height);
+            dialog.OnPreview = f =>
+            {
+                // For new filters, temporarily add to get a preview
+                _customFilterService.Add(f);
+                RegenerateScript(showValidationError: false);
+                var task = LoadScriptAsync();
+                _customFilterService.Remove(f.Id);
+            };
+            await dialog.ShowDialog(this);
+
+            if (dialog.Saved)
+            {
+                filter.Enabled = true;
+                _customFilterService.Add(filter);
+
+                RebuildCustomFilterUI();
+                RegenerateScript(showValidationError: false);
+                await LoadScriptAsync();
+            }
+        }
+
+        private async void OnImportCustomFilterClick(object? sender, RoutedEventArgs e)
+        {
+            var picker = await StorageProvider.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions
+            {
+                Title = GetUiText("CfDlgImportTitle"),
+                AllowMultiple = false,
+                FileTypeFilter = [new Avalonia.Platform.Storage.FilePickerFileType("JSON") { Patterns = ["*.json"] }]
+            });
+
+            if (picker.Count == 0) return;
+
+            var imported = CustomFilterDialog.ImportFromFile(picker[0].Path.LocalPath);
+            if (imported.Count == 0) return;
+
+            foreach (var f in imported)
+            {
+                f.Enabled = true;
+                _customFilterService.Add(f);
+            }
+
+            RebuildCustomFilterUI();
+            RegenerateScript(showValidationError: false);
+            await LoadScriptAsync();
+        }
 
         #endregion
 
@@ -3610,7 +4105,7 @@ namespace CleanScan.Views
             _config.Set("use_img", (!isFilm).ToString().ToLowerInvariant());
 
             // Generate script
-            _scriptService.Generate(_config.Snapshot(), ViewModel.CurrentLanguageCode);
+            _scriptService.Generate(_config.Snapshot(), _customFilterService.Filters, ViewModel.CurrentLanguageCode);
 
             return GenerateRenderScript();
         }

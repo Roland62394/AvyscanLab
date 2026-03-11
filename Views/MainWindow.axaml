@@ -785,6 +785,44 @@
                                 </Grid>
                             </StackPanel>
 
+                            <Rectangle DockPanel.Dock="Top"
+                                       Height="1" Fill="{StaticResource BorderSubtle}"
+                                       Margin="0,8,0,8"/>
+
+                            <!-- CUSTOM FILTERS -->
+                            <StackPanel DockPanel.Dock="Top" Spacing="4">
+                                <Grid ColumnDefinitions="*,Auto,4,Auto">
+                                    <TextBlock Grid.Column="0" Classes="group-label" Text="CUSTOM"
+                                               VerticalAlignment="Center"/>
+                                    <Button Grid.Column="1" x:Name="ImportCustomFilterBtn"
+                                            Content="&#x2193;"
+                                            FontSize="13" FontWeight="Bold"
+                                            Width="24" Height="22"
+                                            Padding="0"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            Background="{StaticResource BgHeader}"
+                                            Foreground="{StaticResource TextPrimary}"
+                                            BorderBrush="{StaticResource BorderSubtle}"
+                                            BorderThickness="1"
+                                            ToolTip.Tip="Import"
+                                            Click="OnImportCustomFilterClick"/>
+                                    <Button Grid.Column="3" x:Name="AddCustomFilterBtn"
+                                            Content="+"
+                                            FontSize="14" FontWeight="Bold"
+                                            Width="24" Height="22"
+                                            Padding="0"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            Background="{StaticResource BgHeader}"
+                                            Foreground="{StaticResource TextPrimary}"
+                                            BorderBrush="{StaticResource BorderSubtle}"
+                                            BorderThickness="1"
+                                            Click="OnAddCustomFilterClick"/>
+                                </Grid>
+                                <StackPanel x:Name="CustomFiltersList" Spacing="4"/>
+                            </StackPanel>
+
                         </DockPanel>
                     </ScrollViewer>
                 </Border>
@@ -1064,6 +1102,9 @@
                                         </Grid>
                                     </StackPanel>
                                 </Border>
+
+                                <!-- ── CUSTOM FILTER SETTINGS (dynamic) ── -->
+                                <StackPanel x:Name="CustomParamPanels" Orientation="Horizontal"/>
 
                             </StackPanel>
                         </ScrollViewer>

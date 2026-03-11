@@ -1,0 +1,255 @@
+<Window xmlns="https://github.com/avaloniaui"
+       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+       x:Class="CleanScan.Views.CustomFilterDialog"
+       Width="780"
+       Height="620"
+       MinWidth="600"
+       MinHeight="450"
+       CanResize="True"
+       WindowStartupLocation="CenterOwner"
+       SystemDecorations="BorderOnly"
+       ShowInTaskbar="False"
+       Background="#0F1319"
+       Icon="/Assets/Ico.ico">
+
+   <Window.Styles>
+       <Style Selector="Button.dialog-btn /template/ ContentPresenter">
+           <Setter Property="Background" Value="#1C2333"/>
+       </Style>
+       <Style Selector="Button.dialog-btn:pointerover /template/ ContentPresenter">
+           <Setter Property="Background" Value="#252E42"/>
+       </Style>
+       <Style Selector="Button#CloseXButton /template/ ContentPresenter">
+           <Setter Property="Background" Value="Transparent"/>
+       </Style>
+       <Style Selector="Button#CloseXButton:pointerover /template/ ContentPresenter">
+           <Setter Property="Background" Value="Transparent"/>
+       </Style>
+       <Style Selector="Button#CloseXButton:pointerover">
+           <Setter Property="Foreground" Value="#C05050"/>
+       </Style>
+   </Window.Styles>
+
+   <Border BorderBrush="#252E42" BorderThickness="1" Margin="6" Background="#161B24">
+       <Grid RowDefinitions="Auto,*,Auto">
+
+           <!-- Title bar -->
+           <Border x:Name="TitleBar"
+                   Grid.Row="0"
+                   Height="34"
+                   Padding="14,0,6,0"
+                   Background="#0F1319"
+                   BorderBrush="#252E42"
+                   BorderThickness="0,0,0,1">
+               <Grid ColumnDefinitions="*,Auto">
+                   <TextBlock x:Name="TitleText"
+                              Grid.Column="0"
+                              Text="CUSTOM FILTER"
+                              FontSize="10"
+                              FontFamily="Consolas,Cascadia Code,monospace"
+                              Foreground="#4A5470"
+                              LetterSpacing="2"
+                              VerticalAlignment="Center"/>
+                   <Button x:Name="CloseXButton"
+                           Grid.Column="1"
+                           Width="28" Height="28"
+                           Padding="0"
+                           Background="Transparent"
+                           BorderThickness="0"
+                           Foreground="#4A5470"
+                           FontSize="13"
+                           HorizontalContentAlignment="Center"
+                           VerticalContentAlignment="Center"
+                           Content="&#x2715;"/>
+               </Grid>
+           </Border>
+
+           <!-- Main content: code (3*) + splitter + params (2*) -->
+           <Grid Grid.Row="1" RowDefinitions="Auto,3*,4,2*">
+
+               <!-- Top section: Name, Position, DLLs -->
+               <ScrollViewer Grid.Row="0"
+                             VerticalScrollBarVisibility="Auto"
+                             HorizontalScrollBarVisibility="Disabled"
+                             MaxHeight="220">
+                   <StackPanel Margin="20,14,20,8" Spacing="10">
+
+                       <!-- Name + Position on same row -->
+                       <Grid ColumnDefinitions="*,16,*">
+                           <StackPanel Grid.Column="0" Spacing="3">
+                               <TextBlock x:Name="FilterNameLabel"
+                                          Text="Filter name"
+                                          FontSize="11" FontWeight="SemiBold"
+                                          Foreground="#DBDBDB"/>
+                               <TextBox x:Name="FilterNameBox"
+                                        Watermark="My custom filter"
+                                        FontSize="12"
+                                        Background="#0F1319"
+                                        Foreground="#DBDBDB"
+                                        BorderBrush="#252E42"/>
+                           </StackPanel>
+                           <StackPanel Grid.Column="2" Spacing="3">
+                               <TextBlock x:Name="PositionLabel"
+                                          Text="Position in pipeline"
+                                          FontSize="11" FontWeight="SemiBold"
+                                          Foreground="#DBDBDB"/>
+                               <ComboBox x:Name="PositionCombo"
+                                         HorizontalAlignment="Stretch"
+                                         FontSize="12"/>
+                           </StackPanel>
+                       </Grid>
+
+                       <!-- DLLs -->
+                       <StackPanel Spacing="3">
+                           <TextBlock x:Name="PluginsLabel"
+                                      Text="Plugins (TryLoadPlugin)"
+                                      FontSize="11" FontWeight="SemiBold"
+                                      Foreground="#DBDBDB"/>
+                           <StackPanel x:Name="DllListPanel" Spacing="2"/>
+                           <Button x:Name="AddDllBtn"
+                                   Content="+ Add DLL..."
+                                   FontSize="11"
+                                   Padding="8,3"
+                                   Classes="dialog-btn"
+                                   Foreground="#7984A5"
+                                   BorderBrush="#252E42"
+                                   BorderThickness="1"
+                                   HorizontalAlignment="Left"/>
+                       </StackPanel>
+                   </StackPanel>
+               </ScrollViewer>
+
+               <!-- Code editor (stretches with window) -->
+               <Border Grid.Row="1"
+                       BorderBrush="#252E42"
+                       BorderThickness="0,1,0,0"
+                       Padding="20,8">
+                   <Grid RowDefinitions="Auto,*">
+                       <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,4">
+                           <StackPanel Grid.Column="0" Spacing="1">
+                               <TextBlock x:Name="CodeLabel"
+                                          Text="AviSynth code"
+                                          FontSize="11" FontWeight="SemiBold"
+                                          Foreground="#DBDBDB"/>
+                               <TextBlock x:Name="CodeHint"
+                                          Text="Use 'c' as the clip variable, {name} for parameters."
+                                          FontSize="10"
+                                          Foreground="#555E72"/>
+                           </StackPanel>
+                           <Button x:Name="PreviewBtn"
+                                   Grid.Column="1"
+                                   Content="&#x25B6; Preview"
+                                   FontSize="11"
+                                   Padding="8,3"
+                                   Background="#1C2333"
+                                   Foreground="#3B82C4"
+                                   BorderBrush="#252E42"
+                                   BorderThickness="1"
+                                   VerticalAlignment="Center"
+                                   HorizontalContentAlignment="Center"
+                                   VerticalContentAlignment="Center"/>
+                       </Grid>
+                       <TextBox x:Name="CodeBox"
+                                Grid.Row="1"
+                                AcceptsReturn="True"
+                                TextWrapping="NoWrap"
+                                FontFamily="Consolas,Courier New,monospace"
+                                FontSize="12"
+                                Background="#0F1319"
+                                Foreground="#DBDBDB"
+                                BorderBrush="#252E42"
+                                Watermark="c = MyFilter(c, strength={sigma}, mode={bt_mode})"/>
+                   </Grid>
+               </Border>
+
+               <!-- GridSplitter between code and parameters -->
+               <GridSplitter Grid.Row="2"
+                             Height="4"
+                             HorizontalAlignment="Stretch"
+                             Background="#252E42"
+                             ResizeDirection="Rows"/>
+
+               <!-- Parameters section (resizable) -->
+               <ScrollViewer Grid.Row="3"
+                             VerticalScrollBarVisibility="Auto"
+                             HorizontalScrollBarVisibility="Disabled">
+                   <StackPanel Margin="20,8,20,10" Spacing="4">
+                       <TextBlock x:Name="ParamsLabel"
+                                  Text="Parameters"
+                                  FontSize="11" FontWeight="SemiBold"
+                                  Foreground="#DBDBDB"/>
+                       <TextBlock x:Name="ParamsHint"
+                                  Text="Detected from {placeholders} in code above."
+                                  FontSize="10"
+                                  Foreground="#555E72"
+                                  Margin="0,0,0,2"/>
+                       <StackPanel x:Name="ControlsPanel" Spacing="4"/>
+                   </StackPanel>
+               </ScrollViewer>
+
+           </Grid>
+
+           <!-- Footer -->
+           <Border Grid.Row="2"
+                   BorderBrush="#252E42"
+                   BorderThickness="0,1,0,0"
+                   Padding="14,10">
+               <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+                   <!-- Delete (left) -->
+                   <Button x:Name="DeleteBtn"
+                           Grid.Column="0"
+                           Content="Delete"
+                           MinWidth="90" Height="28"
+                           Padding="12,0"
+                           Background="#5A2E2E"
+                           Foreground="#DBDBDB"
+                           BorderBrush="#C05050"
+                           BorderThickness="1"
+                           HorizontalContentAlignment="Center"
+                           VerticalContentAlignment="Center"/>
+
+                   <!-- Export (center-left) -->
+                   <Button x:Name="ExportBtn"
+                           Grid.Column="1"
+                           Content="&#x2191; Export"
+                           MinWidth="90" Height="28"
+                           Padding="12,0"
+                           Margin="10,0,0,0"
+                           Classes="dialog-btn"
+                           Foreground="#7984A5"
+                           BorderBrush="#252E42"
+                           BorderThickness="1"
+                           HorizontalContentAlignment="Center"
+                           VerticalContentAlignment="Center"/>
+
+                   <!-- Cancel + Save (right) -->
+                   <StackPanel Grid.Column="3"
+                               Orientation="Horizontal"
+                               Spacing="10">
+                       <Button x:Name="CancelBtn"
+                               Content="Cancel"
+                               MinWidth="90" Height="28"
+                               Padding="12,0"
+                               Classes="dialog-btn"
+                               Foreground="#7984A5"
+                               BorderBrush="#252E42"
+                               BorderThickness="1"
+                               HorizontalContentAlignment="Center"
+                               VerticalContentAlignment="Center"/>
+                       <Button x:Name="SaveBtn"
+                               Content="Save"
+                               MinWidth="90" Height="28"
+                               Padding="12,0"
+                               Background="#2E5A3D"
+                               Foreground="#DBDBDB"
+                               BorderBrush="#35C156"
+                               BorderThickness="1"
+                               HorizontalContentAlignment="Center"
+                               VerticalContentAlignment="Center"/>
+                   </StackPanel>
+               </Grid>
+           </Border>
+
+       </Grid>
+   </Border>
+</Window>

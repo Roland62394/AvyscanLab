@@ -200,6 +200,8 @@ function TryImport(string path) {
 TryImport(pluginRoot + "Scripts/RemoveDirt.avsi")
 TryImport(pluginRoot + "Scripts/FFMS2.avsi")
 
+# __CUSTOM_PLUGINS__
+
 # =========================
 # HELPERS
 # =========================
@@ -579,6 +581,8 @@ if (use_img) {
 c = src
 pipeline_err = ""
 
+# __CUSTOM_INJECT_BeforePipeline__
+
 # STEP 1 — GamMac FIRST (selective RGB correction — neutralises colour cast before RemoveDirt)
 if (enable_gammac && FunctionExists("GamMac")) {
   try {
@@ -594,6 +598,8 @@ if (enable_gammac && FunctionExists("GamMac")) {
   } catch(err) { pipeline_err = "GamMac: " + err }
 }
 
+# __CUSTOM_INJECT_AfterGamMac__
+
 # STEP 2 — Dust / film stains (RemoveDirt)
 if (enable_denoise) {
   c = DenoiseFilm(c,
@@ -603,6 +609,8 @@ if (enable_denoise) {
     \ grey     = denoise_grey,
     \ matrix   = src_matrix)
 }
+
+# __CUSTOM_INJECT_AfterDenoise__
 
 # STEP 3 — Film grain (MVTools2 MDegrain)
 if (enable_degrain) {
@@ -617,6 +625,8 @@ if (enable_degrain) {
     \ prefilter = degrain_prefilter,
     \ matrix    = src_matrix)
 }
+
+# __CUSTOM_INJECT_AfterDegrain__
 
 # STEP 4 — Manual adjustments (Tweak + ColorYUV)
 if (enable_luma_levels) {
@@ -634,6 +644,8 @@ if (enable_luma_levels) {
   c = EnsureColorspaceSafe(luma_yuv, base_pix, matrix=mx)
 }
 
+# __CUSTOM_INJECT_AfterLuma__
+
 # STEP 5 — Sharpen (ALWAYS LAST)
 if (enable_sharp) {
   c = SharpenAdvanced(c,
@@ -643,6 +655,8 @@ if (enable_sharp) {
     \ threshold = Sharp_Threshold,
     \ matrix    = src_matrix)
 }
+
+# __CUSTOM_INJECT_AfterSharpen__
 
 final = c
 

@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
+using CleanScan.Models;
 
 namespace CleanScan.Services;
 
@@ -58,9 +60,18 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
     [GeneratedRegex(@"^\s+#")]
     private static partial Regex InlineCommentRegex();
 
+    [GeneratedRegex(@"^#\s*__CUSTOM_INJECT_(\w+)__\s*$", RegexOptions.Multiline)]
+    private static partial Regex CustomInjectMarkerRegex();
+
+    [GeneratedRegex(@"^#\s*__CUSTOM_PLUGINS__\s*$", RegexOptions.Multiline)]
+    private static partial Regex CustomPluginsMarkerRegex();
+
     // ── IScriptService ──────────────────────────────────────────────────────
 
-    public void Generate(Dictionary<string, string> configValues, string lang = "en")
+    public void Generate(Dictionary<string, string> configValues, string lang = "en") =>
+        Generate(configValues, customFilters: null, lang);
+
+    public void Generate(Dictionary<string, string> configValues, IReadOnlyList<CustomFilter>? customFilters, string lang = "en")
     {
         var templatePath = GetMasterScriptPath(lang);
         if (string.IsNullOrWhiteSpace(templatePath) || !File.Exists(templatePath))
@@ -71,6 +82,7 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
         }
 
         var contents = BuildContents(File.ReadAllText(templatePath), configValues);
+        contents = InjectCustomFilters(contents, customFilters, configValues);
         foreach (var scriptPath in GetScriptPaths())
         {
             if (string.IsNullOrWhiteSpace(scriptPath)) continue;
@@ -480,5 +492,96 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
         var dir = Path.GetDirectoryName(filePath);
         if (!string.IsNullOrWhiteSpace(dir))
             Directory.CreateDirectory(dir);
+    }
+
+    // ── Custom filter injection ─────────────────────────────────────────────
+
+    /// <summary>
+    /// Valid injection positions matching __CUSTOM_INJECT_xxx__ markers in ScriptMaster.
+    /// </summary>
+    public static readonly string[] InjectionPositions =
+        ["BeforePipeline", "AfterGamMac", "AfterDenoise", "AfterDegrain", "AfterLuma", "AfterSharpen"];
+
+    /// <summary>Config key prefix for custom filter placeholder values.</summary>
+    public const string CustomFilterConfigPrefix = "cf_";
+
+    /// <summary>Returns the config key for a custom filter placeholder value.</summary>
+    public static string GetCustomFilterConfigKey(string filterId, string placeholder) =>
+        $"{CustomFilterConfigPrefix}{filterId}_{placeholder}";
+
+    internal static string InjectCustomFilters(string scriptContents, IReadOnlyList<CustomFilter>? filters,
+        Dictionary<string, string>? configValues = null)
+    {
+        if (filters is null || filters.Count == 0)
+        {
+            var result = CustomInjectMarkerRegex().Replace(scriptContents, "");
+            return CustomPluginsMarkerRegex().Replace(result, "");
+        }
+
+        // Collect enabled filters
+        var enabledFilters = filters.Where(f => f.Enabled && !string.IsNullOrWhiteSpace(f.Code)).ToList();
+
+        // ── 1. Inject TryLoadPlugin calls at __CUSTOM_PLUGINS__ marker (deduplicated) ──
+        var allDlls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var f in enabledFilters)
+            foreach (var dll in f.Dlls)
+                if (!string.IsNullOrWhiteSpace(dll))
+                    allDlls.Add(dll.Trim());
+
+        scriptContents = CustomPluginsMarkerRegex().Replace(scriptContents, _ =>
+        {
+            if (allDlls.Count == 0) return "";
+            var sb = new StringBuilder();
+            sb.AppendLine("# ── Custom filter plugins ──");
+            foreach (var dll in allDlls)
+                sb.AppendLine($"TryLoadPlugin(\"{dll}\")");
+            return sb.ToString();
+        });
+
+        // ── 2. Group enabled filters by position ──
+        var byPosition = new Dictionary<string, List<CustomFilter>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var f in enabledFilters)
+        {
+            if (!byPosition.TryGetValue(f.Position, out var list))
+            {
+                list = [];
+                byPosition[f.Position] = list;
+            }
+            list.Add(f);
+        }
+
+        // ── 3. Inject code at __CUSTOM_INJECT_xxx__ markers (no LoadPlugin here) ──
+        return CustomInjectMarkerRegex().Replace(scriptContents, m =>
+        {
+            var position = m.Groups[1].Value;
+            if (!byPosition.TryGetValue(position, out var posFilters))
+                return "";
+
+            var sb = new StringBuilder();
+            foreach (var f in posFilters)
+            {
+                sb.AppendLine($"# ── Custom filter: {f.Name} ──");
+
+                // Resolve placeholders in code
+                var code = f.Code.TrimEnd();
+                foreach (var ctrl in f.Controls)
+                {
+                    var configKey = GetCustomFilterConfigKey(f.Id, ctrl.Placeholder);
+                    var value = ctrl.Default; // fallback
+                    if (configValues is not null &&
+                        configValues.TryGetValue(configKey, out var cfgVal) &&
+                        !string.IsNullOrEmpty(cfgVal))
+                    {
+                        value = cfgVal;
+                    }
+                    code = code.Replace($"{{{ctrl.Placeholder}}}", value, StringComparison.OrdinalIgnoreCase);
+                }
+
+                sb.AppendLine(code);
+                sb.AppendLine();
+            }
+
+            return sb.ToString();
+        });
     }
 }
