@@ -194,7 +194,9 @@ SectionEnd
 ; Launch the app as the normal (non-elevated) user
 ; ─────────────────────────────────────────────────────
 Function LaunchAsCurrentUser
-    ExecShell "" "$INSTDIR\${APP_EXE}"
+    ; explorer.exe is a special Windows process that de-elevates automatically,
+    ; so the launched app runs at medium integrity (normal user) — not admin.
+    Exec '"$WINDIR\explorer.exe" "$INSTDIR\${APP_EXE}"'
 FunctionEnd
 
 ; ─────────────────────────────────────────────────────
