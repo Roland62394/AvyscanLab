@@ -142,10 +142,6 @@ Function .onInit
         ; Already installed — skip
         Goto avs_done
     ${EndIf}
-    ReadRegStr $0 HKLM "SOFTWARE\AviSynth" "Version"
-    ${If} $0 != ""
-        Goto avs_done
-    ${EndIf}
 
     ; ── AviSynth+ not found — must install ──
     MessageBox MB_OKCANCEL|MB_ICONINFORMATION \
