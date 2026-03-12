@@ -25,8 +25,7 @@
 
 ; ── Installer settings ──
 Name "${APP_NAME} ${APP_VERSION}"
-OutDir "Output"
-OutFile "Output\CleanScan_Setup_${APP_VERSION}.exe"
+OutFile "Output\CleanScan_Setup.exe"
 InstallDir "$PROGRAMFILES64\${APP_NAME}"
 InstallDirRegKey HKLM "Software\${APP_NAME}" "InstallDir"
 RequestExecutionLevel admin
