@@ -51,7 +51,11 @@ SetCompressor /SOLID lzma
 !insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_INSTFILES
 ; "Launch app" checkbox on finish page
-!define MUI_FINISHPAGE_RUN "$INSTDIR\${APP_EXE}"
+; Use a custom function to launch the app as the normal (non-elevated) user.
+; Without this, the app inherits the installer's admin privileges and UIPI
+; blocks drag-and-drop from Explorer (which runs at medium integrity).
+!define MUI_FINISHPAGE_RUN
+!define MUI_FINISHPAGE_RUN_FUNCTION LaunchAsCurrentUser
 !define MUI_FINISHPAGE_RUN_TEXT "Launch ${APP_NAME}"
 !insertmacro MUI_PAGE_FINISH
 
@@ -185,6 +189,13 @@ SectionEnd
     !insertmacro MUI_DESCRIPTION_TEXT ${SecDesktop}    "Create a shortcut on the Desktop."
     !insertmacro MUI_DESCRIPTION_TEXT ${SecStartMenu}  "Create a shortcut in the Start Menu."
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
+
+; ─────────────────────────────────────────────────────
+; Launch the app as the normal (non-elevated) user
+; ─────────────────────────────────────────────────────
+Function LaunchAsCurrentUser
+    ExecShell "" "$INSTDIR\${APP_EXE}"
+FunctionEnd
 
 ; ─────────────────────────────────────────────────────
 ; INIT — check 64-bit + install AviSynth+
