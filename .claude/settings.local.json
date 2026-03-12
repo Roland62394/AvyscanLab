@@ -30,7 +30,8 @@
       "Bash(python3 --version 2>&1; py --version 2>&1; dotnet --list-sdks 2>&1 | head -3)",
       "Bash(py -m pip show fpdf2 2>&1 | head -3)",
       "Bash(py -m pip install fpdf2 --quiet 2>&1)",
-      "Bash(cd \"/c/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/CleanScan\" && py generate_guides.py 2>&1)"
+      "Bash(cd \"/c/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/CleanScan\" && py generate_guides.py 2>&1)",
+      "Bash(find \"C:/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/CleanScan\" -iname \"*.ico\" -o -iname \"icon*\" 2>/dev/null | head -10)"
     ]
   }
 }
