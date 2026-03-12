@@ -5411,13 +5411,14 @@ namespace CleanScan.Views
 
             // ── UpdateStep ───────────────────────────────────────────────
 
-            void UpdateStep()
+            async void UpdateStep()
             {
                 var (targetName, titleKey, bodyKey, emoji, beforeAction) = TourSteps[step];
                 bool isFirst = step == 0;
                 bool isLast  = step == TourSteps.Length - 1;
 
                 // Pre-action: open/close panels as needed
+                bool needsLayoutWait = false;
                 if (beforeAction == "OpenCrop")
                 {
                     // Close record panel if open
@@ -5427,16 +5428,28 @@ namespace CleanScan.Views
                         && this.FindControl<Button>("CropExpandBtn") is { } expandBtn)
                     {
                         OnExpandButtonClick(expandBtn, new RoutedEventArgs());
+                        needsLayoutWait = true;
                     }
                 }
                 else if (beforeAction == "OpenRecord")
                 {
-                    if (!_recordOpen) OnRecordClick(null, new RoutedEventArgs());
+                    if (!_recordOpen)
+                    {
+                        OnRecordClick(null, new RoutedEventArgs());
+                        needsLayoutWait = true;
+                    }
                 }
                 else if (beforeAction is null)
                 {
                     // Steps without BeforeAction: close record panel if open
                     if (_recordOpen) OnRecordClick(null, new RoutedEventArgs());
+                }
+
+                // Wait for layout pass so newly-opened panels have valid positions
+                if (needsLayoutWait)
+                {
+                    await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
+                    await Task.Delay(100);
                 }
 
                 // Update text

@@ -21,7 +21,7 @@
 !define APP_PUBLISHER "ScanFilm SNC"
 !define APP_URL       "https://www.scanfilm.ch"
 !define APP_EXE       "CleanScan.exe"
-!define PUBLISH_DIR   "..\bin\Release\net10.0\win-x64"
+!define PUBLISH_DIR   "..\bin\Release\net10.0\win-x64\publish"
 
 ; ── Installer settings ──
 Name "${APP_NAME} ${APP_VERSION}"
@@ -73,8 +73,7 @@ Section "!${APP_NAME} (required)" SecCore
 
     ; AviSynth script templates
     File "${PUBLISH_DIR}\ScriptMaster.en.avs"
-    File "${PUBLISH_DIR}\ScriptUser.avs"
-
+    
     ; Plugins
     SetOutPath "$INSTDIR\Plugins"
     File /r "${PUBLISH_DIR}\Plugins\*.*"
