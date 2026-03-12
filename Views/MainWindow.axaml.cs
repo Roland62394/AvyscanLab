@@ -4292,7 +4292,7 @@ namespace CleanScan.Views
                 {
                     "tiff" => $"-c:v tiff -compression_algo raw -pix_fmt {pixFmt}",
                     "png"  => $"-c:v png -compression_level 0 -pix_fmt {pixFmt}",
-                    "jpg"  => "-c:v mjpeg -q:v 1 -pix_fmt yuvj444p",
+                    "jpg"  => "-c:v mjpeg -qmin 2 -qmax 2 -huffman optimal",
                     _      => ""
                 };
                 ffArgs = $"-progress pipe:2 {inputArgs} {durationLimit} {scaleFilter} {imgCodecArgs} -y \"{outputPath}\"";
