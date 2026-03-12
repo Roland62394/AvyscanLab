@@ -364,3 +364,5 @@ FodyWeavers.xsd
 
 # Large native binaries (too large for GitHub — provide manually)
 mpv/
+Plugins/ffmpeg/ffmpeg.exe
+Installer/Output/
