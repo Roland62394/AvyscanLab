@@ -492,6 +492,7 @@ namespace CleanScan.Views
         private bool _autoSaveEncodingPreset;
         private bool _isLoadingEncodingPreset;
         private bool _pendingEncodingPresetPrompt;
+        private bool _isDroppingFiles;
 
 
         private MainWindowViewModel ViewModel => (MainWindowViewModel)DataContext!;
@@ -2100,6 +2101,7 @@ namespace CleanScan.Views
 
         private async void OnSourceDrop(object? sender, DragEventArgs e)
         {
+            if (_isDroppingFiles) return;
             var paths = GetDroppedFilePaths(e);
             if (paths.Count == 0)
             {
@@ -2107,28 +2109,35 @@ namespace CleanScan.Views
                 return;
             }
 
-            // Activate the first dropped file
-            await ApplyDetectedSourceAndRefreshAsync(paths[0]);
-
-            // Add remaining dropped files without activating
-            for (int i = 1; i < paths.Count; i++)
+            _isDroppingFiles = true;
+            try
             {
-                var normalized = _sourceService.NormalizeConfiguredPath(NormalizeSourceValue(paths[i]));
-                if (!_clipPaths.Any(p => string.Equals(p, normalized, StringComparison.OrdinalIgnoreCase)))
+                // Activate the first dropped file
+                await ApplyDetectedSourceAndRefreshAsync(paths[0]);
+
+                // Add remaining dropped files without activating
+                for (int i = 1; i < paths.Count; i++)
                 {
-                    _clipPaths.Add(normalized);
-                    _clipConfigs.Add(CaptureClipConfig());
-                    _clipPresetNames.Add(null);
-                    _clipBatchSelected.Add(true);
-                    _clipBatchEncodingPreset.Add(null);
+                    var normalized = _sourceService.NormalizeConfiguredPath(NormalizeSourceValue(paths[i]));
+                    if (!_clipPaths.Any(p => string.Equals(p, normalized, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        _clipPaths.Add(normalized);
+                        _clipConfigs.Add(CaptureClipConfig());
+                        _clipPresetNames.Add(null);
+                        _clipBatchSelected.Add(true);
+                        _clipBatchEncodingPreset.Add(null);
+                    }
                 }
+                if (paths.Count > 1)
+                    RebuildClipTabs();
             }
-            if (paths.Count > 1)
-                RebuildClipTabs();
+            catch (Exception ex) { DebugLog($"OnSourceDrop error: {ex.Message}"); }
+            finally { _isDroppingFiles = false; }
         }
 
         private async void OnPlayerFilesDropped(List<string> paths)
         {
+            if (_isDroppingFiles) return;
             var valid = paths.Where(p =>
             {
                 var ext = Path.GetExtension(p);
@@ -2139,24 +2148,30 @@ namespace CleanScan.Views
 
             if (valid.Count == 0) return;
 
-            // Activate the first dropped file
-            await ApplyDetectedSourceAndRefreshAsync(valid[0]);
-
-            // Add remaining files without activating
-            for (int i = 1; i < valid.Count; i++)
+            _isDroppingFiles = true;
+            try
             {
-                var normalized = _sourceService.NormalizeConfiguredPath(NormalizeSourceValue(valid[i]));
-                if (!_clipPaths.Any(p => string.Equals(p, normalized, StringComparison.OrdinalIgnoreCase)))
+                // Activate the first dropped file
+                await ApplyDetectedSourceAndRefreshAsync(valid[0]);
+
+                // Add remaining files without activating
+                for (int i = 1; i < valid.Count; i++)
                 {
-                    _clipPaths.Add(normalized);
-                    _clipConfigs.Add(CaptureClipConfig());
-                    _clipPresetNames.Add(null);
-                    _clipBatchSelected.Add(true);
-                    _clipBatchEncodingPreset.Add(null);
+                    var normalized = _sourceService.NormalizeConfiguredPath(NormalizeSourceValue(valid[i]));
+                    if (!_clipPaths.Any(p => string.Equals(p, normalized, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        _clipPaths.Add(normalized);
+                        _clipConfigs.Add(CaptureClipConfig());
+                        _clipPresetNames.Add(null);
+                        _clipBatchSelected.Add(true);
+                        _clipBatchEncodingPreset.Add(null);
+                    }
                 }
+                if (valid.Count > 1)
+                    RebuildClipTabs();
             }
-            if (valid.Count > 1)
-                RebuildClipTabs();
+            catch (Exception ex) { DebugLog($"OnPlayerFilesDropped error: {ex.Message}"); }
+            finally { _isDroppingFiles = false; }
         }
 
         private static List<string> GetDroppedFilePaths(DragEventArgs e)

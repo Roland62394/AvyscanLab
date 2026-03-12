@@ -73,10 +73,18 @@ public sealed class MpvHost : NativeControlHost
 
     private nint WndProc(nint hWnd, uint msg, nint wParam, nint lParam)
     {
-        if (msg == WM_DROPFILES)
+        try
         {
-            HandleDrop(wParam);
-            return 0;
+            if (msg == WM_DROPFILES)
+            {
+                HandleDrop(wParam);
+                return 0;
+            }
+        }
+        catch
+        {
+            // Never let an exception escape the WndProc subclass — it would
+            // unhook the procedure and permanently break drag-and-drop.
         }
         return CallWindowProc(_origWndProc, hWnd, msg, wParam, lParam);
     }
