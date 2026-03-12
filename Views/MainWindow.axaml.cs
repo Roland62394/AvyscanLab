@@ -3509,7 +3509,14 @@ namespace CleanScan.Views
             UpdateConfigurationValue("preview_half", _halfRes.ToString().ToLowerInvariant());
         }
 
-        private void OnMaxViewerClick(object? sender, RoutedEventArgs e) => ToggleViewerMaximized();
+        private void OnMaxViewerClick(object? sender, RoutedEventArgs e)
+        {
+            // Close tooltip immediately so it doesn't eat the next click
+            if (sender is Button b)
+                ToolTip.SetIsOpen(b, false);
+            ToggleViewerMaximized();
+            e.Handled = true;
+        }
 
         private void ToggleViewerMaximized()
         {
@@ -3555,6 +3562,9 @@ namespace CleanScan.Views
                     ? Brushes.White
                     : ThemeBrush("TextLabel");
             }
+
+            // Force layout update before the next input event
+            Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Render);
         }
 
         private bool _isEncoding;
