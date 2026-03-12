@@ -5,7 +5,9 @@
 ;   1. Install NSIS 3+ from https://nsis.sourceforge.io/Download
 ;   2. Build/publish the app:
 ;        dotnet publish -c Release -r win-x64 --self-contained
-;   3. Right-click this file → "Compile NSIS Script"
+;   3. Place AviSynthPlus installer in Installer/ folder:
+;        AviSynthPlus_3.7.5_20250420_vcredist.exe
+;   4. Right-click this file → "Compile NSIS Script"
 ;      or run:  makensis CleanScan.nsi
 ;
 ; The installer will be created in Installer\Output\
@@ -22,6 +24,7 @@
 !define APP_URL       "https://www.scanfilm.ch"
 !define APP_EXE       "CleanScan.exe"
 !define PUBLISH_DIR   "..\bin\Release\net10.0\win-x64\publish"
+!define AVS_INSTALLER "AviSynthPlus_3.7.5_20250420_vcredist.exe"
 
 ; ── Installer settings ──
 Name "${APP_NAME} ${APP_VERSION}"
@@ -73,10 +76,10 @@ Section "!${APP_NAME} (required)" SecCore
 
     ; AviSynth script templates
     File "${PUBLISH_DIR}\ScriptMaster.en.avs"
-    
-    ; Plugins
+
+    ; Plugins (excluding AviSynth — installed separately)
     SetOutPath "$INSTDIR\Plugins"
-    File /r "${PUBLISH_DIR}\Plugins\*.*"
+    File /r /x "AviSynth" "${PUBLISH_DIR}\Plugins\*.*"
 
     ; mpv player library
     SetOutPath "$INSTDIR\mpv"
@@ -125,13 +128,51 @@ SectionEnd
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 ; ─────────────────────────────────────────────────────
-; INIT — check 64-bit
+; INIT — check 64-bit + install AviSynth+
 ; ─────────────────────────────────────────────────────
 Function .onInit
     ${IfNot} ${RunningX64}
         MessageBox MB_OK|MB_ICONSTOP "${APP_NAME} requires a 64-bit version of Windows."
         Abort
     ${EndIf}
+
+    ; ── Check if AviSynth+ is already installed ──
+    ReadRegStr $0 HKLM "SOFTWARE\AviSynth+" "Version"
+    ${If} $0 != ""
+        ; Already installed — skip
+        Goto avs_done
+    ${EndIf}
+    ReadRegStr $0 HKLM "SOFTWARE\AviSynth" "Version"
+    ${If} $0 != ""
+        Goto avs_done
+    ${EndIf}
+
+    ; ── AviSynth+ not found — must install ──
+    MessageBox MB_OKCANCEL|MB_ICONINFORMATION \
+        "${APP_NAME} requires AviSynth+ to function.$\n$\n\
+        AviSynth+ (GPLv2) will now be installed.$\n\
+        Click OK to proceed, or Cancel to exit." \
+        IDOK avs_install
+    ; User clicked Cancel → abort the entire installer
+    Abort
+
+avs_install:
+    ; Extract AviSynth+ installer to temp and run it
+    SetOutPath "$TEMP"
+    File "${AVS_INSTALLER}"
+    ExecWait '"$TEMP\${AVS_INSTALLER}" /S' $1
+    Delete "$TEMP\${AVS_INSTALLER}"
+
+    ; Verify installation succeeded
+    ${If} $1 != 0
+        MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION \
+            "AviSynth+ installation may have failed (exit code: $1).$\n$\n\
+            Click OK to continue anyway, or Cancel to exit." \
+            IDOK avs_done
+        Abort
+    ${EndIf}
+
+avs_done:
 FunctionEnd
 
 ; ─────────────────────────────────────────────────────

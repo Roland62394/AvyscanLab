@@ -366,3 +366,4 @@ FodyWeavers.xsd
 mpv/
 Plugins/ffmpeg/ffmpeg.exe
 Installer/Output/
+Installer/AviSynthPlus*.exe

@@ -541,7 +541,6 @@ namespace CleanScan.Views
 
         private void InitializeWindow()
         {
-            EnsureAviSynthAvailable();
             InitializeComponent();
             DataContext = new MainWindowViewModel();
             ConfigureMenuBar();
@@ -658,77 +657,8 @@ namespace CleanScan.Views
         private static readonly string _logPath =
             Path.Combine(Path.GetTempPath(), "cleanscan_debug.txt");
 
-        private static bool _avsUsingBundled;
-        private static nint _avsBundledHandle;
-
-        [System.Runtime.InteropServices.LibraryImport("kernel32.dll", SetLastError = true, StringMarshalling = System.Runtime.InteropServices.StringMarshalling.Utf16)]
-        [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
-        private static partial bool SetDllDirectoryW(string lpPathName);
-
-        /// <summary>
-        /// Called once at startup. If AviSynth+ is installed system-wide, do nothing.
-        /// Otherwise, pre-load the bundled avisynth.dll into the process and configure
-        /// the DLL search path so that mpv and ffmpeg find it (and DevIL.dll).
-        /// </summary>
-        private static void EnsureAviSynthAvailable()
-        {
-            // 1. Check system install (System32)
-            var system32 = Environment.GetFolderPath(Environment.SpecialFolder.System);
-            var systemDll = Path.Combine(system32, "avisynth.dll");
-            if (File.Exists(systemDll))
-            {
-                try
-                {
-                    if (System.Runtime.InteropServices.NativeLibrary.TryLoad(systemDll, out var h))
-                    {
-                        System.Runtime.InteropServices.NativeLibrary.Free(h);
-                        return; // System AviSynth is fine, use it
-                    }
-                }
-                catch { }
-            }
-
-            // 2. Fallback: bundled AviSynth in Plugins/AviSynth/
-            var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? string.Empty;
-            var bundledDir = Path.Combine(exeDir, "Plugins", "AviSynth");
-            var bundledDll = Path.Combine(bundledDir, "avisynth.dll");
-            if (!File.Exists(bundledDll)) return;
-
-            // Add bundled dir to DLL search path (for DevIL.dll and other dependencies)
-            SetDllDirectoryW(bundledDir);
-
-            // Also prepend to PATH (for ffmpeg subprocess)
-            var currentPath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
-            Environment.SetEnvironmentVariable("PATH", bundledDir + Path.PathSeparator + currentPath);
-
-            // Pre-load avisynth.dll and keep the handle alive for the entire process lifetime.
-            // When mpv internally calls LoadLibrary("avisynth"), Windows will find it already loaded.
-            if (System.Runtime.InteropServices.NativeLibrary.TryLoad(bundledDll, out _avsBundledHandle))
-                _avsUsingBundled = true;
-        }
-
         private static string GetAviSynthDiagnostic()
         {
-            // If using bundled version, check it
-            if (_avsUsingBundled)
-            {
-                var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? string.Empty;
-                var bundledDll = Path.Combine(exeDir, "Plugins", "AviSynth", "avisynth.dll");
-                if (!File.Exists(bundledDll))
-                    return "AviSynth.dll bundlé introuvable";
-                try
-                {
-                    if (System.Runtime.InteropServices.NativeLibrary.TryLoad(bundledDll, out var h))
-                    {
-                        System.Runtime.InteropServices.NativeLibrary.Free(h);
-                        return "AviSynth.dll (bundlé) chargeable OK";
-                    }
-                    return "AviSynth.dll (bundlé) non chargeable (mauvaise architecture ?)";
-                }
-                catch (Exception ex) { return $"AviSynth.dll (bundlé) erreur : {ex.Message}"; }
-            }
-
-            // System install
             var system32 = Environment.GetFolderPath(Environment.SpecialFolder.System);
             var dllPath  = Path.Combine(system32, "AviSynth.dll");
             if (!File.Exists(dllPath))
@@ -4438,10 +4368,6 @@ namespace CleanScan.Views
                             WorkingDirectory = Path.GetDirectoryName(renderScriptPath) ?? ""
                         };
 
-                        // Ensure AviSynth DLLs sit next to ffmpeg.exe
-                        // (LoadLibrary searches app dir, not PATH)
-                        EnsureAviSynthNextToFfmpeg(ffmpegPath);
-
                         _encodingProcess = new Process
                         {
                             StartInfo = psi,
@@ -4707,28 +4633,6 @@ namespace CleanScan.Views
                 if (File.Exists(candidate)) return candidate;
             }
             return null;
-        }
-
-        private static void EnsureAviSynthNextToFfmpeg(string ffmpegPath)
-        {
-            var ffmpegDir = Path.GetDirectoryName(ffmpegPath);
-            if (string.IsNullOrWhiteSpace(ffmpegDir)) return;
-
-            var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? "";
-            var avsDir = Path.Combine(exeDir, "Plugins", "AviSynth");
-            if (!Directory.Exists(avsDir)) return;
-
-            // Copy avisynth.dll + DevIL.dll next to ffmpeg.exe if not already there
-            foreach (var dll in new[] { "AviSynth.dll", "DevIL.dll" })
-            {
-                var src = Path.Combine(avsDir, dll);
-                var dst = Path.Combine(ffmpegDir, dll);
-                if (File.Exists(src) && !File.Exists(dst))
-                {
-                    try { File.Copy(src, dst, overwrite: false); }
-                    catch { /* another process may have copied it */ }
-                }
-            }
         }
 
         private static async Task<bool> CheckFfmpegAviSynthSupport(string ffmpegPath)
