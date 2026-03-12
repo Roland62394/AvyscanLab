@@ -21,6 +21,7 @@ using Avalonia.Threading;
 using Avalonia.Animation;
 using Avalonia.Animation.Easings;
 using Avalonia.Styling;
+using System.Runtime.InteropServices;
 using CleanScan.Models;
 using CleanScan.Services;
 using CleanScan.ViewModels;
@@ -1014,8 +1015,27 @@ namespace CleanScan.Views
             }
         }
 
+        // ── UIPI drag-drop fix for elevated processes ─────────────────────
+        [DllImport("user32.dll")]
+        private static extern bool ChangeWindowMessageFilterEx(
+            nint hwnd, uint message, uint action, nint pChangeFilterStruct);
+
+        private const uint WM_DROPFILES_MSG      = 0x0233;
+        private const uint WM_COPYGLOBALDATA_MSG  = 0x0049;
+        private const uint MSGFLT_ALLOW_MSG       = 1;
+
+        private void AllowDragDropThroughUipi()
+        {
+            var platformHandle = TryGetPlatformHandle();
+            if (platformHandle is null) return;
+            var hwnd = platformHandle.Handle;
+            ChangeWindowMessageFilterEx(hwnd, WM_DROPFILES_MSG, MSGFLT_ALLOW_MSG, 0);
+            ChangeWindowMessageFilterEx(hwnd, WM_COPYGLOBALDATA_MSG, MSGFLT_ALLOW_MSG, 0);
+        }
+
         private async void OnOpened(object? sender, EventArgs e)
         {
+            AllowDragDropThroughUipi();
             _isInitializing = true;
             var settings = _windowStateService.Load();
             try

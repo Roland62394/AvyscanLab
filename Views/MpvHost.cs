@@ -40,10 +40,15 @@ public sealed class MpvHost : NativeControlHost
     [DllImport("user32.dll", EntryPoint = "SetClassLongPtrW")]
     private static extern nint SetClassLongPtr(nint hWnd, int nIndex, nint dwNewLong);
 
-    private const int  GWLP_WNDPROC  = -4;
-    private const int  GCLP_HCURSOR  = -12;
-    private const int  IDC_ARROW     = 32512;
-    private const uint WM_DROPFILES  = 0x0233;
+    [DllImport("user32.dll")]
+    private static extern bool ChangeWindowMessageFilterEx(nint hwnd, uint message, uint action, nint pChangeFilterStruct);
+
+    private const int  GWLP_WNDPROC       = -4;
+    private const int  GCLP_HCURSOR       = -12;
+    private const int  IDC_ARROW          = 32512;
+    private const uint WM_DROPFILES       = 0x0233;
+    private const uint WM_COPYGLOBALDATA  = 0x0049;
+    private const uint MSGFLT_ALLOW       = 1;
 
     // Keep the delegate alive — GC must not collect it while the window exists.
     private WndProcDelegate? _wndProcDelegate;
@@ -57,6 +62,10 @@ public sealed class MpvHost : NativeControlHost
         var hwnd   = handle.Handle;
 
         // Enable shell drag-and-drop on the native HWND and subclass its WndProc.
+        // Allow WM_DROPFILES through UIPI when the process runs elevated
+        // (e.g. launched from the NSIS installer finish page).
+        ChangeWindowMessageFilterEx(hwnd, WM_DROPFILES, MSGFLT_ALLOW, 0);
+        ChangeWindowMessageFilterEx(hwnd, WM_COPYGLOBALDATA, MSGFLT_ALLOW, 0);
         DragAcceptFiles(hwnd, true);
         _wndProcDelegate = WndProc;
         _origWndProc     = SetWindowLongPtr(hwnd, GWLP_WNDPROC,

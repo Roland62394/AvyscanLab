@@ -90,6 +90,11 @@ Section "!${APP_NAME} (required)" SecCore
     SetOutPath "$INSTDIR\Plugins\Dual\L-Smash-Works"
     File /r "${PUBLISH_DIR}\Plugins\Dual\L-Smash-Works\*.*"
 
+    ; ffmpeg (encoding)
+    SetOutPath "$INSTDIR\Plugins\ffmpeg"
+    File "${PUBLISH_DIR}\Plugins\ffmpeg\ffmpeg.exe"
+    File /nonfatal "${PUBLISH_DIR}\Plugins\ffmpeg\LICENSE"
+
     ; mpv player library
     SetOutPath "$INSTDIR\mpv"
     File /r "${PUBLISH_DIR}\mpv\*.*"
@@ -231,7 +236,7 @@ FunctionEnd
 ; UNINSTALLER
 ; ─────────────────────────────────────────────────────
 Section "Uninstall"
-    ; Remove CleanScan files
+    ; Remove CleanScan files (includes Plugins\ffmpeg, Plugins\RgTools, etc.)
     RMDir /r "$INSTDIR\Plugins"
     RMDir /r "$INSTDIR\mpv"
     RMDir /r "$INSTDIR\Users Guide"

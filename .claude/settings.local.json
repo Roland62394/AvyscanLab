@@ -41,7 +41,8 @@
       "Read(//c/Program Files/**)",
       "Read(//c/Program Files \\(x86\\)/**)",
       "Bash(cd \"C:/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/CleanScan\" && mkdir -p Installer/GPL_Plugins && mv Plugins/FFMS2 Installer/GPL_Plugins/ && mv Plugins/GamMac Installer/GPL_Plugins/ && mv Plugins/Masktools2 Installer/GPL_Plugins/ && mv Plugins/MVTools2 Installer/GPL_Plugins/ && mv Plugins/RemoveDirt Installer/GPL_Plugins/)",
-      "Bash(cd \"C:/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/CleanScan\" && mkdir -p Installer/GPL_Plugins/Scripts && mv Plugins/Scripts/FFMS2.avsi Installer/GPL_Plugins/Scripts/ && mv Plugins/Scripts/RemoveDirt.avsi Installer/GPL_Plugins/Scripts/ && rmdir Plugins/Scripts 2>/dev/null; echo \"done\")"
+      "Bash(cd \"C:/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/CleanScan\" && mkdir -p Installer/GPL_Plugins/Scripts && mv Plugins/Scripts/FFMS2.avsi Installer/GPL_Plugins/Scripts/ && mv Plugins/Scripts/RemoveDirt.avsi Installer/GPL_Plugins/Scripts/ && rmdir Plugins/Scripts 2>/dev/null; echo \"done\")",
+      "Bash(cd \"C:/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/CleanScan\" && rm -rf bin/Release/net10.0/win-x64/publish && dotnet publish -c Release -r win-x64 --self-contained 2>&1)"
     ]
   }
 }
