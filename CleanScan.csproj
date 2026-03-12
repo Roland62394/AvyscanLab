@@ -25,9 +25,6 @@
     <AvaloniaResource Include="Assets\**" />
     <EmbeddedResource Include="Properties\Resources.resx" />
     <EmbeddedResource Include="Resources\ConfigValues.resx" />
-    <Folder Include="Plugins\MVTools2\Documentation\" />
-    <Folder Include="Plugins\MVTools2\Doc_DepanEstimate\" />
-    <Folder Include="Plugins\MVTools2\Doc_Depan\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -70,7 +67,7 @@
     </Content>
   </ItemGroup>
 
-  <!-- ✅ UNE SEULE règle pour tout Plugins (inclut Plugins/AviSynth/ bundlé) -->
+  <!-- Plugins MIT/ISC bundled (RgTools, L-Smash-Works, ffmpeg) -->
   <ItemGroup>
     <!-- Copie tout le contenu Plugins (dll, avsi, etc.) en gardant l'arborescence -->
     <Content Include="Plugins\**\*" Exclude="Plugins\**\VirtualDub2.exe;Plugins\**\vdub2.exe">
@@ -87,14 +84,6 @@
     </AvaloniaResource>
   </ItemGroup>
 
-  <ItemGroup>
-    <Content Update="Plugins\RemoveDirt\OLDRemoveDirt.dll">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Content>
-    <Content Update="Plugins\RemoveDirt\RemoveDirt.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>

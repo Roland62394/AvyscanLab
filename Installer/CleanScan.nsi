@@ -27,7 +27,7 @@
 !define AVS_INSTALLER "AviSynthPlus_3.7.5_20250420_vcredist.exe"
 
 ; GPL plugin DLLs — installed into AviSynth+ plugins64+ folder
-!define GPL_PLUGINS_DIR "${PUBLISH_DIR}\Plugins"
+!define GPL_PLUGINS_DIR "GPL_Plugins"
 
 ; ── Installer settings ──
 Name "${APP_NAME} ${APP_VERSION}"
