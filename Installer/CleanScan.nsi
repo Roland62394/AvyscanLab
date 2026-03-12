@@ -83,14 +83,12 @@ Section "!${APP_NAME} (required)" SecCore
     ; AviSynth script templates
     File "${PUBLISH_DIR}\ScriptMaster.en.avs"
 
-    ; Plugins — only MIT/ISC licensed plugins (RgTools, L-Smash-Works, Scripts)
+    ; Plugins — only MIT/ISC licensed plugins (RgTools, L-Smash-Works)
     SetOutPath "$INSTDIR\Plugins\RgTools"
-    File "${GPL_PLUGINS_DIR}\RgTools\RgTools.dll"
-    File "${GPL_PLUGINS_DIR}\RgTools\LICENSE"
+    File "${PUBLISH_DIR}\Plugins\RgTools\RgTools.dll"
+    File "${PUBLISH_DIR}\Plugins\RgTools\LICENSE"
     SetOutPath "$INSTDIR\Plugins\Dual\L-Smash-Works"
-    File /r "${GPL_PLUGINS_DIR}\Dual\L-Smash-Works\*.*"
-    SetOutPath "$INSTDIR\Plugins\Scripts"
-    File /r "${GPL_PLUGINS_DIR}\Scripts\*.*"
+    File /r "${PUBLISH_DIR}\Plugins\Dual\L-Smash-Works\*.*"
 
     ; mpv player library
     SetOutPath "$INSTDIR\mpv"
@@ -125,8 +123,10 @@ SectionEnd
 Section "Restoration plugins (GPLv2 — required)" SecGplPlugins
     SectionIn RO  ; Cannot be deselected — required for CleanScan
 
-    ; Read AviSynth+ plugin directory from registry
+    ; Read AviSynth+ plugin directory from 64-bit registry view
+    SetRegView 64
     ReadRegStr $AVS_PLUGINDIR HKLM "SOFTWARE\AviSynth" "plugindir+"
+    SetRegView 32
     ${If} $AVS_PLUGINDIR == ""
         ; Fallback: standard path
         StrCpy $AVS_PLUGINDIR "$PROGRAMFILES32\AviSynth+\plugins64+"
@@ -190,8 +190,10 @@ Function .onInit
         Abort
     ${EndIf}
 
-    ; ── Check if AviSynth+ is already installed ──
+    ; ── Check if AviSynth+ is already installed (64-bit registry) ──
+    SetRegView 64
     ReadRegStr $0 HKLM "SOFTWARE\AviSynth+" "Version"
+    SetRegView 32
     ${If} $0 != ""
         ; Already installed — skip
         Goto avs_done
@@ -239,8 +241,10 @@ Section "Uninstall"
     Delete "$INSTDIR\Uninstall.exe"
     RMDir  "$INSTDIR"
 
-    ; Remove GPL plugins from AviSynth+ folder
+    ; Remove GPL plugins from AviSynth+ folder (64-bit registry)
+    SetRegView 64
     ReadRegStr $AVS_PLUGINDIR HKLM "SOFTWARE\AviSynth" "plugindir+"
+    SetRegView 32
     ${If} $AVS_PLUGINDIR != ""
         Delete "$AVS_PLUGINDIR\GamMac_x64.dll"
         Delete "$AVS_PLUGINDIR\GamMac_LICENSE.txt"
