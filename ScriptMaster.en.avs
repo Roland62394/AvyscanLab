@@ -184,7 +184,7 @@ function TryLoadPlugin(string path) {
 # MIT/ISC plugins — bundled with CleanScan
 TryLoadPlugin(pluginRoot + "RgTools/RgTools.dll")
 
-# GPL plugins (GamMac, MaskTools2, RemoveDirt, MVTools2, FFMS2)
+# GPL plugins (FFMS2, GamMac, MaskTools2, MVTools2, RemoveDirt)
 # are installed in the AviSynth+ plugins64+ folder and auto-loaded.
 
 # __CUSTOM_PLUGINS__
