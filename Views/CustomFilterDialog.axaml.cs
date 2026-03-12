@@ -45,7 +45,7 @@ public partial class CustomFilterDialog : Window
     public CustomFilterDialog(CustomFilter filter, bool isNew = false, MainWindowViewModel? vm = null, double ownerHeight = 0)
     {
         _filter = filter;
-        _dlls = new List<string>(filter.Dlls);
+        _dlls = [..filter.Dlls];
         _controls = filter.Controls.Select(CloneControl).ToList();
         _vm = vm;
 
@@ -138,7 +138,7 @@ public partial class CustomFilterDialog : Window
             ? "Custom"
             : FilterNameBox.Text.Trim();
         _filter.Position = PositionCombo.SelectedItem as string ?? "AfterSharpen";
-        _filter.Dlls = new List<string>(_dlls);
+        _filter.Dlls = [.._dlls];
         _filter.Code = CodeBox.Text ?? "";
         _filter.Controls = _controls.Select(CloneControl).ToList();
 
@@ -156,7 +156,7 @@ public partial class CustomFilterDialog : Window
     {
         // Apply current form state to filter temporarily for preview
         _filter.Code = CodeBox.Text ?? "";
-        _filter.Dlls = new List<string>(_dlls);
+        _filter.Dlls = [.._dlls];
         _filter.Position = PositionCombo.SelectedItem as string ?? "AfterSharpen";
         _filter.Controls = _controls.Select(CloneControl).ToList();
 
@@ -184,7 +184,7 @@ public partial class CustomFilterDialog : Window
             Name = string.IsNullOrWhiteSpace(FilterNameBox.Text) ? "Custom" : FilterNameBox.Text.Trim(),
             Enabled = _filter.Enabled,
             Position = PositionCombo.SelectedItem as string ?? "AfterSharpen",
-            Dlls = new List<string>(_dlls),
+            Dlls = [.._dlls],
             Code = CodeBox.Text ?? "",
             Controls = _controls.Select(CloneControl).ToList()
         };
@@ -199,7 +199,7 @@ public partial class CustomFilterDialog : Window
 
         if (picker is null) return;
 
-        var json = JsonSerializer.Serialize(new List<CustomFilter> { snapshot }, ExportJsonOpts);
+        var json = JsonSerializer.Serialize(new[] { snapshot }, ExportJsonOpts);
         await File.WriteAllTextAsync(picker.Path.LocalPath, json);
     }
 
@@ -520,7 +520,7 @@ public partial class CustomFilterDialog : Window
         Min = src.Min,
         Max = src.Max,
         Step = src.Step,
-        Options = new List<string>(src.Options),
+        Options = [..src.Options],
         OnValue = src.OnValue,
         OffValue = src.OffValue
     };

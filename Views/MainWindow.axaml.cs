@@ -386,6 +386,12 @@ namespace CleanScan.Views
         [GeneratedRegex(@"^\d+$")]
         private static partial Regex NumericStemRegex();
 
+        [GeneratedRegex(@"(?m)^(\s*preview\s*=\s*)true")]
+        private static partial Regex PreviewTrueRegex();
+
+        [GeneratedRegex(@"(?m)^(\s*preview_half\s*=\s*)true")]
+        private static partial Regex PreviewHalfTrueRegex();
+
         private enum UpdateMode { Debounced, OnLostFocus, OnEnter, Immediate }
         private sealed record FieldSpec(string Name, UpdateMode Mode, bool ValidateOnChange);
 
@@ -472,15 +478,15 @@ namespace CleanScan.Views
         private bool  _sourceValidationErrorVisible;
         private Grid? _mainGrid;
 
-        private readonly List<string> _clipPaths = new();
-        private readonly List<Dictionary<string, string>> _clipConfigs = new();
-        private readonly List<string?> _clipPresetNames = new();
+        private readonly List<string> _clipPaths = [];
+        private readonly List<Dictionary<string, string>> _clipConfigs = [];
+        private readonly List<string?> _clipPresetNames = [];
         private bool _applyingPreset;
         private int _activeClipIndex = -1;
 
         // Batch encoding state
-        private readonly List<bool> _clipBatchSelected = new();
-        private readonly List<string?> _clipBatchEncodingPreset = new();
+        private readonly List<bool> _clipBatchSelected = [];
+        private readonly List<string?> _clipBatchEncodingPreset = [];
 
         // Encoding preset auto-save
         private bool _autoSaveEncodingPreset;
@@ -655,8 +661,9 @@ namespace CleanScan.Views
         private static bool _avsUsingBundled;
         private static nint _avsBundledHandle;
 
-        [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, SetLastError = true)]
-        private static extern bool SetDllDirectoryW(string lpPathName);
+        [System.Runtime.InteropServices.LibraryImport("kernel32.dll", SetLastError = true, StringMarshalling = System.Runtime.InteropServices.StringMarshalling.Utf16)]
+        [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+        private static partial bool SetDllDirectoryW(string lpPathName);
 
         /// <summary>
         /// Called once at startup. If AviSynth+ is installed system-wide, do nothing.
@@ -1751,7 +1758,7 @@ namespace CleanScan.Views
             {
                 clips.Add(new ClipSession(
                     Path:               _clipPaths[i],
-                    FilterConfig:       i < _clipConfigs.Count ? _clipConfigs[i] : new(),
+                    FilterConfig:       i < _clipConfigs.Count ? _clipConfigs[i] : [],
                     PresetName:         i < _clipPresetNames.Count ? _clipPresetNames[i] : null,
                     BatchSelected:      i < _clipBatchSelected.Count && _clipBatchSelected[i],
                     BatchEncodingPreset: i < _clipBatchEncodingPreset.Count ? _clipBatchEncodingPreset[i] : null));
@@ -2780,7 +2787,9 @@ namespace CleanScan.Views
 
         #region Option toggles & column visibility
 
+#pragma warning disable IDE0028
         private readonly HashSet<string> _openParamPanels = new(StringComparer.Ordinal);
+#pragma warning restore IDE0028
 
         private static readonly string[] AllParamPanels =
             ["CropParams", "DegrainParams", "DenoiseParams", "LumaParams", "GammacParams", "SharpParams"];
@@ -3389,8 +3398,8 @@ namespace CleanScan.Views
 
         private async Task OpenCustomFilterDialog(CustomFilter filter)
         {
-            var dialog = new CustomFilterDialog(filter, vm: ViewModel, ownerHeight: Bounds.Height);
-            dialog.OnPreview = OnCustomFilterPreview;
+            var dialog = new CustomFilterDialog(filter, vm: ViewModel, ownerHeight: Bounds.Height)
+            { OnPreview = OnCustomFilterPreview };
             await dialog.ShowDialog(this);
 
             if (dialog.Deleted)
@@ -3419,14 +3428,16 @@ namespace CleanScan.Views
         private async void OnAddCustomFilterClick(object? sender, RoutedEventArgs e)
         {
             var filter = new CustomFilter { Name = "Custom " + _customFilterService.Filters.Count };
-            var dialog = new CustomFilterDialog(filter, isNew: true, vm: ViewModel, ownerHeight: Bounds.Height);
-            dialog.OnPreview = f =>
+            var dialog = new CustomFilterDialog(filter, isNew: true, vm: ViewModel, ownerHeight: Bounds.Height)
             {
-                // For new filters, temporarily add to get a preview
-                _customFilterService.Add(f);
-                RegenerateScript(showValidationError: false);
-                var task = LoadScriptAsync();
-                _customFilterService.Remove(f.Id);
+                OnPreview = f =>
+                {
+                    // For new filters, temporarily add to get a preview
+                    _customFilterService.Add(f);
+                    RegenerateScript(showValidationError: false);
+                    var task = LoadScriptAsync();
+                    _customFilterService.Remove(f.Id);
+                }
             };
             await dialog.ShowDialog(this);
 
@@ -3817,16 +3828,17 @@ namespace CleanScan.Views
 
         private Dictionary<string, string> CaptureEncodingValues()
         {
-            var d = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            d["encoder"]      = (this.FindControl<ComboBox>("RecordEncoder")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "x264";
-            d["container"]    = (this.FindControl<ComboBox>("RecordContainer")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "mkv";
-            d["quality_mode"] = (this.FindControl<ComboBox>("RecordQualityMode")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "crf";
-            d["crf"]          = ((int)(this.FindControl<Slider>("RecordCrfSlider")?.Value ?? 18)).ToString();
-            d["bitrate"]      = this.FindControl<TextBox>("RecordBitrate")?.Text?.Trim() ?? "20";
-            d["chroma"]       = (this.FindControl<ComboBox>("RecordChroma")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "yuv420p";
-            d["resize"]       = (this.FindControl<ComboBox>("RecordResize")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "original";
-            d["output_dir"]   = this.FindControl<TextBox>("RecordDir")?.Text?.Trim() ?? "";
-            return d;
+            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["encoder"]      = (this.FindControl<ComboBox>("RecordEncoder")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "x264",
+                ["container"]    = (this.FindControl<ComboBox>("RecordContainer")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "mkv",
+                ["quality_mode"] = (this.FindControl<ComboBox>("RecordQualityMode")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "crf",
+                ["crf"]          = ((int)(this.FindControl<Slider>("RecordCrfSlider")?.Value ?? 18)).ToString(),
+                ["bitrate"]      = this.FindControl<TextBox>("RecordBitrate")?.Text?.Trim() ?? "20",
+                ["chroma"]       = (this.FindControl<ComboBox>("RecordChroma")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "yuv420p",
+                ["resize"]       = (this.FindControl<ComboBox>("RecordResize")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "original",
+                ["output_dir"]   = this.FindControl<TextBox>("RecordDir")?.Text?.Trim() ?? "",
+            };
         }
 
         private void ApplyEncodingValues(Dictionary<string, string> vals)
@@ -4186,10 +4198,12 @@ namespace CleanScan.Views
         private Process? _encodingProcess;
         private CancellationTokenSource? _encodingCts;
         private string _lastStderrLine = string.Empty;
-        private readonly List<string> _stderrLines = new();
+        private readonly List<string> _stderrLines = [];
 
         /// <summary>Builds ffmpeg arguments from encoding values dictionary.</summary>
+#pragma warning disable IDE0028
         private readonly HashSet<string> _usedOutputPaths = new(StringComparer.OrdinalIgnoreCase);
+#pragma warning restore IDE0028
 
         private (string ffArgs, string outputPath)? BuildFfmpegArgs(
             Dictionary<string, string> encVals, string renderScriptPath, string outputDir, string sourceFileName)
@@ -4666,10 +4680,8 @@ namespace CleanScan.Views
 
             var content = File.ReadAllText(scriptPath);
             // Force preview=false and preview_half=false for final render
-            content = System.Text.RegularExpressions.Regex.Replace(
-                content, @"(?m)^(\s*preview\s*=\s*)true", "${1}false");
-            content = System.Text.RegularExpressions.Regex.Replace(
-                content, @"(?m)^(\s*preview_half\s*=\s*)true", "${1}false");
+            content = PreviewTrueRegex().Replace(content, "${1}false");
+            content = PreviewHalfTrueRegex().Replace(content, "${1}false");
 
             File.WriteAllText(renderPath, content);
             return renderPath;
