@@ -181,21 +181,11 @@ function TryLoadPlugin(string path) {
   if (Exist(path)) { LoadPlugin(path) }
 }
 
-TryLoadPlugin(pluginRoot + "Masktools2/masktools2.dll")
+# MIT/ISC plugins — bundled with CleanScan
 TryLoadPlugin(pluginRoot + "RgTools/RgTools.dll")
-TryLoadPlugin(pluginRoot + "RemoveDirt/RemoveDirt.dll")
-TryLoadPlugin(pluginRoot + "GamMac/GamMac_x64.dll")
-TryLoadPlugin(pluginRoot + "FFMS2/ffms2.dll")
 
-# MVTools2 — REQUIRED for MDegrain (download from avisynth.nl)
-TryLoadPlugin(pluginRoot + "MVTools2/mvtools2.dll")
-
-function TryImport(string path) {
-  if (Exist(path)) { Import(path) }
-}
-
-TryImport(pluginRoot + "Scripts/RemoveDirt.avsi")
-TryImport(pluginRoot + "Scripts/FFMS2.avsi")
+# GPL plugins (GamMac, MaskTools2, RemoveDirt, MVTools2, FFMS2)
+# are installed in the AviSynth+ plugins64+ folder and auto-loaded.
 
 # __CUSTOM_PLUGINS__
 

@@ -34,7 +34,12 @@
       "Bash(find \"C:/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/CleanScan\" -iname \"*.ico\" -o -iname \"icon*\" 2>/dev/null | head -10)",
       "Bash(\"C:\\\\Users\\\\larde\\\\Documents\\\\Documents administratifs\\\\Scanfilm\\\\Technique\\\\ScriptRestore\\\\CleanScan\\\\Plugins\\\\ffmpeg\\\\ffmpeg.exe\" -demuxers 2>&1 | grep -i avisynth2)",
       "Read(//c/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/CleanScan/$APPDATA/CleanScan/**)",
-      "Read(//c/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/CleanScan/$APPDATA/**)"
+      "Read(//c/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/CleanScan/$APPDATA/**)",
+      "Bash(find \"/c/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/CleanScan\" -maxdepth 1 -name \"Plugins\" -prune -o -iname \"*ffmpeg*\" -print 2>/dev/null | head -10; ls \"/c/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/CleanScan/Plugins/ffmpeg\" 2>&1 || echo \"not in source\"; ls \"/c/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/CleanScan/bin/Release/net10.0/win-x64/publish/Plugins/ffmpeg/\" 2>&1)",
+      "Bash(reg query:*)",
+      "Read(//c/Program Files \\(x86\\)/AviSynth+/**)",
+      "Read(//c/Program Files/**)",
+      "Read(//c/Program Files \\(x86\\)/**)"
     ]
   }
 }

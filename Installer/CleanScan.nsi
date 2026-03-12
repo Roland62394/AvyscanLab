@@ -26,6 +26,9 @@
 !define PUBLISH_DIR   "..\bin\Release\net10.0\win-x64\publish"
 !define AVS_INSTALLER "AviSynthPlus_3.7.5_20250420_vcredist.exe"
 
+; GPL plugin DLLs — installed into AviSynth+ plugins64+ folder
+!define GPL_PLUGINS_DIR "${PUBLISH_DIR}\Plugins"
+
 ; ── Installer settings ──
 Name "${APP_NAME} ${APP_VERSION}"
 OutFile "Output\CleanScan_Setup.exe"
@@ -62,6 +65,9 @@ SetCompressor /SOLID lzma
 !insertmacro MUI_LANGUAGE "German"
 !insertmacro MUI_LANGUAGE "Spanish"
 
+; ── Variable to hold AviSynth+ plugin directory ──
+Var AVS_PLUGINDIR
+
 ; ─────────────────────────────────────────────────────
 ; INSTALLER SECTIONS
 ; ─────────────────────────────────────────────────────
@@ -77,9 +83,14 @@ Section "!${APP_NAME} (required)" SecCore
     ; AviSynth script templates
     File "${PUBLISH_DIR}\ScriptMaster.en.avs"
 
-    ; Plugins (excluding AviSynth — installed separately)
-    SetOutPath "$INSTDIR\Plugins"
-    File /r /x "AviSynth" "${PUBLISH_DIR}\Plugins\*.*"
+    ; Plugins — only MIT/ISC licensed plugins (RgTools, L-Smash-Works, Scripts)
+    SetOutPath "$INSTDIR\Plugins\RgTools"
+    File "${GPL_PLUGINS_DIR}\RgTools\RgTools.dll"
+    File "${GPL_PLUGINS_DIR}\RgTools\LICENSE"
+    SetOutPath "$INSTDIR\Plugins\Dual\L-Smash-Works"
+    File /r "${GPL_PLUGINS_DIR}\Dual\L-Smash-Works\*.*"
+    SetOutPath "$INSTDIR\Plugins\Scripts"
+    File /r "${GPL_PLUGINS_DIR}\Scripts\*.*"
 
     ; mpv player library
     SetOutPath "$INSTDIR\mpv"
@@ -110,6 +121,48 @@ Section "!${APP_NAME} (required)" SecCore
     WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "EstimatedSize" $0
 SectionEnd
 
+; ── GPL restoration plugins (installed into AviSynth+ folder) ──
+Section "Restoration plugins (GPLv2 — required)" SecGplPlugins
+    SectionIn RO  ; Cannot be deselected — required for CleanScan
+
+    ; Read AviSynth+ plugin directory from registry
+    ReadRegStr $AVS_PLUGINDIR HKLM "SOFTWARE\AviSynth" "plugindir+"
+    ${If} $AVS_PLUGINDIR == ""
+        ; Fallback: standard path
+        StrCpy $AVS_PLUGINDIR "$PROGRAMFILES32\AviSynth+\plugins64+"
+    ${EndIf}
+
+    ; Install GPL plugin DLLs + their LICENSE files
+    SetOutPath "$AVS_PLUGINDIR"
+
+    ; GamMac (GPLv2)
+    File "${GPL_PLUGINS_DIR}\GamMac\GamMac_x64.dll"
+    File /oname=GamMac_LICENSE.txt "${GPL_PLUGINS_DIR}\GamMac\LICENSE"
+
+    ; MaskTools2 (GPLv2)
+    File "${GPL_PLUGINS_DIR}\Masktools2\masktools2.dll"
+    File /oname=Masktools2_LICENSE.txt "${GPL_PLUGINS_DIR}\Masktools2\LICENSE"
+
+    ; RemoveDirt (GPLv2)
+    File "${GPL_PLUGINS_DIR}\RemoveDirt\RemoveDirt.dll"
+    File /oname=RemoveDirt_LICENSE.txt "${GPL_PLUGINS_DIR}\RemoveDirt\LICENSE"
+    ; RemoveDirt script
+    File "${GPL_PLUGINS_DIR}\Scripts\RemoveDirt.avsi"
+
+    ; MVTools2 (GPLv2)
+    File "${GPL_PLUGINS_DIR}\MVTools2\mvtools2.dll"
+    File "${GPL_PLUGINS_DIR}\MVTools2\DePan.dll"
+    File "${GPL_PLUGINS_DIR}\MVTools2\DePanEstimate.dll"
+    File /oname=MVTools2_LICENSE.txt "${GPL_PLUGINS_DIR}\MVTools2\LICENSE"
+
+    ; FFMS2 (MIT/GPL)
+    File "${GPL_PLUGINS_DIR}\FFMS2\ffms2.dll"
+    File /oname=FFMS2_LICENSE.txt "${GPL_PLUGINS_DIR}\FFMS2\LICENSE"
+    ; FFMS2 script
+    File "${GPL_PLUGINS_DIR}\Scripts\FFMS2.avsi"
+
+SectionEnd
+
 Section "Desktop shortcut" SecDesktop
     CreateShortCut "$DESKTOP\${APP_NAME}.lnk" "$INSTDIR\${APP_EXE}" "" "$INSTDIR\${APP_EXE}" 0
 SectionEnd
@@ -122,9 +175,10 @@ SectionEnd
 
 ; ── Section descriptions ──
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
-    !insertmacro MUI_DESCRIPTION_TEXT ${SecCore}      "Core application files (required)."
-    !insertmacro MUI_DESCRIPTION_TEXT ${SecDesktop}   "Create a shortcut on the Desktop."
-    !insertmacro MUI_DESCRIPTION_TEXT ${SecStartMenu} "Create a shortcut in the Start Menu."
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecCore}       "Core application files (required)."
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecGplPlugins} "Film restoration plugins (GamMac, MVTools2, MaskTools2, RemoveDirt, FFMS2). Licensed under GPLv2 — source code links included."
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecDesktop}    "Create a shortcut on the Desktop."
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecStartMenu}  "Create a shortcut in the Start Menu."
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 ; ─────────────────────────────────────────────────────
@@ -175,7 +229,7 @@ FunctionEnd
 ; UNINSTALLER
 ; ─────────────────────────────────────────────────────
 Section "Uninstall"
-    ; Remove files
+    ; Remove CleanScan files
     RMDir /r "$INSTDIR\Plugins"
     RMDir /r "$INSTDIR\mpv"
     RMDir /r "$INSTDIR\Users Guide"
@@ -184,6 +238,25 @@ Section "Uninstall"
     Delete "$INSTDIR\ScriptUser.avs"
     Delete "$INSTDIR\Uninstall.exe"
     RMDir  "$INSTDIR"
+
+    ; Remove GPL plugins from AviSynth+ folder
+    ReadRegStr $AVS_PLUGINDIR HKLM "SOFTWARE\AviSynth" "plugindir+"
+    ${If} $AVS_PLUGINDIR != ""
+        Delete "$AVS_PLUGINDIR\GamMac_x64.dll"
+        Delete "$AVS_PLUGINDIR\GamMac_LICENSE.txt"
+        Delete "$AVS_PLUGINDIR\masktools2.dll"
+        Delete "$AVS_PLUGINDIR\Masktools2_LICENSE.txt"
+        Delete "$AVS_PLUGINDIR\RemoveDirt.dll"
+        Delete "$AVS_PLUGINDIR\RemoveDirt_LICENSE.txt"
+        Delete "$AVS_PLUGINDIR\RemoveDirt.avsi"
+        Delete "$AVS_PLUGINDIR\mvtools2.dll"
+        Delete "$AVS_PLUGINDIR\DePan.dll"
+        Delete "$AVS_PLUGINDIR\DePanEstimate.dll"
+        Delete "$AVS_PLUGINDIR\MVTools2_LICENSE.txt"
+        Delete "$AVS_PLUGINDIR\ffms2.dll"
+        Delete "$AVS_PLUGINDIR\FFMS2_LICENSE.txt"
+        Delete "$AVS_PLUGINDIR\FFMS2.avsi"
+    ${EndIf}
 
     ; Remove shortcuts
     Delete "$DESKTOP\${APP_NAME}.lnk"
