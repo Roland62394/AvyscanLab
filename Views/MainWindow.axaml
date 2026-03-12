@@ -9,7 +9,7 @@
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/Ico.ico"
         Title="CleanScan"
-        Background="#0F1319"
+        Background="{DynamicResource BgDeep}"
         Width="960"
         MinWidth="700"
         MinHeight="500"
@@ -29,13 +29,17 @@
         <SolidColorBrush x:Key="AccentBlue"    Color="#3B82C4"/>
         <SolidColorBrush x:Key="AccentGreen"   Color="#35C156"/>
         <SolidColorBrush x:Key="AccentDimmed"  Color="#1E3A2E"/>
+        <SolidColorBrush x:Key="BgHover"       Color="#243050"/>
+        <SolidColorBrush x:Key="BgPressed"     Color="#1a2540"/>
+        <SolidColorBrush x:Key="AccentHover"   Color="#5BA5E4"/>
+        <SolidColorBrush x:Key="AccentPressed" Color="#2870B8"/>
     </Window.Resources>
 
     <Window.Styles>
 
         <!-- ─── Global text ─── -->
         <Style Selector="TextBlock">
-            <Setter Property="Foreground"        Value="{StaticResource TextLabel}"/>
+            <Setter Property="Foreground"        Value="{DynamicResource TextLabel}"/>
             <Setter Property="FontSize"          Value="13"/>
             <Setter Property="FontFamily"        Value="Consolas,Cascadia Code,monospace"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
@@ -43,9 +47,9 @@
 
         <!-- ─── TextBox ─── -->
         <Style Selector="TextBox">
-            <Setter Property="Background"               Value="{StaticResource BgInput}"/>
-            <Setter Property="Foreground"               Value="{StaticResource TextPrimary}"/>
-            <Setter Property="BorderBrush"              Value="{StaticResource BorderSubtle}"/>
+            <Setter Property="Background"               Value="{DynamicResource BgInput}"/>
+            <Setter Property="Foreground"               Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="BorderBrush"              Value="{DynamicResource BorderSubtle}"/>
             <Setter Property="BorderThickness"          Value="1"/>
             <Setter Property="CornerRadius"             Value="3"/>
             <Setter Property="FontSize"                 Value="13"/>
@@ -54,20 +58,20 @@
             <Setter Property="Padding"                  Value="6,0"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="TextAlignment"            Value="Right"/>
-            <Setter Property="CaretBrush"               Value="{StaticResource AccentBlue}"/>
+            <Setter Property="CaretBrush"               Value="{DynamicResource AccentBlue}"/>
         </Style>
         <Style Selector="TextBox:focus">
-            <Setter Property="BorderBrush" Value="{StaticResource AccentBlue}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBlue}"/>
         </Style>
         <Style Selector="TextBox:pointerover">
-            <Setter Property="BorderBrush" Value="{StaticResource BorderAccent}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderAccent}"/>
         </Style>
 
         <!-- ─── ComboBox ─── -->
         <Style Selector="ComboBox">
-            <Setter Property="Background"      Value="{StaticResource BgInput}"/>
-            <Setter Property="Foreground"      Value="{StaticResource TextPrimary}"/>
-            <Setter Property="BorderBrush"     Value="{StaticResource BorderSubtle}"/>
+            <Setter Property="Background"      Value="{DynamicResource BgInput}"/>
+            <Setter Property="Foreground"      Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="BorderBrush"     Value="{DynamicResource BorderSubtle}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius"    Value="3"/>
             <Setter Property="FontSize"        Value="13"/>
@@ -83,9 +87,9 @@
             <Setter Property="Padding"                    Value="8,0"/>
             <Setter Property="CornerRadius"               Value="4"/>
             <Setter Property="BorderThickness"            Value="1"/>
-            <Setter Property="BorderBrush"                Value="{StaticResource BorderSubtle}"/>
-            <Setter Property="Background"                 Value="#1C2333"/>
-            <Setter Property="Foreground"                 Value="{StaticResource TextPrimary}"/>
+            <Setter Property="BorderBrush"                Value="{DynamicResource BorderSubtle}"/>
+            <Setter Property="Background"                 Value="{DynamicResource BgHeader}"/>
+            <Setter Property="Foreground"                 Value="{DynamicResource TextPrimary}"/>
             <Setter Property="FontSize"                   Value="13"/>
             <Setter Property="FontFamily"                 Value="Consolas,Cascadia Code,monospace"/>
             <Setter Property="FontWeight"                 Value="SemiBold"/>
@@ -110,22 +114,22 @@
             </Setter>
         </Style>
         <Style Selector="Button.toggle:pointerover">
-            <Setter Property="Background"  Value="#243050"/>
-            <Setter Property="BorderBrush" Value="{StaticResource AccentBlue}"/>
-            <Setter Property="Foreground"  Value="{StaticResource TextLabel}"/>
+            <Setter Property="Background"  Value="{DynamicResource BgHover}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBlue}"/>
+            <Setter Property="Foreground"  Value="{DynamicResource TextLabel}"/>
         </Style>
         <Style Selector="Button.toggle:pointerover /template/ ContentPresenter">
             <Setter Property="Background"             Value="Transparent"/>
-            <Setter Property="TextElement.Foreground" Value="{StaticResource TextLabel}"/>
+            <Setter Property="TextElement.Foreground" Value="{DynamicResource TextLabel}"/>
         </Style>
         <Style Selector="Button.toggle:pressed">
-            <Setter Property="Background"  Value="#1a2540"/>
-            <Setter Property="BorderBrush" Value="{StaticResource AccentBlue}"/>
-            <Setter Property="Foreground"  Value="{StaticResource TextLabel}"/>
+            <Setter Property="Background"  Value="{DynamicResource BgPressed}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBlue}"/>
+            <Setter Property="Foreground"  Value="{DynamicResource TextLabel}"/>
         </Style>
         <Style Selector="Button.toggle:pressed /template/ ContentPresenter">
             <Setter Property="Background"             Value="Transparent"/>
-            <Setter Property="TextElement.Foreground" Value="{StaticResource TextLabel}"/>
+            <Setter Property="TextElement.Foreground" Value="{DynamicResource TextLabel}"/>
         </Style>
 
         <!-- ─── Expand arrow button ─── -->
@@ -135,9 +139,9 @@
             <Setter Property="Padding"                    Value="0"/>
             <Setter Property="CornerRadius"               Value="3"/>
             <Setter Property="BorderThickness"            Value="1"/>
-            <Setter Property="BorderBrush"                Value="{StaticResource BorderSubtle}"/>
+            <Setter Property="BorderBrush"                Value="{DynamicResource BorderSubtle}"/>
             <Setter Property="Background"                 Value="Transparent"/>
-            <Setter Property="Foreground"                 Value="{StaticResource TextLabel}"/>
+            <Setter Property="Foreground"                 Value="{DynamicResource TextLabel}"/>
             <Setter Property="FontSize"                   Value="11"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment"   Value="Center"/>
@@ -158,71 +162,71 @@
             </Setter>
         </Style>
         <Style Selector="Button.expand-btn:pointerover">
-            <Setter Property="Background"  Value="#243050"/>
-            <Setter Property="BorderBrush" Value="{StaticResource AccentBlue}"/>
-            <Setter Property="Foreground"  Value="{StaticResource AccentBlue}"/>
+            <Setter Property="Background"  Value="{DynamicResource BgHover}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBlue}"/>
+            <Setter Property="Foreground"  Value="{DynamicResource AccentBlue}"/>
         </Style>
         <Style Selector="Button.expand-btn:pointerover /template/ ContentPresenter">
-            <Setter Property="Background"             Value="#243050"/>
-            <Setter Property="TextElement.Foreground" Value="{StaticResource AccentBlue}"/>
+            <Setter Property="Background"             Value="{DynamicResource BgHover}"/>
+            <Setter Property="TextElement.Foreground" Value="{DynamicResource AccentBlue}"/>
         </Style>
         <Style Selector="Button.expand-btn:pressed">
-            <Setter Property="Background" Value="#1a2540"/>
+            <Setter Property="Background" Value="{DynamicResource BgPressed}"/>
         </Style>
         <Style Selector="Button.expand-btn:pressed /template/ ContentPresenter">
-            <Setter Property="Background"             Value="#1a2540"/>
-            <Setter Property="TextElement.Foreground" Value="{StaticResource AccentBlue}"/>
+            <Setter Property="Background"             Value="{DynamicResource BgPressed}"/>
+            <Setter Property="TextElement.Foreground" Value="{DynamicResource AccentBlue}"/>
         </Style>
         <Style Selector="Button.expand-btn.active">
-            <Setter Property="BorderBrush" Value="{StaticResource AccentGreen}"/>
-            <Setter Property="Foreground"  Value="{StaticResource AccentGreen}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentGreen}"/>
+            <Setter Property="Foreground"  Value="{DynamicResource AccentGreen}"/>
         </Style>
         <Style Selector="Button.expand-btn.active /template/ ContentPresenter">
-            <Setter Property="TextElement.Foreground" Value="{StaticResource AccentGreen}"/>
+            <Setter Property="TextElement.Foreground" Value="{DynamicResource AccentGreen}"/>
         </Style>
         <Style Selector="Button.expand-btn.active:pointerover">
-            <Setter Property="BorderBrush" Value="{StaticResource AccentGreen}"/>
-            <Setter Property="Foreground"  Value="{StaticResource AccentGreen}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentGreen}"/>
+            <Setter Property="Foreground"  Value="{DynamicResource AccentGreen}"/>
         </Style>
         <Style Selector="Button.expand-btn.active:pointerover /template/ ContentPresenter">
-            <Setter Property="TextElement.Foreground" Value="{StaticResource AccentGreen}"/>
+            <Setter Property="TextElement.Foreground" Value="{DynamicResource AccentGreen}"/>
         </Style>
         <Style Selector="Button.expand-btn.active:pressed /template/ ContentPresenter">
-            <Setter Property="TextElement.Foreground" Value="{StaticResource AccentGreen}"/>
+            <Setter Property="TextElement.Foreground" Value="{DynamicResource AccentGreen}"/>
         </Style>
 
         <!-- ─── Menu ─── -->
         <Style Selector="Menu">
-            <Setter Property="Background" Value="{StaticResource BgHeader}"/>
-            <Setter Property="Foreground" Value="{StaticResource TextLabel}"/>
+            <Setter Property="Background" Value="{DynamicResource BgHeader}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextLabel}"/>
         </Style>
         <Style Selector="MenuFlyoutPresenter">
-            <Setter Property="Background" Value="{StaticResource BgHeader}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderSubtle}"/>
+            <Setter Property="Background" Value="{DynamicResource BgHeader}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
         <Style Selector="MenuItem">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{StaticResource TextLabel}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextLabel}"/>
             <Setter Property="FontSize"   Value="13"/>
             <Setter Property="FontFamily" Value="Consolas,Cascadia Code,monospace"/>
             <Setter Property="Height"     Value="32"/>
             <Setter Property="Padding"    Value="12,0"/>
         </Style>
         <Style Selector="MenuItem:pointerover">
-            <Setter Property="Background" Value="#243050"/>
-            <Setter Property="Foreground" Value="{StaticResource TextLabel}"/>
+            <Setter Property="Background" Value="{DynamicResource BgHover}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextLabel}"/>
         </Style>
         <Style Selector="MenuItem:selected">
-            <Setter Property="Background" Value="#243050"/>
-            <Setter Property="Foreground" Value="{StaticResource TextLabel}"/>
+            <Setter Property="Background" Value="{DynamicResource BgHover}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextLabel}"/>
         </Style>
 
         <!-- ─── Param row label ─── -->
         <Style Selector="TextBlock.param-label">
             <Setter Property="Width"      Value="100"/>
             <Setter Property="FontSize"   Value="13"/>
-            <Setter Property="Foreground" Value="{StaticResource TextLabel}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextLabel}"/>
         </Style>
 
         <!-- ─── Section title ─── -->
@@ -230,7 +234,7 @@
             <Setter Property="FontSize"      Value="11"/>
             <Setter Property="FontWeight"    Value="SemiBold"/>
             <Setter Property="LetterSpacing" Value="2"/>
-            <Setter Property="Foreground"    Value="{StaticResource TextSecondary}"/>
+            <Setter Property="Foreground"    Value="{DynamicResource TextSecondary}"/>
             <Setter Property="Margin"        Value="0,0,0,10"/>
         </Style>
 
@@ -239,7 +243,7 @@
             <Setter Property="FontSize"      Value="11"/>
             <Setter Property="FontWeight"    Value="SemiBold"/>
             <Setter Property="LetterSpacing" Value="2"/>
-            <Setter Property="Foreground"    Value="{StaticResource TextLabel}"/>
+            <Setter Property="Foreground"    Value="{DynamicResource TextLabel}"/>
             <Setter Property="Margin"        Value="0,0,0,6"/>
         </Style>
 
@@ -250,9 +254,9 @@
             <Setter Property="Padding"                    Value="0"/>
             <Setter Property="CornerRadius"               Value="5"/>
             <Setter Property="BorderThickness"            Value="1"/>
-            <Setter Property="BorderBrush"                Value="{StaticResource BorderSubtle}"/>
-            <Setter Property="Background"                 Value="{StaticResource BgInput}"/>
-            <Setter Property="Foreground"                 Value="{StaticResource TextLabel}"/>
+            <Setter Property="BorderBrush"                Value="{DynamicResource BorderSubtle}"/>
+            <Setter Property="Background"                 Value="{DynamicResource BgInput}"/>
+            <Setter Property="Foreground"                 Value="{DynamicResource TextLabel}"/>
             <Setter Property="FontSize"                   Value="14"/>
             <Setter Property="FontFamily"                 Value="Consolas,Cascadia Code,monospace"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
@@ -275,8 +279,8 @@
             </Setter>
         </Style>
         <Style Selector="Button.transport:pointerover">
-            <Setter Property="Background"  Value="#243050"/>
-            <Setter Property="BorderBrush" Value="{StaticResource AccentBlue}"/>
+            <Setter Property="Background"  Value="{DynamicResource BgHover}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBlue}"/>
             <Setter Property="Foreground"  Value="#FFFFFF"/>
         </Style>
         <Style Selector="Button.transport:pointerover /template/ ContentPresenter">
@@ -284,8 +288,8 @@
             <Setter Property="TextElement.Foreground" Value="#FFFFFF"/>
         </Style>
         <Style Selector="Button.transport:pressed">
-            <Setter Property="Background"  Value="#1a2540"/>
-            <Setter Property="BorderBrush" Value="{StaticResource AccentBlue}"/>
+            <Setter Property="Background"  Value="{DynamicResource BgPressed}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBlue}"/>
         </Style>
         <Style Selector="Button.transport:pressed /template/ ContentPresenter">
             <Setter Property="Background" Value="Transparent"/>
@@ -295,19 +299,19 @@
         <Style Selector="Button.transport.play">
             <Setter Property="Width"       Value="52"/>
             <Setter Property="FontSize"    Value="17"/>
-            <Setter Property="BorderBrush" Value="{StaticResource AccentGreen}"/>
-            <Setter Property="Foreground"  Value="{StaticResource AccentGreen}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentGreen}"/>
+            <Setter Property="Foreground"  Value="{DynamicResource AccentGreen}"/>
         </Style>
         <Style Selector="Button.transport.play:pointerover">
-            <Setter Property="Background"  Value="{StaticResource AccentDimmed}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource AccentGreen}"/>
-            <Setter Property="Foreground"  Value="{StaticResource AccentGreen}"/>
+            <Setter Property="Background"  Value="{DynamicResource AccentDimmed}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentGreen}"/>
+            <Setter Property="Foreground"  Value="{DynamicResource AccentGreen}"/>
         </Style>
         <Style Selector="Button.transport.play:pointerover /template/ ContentPresenter">
-            <Setter Property="TextElement.Foreground" Value="{StaticResource AccentGreen}"/>
+            <Setter Property="TextElement.Foreground" Value="{DynamicResource AccentGreen}"/>
         </Style>
         <Style Selector="Button.transport.play:pressed /template/ ContentPresenter">
-            <Setter Property="TextElement.Foreground" Value="{StaticResource AccentGreen}"/>
+            <Setter Property="TextElement.Foreground" Value="{DynamicResource AccentGreen}"/>
         </Style>
 
         <!-- ─── Param slider ─── -->
@@ -324,7 +328,7 @@
                     <Grid Background="Transparent" VerticalAlignment="Center">
                         <!-- piste grise de fond -->
                         <Border Height="3" VerticalAlignment="Center"
-                                Background="{StaticResource BorderAccent}"
+                                Background="{DynamicResource BorderAccent}"
                                 CornerRadius="2"
                                 IsHitTestVisible="False"/>
                         <Track Name="PART_Track"
@@ -339,7 +343,7 @@
                                     <RepeatButton.Template>
                                         <ControlTemplate>
                                             <Border Height="3" VerticalAlignment="Center"
-                                                    Background="{StaticResource AccentBlue}"
+                                                    Background="{DynamicResource AccentBlue}"
                                                     CornerRadius="2 0 0 2"
                                                     IsHitTestVisible="False"/>
                                         </ControlTemplate>
@@ -359,8 +363,8 @@
                                 <Thumb.Template>
                                     <ControlTemplate TargetType="Thumb">
                                         <Ellipse Width="14" Height="14"
-                                                 Fill="{StaticResource AccentBlue}"
-                                                 Stroke="{StaticResource BgDeep}"
+                                                 Fill="{DynamicResource AccentBlue}"
+                                                 Stroke="{DynamicResource BgDeep}"
                                                  StrokeThickness="2"
                                                  IsHitTestVisible="False"/>
                                     </ControlTemplate>
@@ -373,10 +377,10 @@
         </Style>
         <!-- États hover/pressed sur la poignée -->
         <Style Selector="Slider.param-slider /template/ Thumb:pointerover Ellipse">
-            <Setter Property="Fill" Value="#5BA5E4"/>
+            <Setter Property="Fill" Value="{DynamicResource AccentHover}"/>
         </Style>
         <Style Selector="Slider.param-slider /template/ Thumb:pressed Ellipse">
-            <Setter Property="Fill" Value="#2870B8"/>
+            <Setter Property="Fill" Value="{DynamicResource AccentPressed}"/>
         </Style>
 
 
@@ -442,17 +446,17 @@
     <!-- ══════════════════════════════════════════════════════════
          ROOT LAYOUT
     ══════════════════════════════════════════════════════════ -->
-    <DockPanel Background="{StaticResource BgDeep}">
+    <DockPanel Background="{DynamicResource BgDeep}">
 
         <!-- ── TOP BAR ── -->
-        <Border DockPanel.Dock="Top"
-                Background="{StaticResource BgHeader}"
-                BorderBrush="{StaticResource BorderSubtle}"
+        <Border x:Name="TopBar" DockPanel.Dock="Top"
+                Background="{DynamicResource BgHeader}"
+                BorderBrush="{DynamicResource BorderSubtle}"
                 BorderThickness="0,0,0,1">
             <StackPanel Spacing="0">
 
                 <!-- Menu strip -->
-                <Border Background="{StaticResource BgHeader}" Padding="0">
+                <Border Background="{DynamicResource BgHeader}" Padding="0">
                     <Menu x:Name="MainMenu" HorizontalAlignment="Stretch">
                         <Menu.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -489,6 +493,36 @@
                                 </MenuItem.Header>
                             </MenuItem>
                             <Separator/>
+                            <!-- Theme selector -->
+                            <MenuItem StaysOpenOnClick="True" Focusable="False">
+                                <MenuItem.Header>
+                                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2">
+                                        <TextBlock x:Name="ThemeLabel" Text="Theme" VerticalAlignment="Center"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                            <Button x:Name="ThemeDarkBtn" Content="Dark" Tag="Dark"
+                                                    Click="OnThemeClick" Padding="6,3" FontSize="11"
+                                                    Background="Transparent" Foreground="{DynamicResource TextLabel}"
+                                                    BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="3"
+                                                    Cursor="Hand" FontFamily="Consolas,Cascadia Code,monospace"/>
+                                            <Button x:Name="ThemeLightBtn" Content="Light" Tag="Light"
+                                                    Click="OnThemeClick" Padding="6,3" FontSize="11"
+                                                    Background="Transparent" Foreground="{DynamicResource TextPrimary}"
+                                                    BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="3"
+                                                    Cursor="Hand" FontFamily="Consolas,Cascadia Code,monospace"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </MenuItem.Header>
+                            </MenuItem>
+                            <!-- Accent color selector -->
+                            <MenuItem StaysOpenOnClick="True" Focusable="False">
+                                <MenuItem.Header>
+                                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2">
+                                        <TextBlock x:Name="AccentLabel" Text="Accent" VerticalAlignment="Center"/>
+                                        <StackPanel x:Name="AccentSwatchPanel" Orientation="Horizontal" Spacing="4"/>
+                                    </StackPanel>
+                                </MenuItem.Header>
+                            </MenuItem>
+                            <Separator/>
                             <MenuItem x:Name="ResetSettingsMenuItem" Header="Reset settings" Click="OnResetSettingsClick"/>
                         </MenuItem>
                         <MenuItem x:Name="FeedbackMenuItem" Header="Feedback" Click="OnFeedbackClick"/>
@@ -503,15 +537,15 @@
                 </Border>
 
                 <!-- Source row -->
-                <Border Background="{StaticResource BgPanel}"
-                        BorderBrush="{StaticResource BorderSubtle}"
+                <Border Background="{DynamicResource BgPanel}"
+                        BorderBrush="{DynamicResource BorderSubtle}"
                         BorderThickness="0,1,0,0"
                         Padding="12,7">
                     <Grid ColumnDefinitions="Auto,*,Auto">
 
                         <!-- SOURCE label -->
                         <TextBlock Grid.Column="0" Text="SOURCE" FontSize="10" FontWeight="SemiBold"
-                                   Foreground="{StaticResource TextSecondary}"
+                                   Foreground="{DynamicResource TextSecondary}"
                                    VerticalAlignment="Top" Margin="0,5,8,0"/>
 
                         <!-- Clip tabs (wrappable) -->
@@ -521,8 +555,8 @@
                             <WrapPanel x:Name="ClipTabsPanel" Orientation="Horizontal">
                                 <Button x:Name="AddClipBtn" Content="+" FontSize="16"
                                         Background="Transparent"
-                                        Foreground="{StaticResource TextSecondary}"
-                                        BorderBrush="{StaticResource BorderSubtle}"
+                                        Foreground="{DynamicResource TextSecondary}"
+                                        BorderBrush="{DynamicResource BorderSubtle}"
                                         BorderThickness="1" Padding="8,2"
                                         MinWidth="28" MinHeight="26"
                                         HorizontalContentAlignment="Center"
@@ -538,15 +572,15 @@
                         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="16"
                                     VerticalAlignment="Top" Margin="8,0,0,0">
                             <StackPanel x:Name="img_start_panel" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                <TextBlock Text="start" FontSize="10" Foreground="{StaticResource TextSecondary}" VerticalAlignment="Center"/>
+                                <TextBlock Text="start" FontSize="10" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"/>
                                 <TextBox x:Name="img_start" Width="60"/>
                             </StackPanel>
                             <StackPanel x:Name="img_end_panel" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                <TextBlock Text="end" FontSize="10" Foreground="{StaticResource TextSecondary}" VerticalAlignment="Center"/>
+                                <TextBlock Text="end" FontSize="10" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"/>
                                 <TextBox x:Name="img_end" Width="60"/>
                             </StackPanel>
                             <StackPanel x:Name="play_speed_panel" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                <TextBlock Text="fps" FontSize="10" Foreground="{StaticResource TextSecondary}" VerticalAlignment="Center"/>
+                                <TextBlock Text="fps" FontSize="10" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"/>
                                 <TextBox x:Name="play_speed" Width="44"/>
                             </StackPanel>
                         </StackPanel>
@@ -566,8 +600,8 @@
 
             <!-- Transport Bar fixée en bas du bloc vidéo -->
             <Border DockPanel.Dock="Bottom"
-                    Background="{StaticResource BgHeader}"
-                    BorderBrush="{StaticResource BorderSubtle}"
+                    Background="{DynamicResource BgHeader}"
+                    BorderBrush="{DynamicResource BorderSubtle}"
                     BorderThickness="0,1,0,0"
                     Padding="16,0,16,16">
                 <StackPanel Spacing="3">
@@ -585,13 +619,13 @@
                                        Text="– / –"
                                        FontFamily="Consolas,Cascadia Code,monospace"
                                        FontSize="11"
-                                       Foreground="{StaticResource TextSecondary}"
+                                       Foreground="{DynamicResource TextSecondary}"
                                        MinWidth="110"/>
                             <TextBlock x:Name="TimeLabel"
                                        Text="–:–– / –:––"
                                        FontFamily="Consolas,Cascadia Code,monospace"
                                        FontSize="11"
-                                       Foreground="{StaticResource TextSecondary}"
+                                       Foreground="{DynamicResource TextSecondary}"
                                        MinWidth="110"/>
                         </StackPanel>
                     </Grid>
@@ -605,33 +639,36 @@
                                 ToolTip.Tip="Beginning  (Ctrl+←)" Click="OnVdbBeginningClick"/>
                         <Button x:Name="VdbPrevFrame" Classes="transport" Content="◀◀"
                                 ToolTip.Tip="Prev frame  (←)" Click="OnVdbPrevFrameClick"/>
-                        <Rectangle Width="1" Height="22" Fill="{StaticResource BorderSubtle}" Margin="4,0"/>
+                        <Rectangle Width="1" Height="22" Fill="{DynamicResource BorderSubtle}" Margin="4,0"/>
                         <Button x:Name="VdbPlay" Classes="transport play" Content="▶"
                                 ToolTip.Tip="Play  (Space)" Click="OnVdbPlayClick"/>
-                        <Rectangle Width="1" Height="22" Fill="{StaticResource BorderSubtle}" Margin="4,0"/>
+                        <Rectangle Width="1" Height="22" Fill="{DynamicResource BorderSubtle}" Margin="4,0"/>
                         <Button x:Name="VdbNextFrame" Classes="transport" Content="▶▶"
                                 ToolTip.Tip="Next frame  (→)" Click="OnVdbNextFrameClick"/>
                         <Button x:Name="VdbEnd" Classes="transport" Content="▶|" FontSize="12"
                                 ToolTip.Tip="End  (Ctrl+→)" Click="OnVdbEndClick"/>
-                        <Rectangle Width="1" Height="22" Fill="{StaticResource BorderSubtle}" Margin="4,0"/>
+                        <Rectangle Width="1" Height="22" Fill="{DynamicResource BorderSubtle}" Margin="4,0"/>
                         <Button x:Name="SpeedBtn" Classes="transport" Content="1x"
                                 FontSize="10" Width="38"
                                 ToolTip.Tip="Playback speed" Click="OnSpeedClick"/>
                         <Button x:Name="HalfResBtn" Classes="transport" Content="½"
                                 FontSize="24" Width="34"
                                 ToolTip.Tip="Half-resolution preview" Click="OnHalfResClick"/>
-                        <Rectangle Width="1" Height="22" Fill="{StaticResource BorderSubtle}" Margin="8,0"/>
+                        <Button x:Name="MaxViewerBtn" Classes="transport" Content="⛶"
+                                FontSize="16" Width="34"
+                                ToolTip.Tip="Maximize viewer (F11)" Click="OnMaxViewerClick"/>
+                        <Rectangle Width="1" Height="22" Fill="{DynamicResource BorderSubtle}" Margin="8,0"/>
                         <ComboBox x:Name="ClipPresetCombo"
                                   MinWidth="130" MaxWidth="220"
                                   FontSize="11" Padding="8,3"
-                                  Background="{StaticResource BgInput}"
-                                  BorderBrush="{StaticResource BorderSubtle}"
-                                  Foreground="{StaticResource TextPrimary}"
+                                  Background="{DynamicResource BgInput}"
+                                  BorderBrush="{DynamicResource BorderSubtle}"
+                                  Foreground="{DynamicResource TextPrimary}"
                                   VerticalAlignment="Center"
                                   PlaceholderText="Preset (ce clip)"
                                   SelectionChanged="OnClipPresetChanged"
                                   ToolTip.Tip="Appliquer un preset uniquement à ce clip"/>
-                        <Rectangle Width="1" Height="22" Fill="{StaticResource BorderSubtle}" Margin="8,0"/>
+                        <Rectangle Width="1" Height="22" Fill="{DynamicResource BorderSubtle}" Margin="8,0"/>
                         <Button x:Name="RecordBtn" Classes="transport" Content="⏺ Record"
                                 FontSize="12" MinWidth="120" Padding="16,4"
                                 ToolTip.Tip="Record" Click="OnRecordClick"/>
@@ -645,7 +682,7 @@
                        Text="&#x25BC;  Glisse ton fichier ici  &#x25BC;"
                        FontSize="17" FontWeight="SemiBold"
                        Foreground="#FFD54F"
-                       Background="{StaticResource BgDeep}"
+                       Background="{DynamicResource BgDeep}"
                        HorizontalAlignment="Center"
                        Padding="16,4"
                        DockPanel.Dock="Top">
@@ -684,16 +721,16 @@
         </DockPanel>
 
         <!-- ── Row 1 : Séparateur redimensionnable (vidéo ↕ panneau bas) ── -->
-        <GridSplitter Grid.Row="1"
+        <GridSplitter x:Name="MainSplitter" Grid.Row="1"
                       ResizeDirection="Rows"
                       HorizontalAlignment="Stretch"
-                      Background="{StaticResource BorderSubtle}"
+                      Background="{DynamicResource BorderSubtle}"
                       Cursor="SizeNorthSouth"/>
 
         <!-- ── Row 2 : OPTIONS / FILTERS / PARAMS ── -->
         <Border x:Name="BottomPanel" Grid.Row="2"
-                Background="{StaticResource BgPanel}"
-                BorderBrush="{StaticResource BorderSubtle}"
+                Background="{DynamicResource BgPanel}"
+                BorderBrush="{DynamicResource BorderSubtle}"
                 BorderThickness="0,1,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -704,8 +741,8 @@
 
                 <!-- ════ COL 0 — OPTIONS + FILTERS (boutons toggle) ════ -->
                 <Border Grid.Column="0"
-                        Background="{StaticResource BgPanel}"
-                        BorderBrush="{StaticResource BorderSubtle}"
+                        Background="{DynamicResource BgPanel}"
+                        BorderBrush="{DynamicResource BorderSubtle}"
                         BorderThickness="0,0,1,0">
                     <ScrollViewer VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled">
@@ -723,7 +760,7 @@
                             </StackPanel>
 
                             <Rectangle DockPanel.Dock="Top"
-                                       Height="1" Fill="{StaticResource BorderSubtle}"
+                                       Height="1" Fill="{DynamicResource BorderSubtle}"
                                        Margin="0,0,0,8"/>
 
                             <!-- FILTERS -->
@@ -786,7 +823,7 @@
                             </StackPanel>
 
                             <Rectangle DockPanel.Dock="Top"
-                                       Height="1" Fill="{StaticResource BorderSubtle}"
+                                       Height="1" Fill="{DynamicResource BorderSubtle}"
                                        Margin="0,8,0,8"/>
 
                             <!-- CUSTOM FILTERS -->
@@ -801,9 +838,9 @@
                                             Padding="0"
                                             HorizontalContentAlignment="Center"
                                             VerticalContentAlignment="Center"
-                                            Background="{StaticResource BgHeader}"
-                                            Foreground="{StaticResource TextPrimary}"
-                                            BorderBrush="{StaticResource BorderSubtle}"
+                                            Background="{DynamicResource BgHeader}"
+                                            Foreground="{DynamicResource TextPrimary}"
+                                            BorderBrush="{DynamicResource BorderSubtle}"
                                             BorderThickness="1"
                                             ToolTip.Tip="Import"
                                             Click="OnImportCustomFilterClick"/>
@@ -814,9 +851,9 @@
                                             Padding="0"
                                             HorizontalContentAlignment="Center"
                                             VerticalContentAlignment="Center"
-                                            Background="{StaticResource BgHeader}"
-                                            Foreground="{StaticResource TextPrimary}"
-                                            BorderBrush="{StaticResource BorderSubtle}"
+                                            Background="{DynamicResource BgHeader}"
+                                            Foreground="{DynamicResource TextPrimary}"
+                                            BorderBrush="{DynamicResource BorderSubtle}"
                                             BorderThickness="1"
                                             Click="OnAddCustomFilterClick"/>
                                 </Grid>
@@ -831,17 +868,17 @@
                 <GridSplitter Grid.Column="1"
                               ResizeDirection="Columns"
                               VerticalAlignment="Stretch"
-                              Background="{StaticResource BorderSubtle}"
+                              Background="{DynamicResource BorderSubtle}"
                               Cursor="SizeWestEast"/>
 
                 <!-- ════ COL 2 — RÉGLAGES des filtres (multi-colonnes) ════ -->
-                <Border Grid.Column="2" Background="{StaticResource BgPanel}">
+                <Border Grid.Column="2" Background="{DynamicResource BgPanel}">
                     <Grid>
                         <TextBlock x:Name="ParamsPlaceholder"
                                    IsVisible="True"
                                    Text="← select a filter"
                                    FontSize="11"
-                                   Foreground="{StaticResource TextSecondary}"
+                                   Foreground="{DynamicResource TextSecondary}"
                                    Opacity="0.4"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center"/>
@@ -852,7 +889,7 @@
 
                                 <!-- ── CROP ── -->
                                 <Border x:Name="CropParams" IsVisible="False"
-                                        BorderBrush="{StaticResource BorderSubtle}" BorderThickness="0,0,1,0"
+                                        BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,0,1,0"
                                         Padding="16,14">
                                     <StackPanel Spacing="6">
                                         <TextBlock Classes="section-title" Text="CROP"/>
@@ -881,7 +918,7 @@
 
                                 <!-- ── DEGRAIN ── -->
                                 <Border x:Name="DegrainParams" IsVisible="False"
-                                        BorderBrush="{StaticResource BorderSubtle}" BorderThickness="0,0,1,0"
+                                        BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,0,1,0"
                                         Padding="16,14">
                                     <StackPanel Spacing="6">
                                         <TextBlock Classes="section-title" Text="DEGRAIN"/>
@@ -933,7 +970,7 @@
 
                                 <!-- ── DENOISE ── -->
                                 <Border x:Name="DenoiseParams" IsVisible="False"
-                                        BorderBrush="{StaticResource BorderSubtle}" BorderThickness="0,0,1,0"
+                                        BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,0,1,0"
                                         Padding="16,14">
                                     <StackPanel Spacing="6">
                                         <TextBlock Classes="section-title" Text="DENOISE"/>
@@ -965,7 +1002,7 @@
 
                                 <!-- ── LUMA LEVELS ── -->
                                 <Border x:Name="LumaParams" IsVisible="False"
-                                        BorderBrush="{StaticResource BorderSubtle}" BorderThickness="0,0,1,0"
+                                        BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,0,1,0"
                                         Padding="16,14">
                                     <StackPanel Spacing="6">
                                         <TextBlock Classes="section-title" Text="LUMA LEVELS"/>
@@ -999,7 +1036,7 @@
 
                                 <!-- ── GAMMAC ── -->
                                 <Border x:Name="GammacParams" IsVisible="False"
-                                        BorderBrush="{StaticResource BorderSubtle}" BorderThickness="0,0,1,0"
+                                        BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,0,1,0"
                                         Padding="16,14">
                                     <StackPanel Spacing="6">
                                         <TextBlock Classes="section-title" Text="GAMMAC"/>
@@ -1072,7 +1109,7 @@
 
                                 <!-- ── SHARPEN ── -->
                                 <Border x:Name="SharpParams" IsVisible="False"
-                                        BorderBrush="{StaticResource BorderSubtle}" BorderThickness="0,0,1,0"
+                                        BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,0,1,0"
                                         Padding="16,14">
                                     <StackPanel Spacing="6">
                                         <TextBlock Classes="section-title" Text="SHARPEN"/>
@@ -1136,12 +1173,12 @@
                                                  Value="0" Height="10" Foreground="#3B82C4"/>
                                 </Grid>
                                 <TextBlock x:Name="RecordProgressText" Text=""
-                                           FontSize="11" Foreground="{StaticResource TextSecondary}"
+                                           FontSize="11" Foreground="{DynamicResource TextSecondary}"
                                            HorizontalAlignment="Center"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="20">
                                 <CheckBox x:Name="ShutdownCheckBox" Content="Shutdown after completion"
-                                          FontSize="11" Foreground="{StaticResource TextSecondary}"
+                                          FontSize="11" Foreground="{DynamicResource TextSecondary}"
                                           VerticalAlignment="Center"/>
                                 <Button x:Name="RecordStartBtn"
                                         Content="▶ Start encoding"
@@ -1162,14 +1199,14 @@
                                             Margin="0,0,0,6">
                                     <TextBlock x:Name="BatchClipListLabel" Text="Clips to encode"
                                                FontSize="12" FontWeight="SemiBold"
-                                               Foreground="{StaticResource TextLabel}"
+                                               Foreground="{DynamicResource TextLabel}"
                                                VerticalAlignment="Center"/>
                                     <CheckBox x:Name="BatchSelectAllCheck" Content="Select all"
-                                              FontSize="11" Foreground="{StaticResource TextSecondary}"
+                                              FontSize="11" Foreground="{DynamicResource TextSecondary}"
                                               VerticalAlignment="Center"
                                               Click="OnBatchSelectAllClick"/>
                                 </StackPanel>
-                                <Border Background="#1A2030" BorderBrush="{StaticResource BorderSubtle}"
+                                <Border Background="#1A2030" BorderBrush="{DynamicResource BorderSubtle}"
                                         BorderThickness="1" CornerRadius="4" Padding="4">
                                     <ScrollViewer>
                                         <StackPanel x:Name="BatchClipList" Spacing="2"/>
@@ -1179,7 +1216,7 @@
 
                             <!-- ══ RIGHT: Encoding settings (preset + params grouped) ══ -->
                             <Border Grid.Column="3"
-                                    Background="#10FFFFFF" BorderBrush="{StaticResource BorderSubtle}"
+                                    Background="#10FFFFFF" BorderBrush="{DynamicResource BorderSubtle}"
                                     BorderThickness="1" CornerRadius="6" Padding="20,8">
                                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel Spacing="10">
@@ -1188,7 +1225,7 @@
                                     <StackPanel Spacing="4">
                                         <TextBlock x:Name="RecordPresetLabel" Text="Preset"
                                                    FontSize="12" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TextLabel}"/>
+                                                   Foreground="{DynamicResource TextLabel}"/>
                                         <Grid ColumnDefinitions="*,6,Auto,6,Auto">
                                             <ComboBox x:Name="RecordPresetCombo" Grid.Column="0"
                                                       FontSize="12" HorizontalAlignment="Stretch"
@@ -1204,15 +1241,15 @@
                                         </Grid>
                                     </StackPanel>
 
-                                    <Border Height="1" Background="{StaticResource BorderSubtle}" Margin="0,2"/>
+                                    <Border Height="1" Background="{DynamicResource BorderSubtle}" Margin="0,2"/>
 
                                     <!-- Output directory -->
                                     <StackPanel Spacing="2">
                                         <StackPanel Orientation="Horizontal" Spacing="4">
                                             <TextBlock x:Name="RecordDirLabel" Text="Output directory"
-                                                       FontSize="12" Foreground="{StaticResource TextLabel}" />
+                                                       FontSize="12" Foreground="{DynamicResource TextLabel}" />
                                             <TextBlock x:Name="RecordDiskSpace" Text=""
-                                                       FontSize="10" Foreground="{StaticResource TextSecondary}"
+                                                       FontSize="10" Foreground="{DynamicResource TextSecondary}"
                                                        VerticalAlignment="Center"/>
                                         </StackPanel>
                                         <Grid ColumnDefinitions="400,6,Auto,4,Auto">
@@ -1234,7 +1271,7 @@
                                     <Grid ColumnDefinitions="*,40,*">
                                         <StackPanel Grid.Column="0" Spacing="2">
                                             <TextBlock x:Name="RecordEncoderLabel" Text="Encoder"
-                                                       FontSize="12" Foreground="{StaticResource TextLabel}"/>
+                                                       FontSize="12" Foreground="{DynamicResource TextLabel}"/>
                                             <ComboBox x:Name="RecordEncoder" FontSize="12"
                                                       HorizontalAlignment="Stretch" SelectedIndex="0">
                                                 <ComboBoxItem Content="x264" Tag="x264"/>
@@ -1248,7 +1285,7 @@
                                         </StackPanel>
                                         <StackPanel Grid.Column="2" Spacing="2">
                                             <TextBlock x:Name="RecordContainerLabel" Text="Container"
-                                                       FontSize="12" Foreground="{StaticResource TextLabel}"/>
+                                                       FontSize="12" Foreground="{DynamicResource TextLabel}"/>
                                             <ComboBox x:Name="RecordContainer" FontSize="12"
                                                       HorizontalAlignment="Stretch" SelectedIndex="0">
                                                 <ComboBoxItem Content="MKV" Tag="mkv"/>
@@ -1263,7 +1300,7 @@
                                     <Grid ColumnDefinitions="*,40,*">
                                         <StackPanel Grid.Column="0" Spacing="2">
                                             <TextBlock x:Name="RecordResizeLabel" Text="Resolution"
-                                                       FontSize="12" Foreground="{StaticResource TextLabel}"/>
+                                                       FontSize="12" Foreground="{DynamicResource TextLabel}"/>
                                             <ComboBox x:Name="RecordResize" FontSize="12"
                                                       HorizontalAlignment="Stretch" SelectedIndex="0">
                                                 <ComboBoxItem Content="Original" Tag="original"/>
@@ -1275,7 +1312,7 @@
                                         </StackPanel>
                                         <StackPanel x:Name="RecordChromaPanel" Grid.Column="2" Spacing="2">
                                             <TextBlock x:Name="RecordChromaLabel" Text="Chroma"
-                                                       FontSize="12" Foreground="{StaticResource TextLabel}"/>
+                                                       FontSize="12" Foreground="{DynamicResource TextLabel}"/>
                                             <ComboBox x:Name="RecordChroma" FontSize="12"
                                                       HorizontalAlignment="Stretch" SelectedIndex="0">
                                                 <ComboBoxItem Content="4:2:0" Tag="yuv420p"/>
@@ -1289,7 +1326,7 @@
                                     <Grid x:Name="RecordQualityPanel" ColumnDefinitions="*,40,*">
                                         <StackPanel Grid.Column="0" Spacing="2">
                                             <TextBlock x:Name="RecordQualityModeLabel" Text="Quality mode"
-                                                       FontSize="12" Foreground="{StaticResource TextLabel}"/>
+                                                       FontSize="12" Foreground="{DynamicResource TextLabel}"/>
                                             <ComboBox x:Name="RecordQualityMode" FontSize="12"
                                                       HorizontalAlignment="Stretch" SelectedIndex="0">
                                                 <ComboBoxItem Content="CRF" Tag="crf"/>
@@ -1298,7 +1335,7 @@
                                         </StackPanel>
                                         <StackPanel x:Name="RecordCrfPanel" Grid.Column="2" Spacing="2">
                                             <TextBlock x:Name="RecordCrfLabel" Text="CRF"
-                                                       FontSize="12" Foreground="{StaticResource TextLabel}"/>
+                                                       FontSize="12" Foreground="{DynamicResource TextLabel}"/>
                                             <Grid ColumnDefinitions="*,6,Auto" Height="28">
                                                 <Slider x:Name="RecordCrfSlider" Grid.Column="0"
                                                         Classes="param-slider"
@@ -1308,7 +1345,7 @@
                                                         Width="200" HorizontalAlignment="Left"/>
                                                 <TextBlock x:Name="RecordCrfValue" Grid.Column="2"
                                                            Text="18" FontSize="12" MinWidth="20"
-                                                           Foreground="{StaticResource TextSecondary}"
+                                                           Foreground="{DynamicResource TextSecondary}"
                                                            HorizontalAlignment="Right"
                                                            VerticalAlignment="Center"/>
                                             </Grid>
@@ -1316,7 +1353,7 @@
                                         <StackPanel x:Name="RecordBitratePanel" Grid.Column="2" Spacing="2"
                                                     IsVisible="False">
                                             <TextBlock x:Name="RecordBitrateLabel" Text="Bitrate (Mb/s)"
-                                                       FontSize="12" Foreground="{StaticResource TextLabel}"/>
+                                                       FontSize="12" Foreground="{DynamicResource TextLabel}"/>
                                             <TextBox x:Name="RecordBitrate" FontSize="12" Height="28"
                                                      Watermark="20"/>
                                         </StackPanel>

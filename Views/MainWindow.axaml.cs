@@ -449,6 +449,7 @@ namespace CleanScan.Views
         private readonly IAviService          _aviService;
         private readonly SessionService      _sessionService;
         private readonly CustomFilterService _customFilterService;
+        private readonly ThemeService        _themeService = new();
         private readonly Debouncer            _refreshDebouncer = new(TimeSpan.FromMilliseconds(400));
         private readonly Debouncer            _windowStateDebouncer = new(TimeSpan.FromMilliseconds(120));
         private readonly SemaphoreSlim        _refreshGate      = new(1, 1);
@@ -538,6 +539,7 @@ namespace CleanScan.Views
             InitializeComponent();
             DataContext = new MainWindowViewModel();
             ConfigureMenuBar();
+            InitTheme();
             PreApplyWindowPosition();
             Opened  += OnOpened;
             Closing += OnClosing;
@@ -846,7 +848,7 @@ namespace CleanScan.Views
             if (this.FindControl<Button>("VdbPlay") is { } btn)
             {
                 btn.Opacity = 1.0;
-                btn.Background = new SolidColorBrush(Color.Parse("#1A2030"));
+                btn.Background = ThemeBrush("BgInput");
             }
         }
 
@@ -1172,6 +1174,7 @@ namespace CleanScan.Views
             ApplyParamTooltips(languageCode);
             ApplyTransportTooltips();
             ApplyRecordLabels();
+            ApplyThemeLabels();
 
 
             if (this.FindControl<TextBlock>("DropHintBar") is { IsVisible: true } dropBar)
@@ -1205,6 +1208,10 @@ namespace CleanScan.Views
                 if (this.FindControl<Button>(controlName) is { } btn)
                     ToolTip.SetTip(btn, GetUiText(textKey));
             }
+
+            // MaxViewerBtn tooltip depends on state
+            if (this.FindControl<Button>("MaxViewerBtn") is { } maxBtn)
+                ToolTip.SetTip(maxBtn, GetUiText(_viewerMaximized ? "RestoreViewerBtn" : "MaxViewerBtn"));
         }
 
         private void ApplyRecordLabels()
@@ -1338,6 +1345,129 @@ namespace CleanScan.Views
         {
             if (this.FindControl<MenuItem>("SettingsMenu") is { } menu)
                 menu.Close();
+        }
+
+        #endregion
+
+        #region Theme
+
+        private void InitTheme()
+        {
+            // Build accent swatch buttons
+            if (this.FindControl<StackPanel>("AccentSwatchPanel") is { } panel)
+            {
+                foreach (var accent in ThemeService.AvailableAccents)
+                {
+                    var color = ThemeService.AccentSwatchColors[accent];
+                    var btn = new Button
+                    {
+                        Tag = accent,
+                        Width = 22,
+                        Height = 22,
+                        Padding = new Thickness(0),
+                        CornerRadius = new CornerRadius(11),
+                        Background = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse(color)),
+                        BorderThickness = new Thickness(2),
+                        BorderBrush = Avalonia.Media.Brushes.Transparent,
+                        Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand),
+                        Content = "",
+                    };
+                    btn.Click += OnAccentClick;
+                    // Custom template: just a colored circle
+                    btn.Template = new Avalonia.Controls.Templates.FuncControlTemplate<Button>((b, _) =>
+                    {
+                        var border = new Border
+                        {
+                            CornerRadius = new CornerRadius(11),
+                            [!Border.BackgroundProperty] = b[!Button.BackgroundProperty],
+                            [!Border.BorderBrushProperty] = b[!Button.BorderBrushProperty],
+                            [!Border.BorderThicknessProperty] = b[!Button.BorderThicknessProperty],
+                        };
+                        return border;
+                    });
+                    panel.Children.Add(btn);
+                }
+            }
+
+            ApplyTheme(_themeService.Theme, _themeService.Accent);
+        }
+
+        private void OnThemeClick(object? sender, RoutedEventArgs e)
+        {
+            if (sender is not Button { Tag: string theme }) return;
+            _themeService.SetTheme(theme);
+            ApplyTheme(theme, _themeService.Accent);
+        }
+
+        private void OnAccentClick(object? sender, RoutedEventArgs e)
+        {
+            if (sender is not Button { Tag: string accent }) return;
+            _themeService.SetAccent(accent);
+            ApplyTheme(_themeService.Theme, accent);
+        }
+
+        private void ApplyTheme(string theme, string accent)
+        {
+            var palette = ThemeService.GetPalette(theme, accent);
+
+            // Update window resources
+            foreach (var (key, hex) in palette)
+                Resources[key] = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse(hex));
+
+            // Update Avalonia theme variant (affects Fluent popup/menu surfaces)
+            var variant = string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase)
+                ? Avalonia.Styling.ThemeVariant.Light
+                : Avalonia.Styling.ThemeVariant.Dark;
+            if (Application.Current is { } app)
+                app.RequestedThemeVariant = variant;
+
+            // Update theme button visual states
+            UpdateThemeButtonStates(theme);
+            UpdateAccentSwatchStates(accent);
+        }
+
+        private void UpdateThemeButtonStates(string theme)
+        {
+            var isDark = string.Equals(theme, "Dark", StringComparison.OrdinalIgnoreCase);
+            if (this.FindControl<Button>("ThemeDarkBtn") is { } darkBtn)
+            {
+                darkBtn.Foreground = isDark ? ThemeBrush("TextLabel") : ThemeBrush("TextPrimary");
+                darkBtn.BorderBrush = isDark ? ThemeBrush("AccentBlue") : ThemeBrush("BorderSubtle");
+            }
+            if (this.FindControl<Button>("ThemeLightBtn") is { } lightBtn)
+            {
+                lightBtn.Foreground = !isDark ? ThemeBrush("TextLabel") : ThemeBrush("TextPrimary");
+                lightBtn.BorderBrush = !isDark ? ThemeBrush("AccentBlue") : ThemeBrush("BorderSubtle");
+            }
+        }
+
+        private void UpdateAccentSwatchStates(string accent)
+        {
+            if (this.FindControl<StackPanel>("AccentSwatchPanel") is not { } panel) return;
+            foreach (var child in panel.Children)
+            {
+                if (child is not Button btn || btn.Tag is not string tag) continue;
+                btn.BorderBrush = string.Equals(tag, accent, StringComparison.OrdinalIgnoreCase)
+                    ? Avalonia.Media.Brushes.White
+                    : Avalonia.Media.Brushes.Transparent;
+            }
+        }
+
+        private SolidColorBrush ThemeBrush(string key) =>
+            Resources.TryGetValue(key, out var val) && val is SolidColorBrush b
+                ? b
+                : new SolidColorBrush(Colors.Magenta);
+
+        private void ApplyThemeLabels()
+        {
+            if (this.FindControl<TextBlock>("ThemeLabel") is { } lbl)
+                lbl.Text = GetUiText("ThemeLabel");
+            if (this.FindControl<TextBlock>("AccentLabel") is { } albl)
+                albl.Text = GetUiText("AccentLabel");
+            if (this.FindControl<Button>("ThemeDarkBtn") is { } darkBtn)
+                darkBtn.Content = GetUiText("ThemeDark");
+            if (this.FindControl<Button>("ThemeLightBtn") is { } lightBtn)
+                lightBtn.Content = GetUiText("ThemeLight");
         }
 
         #endregion
@@ -1553,7 +1683,7 @@ namespace CleanScan.Views
                 _halfRes = true;
                 if (this.FindControl<Button>("HalfResBtn") is { } btn)
                 {
-                    btn.Background = new SolidColorBrush(Color.Parse("#35C156"));
+                    btn.Background = ThemeBrush("AccentGreen");
                     btn.Foreground = Brushes.White;
                 }
             }
@@ -2321,7 +2451,7 @@ namespace CleanScan.Views
                     Background = Brushes.Transparent,
                     Foreground = isActive
                         ? new SolidColorBrush(Color.Parse("#FFFFFFA0"))
-                        : new SolidColorBrush(Color.Parse("#7984A5")),
+                        : ThemeBrush("TextPrimary"),
                     BorderThickness = new Thickness(0),
                     Padding = new Thickness(4, 0, 0, 0),
                     Cursor = new Cursor(StandardCursorType.Hand),
@@ -2342,8 +2472,8 @@ namespace CleanScan.Views
                 var tab = new Border
                 {
                     Background = isActive
-                        ? new SolidColorBrush(Color.Parse("#3B82C4"))
-                        : new SolidColorBrush(Color.Parse("#1A2030")),
+                        ? ThemeBrush("AccentBlue")
+                        : ThemeBrush("BgInput"),
                     BorderBrush = isActive
                         ? new SolidColorBrush(Color.Parse("#4A9AD4"))
                         : new SolidColorBrush(Color.Parse("#3A4660")),
@@ -2830,13 +2960,13 @@ namespace CleanScan.Views
             UpdateToggleButtonPresentation(btn, isEnabled);
         }
 
-        private static void UpdateToggleButtonPresentation(Button btn, bool isEnabled)
+        private void UpdateToggleButtonPresentation(Button btn, bool isEnabled)
         {
             if (btn.Name is { Length: > 0 } n && OptionButtonLabels.TryGetValue(n, out var l))
                 btn.Content = l;
             // else: keep existing Content (e.g. custom filter name set by caller)
 
-            btn.Background  = new SolidColorBrush(Color.Parse(isEnabled ? "#35C156" : "#3B4C64"));
+            btn.Background  = isEnabled ? ThemeBrush("AccentGreen") : new SolidColorBrush(Color.Parse("#3B4C64"));
             btn.BorderBrush = new SolidColorBrush(Color.Parse("#3B4C64"));
             btn.Foreground  = Brushes.White;
         }
@@ -2933,7 +3063,7 @@ namespace CleanScan.Views
                 HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                 VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center,
                 Background = Brushes.Transparent,
-                Foreground = new SolidColorBrush(Color.Parse("#7984A5")),
+                Foreground = ThemeBrush("TextPrimary"),
                 BorderThickness = new Thickness(0)
             };
             editBtn.Click += async (_, _) => await OpenCustomFilterDialog(filter);
@@ -2986,7 +3116,7 @@ namespace CleanScan.Views
             var border = new Border
             {
                 Name = panelName,
-                BorderBrush = new SolidColorBrush(Color.Parse("#252E42")),
+                BorderBrush = ThemeBrush("BorderSubtle"),
                 BorderThickness = new Thickness(0, 0, 1, 0),
                 Padding = new Thickness(16, 14),
                 MinWidth = 200
@@ -3365,16 +3495,66 @@ namespace CleanScan.Views
                 btn.Content = speed < 1.0 ? $"{speed:G}x" : "1x";
         }
 
+        private bool _viewerMaximized;
+        private GridLength _savedBottomPanelRow = new(360);
         private bool _halfRes;
         private void OnHalfResClick(object? sender, RoutedEventArgs e)
         {
             _halfRes = !_halfRes;
             if (this.FindControl<Button>("HalfResBtn") is { } btn)
             {
-                btn.Background = new SolidColorBrush(Color.Parse(_halfRes ? "#35C156" : "#3B4C64"));
+                btn.Background = _halfRes ? ThemeBrush("AccentGreen") : new SolidColorBrush(Color.Parse("#3B4C64"));
                 btn.Foreground = Brushes.White;
             }
             UpdateConfigurationValue("preview_half", _halfRes.ToString().ToLowerInvariant());
+        }
+
+        private void OnMaxViewerClick(object? sender, RoutedEventArgs e) => ToggleViewerMaximized();
+
+        private void ToggleViewerMaximized()
+        {
+            _mainGrid ??= this.FindControl<Grid>("MainGrid");
+            _viewerMaximized = !_viewerMaximized;
+
+            // Hide/show top bar (menu + source row)
+            if (this.FindControl<Border>("TopBar") is { } topBar)
+                topBar.IsVisible = !_viewerMaximized;
+
+            // Hide/show bottom panel (params) + grid splitter
+            if (this.FindControl<Border>("BottomPanel") is { } bottomPanel)
+                bottomPanel.IsVisible = !_viewerMaximized;
+            if (this.FindControl<GridSplitter>("MainSplitter") is { } splitter)
+                splitter.IsVisible = !_viewerMaximized;
+
+            // Adjust grid rows: collapse row 2 (params) when maximized
+            if (_mainGrid is not null && _mainGrid.RowDefinitions.Count >= 3)
+            {
+                if (_viewerMaximized)
+                {
+                    _savedBottomPanelRow = _mainGrid.RowDefinitions[2].Height;
+                    _mainGrid.RowDefinitions[1].Height = new GridLength(0);
+                    _mainGrid.RowDefinitions[2].Height = new GridLength(0);
+                }
+                else
+                {
+                    _mainGrid.RowDefinitions[1].Height = new GridLength(4);
+                    _mainGrid.RowDefinitions[2].Height = _savedBottomPanelRow;
+                }
+            }
+
+            // Update button appearance
+            if (this.FindControl<Button>("MaxViewerBtn") is { } btn)
+            {
+                btn.Content = _viewerMaximized ? "⛶" : "⛶";
+                var tooltipKey = _viewerMaximized ? "RestoreViewerBtn" : "MaxViewerBtn";
+                ToolTip.SetTip(btn, GetUiText(tooltipKey));
+                btn.Background = _viewerMaximized
+                    ? ThemeBrush("AccentGreen")
+                    : ThemeBrush("BgInput");
+                btn.Foreground = _viewerMaximized
+                    ? Brushes.White
+                    : ThemeBrush("TextLabel");
+            }
         }
 
         private bool _isEncoding;
@@ -4416,7 +4596,7 @@ namespace CleanScan.Views
             if (idle)
             {
                 btn.Content = GetUiText("RecordStartBtn");
-                btn.Background = new SolidColorBrush(Color.Parse("#35C156"));
+                btn.Background = ThemeBrush("AccentGreen");
             }
             else
             {
@@ -4626,6 +4806,11 @@ namespace CleanScan.Views
                         _mpvService?.Seek((_totalFrames - 1.0) / _fps);
                     else if (_seekDuration > 0)
                         _mpvService?.Seek(_seekDuration - 0.001);
+                    break;
+
+                case (Key.F11, KeyModifiers.None):
+                    e.Handled = true;
+                    ToggleViewerMaximized();
                     break;
             }
         }
@@ -4975,7 +5160,7 @@ namespace CleanScan.Views
             var titleTb = new TextBlock
             {
                 FontSize   = 18, FontWeight = FontWeight.SemiBold,
-                Foreground = new SolidColorBrush(Color.Parse("#F6F6F6")),
+                Foreground = ThemeBrush("TextLabel"),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Margin = new Thickness(0, 0, 0, 10),
             };
@@ -5013,7 +5198,7 @@ namespace CleanScan.Views
             var prevBtn = new Button
             {
                 MinWidth = 70,
-                Background = new SolidColorBrush(Color.Parse("#252E42")),
+                Background = ThemeBrush("BorderSubtle"),
                 Foreground = new SolidColorBrush(Color.Parse("#CCCCCC")),
                 HorizontalContentAlignment = HorizontalAlignment.Center,
                 Cursor = new Cursor(StandardCursorType.Hand),
