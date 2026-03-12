@@ -3638,7 +3638,7 @@ namespace CleanScan.Views
         {
             if (this.FindControl<ComboBox>("RecordEncoder") is not { } enc) return;
             var tag = (enc.SelectedItem as ComboBoxItem)?.Tag?.ToString();
-            var isImageSeq = tag is "tiff" or "png";
+            var isImageSeq = tag is "tiff" or "png" or "jpg";
             var isLossless = tag is "ffv1" or "utvideo" or "tiff" or "png";
 
             if (this.FindControl<ComboBox>("RecordContainer") is { } cnt)
@@ -4165,13 +4165,97 @@ namespace CleanScan.Views
         private string _lastStderrLine = string.Empty;
         private readonly List<string> _stderrLines = [];
 
+        /// <summary>
+        /// Returns a safe output name for a clip. For image-sequence sources whose filename
+        /// contains '%' (e.g. "%05d.tiff"), the parent directory name is used instead,
+        /// because ffmpeg's image2 muxer applies printf formatting to the entire output path.
+        /// </summary>
+        private static string GetSafeOutputName(string clipPath)
+        {
+            var name = Path.GetFileNameWithoutExtension(clipPath);
+            if (name.Contains('%'))
+            {
+                var parent = Path.GetFileName(Path.GetDirectoryName(clipPath));
+                if (!string.IsNullOrEmpty(parent))
+                    name = parent;
+                else
+                    name = name.Replace("%", "_");
+            }
+            return name;
+        }
+
+        /// <summary>
+        /// Resolves the first real image file from a sequence pattern (e.g. "D:/A3/%05d.tiff").
+        /// </summary>
+        private static string? ResolveFirstImageFile(string sequencePattern)
+        {
+            var dir = Path.GetDirectoryName(sequencePattern);
+            if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir)) return null;
+            var ext = Path.GetExtension(sequencePattern);
+            if (string.IsNullOrEmpty(ext)) return null;
+            return Directory.EnumerateFiles(dir, $"*{ext}", SearchOption.TopDirectoryOnly)
+                .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
+                .FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Checks whether an image file (TIFF or PNG) has an alpha channel by reading its header.
+        /// Seeks to the IFD for TIFF files, since some writers place it at the end of the file.
+        /// </summary>
+        private static bool ImageHasAlpha(string imagePath)
+        {
+            try
+            {
+                using var fs = File.OpenRead(imagePath);
+                var header = new byte[8];
+                if (fs.Read(header, 0, 8) < 8) return false;
+
+                // PNG: signature 89 50 4E 47, color type at byte 25
+                if (header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47)
+                {
+                    fs.Seek(25, SeekOrigin.Begin);
+                    return fs.ReadByte() is 4 or 6; // GreyAlpha or RGBA
+                }
+
+                // TIFF: II (little-endian) or MM (big-endian)
+                bool le = header[0] == 'I' && header[1] == 'I';
+                if (!le && !(header[0] == 'M' && header[1] == 'M')) return false;
+
+                ushort U16(byte[] b, int o) => le
+                    ? (ushort)(b[o] | (b[o + 1] << 8))
+                    : (ushort)((b[o] << 8) | b[o + 1]);
+                uint U32(byte[] b, int o) => le
+                    ? (uint)(b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (b[o + 3] << 24))
+                    : (uint)((b[o] << 24) | (b[o + 1] << 16) | (b[o + 2] << 8) | b[o + 3]);
+
+                // IFD offset — may point to end of file for some TIFF writers / scanners
+                long ifdOffset = U32(header, 4);
+                fs.Seek(ifdOffset, SeekOrigin.Begin);
+
+                var countBuf = new byte[2];
+                if (fs.Read(countBuf, 0, 2) < 2) return false;
+                int entryCount = U16(countBuf, 0);
+
+                var entry = new byte[12];
+                for (int i = 0; i < entryCount; i++)
+                {
+                    if (fs.Read(entry, 0, 12) < 12) return false;
+                    if (U16(entry, 0) == 277) // SamplesPerPixel
+                        return U16(entry, 8) >= 4;
+                }
+                return false;
+            }
+            catch { return false; }
+        }
+
         /// <summary>Builds ffmpeg arguments from encoding values dictionary.</summary>
 #pragma warning disable IDE0028
         private readonly HashSet<string> _usedOutputPaths = new(StringComparer.OrdinalIgnoreCase);
 #pragma warning restore IDE0028
 
         private (string ffArgs, string outputPath)? BuildFfmpegArgs(
-            Dictionary<string, string> encVals, string renderScriptPath, string outputDir, string sourceFileName)
+            Dictionary<string, string> encVals, string renderScriptPath, string outputDir, string sourceFileName,
+            bool sourceHasAlpha = false)
         {
             var encoder   = encVals.GetValueOrDefault("encoder", "x264");
             var container = encVals.GetValueOrDefault("container", "mkv");
@@ -4188,7 +4272,7 @@ namespace CleanScan.Views
                 : needsEvenDim
                     ? "-vf pad=ceil(iw/2)*2:ceil(ih/2)*2"
                     : "";
-            var isImageSeq = encoder is "tiff" or "png";
+            var isImageSeq = encoder is "tiff" or "png" or "jpg";
             // Trial limit applied directly in compiled code (not in script)
             var durationLimit = TrialMaxSeconds > 0 ? $"-t {TrialMaxSeconds}" : "";
             // Use -f avisynth to explicitly tell ffmpeg to use the AviSynth demuxer
@@ -4199,11 +4283,19 @@ namespace CleanScan.Views
 
             if (isImageSeq)
             {
-                var ext = encoder == "tiff" ? "tif" : "png";
+                var ext = encoder switch { "tiff" => "tif", "jpg" => "jpg", _ => "png" };
                 var seqDir = Path.Combine(outputDir, sourceFileName);
                 try { Directory.CreateDirectory(seqDir); } catch { return null; }
                 outputPath = Path.Combine(seqDir, $"%05d.{ext}");
-                ffArgs = $"-progress pipe:2 {inputArgs} {durationLimit} {scaleFilter} \"{outputPath}\"";
+                var pixFmt = sourceHasAlpha ? "rgba" : "rgb24";
+                var imgCodecArgs = encoder switch
+                {
+                    "tiff" => $"-c:v tiff -compression_algo raw -pix_fmt {pixFmt}",
+                    "png"  => $"-c:v png -compression_level 0 -pix_fmt {pixFmt}",
+                    "jpg"  => "-c:v mjpeg -q:v 1 -pix_fmt yuvj444p",
+                    _      => ""
+                };
+                ffArgs = $"-progress pipe:2 {inputArgs} {durationLimit} {scaleFilter} {imgCodecArgs} -y \"{outputPath}\"";
             }
             else
             {
@@ -4364,7 +4456,7 @@ namespace CleanScan.Views
                     if (_encodingCts.IsCancellationRequested) break;
 
                     var clipIndex = jobs[jobIdx];
-                    var sourceFileName = Path.GetFileNameWithoutExtension(_clipPaths[clipIndex]);
+                    var sourceFileName = GetSafeOutputName(_clipPaths[clipIndex]);
                     var batchLabel = string.Format(GetUiText("BatchProgress"), jobIdx + 1, jobs.Count);
                     UpdateRecordProgress(0, $"{batchLabel} — {sourceFileName}");
 
@@ -4378,8 +4470,16 @@ namespace CleanScan.Views
                     }
                     DebugLog($"Render script ready: {renderScriptPath} ({new FileInfo(renderScriptPath).Length} bytes)");
 
+                    // Detect alpha channel on source for image-sequence output
+                    var hasAlpha = false;
+                    if (_sourceService.IsImageSource(_clipPaths[clipIndex]))
+                    {
+                        var firstFile = ResolveFirstImageFile(_sourceService.NormalizeConfiguredPath(_clipPaths[clipIndex]));
+                        if (firstFile is not null) hasAlpha = ImageHasAlpha(firstFile);
+                    }
+
                     // Build ffmpeg args
-                    var result = BuildFfmpegArgs(defaultEncoding, renderScriptPath, dir, sourceFileName);
+                    var result = BuildFfmpegArgs(defaultEncoding, renderScriptPath, dir, sourceFileName, hasAlpha);
                     if (result is null)
                     {
                         errors.Add($"{sourceFileName}: failed to build output path");

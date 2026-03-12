@@ -510,7 +510,7 @@ src_path = src
 src = NOP()
 
 if (use_img) {
-  src = ImageSource(src_path, start=img_start, end=img_end, fps=play_speed, use_DevIL=true, pixel_type="RGB24")
+  src = ImageSource(src_path, start=img_start, end=img_end, fps=play_speed, use_DevIL=true, pixel_type="RGB32")
 } else {
   src = OpenVideoSourceSmart(src_path, force=force_source, show_label=(show_source_used && preview), source_overlay_size=source_label_size)
 }

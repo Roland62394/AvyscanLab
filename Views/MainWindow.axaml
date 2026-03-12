@@ -1283,6 +1283,7 @@
                                                 <ComboBoxItem Content="ProRes" Tag="prores"/>
                                                 <ComboBoxItem Content="TIFF sequence" Tag="tiff"/>
                                                 <ComboBoxItem Content="PNG sequence" Tag="png"/>
+                                                <ComboBoxItem Content="JPEG sequence" Tag="jpg"/>
                                             </ComboBox>
                                         </StackPanel>
                                         <StackPanel Grid.Column="2" Spacing="2">
