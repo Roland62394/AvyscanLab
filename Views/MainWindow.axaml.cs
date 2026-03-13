@@ -1744,7 +1744,9 @@ namespace CleanScan.Views
             var validClips = new List<(ClipSession Clip, int OriginalIndex)>();
             for (int i = 0; i < clips.Count; i++)
             {
-                if (File.Exists(clips[i].Path))
+                var clipPath = clips[i].Path;
+                if (File.Exists(clipPath)
+                    || _sourceService.IsImageSource(clipPath) && Directory.Exists(Path.GetDirectoryName(clipPath)))
                     validClips.Add((clips[i], i));
             }
             if (validClips.Count == 0) return;
