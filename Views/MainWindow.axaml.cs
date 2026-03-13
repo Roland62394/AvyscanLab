@@ -4292,7 +4292,7 @@ namespace CleanScan.Views
                 {
                     "tiff" => $"-c:v tiff -compression_algo raw -pix_fmt {pixFmt}",
                     "png"  => $"-c:v png -compression_level 0 -pix_fmt {pixFmt}",
-                    "jpg"  => "-c:v mjpeg -qmin 2 -qmax 2 -huffman optimal",
+                    "jpg"  => "-c:v mjpeg -q:v 2 -pix_fmt yuvj444p",
                     _      => ""
                 };
                 ffArgs = $"-progress pipe:2 {inputArgs} {durationLimit} {scaleFilter} {imgCodecArgs} -y \"{outputPath}\"";
@@ -4517,7 +4517,13 @@ namespace CleanScan.Views
                             batchLabel);
 
                         await _encodingProcess.WaitForExitAsync(_encodingCts.Token);
-                        await stderrTask;
+                        // Give stderr reader a few seconds to drain after process exits
+                        // (avoids potential hang if pipe doesn't close promptly)
+                        using (var drainCts = new CancellationTokenSource(TimeSpan.FromSeconds(5)))
+                        {
+                            try { await stderrTask.WaitAsync(drainCts.Token); }
+                            catch (OperationCanceledException) { DebugLog("stderr drain timed out (5s)"); }
+                        }
 
                         if (_encodingProcess.ExitCode == 0)
                         {
