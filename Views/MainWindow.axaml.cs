@@ -38,6 +38,7 @@ namespace CleanScan.Views
         private const string EncodingPresetsFileName = "encoding_presets.json";
         private const string SessionFileName         = "session.json";
         private const string CustomFiltersFileName   = "custom_filters.json";
+        private const string DefaultEncodingPresetName = "Default";
 
         /// <summary>Trial: max recording duration per clip in seconds. 0 = unlimited (full version).</summary>
         private const int TrialMaxSeconds = 30;
@@ -2161,6 +2162,7 @@ namespace CleanScan.Views
                         _clipPaths.Add(normalized);
                         _clipConfigs.Add(CaptureClipConfig());
                         _clipPresetNames.Add(null);
+                        _clipOutputNames.Add(null);
                         _clipBatchSelected.Add(true);
                         _clipBatchEncodingPreset.Add(null);
                     }
@@ -2200,6 +2202,7 @@ namespace CleanScan.Views
                         _clipPaths.Add(normalized);
                         _clipConfigs.Add(CaptureClipConfig());
                         _clipPresetNames.Add(null);
+                        _clipOutputNames.Add(null);
                         _clipBatchSelected.Add(true);
                         _clipBatchEncodingPreset.Add(null);
                     }
@@ -2624,6 +2627,7 @@ namespace CleanScan.Views
                     _clipPaths.Add(normalized);
                     _clipConfigs.Add(CaptureClipConfig());
                     _clipPresetNames.Add(null);
+                    _clipOutputNames.Add(null);
                     _clipBatchSelected.Add(true);
                     _clipBatchEncodingPreset.Add(null);
                 }
@@ -3639,7 +3643,11 @@ namespace CleanScan.Views
             RefreshEncodingPresetCombo();
 
             if (this.FindControl<ComboBox>("RecordPresetCombo") is { } presetCombo)
+            {
                 presetCombo.SelectionChanged += OnRecordPresetSelectionChanged;
+                if (presetCombo.SelectedItem is null)
+                    presetCombo.SelectedItem = DefaultEncodingPresetName;
+            }
         }
 
         private void OnRecordPresetSelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -3860,11 +3868,23 @@ namespace CleanScan.Views
         private void RefreshEncodingPresetCombo()
         {
             if (this.FindControl<ComboBox>("RecordPresetCombo") is not { } combo) return;
+            EnsureDefaultEncodingPreset();
             var list = _encodingPresetService.LoadPresets()
-                .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+                .OrderBy(p => string.Equals(p.Name, DefaultEncodingPresetName, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+                .ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
                 .Select(p => p.Name)
                 .ToList();
             combo.ItemsSource = list;
+        }
+
+        private void EnsureDefaultEncodingPreset()
+        {
+            var presets = _encodingPresetService.LoadPresets();
+            if (!presets.Any(p => string.Equals(p.Name, DefaultEncodingPresetName, StringComparison.OrdinalIgnoreCase)))
+            {
+                presets.Insert(0, new Preset(DefaultEncodingPresetName, CaptureEncodingValues()));
+                _encodingPresetService.SavePresets(presets);
+            }
         }
 
         private void OnRecordPresetSaveClick(object? sender, RoutedEventArgs e)
@@ -3916,6 +3936,7 @@ namespace CleanScan.Views
             if (this.FindControl<ComboBox>("RecordPresetCombo") is not { } combo) return;
             var name = combo.SelectedItem?.ToString();
             if (string.IsNullOrWhiteSpace(name)) return;
+            if (string.Equals(name, DefaultEncodingPresetName, StringComparison.OrdinalIgnoreCase)) return;
 
             var presets = _encodingPresetService.LoadPresets();
             presets.RemoveAll(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
@@ -3930,7 +3951,7 @@ namespace CleanScan.Views
             }
             finally { _isLoadingEncodingPreset = false; }
 
-            // Clear per-clip references to deleted preset and refresh batch list
+            // Reset per-clip references to deleted preset back to Default
             for (int i = 0; i < _clipBatchEncodingPreset.Count; i++)
             {
                 if (string.Equals(_clipBatchEncodingPreset[i], name, StringComparison.OrdinalIgnoreCase))
@@ -4086,8 +4107,10 @@ namespace CleanScan.Views
             while (_clipBatchEncodingPreset.Count < _clipPaths.Count) _clipBatchEncodingPreset.Add(null);
 
             var monoFont = new FontFamily("Consolas,Cascadia Code,monospace");
+            EnsureDefaultEncodingPreset();
             var presetNames = _encodingPresetService.LoadPresets()
-                .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+                .OrderBy(p => string.Equals(p.Name, DefaultEncodingPresetName, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+                .ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
                 .Select(p => p.Name)
                 .ToList();
 
@@ -4113,7 +4136,7 @@ namespace CleanScan.Views
                 var nameLabel = new TextBlock
                 {
                     Text = filename,
-                    FontSize = 11,
+                    FontSize = 12,
                     FontFamily = monoFont,
                     Foreground = new SolidColorBrush(Color.Parse("#C8D0E0")),
                     VerticalAlignment = VerticalAlignment.Center,
@@ -4126,7 +4149,7 @@ namespace CleanScan.Views
                     Text = _clipOutputNames[i] ?? "",
                     FontSize = 12,
                     FontFamily = monoFont,
-                    Height = 24,
+                    Height = 28,
                     Padding = new Thickness(4, 2),
                     Foreground = new SolidColorBrush(Color.Parse("#C8D0E0")),
                     VerticalAlignment = VerticalAlignment.Center,
@@ -4141,47 +4164,109 @@ namespace CleanScan.Views
                     }
                 };
 
-                var presetCombo = new ComboBox
-                {
-                    FontSize = 11,
-                    Height = 24,
-                    Padding = new Thickness(4, 0),
-                    VerticalAlignment = VerticalAlignment.Center,
-                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
-                    HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Right,
-                    ItemsSource = presetNames,
-                };
-                // Select current per-clip preset (null = use default from right panel)
+                // Select current per-clip preset (null = Default)
                 var clipPreset = i < _clipBatchEncodingPreset.Count ? _clipBatchEncodingPreset[i] : null;
-                if (clipPreset is not null)
+                var effectivePreset = clipPreset ?? DefaultEncodingPresetName;
+                var selectedPresetName = effectivePreset;
+
+                void SyncRightPanel(string? name)
                 {
-                    var idx = presetNames.IndexOf(clipPreset);
-                    if (idx >= 0) presetCombo.SelectedIndex = idx;
-                }
-                void SyncRightPanel()
-                {
-                    var selectedName = presetCombo.SelectedItem as string;
-                    if (selectedName is null) return;
+                    if (name is null) return;
                     var preset = _encodingPresetService.LoadPresets()
-                        .FirstOrDefault(p => string.Equals(p.Name, selectedName, StringComparison.OrdinalIgnoreCase));
+                        .FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
                     if (preset is null) return;
                     _isLoadingEncodingPreset = true;
                     try
                     {
                         ApplyEncodingValues(preset.Values);
                         if (this.FindControl<ComboBox>("RecordPresetCombo") is { } rpc)
-                            rpc.SelectedItem = selectedName;
+                            rpc.SelectedItem = name;
                     }
                     finally { _isLoadingEncodingPreset = false; }
                 }
 
-                presetCombo.SelectionChanged += (_, _) =>
+                // Preset label inside a Border (entire zone is clickable → sync right panel)
+                var presetLabel = new TextBlock
                 {
-                    if (index < _clipBatchEncodingPreset.Count)
-                        _clipBatchEncodingPreset[index] = presetCombo.SelectedItem as string;
-                    SyncRightPanel();
+                    Text = selectedPresetName,
+                    FontSize = 12,
+                    Foreground = new SolidColorBrush(Color.Parse("#C8D0E0")),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+                    TextTrimming = TextTrimming.CharacterEllipsis,
                 };
-                presetCombo.GotFocus += (_, _) => SyncRightPanel();
+                var presetLabelZone = new Border
+                {
+                    Child = presetLabel,
+                    Background = Brushes.Transparent, // hit-test on entire area
+                    Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand),
+                    Padding = new Thickness(4, 0, 4, 0),
+                    Height = 28,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+                    BorderBrush = new SolidColorBrush(Color.Parse("#3C4558")),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(3, 0, 0, 3),
+                };
+                presetLabelZone.PointerPressed += (_, _) => SyncRightPanel(presetLabel.Text);
+
+                // Dropdown button (▾) with flyout to change preset
+                var dropBtn = new Button
+                {
+                    Content = "▾",
+                    FontSize = 14,
+                    Width = 28,
+                    Height = 28,
+                    Padding = new Thickness(0),
+                    HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                    VerticalContentAlignment = VerticalAlignment.Center,
+                    BorderBrush = new SolidColorBrush(Color.Parse("#3C4558")),
+                    BorderThickness = new Thickness(1, 1, 1, 1),
+                    CornerRadius = new CornerRadius(0, 3, 3, 0),
+                };
+                var flyoutPanel = new StackPanel { Spacing = 0 };
+                var flyout = new Flyout
+                {
+                    Content = flyoutPanel,
+                    Placement = PlacementMode.BottomEdgeAlignedRight,
+                };
+                foreach (var pName in presetNames)
+                {
+                    var itemBtn = new Button
+                    {
+                        Content = pName,
+                        FontSize = 12,
+                        Background = Brushes.Transparent,
+                        BorderThickness = new Thickness(0),
+                        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+                        HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Left,
+                        Padding = new Thickness(8, 4),
+                        Foreground = new SolidColorBrush(Color.Parse("#C8D0E0")),
+                    };
+                    var capturedName = pName;
+                    itemBtn.Click += (_, _) =>
+                    {
+                        presetLabel.Text = capturedName;
+                        if (index < _clipBatchEncodingPreset.Count)
+                            _clipBatchEncodingPreset[index] = capturedName;
+                        SyncRightPanel(capturedName);
+                        flyout.Hide();
+                    };
+                    flyoutPanel.Children.Add(itemBtn);
+                }
+                dropBtn.Flyout = flyout;
+
+                // Container: text + arrow button
+                var presetCell = new Grid
+                {
+                    ColumnDefinitions = ColumnDefinitions.Parse("*,Auto"),
+                    Height = 24,
+                    VerticalAlignment = VerticalAlignment.Center,
+                };
+                presetCell.Children.Add(presetLabelZone);
+                Grid.SetColumn(presetLabelZone, 0);
+                presetCell.Children.Add(dropBtn);
+                Grid.SetColumn(dropBtn, 1);
 
                 var row = new Grid
                 {
@@ -4193,8 +4278,8 @@ namespace CleanScan.Views
                 Grid.SetColumn(nameLabel, 1);
                 row.Children.Add(renameBox);
                 Grid.SetColumn(renameBox, 3);
-                row.Children.Add(presetCombo);
-                Grid.SetColumn(presetCombo, 5);
+                row.Children.Add(presetCell);
+                Grid.SetColumn(presetCell, 5);
 
                 panel.Children.Add(row);
             }
@@ -4634,14 +4719,14 @@ namespace CleanScan.Views
                     var batchLabel = string.Format(GetUiText("BatchProgress"), jobIdx + 1, jobs.Count);
                     UpdateRecordProgress(0, $"{batchLabel} — {sourceFileName}");
 
-                    // Resolve per-clip encoding preset (falls back to right-panel defaults)
+                    // Resolve per-clip encoding preset (falls back to Default preset, then right-panel)
                     var clipEncoding = defaultEncoding;
                     var clipPresetName = clipIndex < _clipBatchEncodingPreset.Count
                         ? _clipBatchEncodingPreset[clipIndex] : null;
-                    if (clipPresetName is not null)
                     {
+                        var effectiveName = clipPresetName ?? DefaultEncodingPresetName;
                         var preset = _encodingPresetService.LoadPresets()
-                            .FirstOrDefault(p => string.Equals(p.Name, clipPresetName, StringComparison.OrdinalIgnoreCase));
+                            .FirstOrDefault(p => string.Equals(p.Name, effectiveName, StringComparison.OrdinalIgnoreCase));
                         if (preset is not null)
                             clipEncoding = new Dictionary<string, string>(preset.Values, StringComparer.OrdinalIgnoreCase);
                     }
