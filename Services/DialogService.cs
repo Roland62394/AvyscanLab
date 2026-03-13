@@ -415,6 +415,26 @@ public sealed class DialogService : IDialogService
             SelectedIndex = 0
         };
 
+        // Bug help text (shown when "Bug report" category is selected)
+        var bugHelpText = new TextBlock
+        {
+            Text = L(
+                "To help fix a bug, your description must be as precise as possible.\nWhat action were you performing, on which window, what result did you expect, what did you get instead.\nAlso describe what type of video files you were processing, which filters were active if relevant, etc.",
+                "Pour permettre la correction d\u2019un bug, votre description doit \u00eatre aussi pr\u00e9cise que possible.\nQuelle action \u00e9tiez-vous en train d\u2019entreprendre, sur quelle fen\u00eatre, \u00e0 quel r\u00e9sultat vous vous attendiez, qu\u2019avez-vous obtenu \u00e0 la place.\nD\u00e9crivez aussi quel type de fichiers vid\u00e9o \u00e9tiez-vous en train de traiter, si besoin quel filtre \u00e9tait actif, etc.",
+                "Um einen Fehler beheben zu k\u00f6nnen, muss Ihre Beschreibung so genau wie m\u00f6glich sein.\nWelche Aktion haben Sie ausgef\u00fchrt, in welchem Fenster, welches Ergebnis haben Sie erwartet, was haben Sie stattdessen erhalten.\nBeschreiben Sie auch, welche Art von Videodateien Sie verarbeitet haben, welche Filter aktiv waren, usw.",
+                "Para poder corregir un error, su descripci\u00f3n debe ser lo m\u00e1s precisa posible.\nQu\u00e9 acci\u00f3n estaba realizando, en qu\u00e9 ventana, qu\u00e9 resultado esperaba, qu\u00e9 obtuvo en su lugar.\nDescriba tambi\u00e9n qu\u00e9 tipo de archivos de v\u00eddeo estaba procesando, qu\u00e9 filtros estaban activos si es relevante, etc."),
+            FontSize = 11, FontFamily = monoFont,
+            Foreground = new SolidColorBrush(Color.Parse("#D4A846")),
+            TextWrapping = TextWrapping.Wrap,
+            IsVisible = true, // Bug is index 0 by default
+            Margin = new Thickness(0, 2, 0, 4)
+        };
+
+        categoryCombo.SelectionChanged += (_, _) =>
+        {
+            bugHelpText.IsVisible = categoryCombo.SelectedIndex == 0;
+        };
+
         // Star rating
         var starButtons = new Button[5];
         var starPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2 };
@@ -485,7 +505,7 @@ public sealed class DialogService : IDialogService
 
         var dialog = new Window
         {
-            Title = L("Feedback", "Retour d'expérience", "Feedback", "Comentarios"),
+            Title = "Contact",
             Width = 480, SizeToContent = SizeToContent.Height,
             Background = new SolidColorBrush(Color.Parse("#0F1319")),
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
@@ -503,12 +523,13 @@ public sealed class DialogService : IDialogService
                         nameBox,
                         MakeLabel(L("Email", "Email", "E-Mail", "Email")),
                         emailBox,
-                        MakeLabel(L("Category", "Catégorie", "Kategorie", "Categoría")),
+                        MakeLabel(L("Category", "Cat\u00e9gorie", "Kategorie", "Categor\u00eda")),
                         categoryCombo,
-                        MakeLabel(L("Rating", "Note", "Bewertung", "Valoración")),
-                        starPanel,
+                        bugHelpText,
                         MakeLabel(L("Message", "Message", "Nachricht", "Mensaje")),
                         messageBox,
+                        MakeLabel(L("Rating", "Note", "Bewertung", "Valoraci\u00f3n")),
+                        starPanel,
                         statusText,
                         new StackPanel
                         {
