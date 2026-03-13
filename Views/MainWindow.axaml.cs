@@ -4253,6 +4253,49 @@ namespace CleanScan.Views
         private readonly HashSet<string> _usedOutputPaths = new(StringComparer.OrdinalIgnoreCase);
 #pragma warning restore IDE0028
 
+        /// <summary>
+        /// Shows an overwrite confirmation dialog. Returns true if user chooses to overwrite.
+        /// </summary>
+        private async Task<bool> AskOverwriteAsync(string displayName)
+        {
+            var result = false;
+            var yesBtn = new Button { Content = GetUiText("OverwriteYes"), HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center };
+            var noBtn  = new Button { Content = GetUiText("OverwriteNo"),  HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center };
+
+            var dialog = new Window
+            {
+                Title = GetUiText("OverwriteConfirmTitle"),
+                SizeToContent = SizeToContent.WidthAndHeight,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Content = new StackPanel
+                {
+                    Margin = new Avalonia.Thickness(16),
+                    Spacing = 12,
+                    Children =
+                    {
+                        new TextBlock
+                        {
+                            Text = string.Format(GetUiText("OverwriteConfirm"), displayName),
+                            TextWrapping = TextWrapping.Wrap,
+                            MaxWidth = 400
+                        },
+                        new StackPanel
+                        {
+                            Orientation = Avalonia.Layout.Orientation.Horizontal,
+                            Spacing = 8,
+                            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                            Children = { yesBtn, noBtn }
+                        }
+                    }
+                }
+            };
+
+            yesBtn.Click += (_, _) => { result = true; dialog.Close(); };
+            noBtn.Click  += (_, _) => dialog.Close();
+            await dialog.ShowDialog(this);
+            return result;
+        }
+
         private (string ffArgs, string outputPath)? BuildFfmpegArgs(
             Dictionary<string, string> encVals, string renderScriptPath, string outputDir, string sourceFileName,
             bool sourceHasAlpha = false)
@@ -4487,6 +4530,23 @@ namespace CleanScan.Views
                     }
 
                     var (ffArgs, outputPath) = result.Value;
+
+                    // Check if output already exists and ask user
+                    var isImgSeq = defaultEncoding.GetValueOrDefault("encoder") is "tiff" or "png" or "jpg";
+                    var outputExists = isImgSeq
+                        ? Directory.Exists(Path.GetDirectoryName(outputPath)) &&
+                          Directory.EnumerateFiles(Path.GetDirectoryName(outputPath)!).Any()
+                        : File.Exists(outputPath);
+
+                    if (outputExists)
+                    {
+                        var displayName = isImgSeq
+                            ? Path.GetFileName(Path.GetDirectoryName(outputPath))!
+                            : Path.GetFileName(outputPath);
+                        if (!await AskOverwriteAsync(displayName))
+                            continue;
+                    }
+
                     _lastStderrLine = string.Empty;
                     _stderrLines.Clear();
                     DebugLog($"ffmpeg: {ffmpegPath} {ffArgs}");
