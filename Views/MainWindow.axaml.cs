@@ -482,6 +482,7 @@ namespace CleanScan.Views
         private readonly List<string> _clipPaths = [];
         private readonly List<Dictionary<string, string>> _clipConfigs = [];
         private readonly List<string?> _clipPresetNames = [];
+        private readonly List<string?> _clipOutputNames = [];
         private bool _applyingPreset;
         private int _activeClipIndex = -1;
 
@@ -1050,6 +1051,11 @@ namespace CleanScan.Views
                 // Restore saved session (clips + per-clip configs)
                 RestoreSessionClips();
 
+                // Rebuild batch clip list now that clips are loaded (RestoreSessionState may
+                // have opened the Record panel before clips were available)
+                if (_recordOpen)
+                    RebuildBatchClipList();
+
                 // Régénère toujours avec la bonne langue au démarrage (indépendamment de la validation source)
                 _scriptService.Generate(_config.Snapshot(), _customFilterService.Filters, ViewModel.CurrentLanguageCode);
             }
@@ -1180,8 +1186,6 @@ namespace CleanScan.Views
                 title.Text = "⏺ " + GetUiText("RecordBtn");
             if (this.FindControl<TextBlock>("RecordDirLabel") is { } dirLbl)
                 dirLbl.Text = GetUiText("RecordDirLabel");
-            if (this.FindControl<TextBlock>("RecordFileLabel") is { } fileLbl)
-                fileLbl.Text = GetUiText("RecordFileLabel");
             if (this.FindControl<TextBlock>("RecordEncoderLabel") is { } encLbl)
                 encLbl.Text = GetUiText("RecordEncoderLabel");
             if (this.FindControl<TextBlock>("RecordContainerLabel") is { } cntLbl)
@@ -1206,6 +1210,16 @@ namespace CleanScan.Views
                 startBtn.Content = GetUiText("RecordStartBtn");
             if (this.FindControl<CheckBox>("ShutdownCheckBox") is { } shutCb)
                 shutCb.Content = GetUiText("ShutdownCheckBox");
+            if (this.FindControl<TextBlock>("BatchClipListLabel") is { } batchLbl)
+                batchLbl.Text = GetUiText("BatchClipListLabel");
+            if (this.FindControl<CheckBox>("BatchSelectAllCheck") is { } allCb)
+                allCb.Content = GetUiText("BatchSelectAll");
+            if (this.FindControl<TextBlock>("BatchColOriginal") is { } colOrig)
+                colOrig.Text = GetUiText("BatchColOriginal");
+            if (this.FindControl<TextBlock>("BatchColRenamed") is { } colRenamed)
+                colRenamed.Text = GetUiText("BatchColRenamed");
+            if (this.FindControl<TextBlock>("BatchColPreset") is { } colPreset)
+                colPreset.Text = GetUiText("BatchColPreset");
         }
 
         private void ApplyParamTooltips(string lang)
@@ -1712,7 +1726,8 @@ namespace CleanScan.Views
                     FilterConfig:       i < _clipConfigs.Count ? _clipConfigs[i] : [],
                     PresetName:         i < _clipPresetNames.Count ? _clipPresetNames[i] : null,
                     BatchSelected:      i < _clipBatchSelected.Count && _clipBatchSelected[i],
-                    BatchEncodingPreset: i < _clipBatchEncodingPreset.Count ? _clipBatchEncodingPreset[i] : null));
+                    BatchEncodingPreset: i < _clipBatchEncodingPreset.Count ? _clipBatchEncodingPreset[i] : null,
+                    OutputName:         i < _clipOutputNames.Count ? _clipOutputNames[i] : null));
             }
 
             var encPresetName = (this.FindControl<ComboBox>("RecordPresetCombo")?.SelectedItem as string)?.Trim();
@@ -1737,6 +1752,7 @@ namespace CleanScan.Views
             _clipPaths.Clear();
             _clipConfigs.Clear();
             _clipPresetNames.Clear();
+            _clipOutputNames.Clear();
             _clipBatchSelected.Clear();
             _clipBatchEncodingPreset.Clear();
 
@@ -1745,6 +1761,7 @@ namespace CleanScan.Views
                 _clipPaths.Add(clip.Path);
                 _clipConfigs.Add(new Dictionary<string, string>(clip.FilterConfig, StringComparer.OrdinalIgnoreCase));
                 _clipPresetNames.Add(clip.PresetName);
+                _clipOutputNames.Add(clip.OutputName);
                 _clipBatchSelected.Add(clip.BatchSelected);
                 _clipBatchEncodingPreset.Add(clip.BatchEncodingPreset);
             }
@@ -2312,11 +2329,13 @@ namespace CleanScan.Views
                 // New clip inherits the current config snapshot (filters, not source/crop)
                 _clipConfigs.Add(CaptureClipConfig());
                 _clipPresetNames.Add(null);
+                _clipOutputNames.Add(null);
                 _clipBatchSelected.Add(true);
                 _clipBatchEncodingPreset.Add(null);
                 _activeClipIndex = _clipPaths.Count - 1;
             }
             RebuildClipTabs();
+            if (_recordOpen) RebuildBatchClipList();
         }
 
         /// <summary>Captures the current filter config (excludes source/crop fields).</summary>
@@ -2530,6 +2549,7 @@ namespace CleanScan.Views
             _clipPaths.RemoveAt(index);
             if (index < _clipConfigs.Count) _clipConfigs.RemoveAt(index);
             if (index < _clipPresetNames.Count) _clipPresetNames.RemoveAt(index);
+            if (index < _clipOutputNames.Count) _clipOutputNames.RemoveAt(index);
             if (index < _clipBatchSelected.Count) _clipBatchSelected.RemoveAt(index);
             if (index < _clipBatchEncodingPreset.Count) _clipBatchEncodingPreset.RemoveAt(index);
 
@@ -2537,6 +2557,7 @@ namespace CleanScan.Views
             {
                 _activeClipIndex = -1;
                 RebuildClipTabs();
+                if (_recordOpen) RebuildBatchClipList();
                 await ApplyDetectedSourceAndRefreshAsync(string.Empty);
                 return;
             }
@@ -2557,6 +2578,8 @@ namespace CleanScan.Views
                     _activeClipIndex--;
                 RebuildClipTabs();
             }
+
+            if (_recordOpen) RebuildBatchClipList();
         }
 
         private async void OnAddClipClick(object? sender, RoutedEventArgs e)
@@ -3869,6 +3892,9 @@ namespace CleanScan.Views
                 combo.SelectedItem = name;
             }
             finally { _isLoadingEncodingPreset = false; }
+
+            // Refresh batch clip list so per-clip preset dropdowns include the new preset
+            if (_recordOpen) RebuildBatchClipList();
         }
 
         private void OnRecordPresetLoadClick(object? sender, RoutedEventArgs e)
@@ -3903,6 +3929,14 @@ namespace CleanScan.Views
                 combo.Text = string.Empty;
             }
             finally { _isLoadingEncodingPreset = false; }
+
+            // Clear per-clip references to deleted preset and refresh batch list
+            for (int i = 0; i < _clipBatchEncodingPreset.Count; i++)
+            {
+                if (string.Equals(_clipBatchEncodingPreset[i], name, StringComparison.OrdinalIgnoreCase))
+                    _clipBatchEncodingPreset[i] = null;
+            }
+            if (_recordOpen) RebuildBatchClipList();
         }
 
         private async void OnEncodingSettingChanged()
@@ -4046,10 +4080,16 @@ namespace CleanScan.Views
             if (this.FindControl<StackPanel>("BatchClipList") is not { } panel) return;
             panel.Children.Clear();
 
-            // Sync batch selection list
+            // Sync lists
             while (_clipBatchSelected.Count < _clipPaths.Count) _clipBatchSelected.Add(true);
+            while (_clipOutputNames.Count < _clipPaths.Count) _clipOutputNames.Add(null);
+            while (_clipBatchEncodingPreset.Count < _clipPaths.Count) _clipBatchEncodingPreset.Add(null);
 
             var monoFont = new FontFamily("Consolas,Cascadia Code,monospace");
+            var presetNames = _encodingPresetService.LoadPresets()
+                .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(p => p.Name)
+                .ToList();
 
             for (int i = 0; i < _clipPaths.Count; i++)
             {
@@ -4057,24 +4097,106 @@ namespace CleanScan.Views
                 var filename = Path.GetFileName(_clipPaths[i]);
                 if (string.IsNullOrWhiteSpace(filename)) filename = _clipPaths[i];
 
-                var presetName = _clipPresetNames.Count > i ? _clipPresetNames[i] : null;
-                var presetSuffix = presetName is not null ? $"  [{presetName}]" : "";
-
                 var cb = new CheckBox
                 {
                     IsChecked = _clipBatchSelected[i],
-                    Content = filename + presetSuffix,
-                    FontSize = 11,
-                    FontFamily = monoFont,
-                    Foreground = new SolidColorBrush(Color.Parse("#C8D0E0")),
-                    VerticalContentAlignment = VerticalAlignment.Center,
+                    MinWidth = 0,
+                    Padding = new Thickness(0),
+                    VerticalAlignment = VerticalAlignment.Center,
                 };
                 cb.Click += (_, _) =>
                 {
                     if (index < _clipBatchSelected.Count)
                         _clipBatchSelected[index] = cb.IsChecked == true;
                 };
-                panel.Children.Add(cb);
+
+                var nameLabel = new TextBlock
+                {
+                    Text = filename,
+                    FontSize = 11,
+                    FontFamily = monoFont,
+                    Foreground = new SolidColorBrush(Color.Parse("#C8D0E0")),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    TextTrimming = TextTrimming.CharacterEllipsis,
+                };
+                ToolTip.SetTip(nameLabel, _clipPaths[i]);
+
+                var renameBox = new TextBox
+                {
+                    Text = _clipOutputNames[i] ?? "",
+                    FontSize = 12,
+                    FontFamily = monoFont,
+                    Height = 24,
+                    Padding = new Thickness(4, 2),
+                    Foreground = new SolidColorBrush(Color.Parse("#C8D0E0")),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+                };
+                renameBox.LostFocus += (_, _) =>
+                {
+                    if (index < _clipOutputNames.Count)
+                    {
+                        var text = renameBox.Text?.Trim();
+                        _clipOutputNames[index] = string.IsNullOrEmpty(text) ? null : text;
+                    }
+                };
+
+                var presetCombo = new ComboBox
+                {
+                    FontSize = 11,
+                    Height = 24,
+                    Padding = new Thickness(4, 0),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+                    HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+                    ItemsSource = presetNames,
+                };
+                // Select current per-clip preset (null = use default from right panel)
+                var clipPreset = i < _clipBatchEncodingPreset.Count ? _clipBatchEncodingPreset[i] : null;
+                if (clipPreset is not null)
+                {
+                    var idx = presetNames.IndexOf(clipPreset);
+                    if (idx >= 0) presetCombo.SelectedIndex = idx;
+                }
+                void SyncRightPanel()
+                {
+                    var selectedName = presetCombo.SelectedItem as string;
+                    if (selectedName is null) return;
+                    var preset = _encodingPresetService.LoadPresets()
+                        .FirstOrDefault(p => string.Equals(p.Name, selectedName, StringComparison.OrdinalIgnoreCase));
+                    if (preset is null) return;
+                    _isLoadingEncodingPreset = true;
+                    try
+                    {
+                        ApplyEncodingValues(preset.Values);
+                        if (this.FindControl<ComboBox>("RecordPresetCombo") is { } rpc)
+                            rpc.SelectedItem = selectedName;
+                    }
+                    finally { _isLoadingEncodingPreset = false; }
+                }
+
+                presetCombo.SelectionChanged += (_, _) =>
+                {
+                    if (index < _clipBatchEncodingPreset.Count)
+                        _clipBatchEncodingPreset[index] = presetCombo.SelectedItem as string;
+                    SyncRightPanel();
+                };
+                presetCombo.GotFocus += (_, _) => SyncRightPanel();
+
+                var row = new Grid
+                {
+                    ColumnDefinitions = ColumnDefinitions.Parse("24,2*,8,2*,8,1.5*"),
+                };
+                row.Children.Add(cb);
+                Grid.SetColumn(cb, 0);
+                row.Children.Add(nameLabel);
+                Grid.SetColumn(nameLabel, 1);
+                row.Children.Add(renameBox);
+                Grid.SetColumn(renameBox, 3);
+                row.Children.Add(presetCombo);
+                Grid.SetColumn(presetCombo, 5);
+
+                panel.Children.Add(row);
             }
 
             // Update localized labels
@@ -4084,6 +4206,12 @@ namespace CleanScan.Views
                 allCb.Content = GetUiText("BatchSelectAll");
             if (this.FindControl<CheckBox>("ShutdownCheckBox") is { } shutCb)
                 shutCb.Content = GetUiText("ShutdownCheckBox");
+            if (this.FindControl<TextBlock>("BatchColOriginal") is { } colOrig)
+                colOrig.Text = GetUiText("BatchColOriginal");
+            if (this.FindControl<TextBlock>("BatchColRenamed") is { } colRenamed)
+                colRenamed.Text = GetUiText("BatchColRenamed");
+            if (this.FindControl<TextBlock>("BatchColPreset") is { } colPreset)
+                colPreset.Text = GetUiText("BatchColPreset");
         }
 
         private void OnBatchSelectAllClick(object? sender, RoutedEventArgs e)
@@ -4499,9 +4627,29 @@ namespace CleanScan.Views
                     if (_encodingCts.IsCancellationRequested) break;
 
                     var clipIndex = jobs[jobIdx];
-                    var sourceFileName = GetSafeOutputName(_clipPaths[clipIndex]);
+                    var customName = clipIndex < _clipOutputNames.Count ? _clipOutputNames[clipIndex] : null;
+                    var sourceFileName = !string.IsNullOrEmpty(customName)
+                        ? customName
+                        : GetSafeOutputName(_clipPaths[clipIndex]);
                     var batchLabel = string.Format(GetUiText("BatchProgress"), jobIdx + 1, jobs.Count);
                     UpdateRecordProgress(0, $"{batchLabel} — {sourceFileName}");
+
+                    // Resolve per-clip encoding preset (falls back to right-panel defaults)
+                    var clipEncoding = defaultEncoding;
+                    var clipPresetName = clipIndex < _clipBatchEncodingPreset.Count
+                        ? _clipBatchEncodingPreset[clipIndex] : null;
+                    if (clipPresetName is not null)
+                    {
+                        var preset = _encodingPresetService.LoadPresets()
+                            .FirstOrDefault(p => string.Equals(p.Name, clipPresetName, StringComparison.OrdinalIgnoreCase));
+                        if (preset is not null)
+                            clipEncoding = new Dictionary<string, string>(preset.Values, StringComparer.OrdinalIgnoreCase);
+                    }
+
+                    // Per-clip output dir: preset may override output_dir, fall back to panel dir
+                    var clipDir = clipEncoding.TryGetValue("output_dir", out var presetDir) && !string.IsNullOrWhiteSpace(presetDir)
+                        ? presetDir : dir;
+                    try { if (!Directory.Exists(clipDir)) Directory.CreateDirectory(clipDir); } catch { }
 
                     // Prepare clip's AVS script
                     var renderScriptPath = PrepareClipForEncoding(clipIndex);
@@ -4522,7 +4670,7 @@ namespace CleanScan.Views
                     }
 
                     // Build ffmpeg args
-                    var result = BuildFfmpegArgs(defaultEncoding, renderScriptPath, dir, sourceFileName, hasAlpha);
+                    var result = BuildFfmpegArgs(clipEncoding, renderScriptPath, clipDir, sourceFileName, hasAlpha);
                     if (result is null)
                     {
                         errors.Add($"{sourceFileName}: failed to build output path");
@@ -4531,8 +4679,28 @@ namespace CleanScan.Views
 
                     var (ffArgs, outputPath) = result.Value;
 
+                    // Safety: prevent output from overwriting the source file
+                    var sourcePath = _clipPaths[clipIndex];
+                    var isImgSeq = clipEncoding.GetValueOrDefault("encoder") is "tiff" or "png" or "jpg";
+                    if (!isImgSeq && string.Equals(Path.GetFullPath(outputPath), Path.GetFullPath(sourcePath), StringComparison.OrdinalIgnoreCase))
+                    {
+                        await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"),
+                            string.Format(GetUiText("OutputSameAsSource"), Path.GetFileName(sourcePath)));
+                        continue;
+                    }
+                    if (isImgSeq)
+                    {
+                        var sourceDir = Path.GetDirectoryName(Path.GetFullPath(sourcePath));
+                        var outputSeqDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+                        if (string.Equals(sourceDir, outputSeqDir, StringComparison.OrdinalIgnoreCase))
+                        {
+                            await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"),
+                                string.Format(GetUiText("OutputSameAsSource"), Path.GetFileName(sourcePath)));
+                            continue;
+                        }
+                    }
+
                     // Check if output already exists and ask user
-                    var isImgSeq = defaultEncoding.GetValueOrDefault("encoder") is "tiff" or "png" or "jpg";
                     var outputExists = isImgSeq
                         ? Directory.Exists(Path.GetDirectoryName(outputPath)) &&
                           Directory.EnumerateFiles(Path.GetDirectoryName(outputPath)!).Any()

@@ -1193,7 +1193,7 @@
                         </StackPanel>
 
                         <!-- ── Main area: two columns (centered, 2/3 width) ── -->
-                        <Grid x:Name="RecordSettingsGrid" ColumnDefinitions="*,2*,20,2*,*" Margin="0,4,0,0">
+                        <Grid x:Name="RecordSettingsGrid" ColumnDefinitions="0.3*,2*,20,2*,0.3*" Margin="0,4,0,0">
 
                             <!-- ══ LEFT: Clip list ══ -->
                             <DockPanel Grid.Column="1">
@@ -1210,9 +1210,28 @@
                                 </StackPanel>
                                 <Border Background="#1A2030" BorderBrush="{DynamicResource BorderSubtle}"
                                         BorderThickness="1" CornerRadius="4" Padding="4">
-                                    <ScrollViewer>
-                                        <StackPanel x:Name="BatchClipList" Spacing="2"/>
-                                    </ScrollViewer>
+                                    <DockPanel>
+                                        <!-- Column headers -->
+                                        <Grid DockPanel.Dock="Top" ColumnDefinitions="24,2*,8,2*,8,1.5*" Margin="0,0,0,4">
+                                            <TextBlock Grid.Column="1" x:Name="BatchColOriginal" Text="Clip"
+                                                       FontSize="10" FontWeight="SemiBold"
+                                                       HorizontalAlignment="Center"
+                                                       Foreground="{DynamicResource TextSecondary}"/>
+                                            <TextBlock Grid.Column="3" x:Name="BatchColRenamed" Text="Renamed"
+                                                       FontSize="10" FontWeight="SemiBold"
+                                                       HorizontalAlignment="Center"
+                                                       Foreground="{DynamicResource TextSecondary}"/>
+                                            <TextBlock Grid.Column="5" x:Name="BatchColPreset" Text="Preset"
+                                                       FontSize="10" FontWeight="SemiBold"
+                                                       HorizontalAlignment="Center"
+                                                       Foreground="{DynamicResource TextSecondary}"/>
+                                        </Grid>
+                                        <Border Height="1" DockPanel.Dock="Top"
+                                                Background="{DynamicResource BorderSubtle}" Margin="0,0,0,4"/>
+                                        <ScrollViewer>
+                                            <StackPanel x:Name="BatchClipList" Spacing="2"/>
+                                        </ScrollViewer>
+                                    </DockPanel>
                                 </Border>
                             </DockPanel>
 
@@ -1228,7 +1247,7 @@
                                         <TextBlock x:Name="RecordPresetLabel" Text="Preset"
                                                    FontSize="12" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextLabel}"/>
-                                        <Grid ColumnDefinitions="*,6,Auto,6,Auto">
+                                        <Grid ColumnDefinitions="*,6,Auto,6,Auto" MaxWidth="320" HorizontalAlignment="Left">
                                             <ComboBox x:Name="RecordPresetCombo" Grid.Column="0"
                                                       FontSize="12" HorizontalAlignment="Stretch"
                                                       IsEditable="True"/>
@@ -1270,7 +1289,7 @@
                                     </StackPanel>
 
                                     <!-- Encoder + Container -->
-                                    <Grid ColumnDefinitions="*,40,*">
+                                    <Grid ColumnDefinitions="3*,20,2*,*">
                                         <StackPanel Grid.Column="0" Spacing="2">
                                             <TextBlock x:Name="RecordEncoderLabel" Text="Encoder"
                                                        FontSize="12" Foreground="{DynamicResource TextLabel}"/>
@@ -1300,7 +1319,7 @@
                                     </Grid>
 
                                     <!-- Resolution + Chroma -->
-                                    <Grid ColumnDefinitions="*,40,*">
+                                    <Grid ColumnDefinitions="3*,20,2*,*">
                                         <StackPanel Grid.Column="0" Spacing="2">
                                             <TextBlock x:Name="RecordResizeLabel" Text="Resolution"
                                                        FontSize="12" Foreground="{DynamicResource TextLabel}"/>
@@ -1326,7 +1345,7 @@
                                     </Grid>
 
                                     <!-- Quality mode + CRF/Bitrate (hidden for lossless) -->
-                                    <Grid x:Name="RecordQualityPanel" ColumnDefinitions="*,40,*">
+                                    <Grid x:Name="RecordQualityPanel" ColumnDefinitions="3*,20,2*,*">
                                         <StackPanel Grid.Column="0" Spacing="2">
                                             <TextBlock x:Name="RecordQualityModeLabel" Text="Quality mode"
                                                        FontSize="12" Foreground="{DynamicResource TextLabel}"/>

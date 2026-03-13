@@ -7,7 +7,8 @@ public sealed record ClipSession(
     Dictionary<string, string> FilterConfig,
     string? PresetName,
     bool BatchSelected,
-    string? BatchEncodingPreset);
+    string? BatchEncodingPreset,
+    string? OutputName = null);
 
 public sealed record SessionState(
     int ActiveClipIndex,
