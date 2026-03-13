@@ -22,12 +22,44 @@ public sealed class DialogService : IDialogService
 
     public async Task ShowErrorAsync(Window owner, string title, string message)
     {
-        var closeButton = new Button { Content = "OK", HorizontalAlignment = HorizontalAlignment.Center };
+        var textBox = new TextBox
+        {
+            Text = message,
+            IsReadOnly = true,
+            AcceptsReturn = true,
+            TextWrapping = TextWrapping.Wrap,
+            MaxHeight = 300,
+            FontFamily = new FontFamily("Consolas, Courier New, monospace"),
+            FontSize = 12,
+        };
+
+        var copyButton  = new Button { Content = "Copier", HorizontalAlignment = HorizontalAlignment.Left, MinWidth = 96 };
+        var closeButton = new Button { Content = "OK", HorizontalAlignment = HorizontalAlignment.Right, MinWidth = 96 };
+
+        copyButton.Click += async (_, _) =>
+        {
+            if (owner.Clipboard is { } clipboard)
+            {
+                await clipboard.SetTextAsync(message);
+                copyButton.Content = "Copié !";
+            }
+        };
+
+        var buttonBar = new DockPanel
+        {
+            Margin = new Thickness(0, 8, 0, 0),
+        };
+        DockPanel.SetDock(copyButton, Dock.Left);
+        DockPanel.SetDock(closeButton, Dock.Right);
+        buttonBar.Children.Add(copyButton);
+        buttonBar.Children.Add(closeButton);
+
         var dialog = BuildSimpleDialog(title, new StackPanel
         {
             Margin = new Thickness(16),
-            Spacing = 12,
-            Children = { new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap }, closeButton }
+            Spacing = 8,
+            Width = 560,
+            Children = { textBox, buttonBar }
         });
         closeButton.Click += (_, _) => dialog.Close();
         await dialog.ShowDialog(owner);

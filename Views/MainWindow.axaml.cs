@@ -716,7 +716,8 @@ namespace CleanScan.Views
                 // (paramètre invalide, plugin manquant, etc.) — pas de fallback vidéo.
                 if (diag.Contains("chargeable", StringComparison.OrdinalIgnoreCase))
                 {
-                    ShowPlayerStatus("Erreur de script AviSynth.\nVérifiez les paramètres des filtres actifs (LockVal, Scale, Th…).");
+                    ShowPlayerStatus("Erreur de script AviSynth");
+                    _ = ShowAvsScriptErrorAsync();
                     return;
                 }
 
@@ -739,6 +740,18 @@ namespace CleanScan.Views
 
             _loadingSourceFallback = false;
             ShowPlayerStatus($"Erreur de lecture : {errorMsg}");
+        }
+
+        private async Task ShowAvsScriptErrorAsync()
+        {
+            var scriptPath = _scriptService.GetPrimaryScriptPath();
+            if (string.IsNullOrWhiteSpace(scriptPath)) return;
+
+            var detail = await ProbeAvsScriptError(scriptPath);
+            var message = !string.IsNullOrWhiteSpace(detail)
+                ? detail
+                : "Erreur inconnue dans le script AviSynth.\nOuvrez le script dans AvsPmod pour diagnostiquer.";
+            await _dialogService.ShowErrorAsync(this, "Erreur AviSynth", message);
         }
 
         private void OnMpvFileLoaded()
@@ -777,6 +790,7 @@ namespace CleanScan.Views
                     bar.Maximum   = (_totalFrames - 1.0) / _fps;
                     bar.IsEnabled = true;
                 }
+
             }
         }
 
@@ -5068,6 +5082,58 @@ namespace CleanScan.Views
             File.WriteAllText(renderPath, content);
             return renderPath;
         }
+
+        /// <summary>
+        /// Runs ffmpeg -i on the .avs script to capture the AviSynth error from stderr.
+        /// Returns the relevant error lines, or empty string if no error detail found.
+        /// </summary>
+        private static async Task<string> ProbeAvsScriptError(string avsPath)
+        {
+            var ffmpeg = FindFfmpeg();
+            if (ffmpeg is null || !File.Exists(avsPath)) return "";
+
+            try
+            {
+                var proc = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = ffmpeg,
+                        Arguments = $"-i \"{avsPath}\" -f null -",
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        RedirectStandardError = true,
+                        RedirectStandardOutput = true,
+                    }
+                };
+                proc.Start();
+
+                var stderr = await proc.StandardError.ReadToEndAsync();
+                await proc.WaitForExitAsync();
+
+                // Extract AviSynth error lines from ffmpeg stderr
+                if (string.IsNullOrWhiteSpace(stderr)) return "";
+
+                var lines = stderr.Split('\n');
+                var errorLines = new List<string>();
+                foreach (var line in lines)
+                {
+                    var trimmed = line.Trim();
+                    if (string.IsNullOrEmpty(trimmed)) continue;
+                    if (trimmed.Contains("avisynth", StringComparison.OrdinalIgnoreCase)
+                     || trimmed.Contains("Script error", StringComparison.OrdinalIgnoreCase)
+                     || trimmed.Contains("autoloading", StringComparison.OrdinalIgnoreCase)
+                     || (trimmed.Contains("Error", StringComparison.OrdinalIgnoreCase)
+                         && !trimmed.StartsWith("frame=", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        errorLines.Add(trimmed);
+                    }
+                }
+                return errorLines.Count > 0 ? string.Join("\n", errorLines) : "";
+            }
+            catch { return ""; }
+        }
+
 
         private static string? FindFfmpeg()
         {

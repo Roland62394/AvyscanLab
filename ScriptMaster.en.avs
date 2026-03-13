@@ -498,6 +498,13 @@ function _BuildPreview(clip src_clip, clip final_clip, int "label_size", bool "a
     src_show = HalfSizeEven(src_show)
     res_show = HalfSizeEven(res_show)
   }
+  # Ensure same height for StackHorizontal (custom filters may crop/resize)
+  sh = Height(src_show)
+  rh = Height(res_show)
+  if (sh != rh) {
+    rw = Even(Width(res_show) * sh / rh)
+    res_show = res_show.Spline36Resize(rw, sh)
+  }
   return StackHorizontal(src_show, res_show)
 }
 

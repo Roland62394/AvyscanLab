@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -50,6 +51,9 @@ public sealed class MpvService : IDisposable
     [DllImport("libmpv-2", CharSet = CharSet.Ansi)]
     private static extern int mpv_set_property_string(nint ctx, string name, string data);
 
+    [DllImport("libmpv-2", CharSet = CharSet.Ansi)]
+    private static extern int mpv_request_log_messages(nint ctx, string min_level);
+
     #endregion
 
     #region Event structures
@@ -78,7 +82,17 @@ public sealed class MpvService : IDisposable
         public int Error;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MpvEventLogMessage
+    {
+        public nint Prefix;   // const char*
+        public nint Level;    // const char*
+        public nint Text;     // const char*
+        public int  LogLevel; // mpv_log_level
+    }
+
     private const int EventShutdown       = 1;
+    private const int EventLogMessage     = 9;
     private const int EventEndFile        = 7;
     private const int EventFileLoaded      = 8;
     private const int EventPlaybackRestart = 21;
@@ -109,9 +123,17 @@ public sealed class MpvService : IDisposable
     private bool                     _disposed;
     private bool                     _expectingShutdown;
     private double                   _duration;
+    private readonly List<string>    _errorLogs = [];
+    private readonly object          _errorLogLock = new();
 
     public bool IsReady => _ctx != 0;
     public double Duration => _duration;
+
+    /// <summary>Returns a snapshot of recent error/warning log messages from mpv.</summary>
+    public string GetLastErrorLogs()
+    {
+        lock (_errorLogLock) { return string.Join("\n", _errorLogs); }
+    }
 
     /// <summary>Fired (on background thread) when mpv shuts down unexpectedly during playback.</summary>
     public event Action? UnexpectedShutdown;
@@ -142,6 +164,8 @@ public sealed class MpvService : IDisposable
             return;
         }
 
+        mpv_request_log_messages(_ctx, "v");
+
         mpv_observe_property(_ctx, 0, "time-pos", FormatDouble);
         mpv_observe_property(_ctx, 0, "duration",  FormatDouble);
         mpv_observe_property(_ctx, 0, "pause",     FormatFlag);
@@ -153,6 +177,7 @@ public sealed class MpvService : IDisposable
     public void LoadFile(string path, double startPos = 0)
     {
         if (_ctx == 0) return;
+        lock (_errorLogLock) { _errorLogs.Clear(); }
         _pendingSeekPos = startPos > 0.5 ? startPos : 0;
         mpv_command(_ctx, ["loadfile", path, null]);
     }
@@ -310,6 +335,32 @@ public sealed class MpvService : IDisposable
                     PlaybackRestart?.Invoke();
                     break;
 
+                case EventLogMessage:
+                    if (ev.Data != 0)
+                    {
+                        try
+                        {
+                            var logMsg = Marshal.PtrToStructure<MpvEventLogMessage>(ev.Data);
+                            var prefix = Marshal.PtrToStringAnsi(logMsg.Prefix) ?? "";
+                            var level  = Marshal.PtrToStringAnsi(logMsg.Level)  ?? "";
+                            var text   = Marshal.PtrToStringAnsi(logMsg.Text)?.Trim() ?? "";
+                            if (!string.IsNullOrEmpty(text))
+                            {
+                                // Keep error/warn messages from any module,
+                                // plus verbose messages that mention script/avisynth keywords
+                                var isError = level is "error" or "fatal" or "warn";
+                                var isRelevant = text.Contains("avisynth", StringComparison.OrdinalIgnoreCase)
+                                              || text.Contains("script", StringComparison.OrdinalIgnoreCase)
+                                              || text.Contains("error", StringComparison.OrdinalIgnoreCase)
+                                              || text.Contains("failed", StringComparison.OrdinalIgnoreCase);
+                                if (isError || isRelevant)
+                                    lock (_errorLogLock) { _errorLogs.Add($"[{prefix}] {text}"); }
+                            }
+                        }
+                        catch { }
+                    }
+                    break;
+
                 case EventEndFile:
                     if (ev.Data != 0)
                     {
@@ -318,8 +369,15 @@ public sealed class MpvService : IDisposable
                             var endFile = Marshal.PtrToStructure<MpvEventEndFile>(ev.Data);
                             if (endFile.Reason == EndFileReasonError)
                             {
-                                var msg = Marshal.PtrToStringAnsi(mpv_error_string(endFile.Error))
+                                string msg;
+                                lock (_errorLogLock)
+                                {
+                                    msg = _errorLogs.Count > 0
+                                        ? string.Join("\n", _errorLogs)
+                                        : Marshal.PtrToStringAnsi(mpv_error_string(endFile.Error))
                                           ?? $"error {endFile.Error}";
+                                    _errorLogs.Clear();
+                                }
                                 LoadFailed?.Invoke(msg);
                                 break;
                             }

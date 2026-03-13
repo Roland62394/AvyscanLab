@@ -83,6 +83,8 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
 
         var contents = BuildContents(File.ReadAllText(templatePath), configValues);
         contents = InjectCustomFilters(contents, customFilters, configValues);
+        // Normalize line endings to \r\n (Windows) for AviSynth compatibility
+        contents = contents.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\r\n");
         foreach (var scriptPath in GetScriptPaths())
         {
             if (string.IsNullOrWhiteSpace(scriptPath)) continue;
@@ -509,6 +511,37 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
     public static string GetCustomFilterConfigKey(string filterId, string placeholder) =>
         $"{CustomFilterConfigPrefix}{filterId}_{placeholder}";
 
+    /// <summary>
+    /// Resolves a DLL name to a full path. If the path is already absolute and exists,
+    /// returns it as-is. Otherwise searches the AviSynth+ plugins64+ folder.
+    /// </summary>
+    private static string ResolveDllPath(string dll)
+    {
+        // Already an absolute path
+        if (Path.IsPathRooted(dll))
+            return dll.Replace('\\', '/');
+
+        // Search in known AviSynth+ plugin directories
+        string[] searchDirs =
+        [
+            @"C:\Program Files (x86)\AviSynth+\plugins64+",
+            @"C:\Program Files\AviSynth+\plugins64+",
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"AviSynth+\plugins64+"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"AviSynth+\plugins64+"),
+        ];
+
+        foreach (var dir in searchDirs)
+        {
+            if (!Directory.Exists(dir)) continue;
+            var candidate = Path.Combine(dir, dll);
+            if (File.Exists(candidate))
+                return candidate.Replace('\\', '/');
+        }
+
+        // Fallback: return as-is (TryLoadPlugin will skip if not found)
+        return dll.Replace('\\', '/');
+    }
+
     internal static string InjectCustomFilters(string scriptContents, IReadOnlyList<CustomFilter>? filters,
         Dictionary<string, string>? configValues = null)
     {
@@ -534,7 +567,7 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
             var sb = new StringBuilder();
             sb.AppendLine("# ── Custom filter plugins ──");
             foreach (var dll in allDlls)
-                sb.AppendLine($"TryLoadPlugin(\"{dll}\")");
+                sb.AppendLine($"TryLoadPlugin(\"{ResolveDllPath(dll)}\")");
             return sb.ToString();
         });
 
