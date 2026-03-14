@@ -164,13 +164,19 @@ namespace CleanScan.ViewModels
                 ["CfDlgExportTitle"] = "Export custom filter",
                 ["CfDlgImportTitle"] = "Import custom filter",
                 ["CfDlgConvertTitle"] = "Convert to control",
-                ["CfDlgConvertPrompt"] = "Convert your selection \"{selection}\" into a UI control \"{{{varName}}}\" accessible from the main interface?",
+                ["CfDlgConvertPrompt"] = "Convert your selection \u201c$selection$\u201d into a UI control \u201c$control$\u201d accessible from the main interface?",
                 ["CfDlgConvertYes"] = "Yes",
                 ["CfDlgConvertNo"] = "No",
                 ["CfDlgConvertDontShow"] = "Don't ask again",
                 ["CfDlgShowInCode"] = "Show in code",
                 ["CfDlgRemoveControl"] = "Remove control and restore value in code",
-                ["CfDlgPreviewTip"] = "Reload the modified script in the player"
+                ["CfDlgPreviewTip"] = "Reload the modified script in the player",
+                ["CfDlgExportTip"] = "Export your filter as JSON to save or share it",
+                ["CfDlgRemoveConfirmTitle"] = "Remove control",
+                ["CfDlgRemoveConfirm"] = "Remove the control $name$ and restore its default value in the code?",
+                ["CfDlgHelp"] = "Help",
+                ["CfDlgHelpTitle"] = "Custom filter \u2014 Help",
+                ["CfDlgHelpBody"] = "WORKFLOW\n1. Write your AviSynth code using 'c' as the clip variable.\n2. Select a line like \"var = value\" with the mouse \u2192 a prompt offers to convert it into a {placeholder} control.\n3. Or type {name} directly in the code to create a placeholder manually.\n\nBUTTONS (per parameter)\n\u2022 \uD83D\uDC41 Eye \u2014 Highlights the {placeholder} in the code editor and scrolls to it.\n\u2022 \u2715 Red X \u2014 Removes the control and replaces {placeholder} with its default value in the code.\n\nFOOTER BUTTONS\n\u2022 Delete \u2014 Permanently deletes this custom filter.\n\u2022 \u2191 Export \u2014 Saves the filter as a JSON file to share or back up.\n\u2022 \u25B6 Preview \u2014 Reloads the modified script in the player without closing the dialog.\n\u2022 Cancel \u2014 Closes without saving changes.\n\u2022 Save \u2014 Saves the filter and closes the dialog."
             },
             ["fr"] = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -328,13 +334,19 @@ namespace CleanScan.ViewModels
                 ["CfDlgExportTitle"] = "Exporter le filtre personnalis\u00e9",
                 ["CfDlgImportTitle"] = "Importer un filtre personnalis\u00e9",
                 ["CfDlgConvertTitle"] = "Convertir en contr\u00f4le",
-                ["CfDlgConvertPrompt"] = "Convertir votre s\u00e9lection \u00ab {selection} \u00bb en un contr\u00f4le \u00ab {{{varName}}} \u00bb pilotable depuis l\u2019interface principale ?",
+                ["CfDlgConvertPrompt"] = "Convertir votre s\u00e9lection \u00ab $selection$ \u00bb en un contr\u00f4le \u00ab $control$ \u00bb pilotable depuis l\u2019interface principale ?",
                 ["CfDlgConvertYes"] = "Oui",
                 ["CfDlgConvertNo"] = "Non",
                 ["CfDlgConvertDontShow"] = "Ne plus demander",
                 ["CfDlgShowInCode"] = "Afficher dans le code",
                 ["CfDlgRemoveControl"] = "Supprimer le contr\u00f4le et restaurer la valeur dans le code",
-                ["CfDlgPreviewTip"] = "Recharger le script modifi\u00e9 dans le lecteur"
+                ["CfDlgPreviewTip"] = "Recharger le script modifi\u00e9 dans le lecteur",
+                ["CfDlgExportTip"] = "Exporter votre filtre au format JSON pour le sauvegarder ou le distribuer",
+                ["CfDlgRemoveConfirmTitle"] = "Supprimer le contr\u00f4le",
+                ["CfDlgRemoveConfirm"] = "Supprimer le contr\u00f4le $name$ et restaurer sa valeur par d\u00e9faut dans le code ?",
+                ["CfDlgHelp"] = "Aide",
+                ["CfDlgHelpTitle"] = "Filtre personnalis\u00e9 \u2014 Aide",
+                ["CfDlgHelpBody"] = "FONCTIONNEMENT\n1. \u00c9crivez votre code AviSynth en utilisant \u00ab c \u00bb comme variable clip.\n2. S\u00e9lectionnez une ligne du type \u00ab var = valeur \u00bb \u00e0 la souris \u2192 une fen\u00eatre propose de la convertir en contr\u00f4le {placeholder}.\n3. Ou tapez {nom} directement dans le code pour cr\u00e9er un placeholder manuellement.\n\nBOUTONS (par param\u00e8tre)\n\u2022 \uD83D\uDC41 \u0152il \u2014 Met en surbrillance le {placeholder} dans l\u2019\u00e9diteur de code et scrolle jusqu\u2019\u00e0 lui.\n\u2022 \u2715 X rouge \u2014 Supprime le contr\u00f4le et remplace {placeholder} par sa valeur par d\u00e9faut dans le code.\n\nBOUTONS DU BAS\n\u2022 Supprimer \u2014 Supprime d\u00e9finitivement ce filtre personnalis\u00e9.\n\u2022 \u2191 Exporter \u2014 Sauvegarde le filtre au format JSON pour le partager ou l\u2019archiver.\n\u2022 \u25B6 Aper\u00e7u \u2014 Recharge le script modifi\u00e9 dans le lecteur sans fermer la fen\u00eatre.\n\u2022 Annuler \u2014 Ferme sans sauvegarder les modifications.\n\u2022 Enregistrer \u2014 Sauvegarde le filtre et ferme la fen\u00eatre."
             },
             ["de"] = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -492,13 +504,19 @@ namespace CleanScan.ViewModels
                 ["CfDlgExportTitle"] = "Benutzerdefinierten Filter exportieren",
                 ["CfDlgImportTitle"] = "Benutzerdefinierten Filter importieren",
                 ["CfDlgConvertTitle"] = "In Steuerelement umwandeln",
-                ["CfDlgConvertPrompt"] = "Ihre Auswahl \u201e{selection}\u201c in ein Steuerelement \u201e{{{varName}}}\u201c f\u00fcr die Hauptoberfl\u00e4che umwandeln?",
+                ["CfDlgConvertPrompt"] = "Ihre Auswahl \u201e$selection$\u201c in ein Steuerelement \u201e$control$\u201c f\u00fcr die Hauptoberfl\u00e4che umwandeln?",
                 ["CfDlgConvertYes"] = "Ja",
                 ["CfDlgConvertNo"] = "Nein",
                 ["CfDlgConvertDontShow"] = "Nicht mehr fragen",
                 ["CfDlgShowInCode"] = "Im Code anzeigen",
                 ["CfDlgRemoveControl"] = "Steuerelement entfernen und Wert im Code wiederherstellen",
-                ["CfDlgPreviewTip"] = "Ge\u00e4ndertes Skript im Player neu laden"
+                ["CfDlgPreviewTip"] = "Ge\u00e4ndertes Skript im Player neu laden",
+                ["CfDlgExportTip"] = "Filter als JSON exportieren zum Speichern oder Weitergeben",
+                ["CfDlgRemoveConfirmTitle"] = "Steuerelement entfernen",
+                ["CfDlgRemoveConfirm"] = "Steuerelement $name$ entfernen und den Standardwert im Code wiederherstellen?",
+                ["CfDlgHelp"] = "Hilfe",
+                ["CfDlgHelpTitle"] = "Benutzerdefinierter Filter \u2014 Hilfe",
+                ["CfDlgHelpBody"] = "ABLAUF\n1. Schreiben Sie Ihren AviSynth-Code mit \u201ec\u201c als Clip-Variable.\n2. W\u00e4hlen Sie eine Zeile wie \u201evar = wert\u201c mit der Maus \u2192 ein Dialog bietet an, sie in ein {Platzhalter}-Steuerelement umzuwandeln.\n3. Oder geben Sie {Name} direkt im Code ein, um manuell einen Platzhalter zu erstellen.\n\nSCHALTFL\u00c4CHEN (pro Parameter)\n\u2022 \uD83D\uDC41 Auge \u2014 Hebt den {Platzhalter} im Code-Editor hervor und scrollt dorthin.\n\u2022 \u2715 Rotes X \u2014 Entfernt das Steuerelement und ersetzt {Platzhalter} durch seinen Standardwert im Code.\n\nFUSSZEILE\n\u2022 L\u00f6schen \u2014 L\u00f6scht diesen benutzerdefinierten Filter dauerhaft.\n\u2022 \u2191 Exportieren \u2014 Speichert den Filter als JSON-Datei zum Teilen oder Sichern.\n\u2022 \u25B6 Vorschau \u2014 L\u00e4dt das ge\u00e4nderte Skript im Player neu, ohne den Dialog zu schlie\u00dfen.\n\u2022 Abbrechen \u2014 Schlie\u00dft ohne \u00c4nderungen zu speichern.\n\u2022 Speichern \u2014 Speichert den Filter und schlie\u00dft den Dialog."
             },
             ["es"] = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -656,13 +674,19 @@ namespace CleanScan.ViewModels
                 ["CfDlgExportTitle"] = "Exportar filtro personalizado",
                 ["CfDlgImportTitle"] = "Importar filtro personalizado",
                 ["CfDlgConvertTitle"] = "Convertir en control",
-                ["CfDlgConvertPrompt"] = "\u00bfConvertir su selecci\u00f3n \u00ab{selection}\u00bb en un control \u00ab{{{varName}}}\u00bb accesible desde la interfaz principal?",
+                ["CfDlgConvertPrompt"] = "\u00bfConvertir su selecci\u00f3n \u00ab$selection$\u00bb en un control \u00ab$control$\u00bb accesible desde la interfaz principal?",
                 ["CfDlgConvertYes"] = "S\u00ed",
                 ["CfDlgConvertNo"] = "No",
                 ["CfDlgConvertDontShow"] = "No volver a preguntar",
                 ["CfDlgShowInCode"] = "Mostrar en el c\u00f3digo",
                 ["CfDlgRemoveControl"] = "Eliminar control y restaurar el valor en el c\u00f3digo",
-                ["CfDlgPreviewTip"] = "Recargar el script modificado en el reproductor"
+                ["CfDlgPreviewTip"] = "Recargar el script modificado en el reproductor",
+                ["CfDlgExportTip"] = "Exportar el filtro en formato JSON para guardarlo o compartirlo",
+                ["CfDlgRemoveConfirmTitle"] = "Eliminar control",
+                ["CfDlgRemoveConfirm"] = "\u00bfEliminar el control $name$ y restaurar su valor predeterminado en el c\u00f3digo?",
+                ["CfDlgHelp"] = "Ayuda",
+                ["CfDlgHelpTitle"] = "Filtro personalizado \u2014 Ayuda",
+                ["CfDlgHelpBody"] = "FLUJO DE TRABAJO\n1. Escriba su c\u00f3digo AviSynth usando \u00abc\u00bb como variable de clip.\n2. Seleccione una l\u00ednea como \u00abvar = valor\u00bb con el rat\u00f3n \u2192 un di\u00e1logo ofrece convertirla en un control {marcador}.\n3. O escriba {nombre} directamente en el c\u00f3digo para crear un marcador manualmente.\n\nBOTONES (por par\u00e1metro)\n\u2022 \uD83D\uDC41 Ojo \u2014 Resalta el {marcador} en el editor de c\u00f3digo y desplaza hasta \u00e9l.\n\u2022 \u2715 X roja \u2014 Elimina el control y reemplaza {marcador} por su valor predeterminado en el c\u00f3digo.\n\nBOTONES INFERIORES\n\u2022 Eliminar \u2014 Elimina permanentemente este filtro personalizado.\n\u2022 \u2191 Exportar \u2014 Guarda el filtro como archivo JSON para compartir o respaldar.\n\u2022 \u25B6 Vista previa \u2014 Recarga el script modificado en el reproductor sin cerrar el di\u00e1logo.\n\u2022 Cancelar \u2014 Cierra sin guardar los cambios.\n\u2022 Guardar \u2014 Guarda el filtro y cierra el di\u00e1logo."
             }
         };
 

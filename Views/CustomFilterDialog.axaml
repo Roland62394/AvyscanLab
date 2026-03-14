@@ -79,8 +79,8 @@
                            <StackPanel Grid.Column="0" Spacing="3">
                                <TextBlock x:Name="FilterNameLabel"
                                           Text="Filter name"
-                                          FontSize="11" FontWeight="SemiBold"
-                                          Foreground="#DBDBDB"/>
+                                          FontSize="13" FontWeight="SemiBold"
+                                          Foreground="#E8E8E8"/>
                                <TextBox x:Name="FilterNameBox"
                                         Watermark="My custom filter"
                                         FontSize="12"
@@ -91,8 +91,8 @@
                            <StackPanel Grid.Column="2" Spacing="3">
                                <TextBlock x:Name="PositionLabel"
                                           Text="Position in pipeline"
-                                          FontSize="11" FontWeight="SemiBold"
-                                          Foreground="#DBDBDB"/>
+                                          FontSize="13" FontWeight="SemiBold"
+                                          Foreground="#E8E8E8"/>
                                <ComboBox x:Name="PositionCombo"
                                          HorizontalAlignment="Stretch"
                                          FontSize="12"/>
@@ -103,8 +103,8 @@
                        <StackPanel Spacing="3">
                            <TextBlock x:Name="PluginsLabel"
                                       Text="Plugins (TryLoadPlugin)"
-                                      FontSize="11" FontWeight="SemiBold"
-                                      Foreground="#DBDBDB"/>
+                                      FontSize="13" FontWeight="SemiBold"
+                                      Foreground="#E8E8E8"/>
                            <StackPanel x:Name="DllListPanel" Spacing="2"/>
                            <Button x:Name="AddDllBtn"
                                    Content="+ Add DLL..."
@@ -129,8 +129,8 @@
                            <StackPanel Grid.Column="0" Spacing="1">
                                <TextBlock x:Name="CodeLabel"
                                           Text="AviSynth code"
-                                          FontSize="11" FontWeight="SemiBold"
-                                          Foreground="#DBDBDB"/>
+                                          FontSize="13" FontWeight="SemiBold"
+                                          Foreground="#E8E8E8"/>
                                <TextBlock x:Name="CodeHint"
                                           Text="Use 'c' as the clip variable, {name} for parameters."
                                           FontSize="10"
@@ -176,8 +176,8 @@
                    <StackPanel Margin="20,8,20,10" Spacing="4">
                        <TextBlock x:Name="ParamsLabel"
                                   Text="Parameters"
-                                  FontSize="11" FontWeight="SemiBold"
-                                  Foreground="#DBDBDB"/>
+                                  FontSize="13" FontWeight="SemiBold"
+                                  Foreground="#E8E8E8"/>
                        <TextBlock x:Name="ParamsHint"
                                   Text="Detected from {placeholders} in code above."
                                   FontSize="10"
@@ -194,7 +194,7 @@
                    BorderBrush="#252E42"
                    BorderThickness="0,1,0,0"
                    Padding="14,10">
-               <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+               <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto">
                    <!-- Delete (left) -->
                    <Button x:Name="DeleteBtn"
                            Grid.Column="0"
@@ -222,8 +222,22 @@
                            HorizontalContentAlignment="Center"
                            VerticalContentAlignment="Center"/>
 
+                   <!-- Help -->
+                   <Button x:Name="HelpBtn"
+                           Grid.Column="2"
+                           Content="? Help"
+                           MinWidth="80" Height="28"
+                           Padding="12,0"
+                           Margin="10,0,0,0"
+                           Classes="dialog-btn"
+                           Foreground="#7984A5"
+                           BorderBrush="#252E42"
+                           BorderThickness="1"
+                           HorizontalContentAlignment="Center"
+                           VerticalContentAlignment="Center"/>
+
                    <!-- Cancel + Save (right) -->
-                   <StackPanel Grid.Column="3"
+                   <StackPanel Grid.Column="4"
                                Orientation="Horizontal"
                                Spacing="10">
                        <Button x:Name="CancelBtn"

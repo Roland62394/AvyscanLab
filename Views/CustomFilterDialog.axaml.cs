@@ -92,6 +92,8 @@ public partial class CustomFilterDialog : Window
         PreviewBtn.Click += (_, _) => OnPreviewClick();
         ToolTip.SetTip(PreviewBtn, L("CfDlgPreviewTip"));
         ExportBtn.Click += async (_, _) => await OnExport();
+        ToolTip.SetTip(ExportBtn, L("CfDlgExportTip"));
+        HelpBtn.Click += async (_, _) => await ShowHelp();
 
         // Hide delete button for new filters (not yet saved)
         DeleteBtn.IsVisible = !isNew;
@@ -136,8 +138,43 @@ public partial class CustomFilterDialog : Window
         ParamsHint.Text = L("CfDlgParamsHint");
         DeleteBtn.Content = L("CfDlgDelete");
         ExportBtn.Content = "\u2191 " + L("CfDlgExport");
+        HelpBtn.Content = "? " + L("CfDlgHelp");
         CancelBtn.Content = L("CfDlgCancel");
         SaveBtn.Content = L("CfDlgSave");
+    }
+
+    private async System.Threading.Tasks.Task ShowHelp()
+    {
+        var okBtn = new Button { Content = "OK", MinWidth = 80, HorizontalAlignment = HorizontalAlignment.Right };
+        var dialog = new Window
+        {
+            Title = L("CfDlgHelpTitle"),
+            Width = 520,
+            SizeToContent = SizeToContent.Height,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            MaxHeight = 600,
+            Content = new Border
+            {
+                Padding = new Thickness(20),
+                Child = new StackPanel
+                {
+                    Spacing = 10,
+                    Children =
+                    {
+                        new TextBlock
+                        {
+                            Text = L("CfDlgHelpBody"),
+                            TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+                            FontSize = 13,
+                            LineHeight = 20
+                        },
+                        okBtn
+                    }
+                }
+            }
+        };
+        okBtn.Click += (_, _) => dialog.Close();
+        await dialog.ShowDialog(this);
     }
 
     private void OnSave()
@@ -306,7 +343,9 @@ public partial class CustomFilterDialog : Window
     {
         var result = ConvertPromptResult.No;
 
-        var msg = L("CfDlgConvertPrompt").Replace("{selection}", selection).Replace("{varName}", varName);
+        var msg = L("CfDlgConvertPrompt")
+            .Replace("$selection$", selection)
+            .Replace("$control$", $"{{{varName}}}");
 
         var yesBtn = new Button
         {
@@ -380,6 +419,38 @@ public partial class CustomFilterDialog : Window
         CodeBox.CaretIndex = idx + token.Length;
         CodeBox.SelectionStart = idx;
         CodeBox.SelectionEnd = idx + token.Length;
+    }
+
+    private async System.Threading.Tasks.Task<bool> ConfirmRemovePlaceholder(string placeholder)
+    {
+        var confirmed = false;
+        var msg = L("CfDlgRemoveConfirm").Replace("$name$", $"{{{placeholder}}}");
+
+        var yesBtn = new Button { Content = L("CfDlgConvertYes"), MinWidth = 80 };
+        var noBtn = new Button { Content = L("CfDlgConvertNo"), MinWidth = 80 };
+
+        var dialog = new Window
+        {
+            Title = L("CfDlgRemoveConfirmTitle"),
+            SizeToContent = SizeToContent.WidthAndHeight,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            MaxWidth = 460,
+            Content = new StackPanel
+            {
+                Margin = new Thickness(20),
+                Spacing = 14,
+                Children =
+                {
+                    new TextBlock { Text = msg, TextWrapping = Avalonia.Media.TextWrapping.Wrap, MaxWidth = 400, FontSize = 13 },
+                    new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 10, Children = { yesBtn, noBtn } }
+                }
+            }
+        };
+
+        yesBtn.Click += (_, _) => { confirmed = true; dialog.Close(); };
+        noBtn.Click += (_, _) => dialog.Close();
+        await dialog.ShowDialog(this);
+        return confirmed;
     }
 
     private void RemovePlaceholderFromCode(CustomFilterControl ctrl)
@@ -469,7 +540,7 @@ public partial class CustomFilterDialog : Window
         {
             Text = $"{{{ctrl.Placeholder}}}",
             FontFamily = new FontFamily("Consolas,Courier New,monospace"),
-            FontSize = 11,
+            FontSize = 12,
             FontWeight = FontWeight.SemiBold,
             Foreground = new SolidColorBrush(Color.Parse("#3B82C4")),
             VerticalAlignment = VerticalAlignment.Center,
@@ -507,7 +578,23 @@ public partial class CustomFilterDialog : Window
             VerticalAlignment = VerticalAlignment.Center
         };
         ToolTip.SetTip(eyeBtn, L("CfDlgShowInCode"));
-        eyeBtn.Click += (_, _) => HighlightPlaceholderInCode(ctrl.Placeholder);
+        eyeBtn.Click += (_, _) =>
+        {
+            // Reset all eye buttons to default style, set this one to green bg + white
+            foreach (var child in ControlsPanel.Children)
+            {
+                if (child is Border b && b.Child is StackPanel sp)
+                    foreach (var c in sp.Children)
+                        if (c is Button btn && btn.Content is string s && s == "\uD83D\uDC41")
+                        {
+                            btn.Background = Brushes.Transparent;
+                            btn.Foreground = new SolidColorBrush(Color.Parse("#7984A5"));
+                        }
+            }
+            eyeBtn.Background = new SolidColorBrush(Color.Parse("#2E8B3D"));
+            eyeBtn.Foreground = Brushes.White;
+            HighlightPlaceholderInCode(ctrl.Placeholder);
+        };
         row.Children.Add(eyeBtn);
 
         // Red X button — remove placeholder, restore default value in code
@@ -525,7 +612,11 @@ public partial class CustomFilterDialog : Window
             VerticalAlignment = VerticalAlignment.Center
         };
         ToolTip.SetTip(removeBtn, L("CfDlgRemoveControl"));
-        removeBtn.Click += (_, _) => RemovePlaceholderFromCode(ctrl);
+        removeBtn.Click += async (_, _) =>
+        {
+            if (await ConfirmRemovePlaceholder(ctrl.Placeholder))
+                RemovePlaceholderFromCode(ctrl);
+        };
         row.Children.Add(removeBtn);
 
         // Type-specific inline fields
@@ -552,8 +643,8 @@ public partial class CustomFilterDialog : Window
     private static TextBlock MakeFieldLabel(string text) => new()
     {
         Text = text,
-        FontSize = 9,
-        Foreground = new SolidColorBrush(Color.Parse("#7984A5")),
+        FontSize = 11,
+        Foreground = new SolidColorBrush(Color.Parse("#9DABC4")),
         VerticalAlignment = VerticalAlignment.Center,
         Margin = new Thickness(0, 0, 2, 0)
     };
@@ -561,13 +652,15 @@ public partial class CustomFilterDialog : Window
     private static TextBox MakeFieldBox(string text, double width) => new()
     {
         Text = text,
-        FontSize = 10,
+        FontSize = 11,
         Width = width,
         Padding = new Thickness(4, 2),
         Background = new SolidColorBrush(Color.Parse("#161B24")),
         Foreground = new SolidColorBrush(Color.Parse("#DBDBDB")),
         BorderBrush = new SolidColorBrush(Color.Parse("#252E42")),
-        VerticalAlignment = VerticalAlignment.Center
+        VerticalAlignment = VerticalAlignment.Center,
+        HorizontalContentAlignment = HorizontalAlignment.Center,
+        VerticalContentAlignment = VerticalAlignment.Center
     };
 
     private void AddInlineSliderFields(StackPanel row, CustomFilterControl ctrl)
