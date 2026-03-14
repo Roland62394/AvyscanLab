@@ -90,6 +90,7 @@ public partial class CustomFilterDialog : Window
         AddDllBtn.Click += async (_, _) => await OnAddDll();
 
         PreviewBtn.Click += (_, _) => OnPreviewClick();
+        ToolTip.SetTip(PreviewBtn, L("CfDlgPreviewTip"));
         ExportBtn.Click += async (_, _) => await OnExport();
 
         // Hide delete button for new filters (not yet saved)
@@ -249,9 +250,9 @@ public partial class CustomFilterDialog : Window
         // Don't offer if this variable is already a placeholder
         if (PlaceholderRegex.IsMatch(rawValue)) return;
 
-        // Build confirmation dialog
-        var selStart = CodeBox.SelectionStart;
-        var selEnd = CodeBox.SelectionEnd;
+        // Build confirmation dialog — normalize selection direction
+        var selStart = Math.Min(CodeBox.SelectionStart, CodeBox.SelectionEnd);
+        var selEnd = Math.Max(CodeBox.SelectionStart, CodeBox.SelectionEnd);
         var displaySel = selected.Trim();
 
         var result = await ShowConvertPrompt(displaySel, varName);
@@ -374,13 +375,11 @@ public partial class CustomFilterDialog : Window
         var idx = code.IndexOf(token, StringComparison.OrdinalIgnoreCase);
         if (idx < 0) return;
 
+        // Set caret first to scroll the TextBox, then apply selection
         CodeBox.Focus();
+        CodeBox.CaretIndex = idx + token.Length;
         CodeBox.SelectionStart = idx;
         CodeBox.SelectionEnd = idx + token.Length;
-
-        // Scroll the TextBox so the selection is visible.
-        // Setting CaretIndex near the selection triggers auto-scroll.
-        CodeBox.CaretIndex = idx;
     }
 
     private void RemovePlaceholderFromCode(CustomFilterControl ctrl)
@@ -497,8 +496,8 @@ public partial class CustomFilterDialog : Window
         var eyeBtn = new Button
         {
             Content = "\uD83D\uDC41",   // 👁
-            FontSize = 12,
-            Width = 26, Height = 26,
+            FontSize = 16,
+            Width = 30, Height = 30,
             Padding = new Thickness(0),
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
@@ -515,8 +514,8 @@ public partial class CustomFilterDialog : Window
         var removeBtn = new Button
         {
             Content = "\u2715",
-            FontSize = 11,
-            Width = 26, Height = 26,
+            FontSize = 15,
+            Width = 30, Height = 30,
             Padding = new Thickness(0),
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,

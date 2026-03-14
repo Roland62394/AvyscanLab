@@ -169,7 +169,8 @@ namespace CleanScan.ViewModels
                 ["CfDlgConvertNo"] = "No",
                 ["CfDlgConvertDontShow"] = "Don't ask again",
                 ["CfDlgShowInCode"] = "Show in code",
-                ["CfDlgRemoveControl"] = "Remove control and restore value in code"
+                ["CfDlgRemoveControl"] = "Remove control and restore value in code",
+                ["CfDlgPreviewTip"] = "Reload the modified script in the player"
             },
             ["fr"] = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -332,7 +333,8 @@ namespace CleanScan.ViewModels
                 ["CfDlgConvertNo"] = "Non",
                 ["CfDlgConvertDontShow"] = "Ne plus demander",
                 ["CfDlgShowInCode"] = "Afficher dans le code",
-                ["CfDlgRemoveControl"] = "Supprimer le contr\u00f4le et restaurer la valeur dans le code"
+                ["CfDlgRemoveControl"] = "Supprimer le contr\u00f4le et restaurer la valeur dans le code",
+                ["CfDlgPreviewTip"] = "Recharger le script modifi\u00e9 dans le lecteur"
             },
             ["de"] = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -495,7 +497,8 @@ namespace CleanScan.ViewModels
                 ["CfDlgConvertNo"] = "Nein",
                 ["CfDlgConvertDontShow"] = "Nicht mehr fragen",
                 ["CfDlgShowInCode"] = "Im Code anzeigen",
-                ["CfDlgRemoveControl"] = "Steuerelement entfernen und Wert im Code wiederherstellen"
+                ["CfDlgRemoveControl"] = "Steuerelement entfernen und Wert im Code wiederherstellen",
+                ["CfDlgPreviewTip"] = "Ge\u00e4ndertes Skript im Player neu laden"
             },
             ["es"] = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -658,7 +661,8 @@ namespace CleanScan.ViewModels
                 ["CfDlgConvertNo"] = "No",
                 ["CfDlgConvertDontShow"] = "No volver a preguntar",
                 ["CfDlgShowInCode"] = "Mostrar en el c\u00f3digo",
-                ["CfDlgRemoveControl"] = "Eliminar control y restaurar el valor en el c\u00f3digo"
+                ["CfDlgRemoveControl"] = "Eliminar control y restaurar el valor en el c\u00f3digo",
+                ["CfDlgPreviewTip"] = "Recargar el script modificado en el reproductor"
             }
         };
 
