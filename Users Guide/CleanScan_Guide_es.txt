@@ -4,7 +4,7 @@
                                 ScanFilm SNC
                                www.scanfilm.ch
 
-                 Version de prueba — pre-release 1.0 - marzo 2026
+                 Version de prueba — release 1.00 - marzo 2026
 
 
 =============================================================================================
