@@ -153,6 +153,7 @@ public sealed class MpvService : IDisposable
         mpv_set_option_string(_ctx, "input-default-bindings", "no");
         mpv_set_option_string(_ctx, "input-vo-keyboard",      "no");
         mpv_set_option_string(_ctx, "keep-open",              "always");
+        mpv_set_option_string(_ctx, "pause",                   "yes");
         mpv_set_option_string(_ctx, "sid",                    "no");
         mpv_set_option_string(_ctx, "framedrop",             "vo");
         mpv_set_option_string(_ctx, "video-sync",            "audio");

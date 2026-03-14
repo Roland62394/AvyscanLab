@@ -31,10 +31,42 @@ public partial class CustomFilterDialog : Window
     /// <summary>Session-level flag: suppress the "convert to control" prompt.</summary>
     private static bool _suppressConvertPrompt;
 
-    // Remember size/position across opens (session-only)
-    private static double? _lastWidth;
-    private static double? _lastHeight;
-    private static PixelPoint? _lastPosition;
+    // Persisted layout for the custom filter dialog
+    private sealed record CfDlgLayout(double? Width, double? Height, int? X, int? Y,
+        double? CodeRowHeight, double? ParamsRowHeight);
+
+    private static CfDlgLayout? _cachedLayout;
+
+    private static string LayoutFilePath => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "CleanScan", "cfdlg-layout.json");
+
+    private static CfDlgLayout? LoadLayout()
+    {
+        if (_cachedLayout is not null) return _cachedLayout;
+        try
+        {
+            if (!File.Exists(LayoutFilePath)) return null;
+            _cachedLayout = System.Text.Json.JsonSerializer.Deserialize<CfDlgLayout>(
+                File.ReadAllText(LayoutFilePath));
+            return _cachedLayout;
+        }
+        catch { return null; }
+    }
+
+    private static void SaveLayout(CfDlgLayout layout)
+    {
+        _cachedLayout = layout;
+        try
+        {
+            var dir = Path.GetDirectoryName(LayoutFilePath);
+            if (!string.IsNullOrWhiteSpace(dir)) Directory.CreateDirectory(dir);
+            File.WriteAllText(LayoutFilePath,
+                System.Text.Json.JsonSerializer.Serialize(layout,
+                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+        }
+        catch { /* best effort */ }
+    }
 
     /// <summary>True if user clicked Save.</summary>
     public bool Saved { get; private set; }
@@ -57,30 +89,48 @@ public partial class CustomFilterDialog : Window
 
         InitializeComponent();
 
-        // Size: restore previous or 80% of owner height
-        if (_lastWidth.HasValue && _lastHeight.HasValue)
+        // Restore persisted size/position/grid
+        var layout = LoadLayout();
+        if (layout is { Width: > 0, Height: > 0 })
         {
-            Width = _lastWidth.Value;
-            Height = _lastHeight.Value;
+            Width = layout.Width.Value;
+            Height = layout.Height.Value;
         }
         else if (ownerHeight > 0)
         {
-            Height = Math.Max(450, ownerHeight * 0.8);
+            Height = Math.Max(500, ownerHeight * 0.8);
         }
 
-        // Position: restore previous
-        if (_lastPosition.HasValue)
+        if (layout is { X: not null, Y: not null })
         {
             WindowStartupLocation = WindowStartupLocation.Manual;
-            Position = _lastPosition.Value;
+            Position = new PixelPoint(layout.X.Value, layout.Y.Value);
         }
 
-        // Save size/position on close
+        // Restore grid splitter row heights (code / params ratio)
+        if (layout is { CodeRowHeight: > 0, ParamsRowHeight: > 0 })
+        {
+            Opened += (_, _) =>
+            {
+                var mainGrid = this.FindControl<Grid>("MainContentGrid");
+                if (mainGrid is null) return;
+                mainGrid.RowDefinitions[1].Height = new GridLength(layout.CodeRowHeight!.Value, GridUnitType.Star);
+                mainGrid.RowDefinitions[3].Height = new GridLength(layout.ParamsRowHeight!.Value, GridUnitType.Star);
+            };
+        }
+
+        // Save everything on close
         Closing += (_, _) =>
         {
-            _lastWidth = Bounds.Width;
-            _lastHeight = Bounds.Height;
-            _lastPosition = Position;
+            double? codeH = null, paramsH = null;
+            var mainGrid = this.FindControl<Grid>("MainContentGrid");
+            if (mainGrid is not null)
+            {
+                codeH = mainGrid.RowDefinitions[1].ActualHeight;
+                paramsH = mainGrid.RowDefinitions[3].ActualHeight;
+            }
+            SaveLayout(new CfDlgLayout(Bounds.Width, Bounds.Height,
+                Position.X, Position.Y, codeH, paramsH));
         };
 
         // Wire events
@@ -536,7 +586,7 @@ public partial class CustomFilterDialog : Window
             Background = new SolidColorBrush(Color.Parse("#0F1319")),
             BorderBrush = new SolidColorBrush(Color.Parse("#252E42")),
             BorderThickness = new Thickness(1),
-            Padding = new Thickness(8, 5),
+            Padding = new Thickness(8, 3),
             CornerRadius = new CornerRadius(3)
         };
 
@@ -552,7 +602,7 @@ public partial class CustomFilterDialog : Window
             FontWeight = FontWeight.SemiBold,
             Foreground = new SolidColorBrush(Color.Parse("#3B82C4")),
             VerticalAlignment = VerticalAlignment.Center,
-            MinWidth = 80
+            MinWidth = 120
         });
 
         // Type selector

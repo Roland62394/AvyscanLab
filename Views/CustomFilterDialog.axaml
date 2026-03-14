@@ -1,10 +1,10 @@
 <Window xmlns="https://github.com/avaloniaui"
        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
        x:Class="CleanScan.Views.CustomFilterDialog"
-       Width="780"
-       Height="620"
-       MinWidth="600"
-       MinHeight="450"
+       Width="850"
+       Height="800"
+       MinWidth="650"
+       MinHeight="500"
        CanResize="True"
        WindowStartupLocation="CenterOwner"
        SystemDecorations="BorderOnly"
@@ -65,7 +65,7 @@
            </Border>
 
            <!-- Main content: code (3*) + splitter + params (2*) -->
-           <Grid Grid.Row="1" RowDefinitions="Auto,3*,4,2*">
+           <Grid x:Name="MainContentGrid" Grid.Row="1" RowDefinitions="Auto,3*,4,2*">
 
                <!-- Top section: Name, Position, DLLs -->
                <ScrollViewer Grid.Row="0"
@@ -191,7 +191,7 @@
                <ScrollViewer Grid.Row="3"
                              VerticalScrollBarVisibility="Auto"
                              HorizontalScrollBarVisibility="Disabled">
-                   <StackPanel Margin="20,8,20,10" Spacing="4">
+                   <StackPanel Margin="20,8,20,10" Spacing="2">
                        <TextBlock x:Name="ParamsLabel"
                                   Text="Parameters"
                                   FontSize="13" FontWeight="SemiBold"
