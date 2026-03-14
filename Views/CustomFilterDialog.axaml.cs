@@ -21,6 +21,7 @@ public partial class CustomFilterDialog : Window
 {
     private readonly CustomFilter _filter;
     private readonly List<string> _dlls;
+    private readonly List<string> _scripts;
     private readonly List<CustomFilterControl> _controls;
     private readonly MainWindowViewModel? _vm;
 
@@ -50,6 +51,7 @@ public partial class CustomFilterDialog : Window
     {
         _filter = filter;
         _dlls = [..filter.Dlls];
+        _scripts = [..filter.Scripts];
         _controls = filter.Controls.Select(CloneControl).ToList();
         _vm = vm;
 
@@ -88,6 +90,7 @@ public partial class CustomFilterDialog : Window
         SaveBtn.Click += (_, _) => OnSave();
         DeleteBtn.Click += (_, _) => OnDelete();
         AddDllBtn.Click += async (_, _) => await OnAddDll();
+        AddScriptBtn.Click += async (_, _) => await OnAddScript();
 
         PreviewBtn.Click += (_, _) => OnPreviewClick();
         ToolTip.SetTip(PreviewBtn, L("CfDlgPreviewTip"));
@@ -106,6 +109,7 @@ public partial class CustomFilterDialog : Window
         PositionCombo.SelectedItem = filter.Position;
 
         RebuildDllList();
+        RebuildScriptList();
 
         // Set code BEFORE wiring TextChanged to avoid wiping _controls
         CodeBox.Text = filter.Code;
@@ -131,6 +135,8 @@ public partial class CustomFilterDialog : Window
         PositionLabel.Text = L("CfDlgPosition");
         PluginsLabel.Text = L("CfDlgPlugins");
         AddDllBtn.Content = L("CfDlgAddDll");
+        ScriptsLabel.Text = L("CfDlgScripts");
+        AddScriptBtn.Content = L("CfDlgAddScript");
         CodeLabel.Text = L("CfDlgCode");
         CodeHint.Text = L("CfDlgCodeHint");
         PreviewBtn.Content = "\u25B6 " + L("CfDlgPreview");
@@ -184,6 +190,7 @@ public partial class CustomFilterDialog : Window
             : FilterNameBox.Text.Trim();
         _filter.Position = PositionCombo.SelectedItem as string ?? "AfterSharpen";
         _filter.Dlls = [.._dlls];
+        _filter.Scripts = [.._scripts];
         _filter.Code = CodeBox.Text ?? "";
         _filter.Controls = _controls.Select(CloneControl).ToList();
 
@@ -202,6 +209,7 @@ public partial class CustomFilterDialog : Window
         // Apply current form state to filter temporarily for preview
         _filter.Code = CodeBox.Text ?? "";
         _filter.Dlls = [.._dlls];
+        _filter.Scripts = [.._scripts];
         _filter.Position = PositionCombo.SelectedItem as string ?? "AfterSharpen";
         _filter.Controls = _controls.Select(CloneControl).ToList();
 
@@ -806,6 +814,89 @@ public partial class CustomFilterDialog : Window
             row.Children.Add(delBtn);
 
             DllListPanel.Children.Add(row);
+        }
+    }
+
+    private async System.Threading.Tasks.Task OnAddScript()
+    {
+        var picker = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = L("CfDlgPickScript"),
+            AllowMultiple = true,
+            FileTypeFilter = [new FilePickerFileType("AviSynth Script") { Patterns = ["*.avsi", "*.avs"] }]
+        });
+
+        if (picker.Count == 0) return;
+
+        // Copy selected scripts to Plugins/Scripts/ and store the filename only
+        var scriptsDir = Path.Combine(
+            Path.GetDirectoryName(Environment.ProcessPath) ?? ".",
+            "Plugins", "Scripts");
+        Directory.CreateDirectory(scriptsDir);
+
+        foreach (var file in picker)
+        {
+            var srcPath = file.Path.LocalPath;
+            var fileName = Path.GetFileName(srcPath);
+            var destPath = Path.Combine(scriptsDir, fileName);
+
+            // Copy if not already there or if source is newer
+            if (!File.Exists(destPath)
+             || File.GetLastWriteTimeUtc(srcPath) > File.GetLastWriteTimeUtc(destPath))
+                File.Copy(srcPath, destPath, overwrite: true);
+
+            // Store just the filename (resolved at script generation time)
+            if (!_scripts.Contains(fileName, StringComparer.OrdinalIgnoreCase))
+                _scripts.Add(fileName);
+        }
+        RebuildScriptList();
+    }
+
+    private void RebuildScriptList()
+    {
+        ScriptListPanel.Children.Clear();
+
+        for (var i = 0; i < _scripts.Count; i++)
+        {
+            var idx = i;
+            var row = new Grid
+            {
+                ColumnDefinitions = ColumnDefinitions.Parse("*,6,28"),
+            };
+
+            var pathBox = new TextBox
+            {
+                Text = _scripts[idx],
+                FontSize = 11,
+                IsReadOnly = true,
+                Background = new SolidColorBrush(Color.Parse("#0F1319")),
+                Foreground = new SolidColorBrush(Color.Parse("#7984A5")),
+                BorderBrush = new SolidColorBrush(Color.Parse("#252E42"))
+            };
+            Grid.SetColumn(pathBox, 0);
+            row.Children.Add(pathBox);
+
+            var delBtn = new Button
+            {
+                Content = "\u2715",
+                FontSize = 10,
+                Width = 28, Height = 28,
+                Padding = new Thickness(0),
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                VerticalContentAlignment = VerticalAlignment.Center,
+                Background = Brushes.Transparent,
+                Foreground = new SolidColorBrush(Color.Parse("#7984A5")),
+                BorderThickness = new Thickness(0)
+            };
+            delBtn.Click += (_, _) =>
+            {
+                _scripts.RemoveAt(idx);
+                RebuildScriptList();
+            };
+            Grid.SetColumn(delBtn, 2);
+            row.Children.Add(delBtn);
+
+            ScriptListPanel.Children.Add(row);
         }
     }
 

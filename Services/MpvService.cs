@@ -285,13 +285,17 @@ public sealed class MpvService : IDisposable
         _expectingShutdown = true;
         _cts?.Cancel();
 
+        // Wait for EventLoop to exit BEFORE destroying the mpv context,
+        // otherwise mpv_wait_event may be called on a destroyed handle
+        // → ExecutionEngineException / access violation.
+        try { _eventTask?.Wait(TimeSpan.FromSeconds(2)); } catch { }
+        _eventTask = null;
+
         var ctx = _ctx;
         _ctx = 0;
         if (ctx != 0)
             mpv_terminate_destroy(ctx);
 
-        _eventTask?.Wait(TimeSpan.FromSeconds(2));
-        _eventTask = null;
         _cts?.Dispose();
         _cts = null;
     }

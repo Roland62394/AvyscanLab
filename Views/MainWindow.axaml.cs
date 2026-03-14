@@ -2250,13 +2250,23 @@ namespace CleanScan.Views
         private async void OnPlayerFilesDropped(List<string> paths)
         {
             if (_isDroppingFiles) return;
-            var valid = paths.Where(p =>
+            var valid = new List<string>();
+            foreach (var p in paths)
             {
+                // Directory dropped → find first image inside
+                if (Directory.Exists(p))
+                {
+                    var firstImage = FindFirstImageInDirectory(p);
+                    if (firstImage is not null)
+                        valid.Add(firstImage);
+                    continue;
+                }
                 var ext = Path.GetExtension(p);
-                return !string.IsNullOrWhiteSpace(ext) &&
-                       (VideoExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase) ||
-                        ImageExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase));
-            }).ToList();
+                if (!string.IsNullOrWhiteSpace(ext) &&
+                    (VideoExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase) ||
+                     ImageExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase)))
+                    valid.Add(p);
+            }
 
             if (valid.Count == 0) return;
 
@@ -2300,6 +2310,16 @@ namespace CleanScan.Views
             {
                 var path = item.TryGetLocalPath();
                 if (string.IsNullOrWhiteSpace(path)) continue;
+
+                // Directory dropped → find first image inside
+                if (Directory.Exists(path))
+                {
+                    var firstImage = FindFirstImageInDirectory(path);
+                    if (firstImage is not null)
+                        paths.Add(firstImage);
+                    continue;
+                }
+
                 var ext = Path.GetExtension(path);
                 if (!string.IsNullOrWhiteSpace(ext) &&
                     (VideoExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase) ||
@@ -2307,6 +2327,21 @@ namespace CleanScan.Views
                     paths.Add(path);
             }
             return paths;
+        }
+
+        /// <summary>Scan a directory for the first image file (sorted by name) matching supported extensions.</summary>
+        private static string? FindFirstImageInDirectory(string directory)
+        {
+            if (!Directory.Exists(directory)) return null;
+            return Directory.EnumerateFiles(directory, "*.*", SearchOption.TopDirectoryOnly)
+                .Where(f =>
+                {
+                    var ext = Path.GetExtension(f);
+                    return !string.IsNullOrWhiteSpace(ext)
+                        && ImageExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase);
+                })
+                .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
+                .FirstOrDefault();
         }
 
 

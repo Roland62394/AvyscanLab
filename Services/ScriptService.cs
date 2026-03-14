@@ -531,6 +531,20 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
         return dll.Replace('\\', '/');
     }
 
+    /// <summary>Resolve a .avsi script filename to its full path in Plugins/Scripts/.</summary>
+    private static string ResolveScriptPath(string script)
+    {
+        if (Path.IsPathRooted(script))
+            return script.Replace('\\', '/');
+
+        var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? ".";
+        var candidate = Path.Combine(exeDir, "Plugins", "Scripts", script);
+        if (File.Exists(candidate))
+            return candidate.Replace('\\', '/');
+
+        return script.Replace('\\', '/');
+    }
+
     internal static string InjectCustomFilters(string scriptContents, IReadOnlyList<CustomFilter>? filters,
         Dictionary<string, string>? configValues = null)
     {
@@ -550,13 +564,22 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
                 if (!string.IsNullOrWhiteSpace(dll))
                     allDlls.Add(dll.Trim());
 
+        // Collect scripts (Import .avsi)
+        var allScripts = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var f in enabledFilters)
+            foreach (var script in f.Scripts)
+                if (!string.IsNullOrWhiteSpace(script))
+                    allScripts.Add(script.Trim());
+
         scriptContents = CustomPluginsMarkerRegex().Replace(scriptContents, _ =>
         {
-            if (allDlls.Count == 0) return "";
+            if (allDlls.Count == 0 && allScripts.Count == 0) return "";
             var sb = new StringBuilder();
             sb.AppendLine("# ── Custom filter plugins ──");
             foreach (var dll in allDlls)
                 sb.AppendLine($"TryLoadPlugin(\"{ResolveDllPath(dll)}\")");
+            foreach (var script in allScripts)
+                sb.AppendLine($"Import(\"{ResolveScriptPath(script)}\")");
             return sb.ToString();
         });
 

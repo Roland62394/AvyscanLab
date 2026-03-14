@@ -71,7 +71,7 @@
                <ScrollViewer Grid.Row="0"
                              VerticalScrollBarVisibility="Auto"
                              HorizontalScrollBarVisibility="Disabled"
-                             MaxHeight="220">
+                             MaxHeight="320">
                    <StackPanel Margin="20,14,20,8" Spacing="10">
 
                        <!-- Name + Position on same row -->
@@ -108,6 +108,24 @@
                            <StackPanel x:Name="DllListPanel" Spacing="2"/>
                            <Button x:Name="AddDllBtn"
                                    Content="+ Add DLL..."
+                                   FontSize="11"
+                                   Padding="8,3"
+                                   Classes="dialog-btn"
+                                   Foreground="#7984A5"
+                                   BorderBrush="#252E42"
+                                   BorderThickness="1"
+                                   HorizontalAlignment="Left"/>
+                       </StackPanel>
+
+                       <!-- Scripts (.avsi) -->
+                       <StackPanel Spacing="3">
+                           <TextBlock x:Name="ScriptsLabel"
+                                      Text="Scripts (Import .avsi)"
+                                      FontSize="13" FontWeight="SemiBold"
+                                      Foreground="#E8E8E8"/>
+                           <StackPanel x:Name="ScriptListPanel" Spacing="2"/>
+                           <Button x:Name="AddScriptBtn"
+                                   Content="+ Add AVSI..."
                                    FontSize="11"
                                    Padding="8,3"
                                    Classes="dialog-btn"

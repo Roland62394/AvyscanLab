@@ -5,7 +5,7 @@
                                 ScanFilm SNC
                                www.scanfilm.ch
 
-              Version d'essai — Beta 5.0
+              Version d'essai — Beta 5.0 - mars 2026
 
 
 =============================================================================================
@@ -44,6 +44,39 @@ via un lecteur video integre (libmpv). L'encodage final est assure par FFmpeg.
 
 L'application est disponible en 4 langues : francais, anglais, allemand, espagnol.
 
+=============================================================================================
+                                REMERCIEMENTS / CREDITS
+  =============================================================================================
+
+  CleanScan s’appuie sur la qualité des plugins AviSynth+ développés 
+  et maintenus par la communauté open source. Nous adressons nos remerciements les plus chaleureux,
+  aussi exhaustivement que possible, à leurs auteurs :
+
+     MVTools2 — Manao, Fizick, Tsp, TSchniede, SEt
+          Estimation de mouvement et réduction temporelle du grain (MDegrain).
+          Le cœur du pipeline de restauration de CleanScan.
+
+      RemoveDirt — Kassandro
+          Détection et suppression temporelles des poussières et des rayures.
+          RemoveDirtMC (avec compensation de mouvement) reste inégalé pour
+          le nettoyage des films argentiques.
+
+      GamMac — StainlessS
+          Correction colorimétrique avancée par analyse des canaux RVB.
+          Un outil précieux pour corriger les dérives de couleur
+          des pellicules vieillissantes.
+
+      MaskTools2 — Manao, tp7
+          Opérations sur les masques, indispensables pour le renforcement
+          sélectif de la netteté (mode edge-aware).
+
+      RgTools — tp7, pinterf
+          Outils de suppression du grain et opérations matricielles,
+          utilisés comme préfiltre dans l’analyse de mouvement.
+
+      LimitedSharpenFaster — Didée
+          Technique de renforcement de la netteté par masque Sobel et courbe
+          gamma (^0.86), dont s’inspire le mode « edge » de CleanScan.
 
 =============================================================================================
                            2.  PREREQUIS ET INSTALLATION
@@ -56,7 +89,7 @@ Systeme requis :
 
 Composants :
     - AviSynth+ 64 bits doit etre installe. Si absent, CleanScan le detecte au demarrage
-      et propose un lien de telechargement. Une version embarquee est utilisee en secours.
+      et propose son installation.
     - FFmpeg est fourni avec l'application (dossier Plugins/ffmpeg/).
     - Le lecteur mpv est fourni avec l'application (dossier mpv/).
 
@@ -72,7 +105,7 @@ L'interface est organisee en trois zones principales :
 
     ZONE SUPERIEURE
     -----------------------------------------------------------------------------------------
-    Barre de menus : Infos (guide, apercu script, presets, a propos, contact, reglages),
+    Barre de menus : Infos (guide, apercu script, presets, à propos, contact, reglages),
     Langues (FR/EN/DE/ES), Visite guidee.
 
     Barre de source : champs de selection du fichier source, mode image/video, threads,
@@ -120,13 +153,16 @@ Fichier video
                         .m2ts  .mxf  .mpeg  .mpg  .ogv  .3gp
 
 Sequence d'images
-    Activez le mode image (bouton bascule "IMG"), puis selectionnez un fichier image.
+    Selectionnez un répertoire contenant des fichiers d'images (par exemple : 00001.tif, 00002.tif, etc..).
     CleanScan detecte automatiquement la premiere et la derniere image de la sequence.
-    Formats supportes : .tif  .tiff  .jpg  .jpeg  .png  .bmp  .gif  .webp  .exr
+    Formats supportes : .tif  .tiff  .jpg  .jpeg  .png  .bmp  
 
 Cadence de lecture (FPS)
     Le champ "fps" definit la cadence de lecture.
-    Valeurs courantes : 16 fps (8 mm), 18 fps (Super 8), 24 fps (16 mm).
+    Valeurs courantes pour formats courants: 
+                    8 mm : 16 ou 18 ips 
+                    Super 8 : 18 ou 24 ips 
+                    Autres formats 18 ou 24 fps (16 mm).
 
 Chargeur source
     Le menu deroulant permet de forcer le plugin de decodage :
@@ -134,10 +170,13 @@ Chargeur source
         FFMS2     FFmpegSource2 — compatibilite maximale
         L-SMASH   LSmashSource — MP4/MOV optimise
         LWLibav   LWLibavVideoSource — format alternatif
+    En cas d'erreur de lecture d'un fichier à l'ouverture de celui-ci, essayez de changer le chargeur source.
 
 Threads
     Nombre de threads de traitement AviSynth (defaut : 4). Augmentez pour exploiter
     tous les coeurs du processeur.
+    Une valeur trop élevée peut provoquer des ralentissements ou des erreurs sur les machines moins puissantes. 
+    Ajustez en fonction de votre matériel.
 
 Multi-clips
     Vous pouvez charger plusieurs fichiers. Chaque clip dispose de ses propres reglages
@@ -161,7 +200,7 @@ Raccourcis clavier :
     Fleche droite             Image suivante
     Ctrl + Gauche             Aller au debut
     Ctrl + Droite             Aller a la fin
-    F11                       Maximiser/Restaurer le lecteur
+    F11                       Maximiser/Restaurer la taille du lecteur
 
 Interactions avec les parametres :
 
@@ -171,7 +210,7 @@ Interactions avec les parametres :
     Glisser le slider         Ajustement en temps reel
     Molette sur champ texte   Ajuste la valeur par pas (Step)
     Saisie directe            Tapez une valeur, validez par Entree ou clic ailleurs
-    Survol d'un label         Affiche l'infobulle avec plage et conseils
+    Survol d'un label         Affiche l'infobulle avec plage et conseils lié au paramètre sélectionné
 
 Mode demi-resolution :
     Le bouton "1/2" active le mode demi-resolution : le script AviSynth traite l'image
@@ -181,7 +220,7 @@ Mode demi-resolution :
 Affichage des erreurs :
     En cas d'erreur de script AviSynth, un bandeau apparait dans le lecteur et une fenetre
     d'erreur s'ouvre avec :
-        - Le message d'erreur nettoye (sans les prefixes techniques de ffmpeg)
+        - Le message d'erreur (sans les prefixes techniques de ffmpeg)
         - L'extrait du script autour de la ligne fautive (avec marqueur ►)
         - La sortie complete de ffmpeg dans une section "Details" retractable
         - Un bouton "Copier" pour copier le message complet
@@ -201,7 +240,7 @@ Le panneau inferieur est divise en deux colonnes :
 
 Chaque filtre possede :
     - Un bouton ON/OFF pour activer/desactiver le filtre
-    - Un bouton d'expansion (>) qui affiche son panneau de parametres detailles
+    - Un bouton d'expansion (>) qui affiche son panneau avec ses parametres detailles
     - Des presets rapides (pour certains filtres)
 
 Les options generales (hors filtres) sont :
@@ -277,7 +316,7 @@ aux nombres pairs (exigence du sous-echantillonnage chroma YUV).
 
     DENOISE — Suppression des poussieres (RemoveDirt)
     -----------------------------------------------------------------------------------------
-    Detection et suppression temporelle des poussieres, rayures et defauts ponctuels.
+    Detection et suppression temporelle des poussieres et defauts ponctuels.
 
     Parametre              Plage                        Defaut      Description
     denoise_mode           removedirtmc/removedirt      removedirtmc  Algorithme

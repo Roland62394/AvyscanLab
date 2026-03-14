@@ -9,6 +9,7 @@ public sealed class CustomFilter
     public string Name { get; set; } = "Custom";
     public bool Enabled { get; set; }
     public List<string> Dlls { get; set; } = [];
+    public List<string> Scripts { get; set; } = [];
     public string Code { get; set; } = "";
     public string Position { get; set; } = "AfterSharpen";
 
