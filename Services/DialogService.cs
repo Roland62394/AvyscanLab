@@ -20,47 +20,133 @@ public sealed class DialogService : IDialogService
 {
     private const string AviSynthDownloadUrl = "https://github.com/AviSynth/AviSynthPlus/releases";
 
-    public async Task ShowErrorAsync(Window owner, string title, string message)
+    public async Task ShowErrorAsync(Window owner, string title, string message, string? details = null)
     {
-        var textBox = new TextBox
+        var monoFont = new FontFamily("Consolas, Cascadia Code, monospace");
+        var bgPanel  = new SolidColorBrush(Color.Parse("#161B24"));
+        var bgField  = new SolidColorBrush(Color.Parse("#0D1117"));
+        var fgError  = new SolidColorBrush(Color.Parse("#FF6B6B"));
+        var fgText   = new SolidColorBrush(Color.Parse("#DBDBDB"));
+        var fgDim    = new SolidColorBrush(Color.Parse("#7984A5"));
+        var border   = new SolidColorBrush(Color.Parse("#30363D"));
+
+        var titleBlock = new TextBlock
         {
-            Text = message,
-            IsReadOnly = true,
-            AcceptsReturn = true,
-            TextWrapping = TextWrapping.Wrap,
-            MaxHeight = 300,
-            FontFamily = new FontFamily("Consolas, Courier New, monospace"),
-            FontSize = 12,
+            Text = title,
+            Foreground = fgError,
+            FontSize = 15,
+            FontWeight = FontWeight.SemiBold,
+            FontFamily = monoFont,
+            Margin = new Thickness(0, 0, 0, 6)
         };
 
-        var copyButton  = new Button { Content = "Copier", HorizontalAlignment = HorizontalAlignment.Left, MinWidth = 96 };
-        var closeButton = new Button { Content = "OK", HorizontalAlignment = HorizontalAlignment.Right, MinWidth = 96 };
+        // Primary error message — prominent
+        var messageBlock = new TextBlock
+        {
+            Text = message,
+            Foreground = fgText,
+            FontFamily = monoFont,
+            FontSize = 13,
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 0, 0, 4)
+        };
+
+        var content = new StackPanel { Spacing = 8 };
+        content.Children.Add(titleBlock);
+        content.Children.Add(messageBlock);
+
+        // Optional details section — collapsible
+        if (!string.IsNullOrWhiteSpace(details))
+        {
+            var detailsBox = new TextBox
+            {
+                Text = details,
+                IsReadOnly = true,
+                AcceptsReturn = true,
+                TextWrapping = TextWrapping.Wrap,
+                MaxHeight = 250,
+                FontFamily = monoFont,
+                FontSize = 11,
+                Background = bgField,
+                Foreground = fgDim,
+                BorderBrush = border,
+                BorderThickness = new Thickness(1),
+                Padding = new Thickness(10, 8),
+            };
+
+            var expander = new Expander
+            {
+                Header = "Détails (sortie ffmpeg)",
+                IsExpanded = false,
+                Foreground = fgDim,
+                FontFamily = monoFont,
+                FontSize = 11,
+                Content = detailsBox,
+                Margin = new Thickness(0, 4, 0, 0)
+            };
+            content.Children.Add(expander);
+        }
+
+        var copyButton = new Button
+        {
+            Content = "Copier",
+            MinWidth = 96, Height = 30,
+            Background = new SolidColorBrush(Color.Parse("#1C2333")),
+            Foreground = fgText,
+            BorderBrush = border,
+            BorderThickness = new Thickness(1),
+            FontFamily = monoFont,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+        };
+        var closeButton = new Button
+        {
+            Content = "OK",
+            MinWidth = 96, Height = 30,
+            Background = new SolidColorBrush(Color.Parse("#1C2333")),
+            Foreground = fgText,
+            BorderBrush = border,
+            BorderThickness = new Thickness(1),
+            FontFamily = monoFont,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+        };
 
         copyButton.Click += async (_, _) =>
         {
             if (owner.Clipboard is { } clipboard)
             {
-                await clipboard.SetTextAsync(message);
+                var fullText = details != null ? message + "\n\n--- Détails ---\n" + details : message;
+                await clipboard.SetTextAsync(fullText);
                 copyButton.Content = "Copié !";
             }
         };
 
-        var buttonBar = new DockPanel
-        {
-            Margin = new Thickness(0, 8, 0, 0),
-        };
+        var buttonBar = new DockPanel { Margin = new Thickness(0, 10, 0, 0) };
         DockPanel.SetDock(copyButton, Dock.Left);
         DockPanel.SetDock(closeButton, Dock.Right);
         buttonBar.Children.Add(copyButton);
         buttonBar.Children.Add(closeButton);
+        content.Children.Add(buttonBar);
 
-        var dialog = BuildSimpleDialog(title, new StackPanel
+        var dialog = new Window
         {
-            Margin = new Thickness(16),
-            Spacing = 8,
-            Width = 560,
-            Children = { textBox, buttonBar }
-        });
+            Title = title,
+            Width = 580,
+            SizeToContent = SizeToContent.Height,
+            Background = new SolidColorBrush(Color.Parse("#0F1319")),
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Content = new Border
+            {
+                Margin = new Thickness(16),
+                Padding = new Thickness(16),
+                Background = bgPanel,
+                BorderBrush = new SolidColorBrush(Color.Parse("#C62828")),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
+                Child = content
+            }
+        };
         closeButton.Click += (_, _) => dialog.Close();
         await dialog.ShowDialog(owner);
     }

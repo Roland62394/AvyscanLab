@@ -8,7 +8,7 @@ namespace CleanScan.Services;
 
 public interface IDialogService
 {
-    Task ShowErrorAsync(Window owner, string title, string message);
+    Task ShowErrorAsync(Window owner, string title, string message, string? details = null);
     Task ShowTextDialogAsync(Window owner, string title, string text);
     Task ShowAboutDialogAsync(Window owner, string title, string company, string rights, string website, string version, string closeLabel, string imageUri);
     Task ShowScriptPreviewDialogAsync(Window owner, IScriptService scriptService, Action? onReload, MainWindowViewModel vm);

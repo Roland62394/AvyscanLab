@@ -358,7 +358,7 @@ namespace CleanScan.Views
             new("degrain_thSAD",     0,    1000, 10,   false),
             new("degrain_thSADC",    0,    1000, 10,   false),
             new("degrain_blksize",   4,    64,   4,    false),
-            new("degrain_overlap",   0,    32,   1,    false),
+            new("degrain_overlap",   0,    32,   2,    false),
             new("degrain_pel",       1,    4,    1,    false),
             new("degrain_search",    0,    5,    1,    false),
             new("denoise_strength",  1,    24,   1,    false),
@@ -688,7 +688,7 @@ namespace CleanScan.Views
         private void ShowPlayerStatus(string message)
         {
             DebugLog("ShowPlayerStatus: " + message.Replace('\n', ' '));
-            Title = "CleanScan — " + message.Split('\n')[0];
+            Title = "CleanScan";
 
             if (this.FindControl<Border>("PlayerErrorBanner") is { } banner
              && this.FindControl<TextBlock>("PlayerErrorText")  is { } text)
@@ -747,11 +747,12 @@ namespace CleanScan.Views
             var scriptPath = _scriptService.GetPrimaryScriptPath();
             if (string.IsNullOrWhiteSpace(scriptPath)) return;
 
-            var detail = await ProbeAvsScriptError(scriptPath);
-            var message = !string.IsNullOrWhiteSpace(detail)
-                ? detail
+            var (avsError, fullStderr) = await ProbeAvsScriptError(scriptPath);
+            var primary = !string.IsNullOrWhiteSpace(avsError)
+                ? avsError
                 : "Erreur inconnue dans le script AviSynth.\nOuvrez le script dans AvsPmod pour diagnostiquer.";
-            await _dialogService.ShowErrorAsync(this, "Erreur AviSynth", message);
+            ShowPlayerStatus(primary);
+            await _dialogService.ShowErrorAsync(this, "Erreur AviSynth", primary, fullStderr);
         }
 
         private void OnMpvFileLoaded()
@@ -922,6 +923,17 @@ namespace CleanScan.Views
             }
 
             _config.Changed += OnConfigChangedForSlider;
+
+            // Initialize overlap max based on current blksize
+            if (_sliderMap.TryGetValue("degrain_blksize", out var blk))
+                ClampOverlapToBlksize(SnapToNearest(blk.Slider.Value, ValidBlkSizes));
+        }
+
+        /// <summary>Snap a value to the nearest multiple of <paramref name="step"/> from <paramref name="min"/>.</summary>
+        private static double SnapToStep(double value, double min, double step)
+        {
+            if (step <= 0) return value;
+            return min + Math.Round((value - min) / step) * step;
         }
 
         private static void MoveSliderToPointer(Slider slider, PointerEventArgs e)
@@ -931,7 +943,8 @@ namespace CleanScan.Views
             if (w <= thumbHalf * 2) return;
             var x     = e.GetCurrentPoint(slider).Position.X;
             var ratio = Math.Clamp((x - thumbHalf) / (w - thumbHalf * 2), 0.0, 1.0);
-            slider.Value = slider.Minimum + ratio * (slider.Maximum - slider.Minimum);
+            var raw   = slider.Minimum + ratio * (slider.Maximum - slider.Minimum);
+            slider.Value = SnapToStep(raw, slider.Minimum, slider.SmallChange);
         }
 
         private void OnSliderValueChanged(SliderSpec spec)
@@ -943,21 +956,65 @@ namespace CleanScan.Views
             _sliderSync = true;
             try
             {
+                var snapped = SnapToStep(entry.Slider.Value, spec.Min, spec.SmallChange);
+                if (spec.Field == "degrain_blksize")
+                    snapped = SnapToNearest(snapped, ValidBlkSizes);
                 tb.Text = spec.IsFloat
-                    ? entry.Slider.Value.ToString("F" + spec.Decimals, CultureInfo.InvariantCulture)
-                    : ((int)Math.Round(entry.Slider.Value)).ToString();
+                    ? snapped.ToString("F" + spec.Decimals, CultureInfo.InvariantCulture)
+                    : ((int)Math.Round(snapped)).ToString();
             }
             finally { _sliderSync = false; }
         }
 
 
+        /// <summary>Valid blksize values for MVTools2 MAnalyse (powers of 2).</summary>
+        private static readonly int[] ValidBlkSizes = [4, 8, 16, 32, 64];
+
+        /// <summary>Snap to nearest value in a sorted array.</summary>
+        private static int SnapToNearest(double value, int[] validValues)
+        {
+            var best = validValues[0];
+            var bestDist = Math.Abs(value - best);
+            for (var i = 1; i < validValues.Length; i++)
+            {
+                var dist = Math.Abs(value - validValues[i]);
+                if (dist < bestDist) { best = validValues[i]; bestDist = dist; }
+            }
+            return best;
+        }
+
         private void CommitSliderField(string field)
         {
             if (!_sliderMap.TryGetValue(field, out var entry)) return;
+            var snapped = SnapToStep(entry.Slider.Value, entry.Spec.Min, entry.Spec.SmallChange);
+            snapped = Math.Clamp(snapped, entry.Spec.Min, entry.Spec.Max);
+
+            // blksize: snap to nearest power of 2
+            if (field == "degrain_blksize")
+                snapped = SnapToNearest(snapped, ValidBlkSizes);
+
+            entry.Slider.Value = snapped;
             var text = entry.Spec.IsFloat
-                ? entry.Slider.Value.ToString("F" + entry.Spec.Decimals, CultureInfo.InvariantCulture)
-                : ((int)Math.Round(entry.Slider.Value)).ToString();
+                ? snapped.ToString("F" + entry.Spec.Decimals, CultureInfo.InvariantCulture)
+                : ((int)Math.Round(snapped)).ToString();
             _ = ApplyFieldChangeAsync(field, text, showValidationError: true, refreshScriptPreview: false);
+
+            // When blksize changes, cap overlap to blksize/2
+            if (field == "degrain_blksize")
+                ClampOverlapToBlksize((int)Math.Round(snapped));
+        }
+
+        /// <summary>Ensures overlap ≤ blksize/2 and updates slider max accordingly.</summary>
+        private void ClampOverlapToBlksize(int blksize)
+        {
+            if (!_sliderMap.TryGetValue("degrain_overlap", out var ov)) return;
+            var maxOverlap = blksize / 2;
+            ov.Slider.Maximum = maxOverlap;
+            if (ov.Slider.Value > maxOverlap)
+            {
+                ov.Slider.Value = maxOverlap;
+                CommitSliderField("degrain_overlap");
+            }
         }
 
         private void OnConfigChangedForSlider(string key, string value)
@@ -3227,7 +3284,8 @@ namespace CleanScan.Views
             {
                 if (syncing) return;
                 syncing = true;
-                textBox.Text = FormatSliderValue(args.NewValue, isFloat);
+                var snapped = SnapToStep(args.NewValue, ctrl.Min, ctrl.Step);
+                textBox.Text = FormatSliderValue(snapped, isFloat);
                 syncing = false;
             };
 
@@ -3254,7 +3312,10 @@ namespace CleanScan.Views
                 if (!pressing) return;
                 pressing = false;
                 e.Pointer.Capture(null);
-                var val = FormatSliderValue(slider.Value, isFloat);
+                var snapped = SnapToStep(slider.Value, ctrl.Min, ctrl.Step);
+                snapped = Math.Clamp(snapped, ctrl.Min, ctrl.Max);
+                slider.Value = snapped;
+                var val = FormatSliderValue(snapped, isFloat);
                 _config.Set(configKey, val);
                 RegenerateScript(showValidationError: false);
                 _ = LoadScriptAsync();
@@ -3268,6 +3329,7 @@ namespace CleanScan.Views
                 syncing = true;
                 var parsed = ParseDouble(textBox.Text ?? "", ctrl.Min);
                 parsed = Math.Clamp(parsed, ctrl.Min, ctrl.Max);
+                parsed = SnapToStep(parsed, ctrl.Min, ctrl.Step);
                 slider.Value = parsed;
                 var val = FormatSliderValue(parsed, isFloat);
                 textBox.Text = val;
@@ -3282,7 +3344,8 @@ namespace CleanScan.Views
             {
                 e.Handled = true;
                 var delta = e.Delta.Y > 0 ? ctrl.Step : -ctrl.Step;
-                slider.Value = Math.Clamp(slider.Value + delta, ctrl.Min, ctrl.Max);
+                var snapped = SnapToStep(slider.Value + delta, ctrl.Min, ctrl.Step);
+                slider.Value = Math.Clamp(snapped, ctrl.Min, ctrl.Max);
                 var val = FormatSliderValue(slider.Value, isFloat);
                 _config.Set(configKey, val);
                 RegenerateScript(showValidationError: false);
@@ -5085,12 +5148,12 @@ namespace CleanScan.Views
 
         /// <summary>
         /// Runs ffmpeg -i on the .avs script to capture the AviSynth error from stderr.
-        /// Returns the relevant error lines, or empty string if no error detail found.
+        /// Returns (avsError, fullStderr): avsError = cleaned [avisynth] lines, fullStderr = raw output.
         /// </summary>
-        private static async Task<string> ProbeAvsScriptError(string avsPath)
+        private static async Task<(string AvsError, string FullStderr)> ProbeAvsScriptError(string avsPath)
         {
             var ffmpeg = FindFfmpeg();
-            if (ffmpeg is null || !File.Exists(avsPath)) return "";
+            if (ffmpeg is null || !File.Exists(avsPath)) return ("", "");
 
             try
             {
@@ -5111,27 +5174,78 @@ namespace CleanScan.Views
                 var stderr = await proc.StandardError.ReadToEndAsync();
                 await proc.WaitForExitAsync();
 
-                // Extract AviSynth error lines from ffmpeg stderr
-                if (string.IsNullOrWhiteSpace(stderr)) return "";
+                if (string.IsNullOrWhiteSpace(stderr)) return ("", "");
 
-                var lines = stderr.Split('\n');
-                var errorLines = new List<string>();
-                foreach (var line in lines)
+                // Extract and clean [avisynth @ ...] lines as primary error
+                var avsLines = new List<string>();
+                int scriptLineNum = -1;
+                foreach (var line in stderr.Split('\n'))
                 {
                     var trimmed = line.Trim();
                     if (string.IsNullOrEmpty(trimmed)) continue;
-                    if (trimmed.Contains("avisynth", StringComparison.OrdinalIgnoreCase)
-                     || trimmed.Contains("Script error", StringComparison.OrdinalIgnoreCase)
-                     || trimmed.Contains("autoloading", StringComparison.OrdinalIgnoreCase)
-                     || (trimmed.Contains("Error", StringComparison.OrdinalIgnoreCase)
-                         && !trimmed.StartsWith("frame=", StringComparison.OrdinalIgnoreCase)))
+                    if (trimmed.Contains("[avisynth", StringComparison.OrdinalIgnoreCase))
                     {
-                        errorLines.Add(trimmed);
+                        var clean = System.Text.RegularExpressions.Regex.Replace(
+                            trimmed, @"^\[avisynth\s*@\s*[0-9a-fA-F]+\]\s*", "");
+                        avsLines.Add(clean);
+
+                        // Extract line number from patterns like "(script.avs, line 607)" or "line 42"
+                        var lineMatch = System.Text.RegularExpressions.Regex.Match(
+                            clean, @"line\s+(\d+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                        if (lineMatch.Success && scriptLineNum < 0)
+                            scriptLineNum = int.Parse(lineMatch.Groups[1].Value);
                     }
                 }
-                return errorLines.Count > 0 ? string.Join("\n", errorLines) : "";
+
+                // Show script context: by line number if available, or by searching filter name
+                if (File.Exists(avsPath))
+                {
+                    try
+                    {
+                        var scriptLines = await File.ReadAllLinesAsync(avsPath);
+
+                        // If no explicit line number, search for the filter/function name in the script
+                        // Error format: "FilterName: error message" → extract "FilterName"
+                        if (scriptLineNum < 0 && avsLines.Count > 0)
+                        {
+                            var filterMatch = System.Text.RegularExpressions.Regex.Match(
+                                avsLines[0], @"^(\w+)\s*:");
+                            if (filterMatch.Success)
+                            {
+                                var filterName = filterMatch.Groups[1].Value;
+                                // Find last occurrence (most likely the call site, not the function definition)
+                                for (var i = scriptLines.Length - 1; i >= 0; i--)
+                                {
+                                    if (scriptLines[i].Contains(filterName, StringComparison.OrdinalIgnoreCase)
+                                     && !scriptLines[i].TrimStart().StartsWith("#"))
+                                    {
+                                        scriptLineNum = i + 1;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (scriptLineNum > 0)
+                        {
+                            var from = Math.Max(0, scriptLineNum - 3);
+                            var to   = Math.Min(scriptLines.Length, scriptLineNum + 2);
+                            avsLines.Add("");
+                            avsLines.Add($"── Script ligne {scriptLineNum} ──");
+                            for (var i = from; i < to; i++)
+                            {
+                                var marker = (i + 1 == scriptLineNum) ? "►" : " ";
+                                avsLines.Add($" {marker} {i + 1,4}│ {scriptLines[i]}");
+                            }
+                        }
+                    }
+                    catch { /* ignore read errors */ }
+                }
+
+                var avsError = avsLines.Count > 0 ? string.Join("\n", avsLines) : "";
+                return (avsError, stderr.Trim());
             }
-            catch { return ""; }
+            catch { return ("", ""); }
         }
 
 
