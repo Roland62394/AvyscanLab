@@ -25,6 +25,10 @@ public partial class CustomFilterDialog : Window
     private readonly MainWindowViewModel? _vm;
 
     private static readonly Regex PlaceholderRegex = new(@"\{(\w+)\}", RegexOptions.Compiled);
+    private static readonly Regex AssignmentRegex = new(@"^\s*(\w+)\s*=\s*(.+?)\s*$", RegexOptions.Compiled);
+
+    /// <summary>Session-level flag: suppress the "convert to control" prompt.</summary>
+    private static bool _suppressConvertPrompt;
 
     // Remember size/position across opens (session-only)
     private static double? _lastWidth;
@@ -106,6 +110,9 @@ public partial class CustomFilterDialog : Window
         // Auto-detect placeholders when code changes
         CodeBox.TextChanged += (_, _) => SyncPlaceholders();
         SyncPlaceholders();
+
+        // Offer to convert "var = value" selections into {placeholder} controls
+        CodeBox.PointerReleased += OnCodeBoxPointerReleased;
 
         // Apply translations
         ApplyLocalization();
@@ -224,6 +231,171 @@ public partial class CustomFilterDialog : Window
         }
     }
 
+    // ── Selection → placeholder conversion ─────────────────────────────
+
+    private async void OnCodeBoxPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (_suppressConvertPrompt) return;
+
+        var selected = CodeBox.SelectedText;
+        if (string.IsNullOrWhiteSpace(selected)) return;
+
+        var m = AssignmentRegex.Match(selected);
+        if (!m.Success) return;
+
+        var varName = m.Groups[1].Value;
+        var rawValue = m.Groups[2].Value.Trim();
+
+        // Don't offer if this variable is already a placeholder
+        if (PlaceholderRegex.IsMatch(rawValue)) return;
+
+        // Build confirmation dialog
+        var selStart = CodeBox.SelectionStart;
+        var selEnd = CodeBox.SelectionEnd;
+        var displaySel = selected.Trim();
+
+        var result = await ShowConvertPrompt(displaySel, varName);
+
+        if (result == ConvertPromptResult.DontShowAgain)
+        {
+            _suppressConvertPrompt = true;
+            return;
+        }
+
+        if (result != ConvertPromptResult.Yes) return;
+
+        // Replace the value part with {varName} in the code
+        var code = CodeBox.Text ?? "";
+        var selectedText = code.Substring(selStart, selEnd - selStart);
+        var assignMatch = AssignmentRegex.Match(selectedText);
+        if (!assignMatch.Success) return;
+
+        // Build the replacement: keep var and = , replace value with {varName}
+        var valueGroup = assignMatch.Groups[2];
+        var valueStartInSelection = valueGroup.Index;
+        var newSelected = selectedText[..valueStartInSelection] + $"{{{varName}}}" + selectedText[(valueStartInSelection + valueGroup.Length)..];
+
+        CodeBox.Text = code[..selStart] + newSelected + code[selEnd..];
+
+        // Set default value on the newly created control (SyncPlaceholders will fire via TextChanged)
+        // Find or wait for the control
+        var ctrl = _controls.FirstOrDefault(c => c.Placeholder.Equals(varName, StringComparison.OrdinalIgnoreCase));
+        if (ctrl is not null)
+        {
+            ctrl.Default = rawValue;
+        }
+        else
+        {
+            // SyncPlaceholders will create it; set after a short dispatch
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                var c = _controls.FirstOrDefault(c2 => c2.Placeholder.Equals(varName, StringComparison.OrdinalIgnoreCase));
+                if (c is not null)
+                {
+                    c.Default = rawValue;
+                    RebuildControlsPanel();
+                }
+            }, Avalonia.Threading.DispatcherPriority.Background);
+        }
+    }
+
+    private enum ConvertPromptResult { Yes, No, DontShowAgain }
+
+    private async System.Threading.Tasks.Task<ConvertPromptResult> ShowConvertPrompt(string selection, string varName)
+    {
+        var result = ConvertPromptResult.No;
+
+        var msg = L("CfDlgConvertPrompt").Replace("{selection}", selection).Replace("{varName}", varName);
+
+        var yesBtn = new Button
+        {
+            Content = L("CfDlgConvertYes"),
+            MinWidth = 80,
+            Margin = new Thickness(0, 0, 8, 0)
+        };
+        var noBtn = new Button
+        {
+            Content = L("CfDlgConvertNo"),
+            MinWidth = 80,
+            Margin = new Thickness(0, 0, 8, 0)
+        };
+        var dontShowBtn = new Button
+        {
+            Content = L("CfDlgConvertDontShow"),
+            MinWidth = 80,
+            Foreground = new SolidColorBrush(Color.Parse("#7984A5")),
+            FontSize = 11
+        };
+
+        var dialog = new Window
+        {
+            Title = L("CfDlgConvertTitle"),
+            SizeToContent = SizeToContent.WidthAndHeight,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            MaxWidth = 500,
+            Content = new StackPanel
+            {
+                Margin = new Thickness(20),
+                Spacing = 14,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = msg,
+                        TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+                        MaxWidth = 440,
+                        FontSize = 13
+                    },
+                    new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        HorizontalAlignment = HorizontalAlignment.Right,
+                        Spacing = 8,
+                        Children = { yesBtn, noBtn, dontShowBtn }
+                    }
+                }
+            }
+        };
+
+        yesBtn.Click += (_, _) => { result = ConvertPromptResult.Yes; dialog.Close(); };
+        noBtn.Click += (_, _) => { result = ConvertPromptResult.No; dialog.Close(); };
+        dontShowBtn.Click += (_, _) => { result = ConvertPromptResult.DontShowAgain; dialog.Close(); };
+
+        await dialog.ShowDialog(this);
+        return result;
+    }
+
+    // ── Placeholder actions ────────────────────────────────────────────
+
+    private void HighlightPlaceholderInCode(string placeholder)
+    {
+        var code = CodeBox.Text ?? "";
+        var token = $"{{{placeholder}}}";
+        var idx = code.IndexOf(token, StringComparison.OrdinalIgnoreCase);
+        if (idx < 0) return;
+
+        CodeBox.Focus();
+        CodeBox.SelectionStart = idx;
+        CodeBox.SelectionEnd = idx + token.Length;
+
+        // Scroll the TextBox so the selection is visible.
+        // Setting CaretIndex near the selection triggers auto-scroll.
+        CodeBox.CaretIndex = idx;
+    }
+
+    private void RemovePlaceholderFromCode(CustomFilterControl ctrl)
+    {
+        var code = CodeBox.Text ?? "";
+        var token = $"{{{ctrl.Placeholder}}}";
+
+        // Replace all occurrences of {placeholder} with its default value
+        var replacement = string.IsNullOrEmpty(ctrl.Default) ? ctrl.Placeholder : ctrl.Default;
+        var updated = code.Replace(token, replacement, StringComparison.OrdinalIgnoreCase);
+
+        if (!string.Equals(code, updated, StringComparison.Ordinal))
+            CodeBox.Text = updated;  // triggers SyncPlaceholders via TextChanged
+    }
+
     // ── Placeholder detection & control config ──────────────────────────
 
     private void SyncPlaceholders()
@@ -320,6 +492,42 @@ public partial class CustomFilterDialog : Window
             RebuildControlsPanel();
         };
         row.Children.Add(typeCombo);
+
+        // Eye button — highlight placeholder in code
+        var eyeBtn = new Button
+        {
+            Content = "\uD83D\uDC41",   // 👁
+            FontSize = 12,
+            Width = 26, Height = 26,
+            Padding = new Thickness(0),
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Background = Brushes.Transparent,
+            Foreground = new SolidColorBrush(Color.Parse("#7984A5")),
+            BorderThickness = new Thickness(0),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        ToolTip.SetTip(eyeBtn, L("CfDlgShowInCode"));
+        eyeBtn.Click += (_, _) => HighlightPlaceholderInCode(ctrl.Placeholder);
+        row.Children.Add(eyeBtn);
+
+        // Red X button — remove placeholder, restore default value in code
+        var removeBtn = new Button
+        {
+            Content = "\u2715",
+            FontSize = 11,
+            Width = 26, Height = 26,
+            Padding = new Thickness(0),
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Background = Brushes.Transparent,
+            Foreground = new SolidColorBrush(Color.Parse("#C05050")),
+            BorderThickness = new Thickness(0),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        ToolTip.SetTip(removeBtn, L("CfDlgRemoveControl"));
+        removeBtn.Click += (_, _) => RemovePlaceholderFromCode(ctrl);
+        row.Children.Add(removeBtn);
 
         // Type-specific inline fields
         switch (ctrl.Type)

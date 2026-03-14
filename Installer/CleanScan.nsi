@@ -28,6 +28,8 @@
 
 ; GPL plugin DLLs — installed into AviSynth+ plugins64+ folder
 !define GPL_PLUGINS_DIR "GPL_Plugins"
+; Permissive-license plugins (ISC/MIT) — also installed into AviSynth+ plugins64+
+!define AVS_PLUGINS_DIR "AVS_Plugins"
 
 ; ── Installer settings ──
 Name "${APP_NAME} ${APP_VERSION}"
@@ -87,13 +89,6 @@ Section "!${APP_NAME} (required)" SecCore
     ; AviSynth script templates
     File "${PUBLISH_DIR}\ScriptMaster.en.avs"
 
-    ; Plugins — only MIT/ISC licensed plugins (RgTools, L-Smash-Works)
-    SetOutPath "$INSTDIR\Plugins\RgTools"
-    File "${PUBLISH_DIR}\Plugins\RgTools\RgTools.dll"
-    File "${PUBLISH_DIR}\Plugins\RgTools\LICENSE"
-    SetOutPath "$INSTDIR\Plugins\Dual\L-Smash-Works"
-    File /r "${PUBLISH_DIR}\Plugins\Dual\L-Smash-Works\*.*"
-
     ; ffmpeg (encoding)
     SetOutPath "$INSTDIR\Plugins\ffmpeg"
     File "${PUBLISH_DIR}\Plugins\ffmpeg\ffmpeg.exe"
@@ -128,8 +123,8 @@ Section "!${APP_NAME} (required)" SecCore
     WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "EstimatedSize" $0
 SectionEnd
 
-; ── GPL restoration plugins (installed into AviSynth+ folder) ──
-Section "Restoration plugins (GPLv2 — required)" SecGplPlugins
+; ── AviSynth+ restoration plugins (installed into plugins64+ folder) ──
+Section "Restoration plugins (required)" SecGplPlugins
     SectionIn RO  ; Cannot be deselected — required for CleanScan
 
     ; Read AviSynth+ plugin directory from 64-bit registry view
@@ -141,8 +136,16 @@ Section "Restoration plugins (GPLv2 — required)" SecGplPlugins
         StrCpy $AVS_PLUGINDIR "$PROGRAMFILES32\AviSynth+\plugins64+"
     ${EndIf}
 
-    ; Install GPL plugin DLLs + their LICENSE files
+    ; Install plugin DLLs + their LICENSE files
     SetOutPath "$AVS_PLUGINDIR"
+
+    ; LSMASHSource (ISC)
+    File "${AVS_PLUGINS_DIR}\LSMASHSource\LSMASHSource.dll"
+    File /oname=LSMASHSource_LICENSE.txt "${AVS_PLUGINS_DIR}\LSMASHSource\LICENSE"
+
+    ; RgTools (MIT)
+    File "${AVS_PLUGINS_DIR}\RgTools\RgTools.dll"
+    File /oname=RgTools_LICENSE.txt "${AVS_PLUGINS_DIR}\RgTools\LICENSE"
 
     ; GamMac (GPLv2)
     File "${GPL_PLUGINS_DIR}\GamMac\GamMac_x64.dll"
@@ -185,7 +188,7 @@ SectionEnd
 ; ── Section descriptions ──
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
     !insertmacro MUI_DESCRIPTION_TEXT ${SecCore}       "Core application files (required)."
-    !insertmacro MUI_DESCRIPTION_TEXT ${SecGplPlugins} "Film restoration plugins (GamMac, MVTools2, MaskTools2, RemoveDirt, FFMS2). Licensed under GPLv2 — source code links included."
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecGplPlugins} "AviSynth+ restoration plugins (LSMASHSource, RgTools, GamMac, MVTools2, MaskTools2, RemoveDirt, FFMS2). Installed into AviSynth+ plugins64+ folder."
     !insertmacro MUI_DESCRIPTION_TEXT ${SecDesktop}    "Create a shortcut on the Desktop."
     !insertmacro MUI_DESCRIPTION_TEXT ${SecStartMenu}  "Create a shortcut in the Start Menu."
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
@@ -249,7 +252,7 @@ FunctionEnd
 ; UNINSTALLER
 ; ─────────────────────────────────────────────────────
 Section "Uninstall"
-    ; Remove CleanScan files (includes Plugins\ffmpeg, Plugins\RgTools, etc.)
+    ; Remove CleanScan files (includes Plugins\ffmpeg, mpv, etc.)
     RMDir /r "$INSTDIR\Plugins"
     RMDir /r "$INSTDIR\mpv"
     RMDir /r "$INSTDIR\Users Guide"
@@ -259,11 +262,15 @@ Section "Uninstall"
     Delete "$INSTDIR\Uninstall.exe"
     RMDir  "$INSTDIR"
 
-    ; Remove GPL plugins from AviSynth+ folder (64-bit registry)
+    ; Remove AviSynth+ plugins installed by CleanScan (64-bit registry)
     SetRegView 64
     ReadRegStr $AVS_PLUGINDIR HKLM "SOFTWARE\AviSynth" "plugindir+"
     SetRegView 32
     ${If} $AVS_PLUGINDIR != ""
+        Delete "$AVS_PLUGINDIR\LSMASHSource.dll"
+        Delete "$AVS_PLUGINDIR\LSMASHSource_LICENSE.txt"
+        Delete "$AVS_PLUGINDIR\RgTools.dll"
+        Delete "$AVS_PLUGINDIR\RgTools_LICENSE.txt"
         Delete "$AVS_PLUGINDIR\GamMac_x64.dll"
         Delete "$AVS_PLUGINDIR\GamMac_LICENSE.txt"
         Delete "$AVS_PLUGINDIR\masktools2.dll"

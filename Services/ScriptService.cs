@@ -54,9 +54,6 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
     [GeneratedRegex(@"(?<prefix>\b(?:LoadPlugin|Import)\s*\(\s*"")(?<path>Plugins?/[^""\r\n]+)(?<suffix>""\s*\))", RegexOptions.IgnoreCase)]
     private static partial Regex PluginImportRegex();
 
-    [GeneratedRegex(@"^(?<prefix>\s*(?:global\s+)?pluginRoot\s*=\s*)(?<value>[^#\r\n]*)(?<suffix>.*)$", RegexOptions.Multiline | RegexOptions.IgnoreCase)]
-    private static partial Regex PluginRootRegex();
-
     [GeneratedRegex(@"^\s+#")]
     private static partial Regex InlineCommentRegex();
 
@@ -390,10 +387,7 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
                 return $"{m.Groups["prefix"].Value}{abs}{m.Groups["suffix"].Value}";
             });
 
-        var pluginRoot = source.NormalizePathForAvisynth(Path.GetFullPath(Path.Combine(baseDir, "Plugins")));
-        return PluginRootRegex().Replace(
-            updated,
-            $"${{prefix}}\"{pluginRoot}/\"${{suffix}}");
+        return updated;
     }
 
     // ── Script file path helpers ────────────────────────────────────────────
@@ -446,11 +440,6 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
                     var abs = Path.GetFullPath(Path.Combine(baseDir, m.Groups["path"].Value.Replace('/', Path.DirectorySeparatorChar)));
                     return $"{m.Groups["prefix"].Value}{abs}{m.Groups["suffix"].Value}";
                 });
-
-            var pluginRoot = Path.GetFullPath(Path.Combine(baseDir, "Plugins")).Replace('\\', '/');
-            updated = PluginRootRegex().Replace(
-                updated,
-                $"${{prefix}}\"{pluginRoot}/\"${{suffix}}");
 
             if (!string.Equals(contents, updated, StringComparison.Ordinal))
                 File.WriteAllText(scriptPath, updated);

@@ -171,21 +171,12 @@ global ffms_fpsden    = 1
 # PLUGINS (x64)
 # =========================
 
-pluginRoot = ScriptDir() + "Plugins/"
-
-if (!use_img) {
-  TryLoadPlugin(pluginRoot + "Dual/L-Smash-Works/LSMASHSource.dll")
-}
-
 function TryLoadPlugin(string path) {
   if (Exist(path)) { LoadPlugin(path) }
 }
 
-# MIT/ISC plugins — bundled with CleanScan
-TryLoadPlugin(pluginRoot + "RgTools/RgTools.dll")
-
-# GPL plugins (FFMS2, GamMac, MaskTools2, MVTools2, RemoveDirt)
-# are installed in the AviSynth+ plugins64+ folder and auto-loaded.
+# All AviSynth plugins (LSMASHSource, RgTools, FFMS2, GamMac, MaskTools2,
+# MVTools2, RemoveDirt) are installed in AviSynth+ plugins64+ and auto-loaded.
 
 # __CUSTOM_PLUGINS__
 

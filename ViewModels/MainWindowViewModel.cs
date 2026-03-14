@@ -162,7 +162,14 @@ namespace CleanScan.ViewModels
                 ["CfDlgPickDll"] = "Select AviSynth plugin DLL",
                 ["CfDlgExport"] = "Export",
                 ["CfDlgExportTitle"] = "Export custom filter",
-                ["CfDlgImportTitle"] = "Import custom filter"
+                ["CfDlgImportTitle"] = "Import custom filter",
+                ["CfDlgConvertTitle"] = "Convert to control",
+                ["CfDlgConvertPrompt"] = "Convert your selection \"{selection}\" into a UI control \"{{{varName}}}\" accessible from the main interface?",
+                ["CfDlgConvertYes"] = "Yes",
+                ["CfDlgConvertNo"] = "No",
+                ["CfDlgConvertDontShow"] = "Don't ask again",
+                ["CfDlgShowInCode"] = "Show in code",
+                ["CfDlgRemoveControl"] = "Remove control and restore value in code"
             },
             ["fr"] = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -318,7 +325,14 @@ namespace CleanScan.ViewModels
                 ["CfDlgPickDll"] = "S\u00e9lectionner un plugin AviSynth (DLL)",
                 ["CfDlgExport"] = "Exporter",
                 ["CfDlgExportTitle"] = "Exporter le filtre personnalis\u00e9",
-                ["CfDlgImportTitle"] = "Importer un filtre personnalis\u00e9"
+                ["CfDlgImportTitle"] = "Importer un filtre personnalis\u00e9",
+                ["CfDlgConvertTitle"] = "Convertir en contr\u00f4le",
+                ["CfDlgConvertPrompt"] = "Convertir votre s\u00e9lection \u00ab {selection} \u00bb en un contr\u00f4le \u00ab {{{varName}}} \u00bb pilotable depuis l\u2019interface principale ?",
+                ["CfDlgConvertYes"] = "Oui",
+                ["CfDlgConvertNo"] = "Non",
+                ["CfDlgConvertDontShow"] = "Ne plus demander",
+                ["CfDlgShowInCode"] = "Afficher dans le code",
+                ["CfDlgRemoveControl"] = "Supprimer le contr\u00f4le et restaurer la valeur dans le code"
             },
             ["de"] = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -474,7 +488,14 @@ namespace CleanScan.ViewModels
                 ["CfDlgPickDll"] = "AviSynth-Plugin-DLL ausw\u00e4hlen",
                 ["CfDlgExport"] = "Exportieren",
                 ["CfDlgExportTitle"] = "Benutzerdefinierten Filter exportieren",
-                ["CfDlgImportTitle"] = "Benutzerdefinierten Filter importieren"
+                ["CfDlgImportTitle"] = "Benutzerdefinierten Filter importieren",
+                ["CfDlgConvertTitle"] = "In Steuerelement umwandeln",
+                ["CfDlgConvertPrompt"] = "Ihre Auswahl \u201e{selection}\u201c in ein Steuerelement \u201e{{{varName}}}\u201c f\u00fcr die Hauptoberfl\u00e4che umwandeln?",
+                ["CfDlgConvertYes"] = "Ja",
+                ["CfDlgConvertNo"] = "Nein",
+                ["CfDlgConvertDontShow"] = "Nicht mehr fragen",
+                ["CfDlgShowInCode"] = "Im Code anzeigen",
+                ["CfDlgRemoveControl"] = "Steuerelement entfernen und Wert im Code wiederherstellen"
             },
             ["es"] = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -630,7 +651,14 @@ namespace CleanScan.ViewModels
                 ["CfDlgPickDll"] = "Seleccionar plugin AviSynth (DLL)",
                 ["CfDlgExport"] = "Exportar",
                 ["CfDlgExportTitle"] = "Exportar filtro personalizado",
-                ["CfDlgImportTitle"] = "Importar filtro personalizado"
+                ["CfDlgImportTitle"] = "Importar filtro personalizado",
+                ["CfDlgConvertTitle"] = "Convertir en control",
+                ["CfDlgConvertPrompt"] = "\u00bfConvertir su selecci\u00f3n \u00ab{selection}\u00bb en un control \u00ab{{{varName}}}\u00bb accesible desde la interfaz principal?",
+                ["CfDlgConvertYes"] = "S\u00ed",
+                ["CfDlgConvertNo"] = "No",
+                ["CfDlgConvertDontShow"] = "No volver a preguntar",
+                ["CfDlgShowInCode"] = "Mostrar en el c\u00f3digo",
+                ["CfDlgRemoveControl"] = "Eliminar control y restaurar el valor en el c\u00f3digo"
             }
         };
 
