@@ -1,56 +1,55 @@
-
                               C L E A N S C A N
-                            Guide de l'utilisateur
+                            Guide de l’utilisateur
 
                                 ScanFilm SNC
                                www.scanfilm.ch
 
-              Version d'essai — Beta 5.0 - mars 2026
+                 Version d’essai — pré-release 1.0 - mars 2026
 
 
 =============================================================================================
-                                 TABLE DES MATIERES
+                                 TABLE DES MATIÈRES
 =============================================================================================
 
-    1.  Presentation                         10.  Filtres personnalises (Custom)
-    2.  Prerequis et installation            11.  Prereglages (Presets)
-    3.  Interface generale                   12.  Encodage et rendu
-    4.  Selection de la source               13.  Reglages de l'application
-    5.  Lecteur video et navigation          14.  Apercu du script
-    6.  Panneau de filtres                   15.  Retour d'experience (Feedback)
-    7.  Filtre CROP (Recadrage)              16.  Workflow recommande
-    8.  Filtres de restauration              17.  Astuces et raccourcis
-    9.  Filtres d'amelioration               18.  Fichiers et emplacements
-                                             19.  Contenu de l'application
+    1.  Présentation                         10.  Filtres personnalisés (Custom)
+    2.  Prérequis et installation           11.  Préréglages (Presets)
+    3.  Interface générale                  12.  Encodage et rendu
+    4.  Sélection de la source              13.  Réglages de l’application
+    5.  Lecteur vidéo et navigation         14.  Aperçu du script
+    6.  Panneau de filtres                  15.  Retour d’expérience (Feedback)
+    7.  Filtre CROP (Recadrage)             16.  Workflow recommandé
+    8.  Filtres de restauration             17.  Astuces et raccourcis
+    9.  Filtres d’amélioration              18.  Fichiers et emplacements
+                                            19.  Contenu de l’application
 
 
 =============================================================================================
-                                  1.  PRESENTATION
+                                  1.  PRÉSENTATION
 =============================================================================================
 
-CleanScan est un logiciel de restauration de films argentiques numerises (8 mm, Super 8,
+CleanScan est un logiciel de restauration de films argentiques numérisés (8 mm, Super 8,
 9,5 mm, 16 mm). Il permet de :
 
-    - Reduire le grain de pellicule (MVTools2 MDegrain)
-    - Supprimer poussieres et rayures (RemoveDirt / RemoveDirtMC)
-    - Corriger luminosite, contraste, saturation et couleurs
-    - Corriger les derives colorimetriques (GamMac)
-    - Recadrer l'image
-    - Renforcer la nettete (Sharpen / Edge-aware)
-    - Ajouter des filtres AviSynth personnalises avec interface de controle
+    - Réduire le grain de pellicule (MVTools2 MDegrain)
+    - Supprimer les poussières et les rayures (RemoveDirt / RemoveDirtMC)
+    - Corriger la luminosité, le contraste, la saturation et les couleurs
+    - Corriger les dérives colorimétriques (GamMac)
+    - Recadrer l’image
+    - Renforcer la netteté (Sharpen / Edge-aware)
+    - Ajouter des filtres AviSynth personnalisés avec interface de contrôle
 
-Le logiciel genere un script AviSynth+ optimise et offre une previsualisation en temps reel
-via un lecteur video integre (libmpv). L'encodage final est assure par FFmpeg.
+Le logiciel génère un script AviSynth+ optimisé et offre une prévisualisation en temps réel
+via un lecteur vidéo intégré (libmpv). L’encodage final est assuré par FFmpeg.
 
-L'application est disponible en 4 langues : francais, anglais, allemand, espagnol.
+L’application est disponible en 4 langues : français, anglais, allemand et espagnol.
 
 =============================================================================================
-                                REMERCIEMENTS / CREDITS
-  =============================================================================================
+                                REMERCIEMENTS / CRÉDITS
+=============================================================================================
 
-  CleanScan s’appuie sur la qualité des plugins AviSynth+ développés 
-  et maintenus par la communauté open source. Nous adressons nos remerciements les plus chaleureux,
-  aussi exhaustivement que possible, à leurs auteurs :
+CleanScan s’appuie sur la qualité des plugins AviSynth+ développés
+et maintenus par la communauté open source. Nous adressons nos remerciements les plus chaleureux,
+aussi exhaustivement que possible, à leurs auteurs :
 
      MVTools2 — Manao, Fizick, Tsp, TSchniede, SEt
           Estimation de mouvement et réduction temporelle du grain (MDegrain).
@@ -79,154 +78,154 @@ L'application est disponible en 4 langues : francais, anglais, allemand, espagno
           gamma (^0.86), dont s’inspire le mode « edge » de CleanScan.
 
 =============================================================================================
-                           2.  PREREQUIS ET INSTALLATION
+                           2.  PRÉREQUIS ET INSTALLATION
 =============================================================================================
 
-Systeme requis :
+Système requis :
     - Windows 10 ou 11 (64 bits)
-    - 4 Go de RAM minimum (8 Go recommande)
+    - 4 Go de RAM minimum (8 Go recommandés)
     - Espace disque suffisant pour les fichiers source et les rendus
 
 Composants :
-    - AviSynth+ 64 bits doit etre installe. Si absent, CleanScan le detecte au demarrage
+    - AviSynth+ 64 bits doit être installé. S’il est absent, CleanScan le détecte au démarrage
       et propose son installation.
-    - FFmpeg est fourni avec l'application (dossier Plugins/ffmpeg/).
-    - Le lecteur mpv est fourni avec l'application (dossier mpv/).
+    - FFmpeg est fourni avec l’application (dossier Plugins/ffmpeg/).
+    - Le lecteur mpv est fourni avec l’application (dossier mpv/).
 
-Aucune installation supplementaire n'est requise. Il suffit de decompresser l'archive
-et de lancer l'executable CleanScan.exe.
+Aucune installation supplémentaire n’est requise. Il suffit de décompresser l’archive
+et de lancer l’exécutable CleanScan.exe.
 
 
 =============================================================================================
-                              3.  INTERFACE GENERALE
+                              3.  INTERFACE GÉNÉRALE
 =============================================================================================
 
-L'interface est organisee en trois zones principales :
+L’interface est organisée en trois zones principales :
 
-    ZONE SUPERIEURE
+    ZONE SUPÉRIEURE
     -----------------------------------------------------------------------------------------
-    Barre de menus : Infos (guide, apercu script, presets, à propos, contact, reglages),
-    Langues (FR/EN/DE/ES), Visite guidee.
+    Barre de menus : Infos (guide, aperçu du script, presets, à propos, contact, réglages),
+    Langues (FR/EN/DE/ES), visite guidée.
 
-    Barre de source : champs de selection du fichier source, mode image/video, threads,
+    Barre de source : champs de sélection du fichier source, mode image/vidéo, threads,
     chargeur source (Auto/FFMS2/L-SMASH/LWLibav).
 
-    Onglets clips : chaque clip charge apparait sous forme d'onglet avec le nom du fichier
-    et le preset applique (ex: "[perso2]"). Cliquez sur un onglet pour basculer entre les
-    clips. Le bouton + permet d'ajouter un clip, le x ferme un onglet.
+    Onglets clips : chaque clip chargé apparaît sous forme d’onglet avec le nom du fichier
+    et le preset appliqué (ex. : "[perso2]"). Cliquez sur un onglet pour basculer entre les
+    clips. Le bouton + permet d’ajouter un clip, le x ferme un onglet.
 
     ZONE CENTRALE
     -----------------------------------------------------------------------------------------
-    Lecteur video mpv : affiche la previsualisation du script AviSynth en temps reel.
+    Lecteur vidéo mpv : affiche la prévisualisation du script AviSynth en temps réel.
 
     Barre de transport (en bas du lecteur) :
-        |<      Debut du clip
-        <<      Image precedente
+        |<      Début du clip
+        <<      Image précédente
         >       Lecture / Pause
         >>      Image suivante
         1x      Vitesse (cycle : 0.25x -> 0.5x -> 1x)
-        1/2     Demi-resolution (previsualisation plus rapide)
+        1/2     Demi-résolution (prévisualisation plus rapide)
         []      Maximiser/Restaurer le lecteur (F11)
-        REC     Ouvrir le panneau d'encodage
+        REC     Ouvrir le panneau d’encodage
 
-    Barre de progression : position actuelle / duree totale.
+    Barre de progression : position actuelle / durée totale.
     Cliquez ou glissez pour naviguer.
 
-    ZONE INFERIEURE
+    ZONE INFÉRIEURE
     -----------------------------------------------------------------------------------------
-    Panneau de filtres divise en deux colonnes separees par un separateur redimensionnable :
-        - Colonne gauche : boutons d'activation des filtres (ON/OFF) et filtres personnalises
-        - Colonne droite : parametres detailles du filtre selectionne
+    Panneau de filtres divisé en deux colonnes séparées par un séparateur redimensionnable :
+        - Colonne gauche : boutons d’activation des filtres (ON/OFF) et filtres personnalisés
+        - Colonne droite : paramètres détaillés du filtre sélectionné
 
-    La hauteur entre le lecteur et le panneau de filtres est ajustable via le separateur
+    La hauteur entre le lecteur et le panneau de filtres est ajustable via le séparateur
     horizontal.
 
 
 =============================================================================================
-                            4.  SELECTION DE LA SOURCE
+                            4.  SÉLECTION DE LA SOURCE
 =============================================================================================
 
-Fichier video
-    Glissez-deposez un fichier video sur la zone de lecture, ou cliquez sur le bouton
-    a cote du champ "source" pour ouvrir un explorateur de fichiers.
-    Formats supportes : .avi  .mp4  .mov  .mkv  .wmv  .webm  .m4v  .flv  .ts  .mts
+Fichier vidéo
+    Glissez-déposez un fichier vidéo sur la zone de lecture, ou cliquez sur le bouton
+    à côté du champ "source" pour ouvrir un explorateur de fichiers.
+    Formats supportés : .avi  .mp4  .mov  .mkv  .wmv  .webm  .m4v  .flv  .ts  .mts
                         .m2ts  .mxf  .mpeg  .mpg  .ogv  .3gp
 
-Sequence d'images
-    Selectionnez un répertoire contenant des fichiers d'images (par exemple : 00001.tif, 00002.tif, etc..).
-    CleanScan detecte automatiquement la premiere et la derniere image de la sequence.
-    Formats supportes : .tif  .tiff  .jpg  .jpeg  .png  .bmp  
+Séquence d’images
+    Sélectionnez un répertoire contenant des fichiers images (par exemple : 00001.tif, 00002.tif, etc.).
+    CleanScan détecte automatiquement la première et la dernière image de la séquence.
+    Formats supportés : .tif  .tiff  .jpg  .jpeg  .png  .bmp
 
 Cadence de lecture (FPS)
-    Le champ "fps" definit la cadence de lecture.
-    Valeurs courantes pour formats courants: 
-                    8 mm : 16 ou 18 ips 
-                    Super 8 : 18 ou 24 ips 
-                    Autres formats 18 ou 24 fps (16 mm).
+    Le champ "fps" définit la cadence de lecture.
+    Valeurs courantes pour les formats usuels :
+                    8 mm : 16 ou 18 ips
+                    Super 8 : 18 ou 24 ips
+                    16 mm : 18 ou 24 ips
 
 Chargeur source
-    Le menu deroulant permet de forcer le plugin de decodage :
-        Auto      Detection automatique (recommande)
-        FFMS2     FFmpegSource2 — compatibilite maximale
-        L-SMASH   LSmashSource — MP4/MOV optimise
+    Le menu déroulant permet de forcer le plugin de décodage :
+        Auto      Détection automatique (recommandée)
+        FFMS2     FFmpegSource2 — compatibilité maximale
+        L-SMASH   LSmashSource — MP4/MOV optimisé
         LWLibav   LWLibavVideoSource — format alternatif
-    En cas d'erreur de lecture d'un fichier à l'ouverture de celui-ci, essayez de changer le chargeur source.
+    En cas d’erreur de lecture à l’ouverture d’un fichier, essayez de changer le chargeur source.
 
 Threads
-    Nombre de threads de traitement AviSynth (defaut : 4). Augmentez pour exploiter
-    tous les coeurs du processeur.
-    Une valeur trop élevée peut provoquer des ralentissements ou des erreurs sur les machines moins puissantes. 
-    Ajustez en fonction de votre matériel.
+    Nombre de threads de traitement AviSynth (défaut : 4). Augmentez cette valeur pour exploiter
+    tous les cœurs du processeur.
+    Une valeur trop élevée peut provoquer des ralentissements ou des erreurs sur les machines les moins puissantes.
+    Ajustez-la en fonction de votre matériel.
 
 Multi-clips
-    Vous pouvez charger plusieurs fichiers. Chaque clip dispose de ses propres reglages
-    de filtres et de son propre preset. Glissez-deposez plusieurs fichiers a la fois
+    Vous pouvez charger plusieurs fichiers. Chaque clip dispose de ses propres réglages
+    de filtres et de son propre preset. Glissez-déposez plusieurs fichiers à la fois
     ou utilisez le bouton + pour en ajouter.
 
 
 =============================================================================================
-                         5.  LECTEUR VIDEO ET NAVIGATION
+                         5.  LECTEUR VIDÉO ET NAVIGATION
 =============================================================================================
 
-Le lecteur integre affiche le resultat du script AviSynth en temps reel. Toute modification
-de parametre regenere automatiquement le script et rafraichit l'apercu.
+Le lecteur intégré affiche le résultat du script AviSynth en temps réel. Toute modification
+de paramètre régénère automatiquement le script et rafraîchit l’aperçu.
 
 Raccourcis clavier :
 
     Touche                    Action
     -----------------------------------------------------------------------------------------
     Espace                    Lecture / Pause
-    Fleche gauche             Image precedente
-    Fleche droite             Image suivante
-    Ctrl + Gauche             Aller au debut
-    Ctrl + Droite             Aller a la fin
+    Flèche gauche             Image précédente
+    Flèche droite             Image suivante
+    Ctrl + Gauche             Aller au début
+    Ctrl + Droite             Aller à la fin
     F11                       Maximiser/Restaurer la taille du lecteur
 
-Interactions avec les parametres :
+Interactions avec les paramètres :
 
     Action                    Effet
     -----------------------------------------------------------------------------------------
     Clic sur slider           Positionne directement le curseur
-    Glisser le slider         Ajustement en temps reel
-    Molette sur champ texte   Ajuste la valeur par pas (Step)
-    Saisie directe            Tapez une valeur, validez par Entree ou clic ailleurs
-    Survol d'un label         Affiche l'infobulle avec plage et conseils lié au paramètre sélectionné
+    Glisser le slider         Ajustement en temps réel
+    Molette sur champ texte   Ajuste la valeur par pas (step)
+    Saisie directe            Tapez une valeur, validez par Entrée ou clic ailleurs
+    Survol d’un label         Affiche l’infobulle avec plage et conseils liés au paramètre sélectionné
 
-Mode demi-resolution :
-    Le bouton "1/2" active le mode demi-resolution : le script AviSynth traite l'image
-    a la moitie de sa taille AVANT les filtres lourds, puis l'affiche. Cela accelere
-    considerablement la previsualisation sur les machines moins puissantes.
+Mode demi-résolution :
+    Le bouton "1/2" active le mode demi-résolution : le script AviSynth traite l’image
+    à la moitié de sa taille AVANT les filtres lourds, puis l’affiche. Cela accélère
+    considérablement la prévisualisation sur les machines moins puissantes.
 
 Affichage des erreurs :
-    En cas d'erreur de script AviSynth, un bandeau apparait dans le lecteur et une fenetre
-    d'erreur s'ouvre avec :
-        - Le message d'erreur (sans les prefixes techniques de ffmpeg)
-        - L'extrait du script autour de la ligne fautive (avec marqueur ►)
-        - La sortie complete de ffmpeg dans une section "Details" retractable
+    En cas d’erreur de script AviSynth, un bandeau apparaît dans le lecteur et une fenêtre
+    d’erreur s’ouvre avec :
+        - Le message d’erreur (sans les préfixes techniques de ffmpeg)
+        - L’extrait du script autour de la ligne fautive (avec marqueur ►)
+        - La sortie complète de ffmpeg dans une section "Détails" rétractable
         - Un bouton "Copier" pour copier le message complet
 
 Preset par clip :
-    Le menu deroulant a cote de la barre de transport permet d'appliquer un preset
+    Le menu déroulant à côté de la barre de transport permet d’appliquer un preset
     de filtres uniquement au clip actif.
 
 
@@ -234,251 +233,294 @@ Preset par clip :
                               6.  PANNEAU DE FILTRES
 =============================================================================================
 
-Le panneau inferieur est divise en deux colonnes :
-    Colonne gauche : boutons d'activation (ON/OFF, vert = actif)
-    Colonne droite : parametres detailles du filtre selectionne
+Le panneau inférieur est divisé en deux colonnes :
+    Colonne gauche : boutons d’activation (ON/OFF, vert = actif)
+    Colonne droite : paramètres détaillés du filtre sélectionné
 
-Chaque filtre possede :
-    - Un bouton ON/OFF pour activer/desactiver le filtre
-    - Un bouton d'expansion (>) qui affiche son panneau avec ses parametres detailles
+Chaque filtre possède :
+    - Un bouton ON/OFF pour activer/désactiver le filtre
+    - Un bouton d’expansion (>) qui affiche son panneau avec ses paramètres détaillés
     - Des presets rapides (pour certains filtres)
 
-Les options generales (hors filtres) sont :
-    preview            Previsualisation AviSynth (comparaison avant/apres)
+Les options générales (hors filtres) sont :
+    preview            Prévisualisation AviSynth (comparaison avant/après)
     enable_flip_h      Retournement horizontal
     enable_flip_v      Retournement vertical
 
 Ordre du pipeline de traitement :
     1. Retournement (flip)
     2. Recadrage (crop)
-    3. Suppression poussieres (denoise / RemoveDirt)
-    4. Reduction grain (degrain / MVTools2)
-    5. Niveaux de luminosite (luma levels)
-    6. Correction colorimetrique (GamMac)
-    7. Filtres personnalises (6 points d'injection possibles)
-    8. Nettete (sharpen) — toujours en dernier
+    3. Suppression des poussières (denoise / RemoveDirt)
+    4. Réduction du grain (degrain / MVTools2)
+    5. Niveaux de luminosité (luma levels)
+    6. Correction colorimétrique (GamMac)
+    7. Filtres personnalisés (6 points d’injection possibles)
+    8. Netteté (sharpen) — toujours en dernier
 
-Les valeurs des sliders sont automatiquement alignees sur le pas (step) defini
-pour chaque parametre, empechant les valeurs invalides.
+Les valeurs des sliders sont automatiquement alignées sur le pas (step) défini
+pour chaque paramètre, ce qui empêche les valeurs invalides.
 
 
 =============================================================================================
                            7.  FILTRE CROP (RECADRAGE)
 =============================================================================================
 
-Supprime des pixels sur les bords de l'image. Les valeurs sont automatiquement arrondies
-aux nombres pairs (exigence du sous-echantillonnage chroma YUV).
+Supprime des pixels sur les bords de l’image. Les valeurs sont automatiquement arrondies
+aux nombres pairs (exigence du sous-échantillonnage chroma YUV).
 
-    Parametre       Plage          Defaut      Description
+    Paramètre       Plage          Défaut      Description
     -----------------------------------------------------------------------------------------
-    Crop_L          0-500 px       0           Pixels supprimes a gauche
-    Crop_T          0-500 px       0           Pixels supprimes en haut
-    Crop_R          0-500 px       0           Pixels supprimes a droite
-    Crop_B          0-500 px       0           Pixels supprimes en bas
+    Crop_L          0-500 px       0           Pixels supprimés à gauche
+    Crop_T          0-500 px       0           Pixels supprimés en haut
+    Crop_R          0-500 px       0           Pixels supprimés à droite
+    Crop_B          0-500 px       0           Pixels supprimés en bas
 
 
 =============================================================================================
                          8.  FILTRES DE RESTAURATION
 =============================================================================================
 
-    DEGRAIN — Reduction du grain (MVTools2)
+    DEGRAIN — Réduction du grain (MVTools2)
     -----------------------------------------------------------------------------------------
-    Reduction temporelle du grain de pellicule via l'analyse de mouvement MVTools2.
-    Le filtre compare plusieurs images consécutives pour distinguer le detail du grain.
+    Réduction temporelle du grain de pellicule via l’analyse de mouvement MVTools2.
+    Le filtre compare plusieurs images consécutives pour distinguer le détail du grain.
 
-    Parametre              Plage                        Defaut      Description
+    Paramètre              Plage                        Défaut      Description
     degrain_mode           mdegrain1/2/3/temporal       mdegrain2   Algorithme
     degrain_thSAD          0-1000                       350         Seuil luma
     degrain_thSADC         0-1000                       250         Seuil chroma
     degrain_blksize        4/8/16/32/64                 16          Taille de bloc
-    degrain_overlap        0 a blksize/2                blksize/2   Chevauchement
-    degrain_pel            1 ou 2                       2           Precision sub-pixel
-    degrain_search         0-5                          2           Mode recherche
-    degrain_prefilter      remgrain/blur/none           remgrain    Pre-filtre
+    degrain_overlap        0 à blksize/2                blksize/2   Chevauchement
+    degrain_pel            1 ou 2                       2           Précision sub-pixel
+    degrain_search         0-5                          2           Mode de recherche
+    degrain_prefilter      remgrain/blur/none           remgrain    Préfiltre
 
     Contraintes automatiques :
         - blksize ne peut prendre que les valeurs 4, 8, 16, 32 ou 64 (puissances de 2,
-          exigence de MVTools2 MAnalyse). Le slider snape automatiquement.
-        - overlap est automatiquement plafonne a blksize/2. Si vous reduisez blksize,
-          overlap est reduit en consequence.
-        - overlap n'accepte que des valeurs paires (step = 2).
+          exigence de MVTools2 MAnalyse). Le slider s’ajuste automatiquement.
+        - overlap est automatiquement plafonné à blksize/2. Si vous réduisez blksize,
+          overlap est réduit en conséquence.
+        - overlap n’accepte que des valeurs paires (step = 2).
 
     Presets rapides :
         Grain fin        thSAD=200, thSADC=150
-        Grain moyen      thSAD=350, thSADC=250 (defaut)
-        Grain fort        thSAD=500, thSADC=400
+        Grain moyen      thSAD=350, thSADC=250 (défaut)
+        Grain fort       thSAD=500, thSADC=400
 
     Notes :
-        - mdegrain2 : 2 references temporelles (recommande, bon rapport qualite/vitesse)
-        - mdegrain3 : 3 references (meilleur resultat, plus lent)
-        - mdegrain1 : 1 reference (rapide, moins efficace)
+        - mdegrain2 : 2 références temporelles (recommandé, bon rapport qualité/vitesse)
+        - mdegrain3 : 3 références (meilleur résultat, plus lent)
+        - mdegrain1 : 1 référence (rapide, moins efficace)
         - temporal  : TemporalSoften (sans MVTools2, basique)
 
-    DENOISE — Suppression des poussieres (RemoveDirt)
+    DENOISE — Suppression des poussières (RemoveDirt)
     -----------------------------------------------------------------------------------------
-    Detection et suppression temporelle des poussieres et defauts ponctuels.
+    Détection et suppression temporelles des poussières et défauts ponctuels.
 
-    Parametre              Plage                        Defaut      Description
-    denoise_mode           removedirtmc/removedirt      removedirtmc  Algorithme
-    denoise_strength       1-24                         10          Seuil de detection
-    denoise_dist           1-20                         3           Rayon spatial
-    denoise_grey           true/false                   false       Luma uniquement
+    Paramètre              Plage                        Défaut         Description
+    denoise_mode           removedirtmc/removedirt      removedirtmc   Algorithme
+    denoise_strength       1-24                         10             Seuil de détection
+    denoise_dist           1-20                         3              Rayon spatial
+    denoise_grey           true/false                   false          Luma uniquement
 
-    Note : removedirtmc (avec compensation de mouvement) est recommande pour de meilleurs
-    resultats. Le mode removedirt est plus rapide mais moins precis.
+    Note : removedirtmc (avec compensation de mouvement) est recommandé pour de meilleurs
+    résultats. Le mode removedirt est plus rapide mais moins précis.
 
 
 =============================================================================================
-                         9.  FILTRES D'AMELIORATION
+                         9.  FILTRES D’AMÉLIORATION
 =============================================================================================
 
-    LUMA LEVELS — Niveaux de luminosite
+    LUMA LEVELS — Niveaux de luminosité
     -----------------------------------------------------------------------------------------
-    Ajustement global de la luminosite, du contraste, de la saturation et de la teinte.
+    Ajustement global de la luminosité, du contraste, de la saturation et de la teinte.
 
-    Parametre       Plage              Defaut      Description
-    Lum_Bright      -255 a 255         0           Decalage de luminosite
-    Lum_Contrast    0.1 a 3.0          1.05        Multiplicateur de contraste
-    Lum_Sat         0.1 a 3.0          1.10        Saturation des couleurs
-    Lum_Hue         -180 a 180         0           Rotation de teinte (degres)
-    Lum_GammaY      0.1 a 3.0          1.30        Courbe gamma
+    Paramètre       Plage              Défaut      Description
+    Lum_Bright      -255 à 255         0           Décalage de luminosité
+    Lum_Contrast    0.1 à 3.0          1.05        Multiplicateur de contraste
+    Lum_Sat         0.1 à 3.0          1.10        Saturation des couleurs
+    Lum_Hue         -180 à 180         0           Rotation de teinte (degrés)
+    Lum_GammaY      0.1 à 3.0          1.30        Courbe gamma
 
-    Note : GammaY > 1 eclaircit les tons moyens, < 1 les assombrit.
-    C'est souvent le parametre le plus utile pour les films anciens sous-exposes.
+    Note : GammaY > 1 éclaircit les tons moyens, < 1 les assombrit.
+    C’est souvent le paramètre le plus utile pour les films anciens sous-exposés.
 
-    GAMMAC — Correction colorimetrique avancee
+    GAMMAC — Correction colorimétrique avancée
     -----------------------------------------------------------------------------------------
-    Correction automatique des derives de couleur entre canaux RGB. Particulierement
-    utile pour les films presentant un jaunissement, une dominante bleue ou rouge.
+    Correction automatique des dérives de couleur entre canaux RGB. Particulièrement
+    utile pour les films présentant un jaunissement, une dominante bleue ou rouge.
 
-    Parametre       Plage              Defaut      Description
-    LockChan        -3 a 2             1           Canal de reference
+    Paramètre       Plage              Défaut      Description
+    LockChan        -3 à 2             1           Canal de référence
     LockVal         1-255              250         Seuil de verrouillage
-    Scale           0-2                2           Mode d'echelle
+    Scale           0-2                2           Mode d’échelle
     Th              0.0-1.0            0           Seuil bas
     HiTh            0.0-1.0            1           Seuil haut
-    X               0-2000             0           Decalage X de la zone d'analyse
-    Y               0-2000             0           Decalage Y de la zone d'analyse
+    X               0-2000             0           Décalage X de la zone d’analyse
+    Y               0-2000             0           Décalage Y de la zone d’analyse
     W               0-4000             0           Largeur de la zone (0 = tout)
     H               0-4000             0           Hauteur de la zone (0 = tout)
     Omin            0-255              0           Sortie minimale
     Omax            0-255              255         Sortie maximale
     Show            true/false         false       Afficher la visualisation
-    Verbosity       0-6                0           Niveau de detail du log
+    Verbosity       0-6                0           Niveau de détail du log
 
-    LockChan : 0=Rouge, 1=Vert, 2=Bleu, -1=valeur cible, -2=moyenne, -3=median.
-    Cliquez sur le bouton (i) pour ouvrir la documentation detaillee de GamMac.
+    LockChan : 0=Rouge, 1=Vert, 2=Bleu, -1=valeur cible, -2=moyenne, -3=médiane.
+    Cliquez sur le bouton (i) pour ouvrir la documentation détaillée de GamMac.
 
-    SHARPEN — Renforcement de la nettete
+    SHARPEN — Renforcement de la netteté
     -----------------------------------------------------------------------------------------
-    Renforcement de la nettete de l'image. Toujours applique en dernier dans le pipeline
-    pour eviter d'amplifier les artefacts des autres filtres.
+    Renforcement de la netteté de l’image. Toujours appliqué en dernier dans le pipeline
+    pour éviter d’amplifier les artefacts des autres filtres.
 
-    Parametre              Plage              Defaut      Description
+    Paramètre              Plage              Défaut      Description
     Sharp_Mode             simple/edge        simple      Algorithme
     Sharp_Strength         1-20               8           Force du renforcement
     Sharp_Radius           0.5-5.0            1.5         Rayon de flou (masque)
     Sharp_Threshold        0-100              0           Seuil anti-bruit
 
     Presets rapides :
-        Leger            Strength=5
-        Standard         Strength=8 (defaut)
+        Léger            Strength=5
+        Standard         Strength=8 (défaut)
         Moyen            Strength=12
         Fort             Strength=16
-        Tres fort        Strength=20
+        Très fort        Strength=20
 
     Notes :
-        - simple : Sharpen() global, efficace mais peut amplifier le grain residuel.
+        - simple : Sharpen() global, efficace mais peut amplifier le grain résiduel.
         - edge : contours uniquement via masque Sobel + gamma (technique
-          LimitedSharpenFaster). Preserve les zones lisses. Recommande apres Degrain.
+          LimitedSharpenFaster). Préserve les zones lisses. Recommandé après Degrain.
 
 
 =============================================================================================
-                        10.  FILTRES PERSONNALISES (CUSTOM)
+                        10.  FILTRES PERSONNALISÉS (CUSTOM)
 =============================================================================================
 
-CleanScan permet de creer vos propres filtres AviSynth et de les integrer dans le pipeline
-de restauration avec une interface de controle complete.
+CleanScan permet de créer vos propres filtres AviSynth et de les intégrer dans le pipeline
+de restauration avec une interface de contrôle complète.
 
-    CREER UN FILTRE PERSONNALISE
+    CRÉER UN FILTRE PERSONNALISÉ
     -----------------------------------------------------------------------------------------
 
-    1. Cliquez sur le bouton "+" a droite du titre "CUSTOM" dans le panneau de filtres.
-       Le formulaire de filtre personnalise s'ouvre.
+    1. Cliquez sur le bouton "+" à droite du titre "CUSTOM" dans le panneau de filtres.
+       Le formulaire de filtre personnalisé s’ouvre.
 
     2. Renseignez le nom du filtre et la position dans le pipeline :
        - BeforePipeline : avant tous les filtres
-       - AfterGamMac    : apres la correction colorimetrique
-       - AfterDenoise   : apres la suppression des poussieres
-       - AfterDegrain   : apres la reduction du grain
-       - AfterLuma      : apres les niveaux de luminosite
-       - AfterSharpen   : apres la nettete (fin du pipeline)
+       - AfterGamMac    : après la correction colorimétrique
+       - AfterDenoise   : après la suppression des poussières
+       - AfterDegrain   : après la réduction du grain
+       - AfterLuma      : après les niveaux de luminosité
+       - AfterSharpen   : après la netteté (fin du pipeline)
 
-    3. Si votre filtre necessite un plugin AviSynth externe (.dll), cliquez sur
-       "+ Ajouter DLL..." pour l'ajouter. Les DLLs sont chargees via TryLoadPlugin()
-       et les doublons sont automatiquement elimines.
+    3. Si votre filtre nécessite un plugin AviSynth externe (.dll), cliquez sur
+       "+ Ajouter DLL..." pour l’ajouter. Les DLL sont chargées via TryLoadPlugin()
+       et les doublons sont automatiquement éliminés.
 
-    4. Ecrivez le code AviSynth dans l'editeur. Utilisez "c" comme variable clip :
+    4. Écrivez le code AviSynth dans l’éditeur. Utilisez "c" comme variable clip :
            c = MonFiltre(c, force={sigma})
-       Les mots entre accolades {nom} sont detectes automatiquement comme parametres.
+       Les mots entre accolades {nom} sont détectés automatiquement comme paramètres.
 
-    5. Pour chaque parametre detecte, configurez le type de controle :
-       - slider   : curseur avec Min, Max, Step et Defaut.
-                     Les valeurs sont automatiquement alignees sur le pas (step).
-                     Avec un step de 2, seules les valeurs paires sont autorisees.
-       - combo    : liste deroulante avec valeurs separees par virgule
-       - checkbox : case a cocher avec valeurs On/Off personnalisables
+    5. Pour chaque paramètre détecté, configurez le type de contrôle :
+       - slider   : curseur avec Min, Max, Step et Défaut.
+                    Les valeurs sont automatiquement alignées sur le pas (step).
+                    Avec un step de 2, seules les valeurs paires sont autorisées.
+       - combo    : liste déroulante avec valeurs séparées par des virgules
+       - checkbox : case à cocher avec valeurs On/Off personnalisables
        - text     : champ texte libre
 
-    6. Utilisez le bouton "Apercu" pour tester le filtre en temps reel sans quitter
+    6. Utilisez le bouton "Aperçu" pour tester le filtre en temps réel sans quitter
        le formulaire.
 
     7. Cliquez sur "Enregistrer" pour sauvegarder.
 
-    UTILISER UN FILTRE PERSONNALISE
+    UTILISER UN FILTRE PERSONNALISÉ
     -----------------------------------------------------------------------------------------
 
-    Le filtre apparait dans la section CUSTOM avec :
-        - Un bouton ON/OFF pour activer/desactiver le filtre
-        - Un bouton fleche (>) pour ouvrir le panneau de parametres
-        - Un bouton crayon pour ouvrir le formulaire d'edition
+    Le filtre apparaît dans la section CUSTOM avec :
+        - Un bouton ON/OFF pour activer/désactiver le filtre
+        - Un bouton flèche (>) pour ouvrir le panneau de paramètres
+        - Un bouton crayon pour ouvrir le formulaire d’édition
 
-    Les parametres sont affiches dans la colonne droite du panneau de filtres avec les
-    controles definis (sliders, listes, cases a cocher, champs texte).
+    Les paramètres sont affichés dans la colonne droite du panneau de filtres avec les
+    contrôles définis (sliders, listes, cases à cocher, champs texte).
 
     EXPORTER / IMPORTER UN FILTRE
     -----------------------------------------------------------------------------------------
 
-    Exporter : dans le formulaire d'edition, cliquez sur "Exporter". Le filtre est
-    sauvegarde dans un fichier .json que vous pouvez partager avec d'autres utilisateurs.
+    Exporter : dans le formulaire d’édition, cliquez sur "Exporter". Le filtre est
+    sauvegardé dans un fichier .json que vous pouvez partager avec d’autres utilisateurs.
 
-    Importer : dans le panneau de filtres, cliquez sur le bouton fleche vers le bas a cote
-    du "+" dans la section CUSTOM. Selectionnez un fichier .json exporte. Les filtres
-    importes recoivent un nouvel identifiant pour eviter les doublons.
+    Importer : dans le panneau de filtres, cliquez sur le bouton flèche vers le bas à côté
+    du "+" dans la section CUSTOM. Sélectionnez un fichier .json exporté. Les filtres
+    importés reçoivent un nouvel identifiant pour éviter les doublons.
 
     Note : les chemins DLL sont absolus. Si le filtre utilise un plugin externe, assurez-vous
-    que la DLL est presente au meme emplacement sur la machine cible, ou editez le filtre
-    apres importation pour corriger le chemin.
+    que la DLL est présente au même emplacement sur la machine cible, ou éditez le filtre
+    après importation pour corriger le chemin.
 
     SUPPRIMER UN FILTRE
     -----------------------------------------------------------------------------------------
 
-    Ouvrez le formulaire d'edition (bouton crayon) et cliquez sur "Supprimer".
+    Ouvrez le formulaire d’édition (bouton crayon) et cliquez sur "Supprimer".
 
 Emplacement de stockage : %AppData%\CleanScan\custom_filters.json
 
 
+  IMPORTER UN SCRIPT AVSI
+      -----------------------------------------------------------------------------------------
+
+      Certains filtres AviSynth reposent sur des fonctions définies dans des fichiers
+      de script (.avsi). Ces fichiers contiennent des fonctions réutilisables qui étendent
+      les possibilités d’AviSynth sans être des plugins compilés (.dll).
+
+      Pour ajouter un script .avsi à un filtre personnalisé :
+
+      1. Ouvrez le formulaire d’édition du filtre (bouton crayon ou création d’un nouveau
+         filtre via le bouton "+").
+
+      2. Dans la section "Scripts (Import .avsi)", cliquez sur "+ Ajouter AVSI...".
+
+      3. Sélectionnez un ou plusieurs fichiers .avsi ou .avs depuis votre disque.
+         Les fichiers sélectionnés sont automatiquement copiés dans le dossier
+         Plugins/Scripts/ de l’application, ce qui garantit leur disponibilité
+         indépendamment de leur emplacement d’origine.
+
+      4. Les scripts ajoutés apparaissent dans la liste. Utilisez le bouton (x) pour
+         retirer un script de la liste.
+
+      5. Lors de la génération du script AviSynth, CleanScan insère automatiquement
+         une instruction Import() pour chaque script référencé, juste après le
+         chargement des plugins :
+
+             TryLoadPlugin("C:/.../MonPlugin.dll")
+             Import("C:/.../Plugins/Scripts/MesFonctions.avsi")
+
+      Les fonctions définies dans le fichier .avsi sont alors disponibles dans le code
+      de votre filtre personnalisé.
+
+      Exemple : si votre fichier MesFonctions.avsi définit une fonction MonDebruitage(),
+      vous pouvez l’utiliser directement dans le code du filtre :
+          c = MonDebruitage(c, force={sigma})
+
+      Note : lors de l’exportation d’un filtre, seul le nom du fichier .avsi est
+      enregistré (pas son contenu). Si vous partagez un filtre avec un autre utilisateur,
+      transmettez également les fichiers .avsi nécessaires. L’utilisateur devra les
+      importer via le même mécanisme.
+
+
+
 =============================================================================================
-                            11.  PREREGLAGES (PRESETS)
+                            11.  PRÉRÉGLAGES (PRESETS)
 =============================================================================================
 
     PRESETS GLOBAUX (filtres)
     -----------------------------------------------------------------------------------------
-    Le menu Infos > Preset permet de sauvegarder et restaurer vos configurations de filtres.
+    Le menu Infos > Presets permet de sauvegarder et restaurer vos configurations de filtres.
 
     Action              Description
-    Sauvegarder         Enregistre les reglages actuels sous un nom
-    Charger             Applique un preset existant (s'applique a tous les clips charges)
+    Sauvegarder         Enregistre les réglages actuels sous un nom
+    Charger             Applique un preset existant (s’applique à tous les clips chargés)
     Supprimer           Efface un preset
 
     Les champs source, film, img, start, end et crop ne sont PAS inclus dans les presets.
@@ -486,16 +528,16 @@ Emplacement de stockage : %AppData%\CleanScan\custom_filters.json
 
     PRESETS PAR CLIP
     -----------------------------------------------------------------------------------------
-    Chaque clip peut avoir ses propres reglages de filtres. Quand vous modifiez manuellement
-    un parametre, le clip est automatiquement nomme "perso1", "perso2", etc.
-    Le menu deroulant dans la barre de transport permet de charger un preset global pour
+    Chaque clip peut avoir ses propres réglages de filtres. Quand vous modifiez manuellement
+    un paramètre, le clip est automatiquement nommé "perso1", "perso2", etc.
+    Le menu déroulant dans la barre de transport permet de charger un preset global pour
     le clip actif uniquement.
 
-    PRESETS D'ENCODAGE
+    PRESETS D’ENCODAGE
     -----------------------------------------------------------------------------------------
-    Les combinaisons d'encodage (encodeur + conteneur + qualite + chroma + resolution)
-    peuvent etre sauvegardees et rechargees depuis le panneau Record.
-    Le preset "Default" est toujours present et apparait en premier.
+    Les combinaisons d’encodage (encodeur + conteneur + qualité + chroma + résolution)
+    peuvent être sauvegardées et rechargées depuis le panneau Record.
+    Le preset "Default" est toujours présent et apparaît en premier.
     Emplacement : %AppData%\CleanScan\encoding_presets.json
 
 
@@ -504,182 +546,192 @@ Emplacement de stockage : %AppData%\CleanScan\custom_filters.json
 =============================================================================================
 
 Cliquez sur le bouton REC (rouge) dans la barre de transport pour ouvrir le panneau
-d'encodage.
+d’encodage.
 
-    ETAPE 1 — Selection des clips
+    ÉTAPE 1 — Sélection des clips
     -----------------------------------------------------------------------------------------
-    Cochez les clips a encoder dans la liste. Utilisez "Tout selectionner" pour les
+    Cochez les clips à encoder dans la liste. Utilisez "Tout sélectionner" pour les
     encoder tous en une seule fois (batch). Chaque clip peut avoir un nom de sortie
-    et un preset d'encodage differents.
+    et un preset d’encodage différents.
+    Chaque preset peut inclure un dossier de destination différent, ce qui permet d’organiser
+    facilement les rendus de plusieurs clips.
 
-    ETAPE 2 — Dossier de destination
+    ÉTAPE 2 — Dossier de destination
     -----------------------------------------------------------------------------------------
-    Cliquez sur le bouton parcourir ou saisissez le chemin. L'espace disque disponible
-    est affiche en temps reel.
+    Cliquez sur le bouton Parcourir ou saisissez le chemin. L’espace disque disponible
+    est affiché en temps réel.
 
-    ETAPE 3 — Choix de l'encodeur
+    ÉTAPE 3 — Choix de l’encodeur
     -----------------------------------------------------------------------------------------
     Encodeur       Type             Usage
     x264           Lossy            Diffusion (H.264)
     x265           Lossy            Diffusion (HEVC)
     FFV1           Lossless         Archivage professionnel
-    UT Video       Lossless         Edition rapide
+    UT Video       Lossless         Édition rapide
     ProRes         Lossy HQ         Post-production
     TIFF seq.      Lossless         Images individuelles (archivage)
     PNG seq.       Lossless         Images individuelles
     JPG seq.       Lossy            Images individuelles
 
-    ETAPE 4 — Conteneur
+    ÉTAPE 4 — Conteneur
     -----------------------------------------------------------------------------------------
-    MKV, MP4, AVI ou MOV (pour les codecs video). Ignore pour les sequences d'images.
+    MKV, MP4, AVI ou MOV (pour les codecs vidéo). Ignoré pour les séquences d’images.
 
-    ETAPE 5 — Parametres avances (codecs lossy uniquement)
+    ÉTAPE 5 — Paramètres avancés (codecs lossy uniquement)
     -----------------------------------------------------------------------------------------
-    Mode qualite :
-        CRF      Qualite constante (defaut). Plus la valeur est basse, meilleure est la
-                 qualite. Valeurs typiques : 18-23. Le slider va de 0 a 51.
-        Bitrate  Debit fixe en Mb/s. Le minimum recommande est calcule automatiquement
-                 en fonction de la resolution et du chroma choisis.
+    Mode qualité :
+        CRF      Qualité constante (défaut). Plus la valeur est basse, meilleure est la
+                 qualité. Valeurs typiques : 18-23. Le slider va de 0 à 51.
+        Bitrate  Débit fixe en Mb/s. Le minimum recommandé est calculé automatiquement
+                 en fonction de la résolution et du chroma choisis.
 
-    Sous-echantillonnage chroma :
-        4:2:0    Standard (plus petit fichier)
-        4:2:2    Meilleure qualite couleur
-        4:4:4    Qualite maximale (fichier volumineux)
+    Sous-échantillonnage chroma :
+        4:2:0    Standard (fichier plus petit)
+        4:2:2    Meilleure qualité couleur
+        4:4:4    Qualité maximale (fichier volumineux)
 
-        Note : le bitrate et le chroma sont couples. Modifier le chroma ajuste le
-        bitrate minimum recommande. Entrer un bitrate eleve peut ajuster
-        automatiquement le chroma au niveau maximum supporte.
+        Note : le bitrate et le chroma sont couplés. Modifier le chroma ajuste le
+        bitrate minimum recommandé. Entrer un bitrate élevé peut ajuster
+        automatiquement le chroma au niveau maximum supporté.
 
-    Resolution de sortie :
-        Original   Resolution source conservee
+    Résolution de sortie :
+        Original   Résolution source conservée
         1080p      1920x1080
         720p       1280x720
         576p       720x576 (PAL)
         480p       720x480 (NTSC)
 
-        Note : les dimensions impaires sont automatiquement ajustees aux nombres pairs
+        Note : les dimensions impaires sont automatiquement ajustées aux nombres pairs
         (exigence de x264/x265) via un filtre de padding.
 
-    PENDANT L'ENCODAGE
+    PENDANT L’ENCODAGE
     -----------------------------------------------------------------------------------------
-    - La lecture video est automatiquement arretee
-    - L'interface est verrouillee (filtres, transport, menus, onglets clips)
-    - Seul le bouton "Arreter" reste actif
-    - Une barre de progression affiche le pourcentage d'avancement
-    - La fermeture de l'application stoppe automatiquement l'encodage en cours
+    - La lecture vidéo est automatiquement arrêtée
+    - L’interface est verrouillée (filtres, transport, menus, onglets clips)
+    - Seul le bouton "Arrêter" reste actif
+    - Une barre de progression affiche le pourcentage d’avancement
+    - La fermeture de l’application stoppe automatiquement l’encodage en cours
 
-    Option "Eteindre apres encodage" : cochez cette case pour arreter l'ordinateur
-    automatiquement apres un encodage batch reussi.
+    Option "Éteindre après encodage" : cochez cette case pour arrêter l’ordinateur
+    automatiquement après un encodage batch réussi.
 
-    Note technique : l'encodage utilise un script de rendu dedie (ScriptRender.avs) ou
-    le mode preview est desactive, garantissant la qualite finale maximale.
+    Note technique : l’encodage utilise un script de rendu dédié (ScriptRender.avs) où
+    le mode preview est désactivé, garantissant la qualité finale maximale.
 
 
 =============================================================================================
-                         13.  REGLAGES DE L'APPLICATION
+                         13.  RÉGLAGES DE L’APPLICATION
 =============================================================================================
 
-Menu Infos > Reglages :
+Menu Infos > Réglages :
 
-    Parametre              Description
+    Paramètre              Description
     -----------------------------------------------------------------------------------------
-    Theme                  Sombre (defaut) ou Clair
-    Langue                 Francais, English, Deutsch, Espanol
-    Reset settings         Reinitialise tous les reglages par defaut et redemarre
+    Thème                  Sombre (défaut) ou Clair
+    Langue                 Français, Anglais, Allemand, Espagnol
+    Reset settings         Réinitialise tous les réglages par défaut et redémarre.
+                           Attention, il s’agit vraiment d’une réinitialisation complète qui
+                           efface tous les presets, filtres personnalisés et autres
+                           configurations sauvegardées.
 
 Menu Langues :
-    Changement de langue immediat. L'interface, les scripts AviSynth et le guide sont
-    regeneres dans la langue choisie.
+    Changement de langue immédiat. L’interface, les scripts AviSynth et le guide sont
+    régénérés dans la langue choisie.
 
 
 =============================================================================================
-                              14.  APERCU DU SCRIPT
+                              14.  APERÇU DU SCRIPT
 =============================================================================================
 
-Menu Infos > Apercu du script ouvre une fenetre affichant le contenu complet du fichier
-ScriptUser.avs genere par CleanScan.
+Le menu Infos > Aperçu du script ouvre une fenêtre affichant le contenu complet du fichier
+ScriptUser.avs généré par CleanScan.
 
-Le bouton "Recharger" relit le fichier depuis le disque et rafraichit la previsualisation.
-Cela permet de verifier le script AviSynth produit et de le copier pour un usage externe
-(AvsPmod, VirtualDub, etc.).
-
-
-=============================================================================================
-                       15.  RETOUR D'EXPERIENCE (FEEDBACK)
-=============================================================================================
-
-Le menu Infos > Votre retour d'experience ouvre un formulaire de contact integre permettant
-d'envoyer directement au developpeur :
-    - Un signalement de bug (avec conseils de redaction)
-    - Une demande de fonctionnalite
-    - Un avis general avec notation (etoiles 1 a 5)
-
-Le formulaire est transmis par internet. Le nom et l'email sont optionnels mais recommandes
-si vous souhaitez une reponse.
+Le bouton "Recharger" relit le fichier depuis le disque et rafraîchit la prévisualisation.
+Cela permet de vérifier le script AviSynth produit et de le copier éventuellement
+pour un usage externe (AvsPmod, VirtualDub, etc.).
 
 
 =============================================================================================
-                             16.  WORKFLOW RECOMMANDE
+                       15.  RETOUR D’EXPÉRIENCE (FEEDBACK)
 =============================================================================================
 
-    1. Ouvrez votre source (glisser-deposer ou champ source).
+Le menu Infos > Votre retour d’expérience ouvre un formulaire de contact intégré permettant
+d’envoyer directement au développeur :
+    - Un signalement de bug (avec conseils de rédaction)
+    - Une demande de fonctionnalité
+    - Un avis général avec notation (étoiles de 1 à 5)
 
-    2. Naviguez jusqu'a une image representative (ni trop sombre, ni trop claire).
+Le formulaire est transmis par Internet. Le nom et l’e-mail sont optionnels mais recommandés
+si vous souhaitez une réponse.
 
-    3. Activez les filtres un par un dans l'ordre du pipeline :
+
+=============================================================================================
+                             16.  WORKFLOW RECOMMANDÉ
+=============================================================================================
+
+    1. Ouvrez votre source (glisser-déposer ou champ source).
+
+    2. Naviguez jusqu’à une image représentative (ni trop sombre, ni trop claire).
+
+    3. Activez les filtres un par un dans l’ordre du pipeline :
 
        a) Crop       — Supprimez les bordures noires ou ajustez le cadrage.
 
-       b) Denoise    — Supprimez les poussieres et rayures. Le preset "standard"
+       b) Denoise    — Supprimez les poussières et les rayures. Le preset "standard"
                        convient dans la plupart des cas. Augmentez strength si les
-                       defauts persistent.
+                       défauts persistent.
 
        c) Degrain    — Commencez par le preset "Grain moyen", puis augmentez thSAD
-                       si le grain persiste. Attention : des valeurs trop elevees
+                       si le grain persiste. Attention : des valeurs trop élevées
                        produisent un effet "plastique".
 
-       d) Luma       — Ajustez luminosite et contraste. GammaY est souvent le
-                       parametre le plus utile pour eclaircir les films anciens.
+       d) Luma       — Ajustez la luminosité et le contraste. GammaY est souvent le
+                       paramètre le plus utile pour éclaircir les films anciens.
 
-       e) GamMac     — Corrigez les derives de couleur (jaunissement, dominante
+       e) GamMac     — Corrigez les dérives de couleur (jaunissement, dominante
                        bleue, rouge, etc.).
 
-       f) Sharpen    — Renforcez la nettete en derniere etape. Le mode "edge"
-                       preserve mieux les zones lisses et evite d'amplifier le
-                       grain residuel.
+       f) Sharpen    — Renforcez la netteté en dernière étape. Le mode "edge"
+                       préserve mieux les zones lisses et évite d’amplifier le
+                       grain résiduel.
 
-    4. Utilisez les presets de chaque filtre pour un reglage rapide, puis affinez.
+    4. Utilisez les presets disponibles sur certains filtres pour un réglage rapide, puis affinez.
 
-    5. Verifiez le resultat en parcourant plusieurs passages du film.
+    5. Vérifiez le résultat en parcourant plusieurs passages du film.
 
-    6. Sauvegardez votre configuration en preset.
+    6. Sauvegardez votre configuration en preset dans le menu Settings pour pouvoir
+       la réutiliser facilement sur d’autres clips du même film ou d’autres films similaires.
 
-    7. Si plusieurs clips : chargez-les tous, appliquez les presets adaptes.
+    7. Si vous avez plusieurs clips : chargez-les tous, puis appliquez les presets adaptés.
 
-    8. Ouvrez le panneau Record, choisissez l'encodeur et lancez l'encodage final.
+    8. Ouvrez le panneau Record, choisissez les paramètres d’encodage.
+       Chaque film peut avoir un preset d’encodage différent, ce qui permet d’organiser
+       facilement les rendus.
+       Chaque film peut ou non être inclus dans un batch d’encodage.
+       Lancez le rendu !
 
-    Conseil : activez le mode demi-resolution (1/2) pendant le reglage des parametres
-    pour accelerer la previsualisation, puis desactivez-le pour verifier le resultat
-    en pleine resolution avant l'encodage.
+    Conseil : activez le mode demi-résolution (1/2) pendant le réglage des paramètres
+    pour accélérer la prévisualisation, puis désactivez-le pour vérifier le résultat
+    en pleine résolution avant l’encodage.
 
 
 =============================================================================================
                            17.  ASTUCES ET RACCOURCIS
 =============================================================================================
 
-    - La molette de souris sur les champs numeriques ajuste la valeur par pas.
-    - Le mode demi-resolution (bouton 1/2) accelere considerablement la previsualisation.
-    - Tous les parametres sont sauvegardes automatiquement dans ScriptUser.avs a chaque
+    - La molette de la souris sur les champs numériques ajuste la valeur par pas.
+    - Le mode demi-résolution (bouton 1/2) accélère considérablement la prévisualisation.
+    - Tous les paramètres sont sauvegardés automatiquement dans ScriptUser.avs à chaque
       modification.
-    - La position, la taille de la fenetre et l'etat des panneaux sont memorises entre
+    - La position, la taille de la fenêtre et l’état des panneaux sont mémorisés entre
       les sessions.
-    - Le panneau Record est restaure a l'ouverture s'il etait ouvert a la fermeture.
-    - Les infobulles (survol) sur chaque parametre affichent les plages et des conseils.
-    - Le glisser-deposer de plusieurs fichiers cree automatiquement un clip par fichier.
+    - Le panneau Record est restauré à l’ouverture s’il était ouvert à la fermeture.
+    - Les infobulles (au survol) sur chaque paramètre affichent les plages et des conseils.
+    - Le glisser-déposer de plusieurs fichiers crée automatiquement un clip par fichier.
     - Les sliders se positionnent directement au clic (pas besoin de glisser).
-    - La visite guidee (menu) permet de decouvrir l'interface pas a pas.
+    - La visite guidée (menu) permet de découvrir les bases de l’interface pas à pas.
     - Les erreurs AviSynth affichent automatiquement la ligne de script fautive.
-    - Le bouton "Copier" dans la fenetre d'erreur copie le message + les details.
+    - Le bouton "Copier" dans la fenêtre d’erreur copie le message et les détails.
 
 
 =============================================================================================
@@ -688,70 +740,70 @@ si vous souhaitez une reponse.
 
     Fichier / Dossier              Emplacement
     -----------------------------------------------------------------------------------------
-    ScriptUser.avs                 Dossier de l'exe
-    ScriptMaster.xx.avs            Dossier de l'exe (xx = langue)
-    ScriptRender.avs               Dossier de l'exe (genere pour l'encodage)
+    ScriptUser.avs                 Dossier de l’exe
+    ScriptMaster.xx.avs            Dossier de l’exe (xx = langue)
+    ScriptRender.avs               Dossier de l’exe (généré pour l’encodage)
     presets.json                   %AppData%\CleanScan
     encoding_presets.json          %AppData%\CleanScan
     custom_filters.json            %AppData%\CleanScan
     window_settings.json           %AppData%\CleanScan
     session.json                   %AppData%\CleanScan
-    Plugins/                       Dossier de l'exe
-    mpv/                           Dossier de l'exe
+    Plugins/                       Dossier de l’exe
+    mpv/                           Dossier de l’exe
 
 
 =============================================================================================
-                          19.  CONTENU DE L'APPLICATION
+                          19.  CONTENU DE L’APPLICATION
 =============================================================================================
 
-Arborescence des fichiers distribues avec CleanScan :
+Arborescence des fichiers distribués avec CleanScan :
 
-    CleanScan.exe                           Executable principal
-    ScriptMaster.en.avs                     Modele de script AviSynth
-    UserGuide.txt                           Guide texte (francais, source)
+    CleanScan.exe                           Exécutable principal
+    ScriptMaster.en.avs                     Modèle de script AviSynth
+    UserGuide.txt                           Guide texte (français, source)
 
     Assets/
-      Ico.ico                               Icone de l'application
+      Ico.ico                               Icône de l’application
       Logo.png                              Logo
 
     mpv/
-      libmpv-2.dll                          Lecteur video (libmpv)
+      libmpv-2.dll                          Lecteur vidéo (libmpv)
 
     Users Guide/
       CleanScan_Guide_en.txt                Guide utilisateur (anglais)
-      CleanScan_Guide_fr.txt                Guide utilisateur (francais)
+      CleanScan_Guide_fr.txt                Guide utilisateur (français)
       CleanScan_Guide_de.txt                Guide utilisateur (allemand)
       CleanScan_Guide_es.txt                Guide utilisateur (espagnol)
 
     Plugins/
       Avisynth/
-        AviSynth.dll                        Moteur AviSynth+ embarque
-        DevIL.dll                           Chargement d'images (dependance)
-        ImageSeq.dll                        Support des sequences d'images
+        AviSynth.dll                        Moteur AviSynth+ embarqué
+        DevIL.dll                           Chargement d’images (dépendance)
+        ImageSeq.dll                        Support des séquences d’images
 
       Dual/L-Smash-Works/
-        LSMASHSource.dll                    Decodeur L-SMASH (MP4/MOV)
-        LSMASHSource_indexing.exe            Outil d'indexation
+        LSMASHSource.dll                    Décodeur L-SMASH (MP4/MOV)
+        LSMASHSource_indexing.exe           Outil d’indexation
 
       ffmpeg/
-        ffmpeg.exe                          Encodeur video
-        ffprobe.exe                         Analyse de fichiers video
+        ffmpeg.exe                          Encodeur vidéo
+        ffprobe.exe                         Analyse de fichiers vidéo
         avcodec-62.dll                      Codec FFmpeg
-        avdevice-62.dll                     Peripheriques FFmpeg
+        avdevice-62.dll                     Périphériques FFmpeg
         avfilter-11.dll                     Filtres FFmpeg
         avformat-62.dll                     Formats FFmpeg
         avutil-60.dll                       Utilitaires FFmpeg
-        swresample-6.dll                    Reechantillonnage audio
-        swscale-9.dll                       Mise a l'echelle video
+        swresample-6.dll                    Rééchantillonnage audio
+        swscale-9.dll                       Mise à l’échelle vidéo
 
       FFMS2/
-        ffms2.dll                           Decodeur FFMS2
+        ffms2.dll                           Décodeur FFMS2
 
       GamMac/
-        GamMac_x64.dll                      Correction colorimetrique GamMac
+        GamMac_x64.dll                      Correction colorimétrique GamMac
 
       Masktools2/
-        masktools2.dll                      Operations sur les masques
+        masktools2.dll                      Opérations sur les masques
 
       MVTools2/
         mvtools2.dll                        Estimation et compensation de mouvement
@@ -759,14 +811,14 @@ Arborescence des fichiers distribues avec CleanScan :
         DePanEstimate.dll                   Estimation DePan
 
       RemoveDirt/
-        RemoveDirt.dll                      Suppression des poussieres
+        RemoveDirt.dll                      Suppression des poussières
 
       RgTools/
-        RgTools.dll                         Outils de suppression de grain
+        RgTools.dll                         Outils de suppression du grain
 
       Scripts/
-        FFMS2.avsi                          Script d'import FFMS2
-        RemoveDirt.avsi                     Script d'import RemoveDirt
+        FFMS2.avsi                          Script d’import FFMS2
+        RemoveDirt.avsi                     Script d’import RemoveDirt
 
 
 =============================================================================================
@@ -775,6 +827,6 @@ Arborescence des fichiers distribues avec CleanScan :
                                 ScanFilm SNC
                                www.scanfilm.ch
 
-             Support : utilisez le formulaire Feedback integre dans l'application.
+             Support : utilisez le formulaire Feedback intégré dans l’application.
 
 =============================================================================================

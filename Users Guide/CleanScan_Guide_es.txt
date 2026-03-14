@@ -5,7 +5,7 @@
                                 ScanFilm SNC
                                www.scanfilm.ch
 
-              Version de prueba — Beta 5.0
+              Version de prueba — Beta 6.0
 
 
 =============================================================================================
