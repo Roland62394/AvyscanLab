@@ -2864,6 +2864,7 @@ namespace CleanScan.Views
         bool IEncodeHost.IsEncoding { get => _isEncoding; set => _isEncoding = value; }
         bool IEncodeHost.IsInitializing => _isInitializing;
         bool IEncodeHost.IsClosing => _isClosing;
+        bool IEncodeHost.IsSwitchingClip => _switchingClip;
         void IEncodeHost.RegenerateScript(bool showValidationError) => RegenerateScript(showValidationError);
         Task IEncodeHost.LoadScriptAsync(bool resetPosition) => LoadScriptAsync(resetPosition);
         void IEncodeHost.RestoreClipConfig(int index) => RestoreClipConfig(index);
