@@ -722,7 +722,7 @@ public partial class CustomFilterDialog : Window
         row.Children.Add(new TextBlock
         {
             Text = $"{{{ctrl.Placeholder}}}",
-            FontFamily = new FontFamily("Consolas,Courier New,monospace"),
+            FontFamily = UiConstants.CodeFont,
             FontSize = 12,
             FontWeight = FontWeight.SemiBold,
             Foreground = ThemeBrush("AccentBlue"),
@@ -890,54 +890,11 @@ public partial class CustomFilterDialog : Window
             RebuildDllList();
     }
 
-    private void RebuildDllList()
+    private void RebuildDllList() => RebuildFileList(_dlls, DllListPanel, idx =>
     {
-        DllListPanel.Children.Clear();
-
-        for (var i = 0; i < _dlls.Count; i++)
-        {
-            var idx = i;
-            var row = new Grid
-            {
-                ColumnDefinitions = ColumnDefinitions.Parse("*,6,28"),
-                Margin = new Thickness(0, 0, 0, 0)
-            };
-
-            var pathBox = new TextBox
-            {
-                Text = _dlls[idx],
-                FontSize = 11,
-                IsReadOnly = true,
-                Background = ThemeBrush("BgInput"),
-                Foreground = ThemeBrush("TextSecondary"),
-                BorderBrush = ThemeBrush("BorderSubtle")
-            };
-            Grid.SetColumn(pathBox, 0);
-            row.Children.Add(pathBox);
-
-            var delBtn = new Button
-            {
-                Content = "\u2715",
-                FontSize = 10,
-                Width = 28, Height = 28,
-                Padding = new Thickness(0),
-                HorizontalContentAlignment = HorizontalAlignment.Center,
-                VerticalContentAlignment = VerticalAlignment.Center,
-                Background = Brushes.Transparent,
-                Foreground = ThemeBrush("TextPrimary"),
-                BorderThickness = new Thickness(0)
-            };
-            delBtn.Click += (_, _) =>
-            {
-                _dlls.RemoveAt(idx);
-                RebuildDllList();
-            };
-            Grid.SetColumn(delBtn, 2);
-            row.Children.Add(delBtn);
-
-            DllListPanel.Children.Add(row);
-        }
-    }
+        _dlls.RemoveAt(idx);
+        RebuildDllList();
+    });
 
     private async System.Threading.Tasks.Task OnAddScript()
     {
@@ -974,11 +931,18 @@ public partial class CustomFilterDialog : Window
         RebuildScriptList();
     }
 
-    private void RebuildScriptList()
+    private void RebuildScriptList() => RebuildFileList(_scripts, ScriptListPanel, idx =>
     {
-        ScriptListPanel.Children.Clear();
+        _scripts.RemoveAt(idx);
+        RebuildScriptList();
+    });
 
-        for (var i = 0; i < _scripts.Count; i++)
+    /// <summary>Shared implementation for RebuildDllList / RebuildScriptList.</summary>
+    private void RebuildFileList(List<string> items, StackPanel panel, Action<int> onRemove)
+    {
+        panel.Children.Clear();
+
+        for (var i = 0; i < items.Count; i++)
         {
             var idx = i;
             var row = new Grid
@@ -988,7 +952,7 @@ public partial class CustomFilterDialog : Window
 
             var pathBox = new TextBox
             {
-                Text = _scripts[idx],
+                Text = items[idx],
                 FontSize = 11,
                 IsReadOnly = true,
                 Background = ThemeBrush("BgInput"),
@@ -1010,15 +974,11 @@ public partial class CustomFilterDialog : Window
                 Foreground = ThemeBrush("TextPrimary"),
                 BorderThickness = new Thickness(0)
             };
-            delBtn.Click += (_, _) =>
-            {
-                _scripts.RemoveAt(idx);
-                RebuildScriptList();
-            };
+            delBtn.Click += (_, _) => onRemove(idx);
             Grid.SetColumn(delBtn, 2);
             row.Children.Add(delBtn);
 
-            ScriptListPanel.Children.Add(row);
+            panel.Children.Add(row);
         }
     }
 

@@ -716,7 +716,7 @@ public sealed class EncodeController
         if (_host.FindControl<StackPanel>("BatchClipList") is not { } panel) return;
         panel.Children.Clear();
 
-        var monoFont = new FontFamily("Consolas,Cascadia Code,monospace");
+        var monoFont = UiConstants.MonoFont;
         EnsureDefaultEncodingPreset();
         var presetNames = _host.EncodingPresetService.LoadPresets()
             .OrderBy(p => string.Equals(p.Name, DefaultEncodingPresetName, StringComparison.OrdinalIgnoreCase) ? 0 : 1)

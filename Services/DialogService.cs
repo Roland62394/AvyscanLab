@@ -24,7 +24,7 @@ public sealed class DialogService : IDialogService
 
     public async Task ShowErrorAsync(Window owner, string title, string message, string? details = null)
     {
-        var monoFont = new FontFamily("Consolas, Cascadia Code, monospace");
+        var monoFont = UiConstants.MonoFont;
         var fgError  = new SolidColorBrush(Color.Parse("#FF6B6B"));
 
         var titleBlock = new TextBlock
@@ -211,7 +211,7 @@ public sealed class DialogService : IDialogService
             TextWrapping = TextWrapping.NoWrap,
             MinWidth = 900,
             MinHeight = 520,
-            FontFamily = new FontFamily("Consolas, Courier New, monospace")
+            FontFamily = UiConstants.CodeFont
         };
 
         var reloadButton = MakeButton(vm.GetLocalizedText(fr: "Recharger", en: "Reload"), minWidth: 100);
@@ -263,7 +263,7 @@ public sealed class DialogService : IDialogService
         var presetList = presets.LoadPresets();
         var ordered = presetList.OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase).ToList();
 
-        var monoFont = new FontFamily("Consolas,Cascadia Code,monospace");
+        var monoFont = UiConstants.MonoFont;
 
         var comboBox = new ComboBox
         {
@@ -489,7 +489,7 @@ public sealed class DialogService : IDialogService
             "fr" => fr, "de" => de, "es" => es, _ => en
         };
 
-        var monoFont = new FontFamily("Consolas,Cascadia Code,monospace");
+        var monoFont = UiConstants.MonoFont;
 
         TextBlock MakeLabel(string text) => new()
         {
