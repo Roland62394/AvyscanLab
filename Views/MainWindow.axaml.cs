@@ -335,11 +335,13 @@ namespace CleanScan.Views
                 ClampOverlapToBlksize((int)Math.Round(snapped));
 
             // Clear GamMac preset name when a GamMac parameter changes manually
-            if (Array.IndexOf(EncodeController.GammacKeys, field) >= 0)
+            if (!_switchingClip && Array.IndexOf(EncodeController.GammacKeys, field) >= 0)
             {
                 if (this.FindControl<ComboBox>("GammacPresetCombo") is { } gc)
                 { gc.SelectedIndex = -1; gc.Text = null; }
                 _config.Set("gammac_preset", string.Empty);
+                try { File.AppendAllText(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "combo_debug.txt"),
+                    $"[COMMIT-GAMMAC] {DateTime.Now:HH:mm:ss.fff} field='{field}' _switchingClip={_switchingClip}\n"); } catch {}
             }
         }
 
@@ -1999,7 +2001,14 @@ namespace CleanScan.Views
                 // Defer resetting _switchingClip so that async continuations
                 // (e.g. LostFocus handlers on TextBoxes that fire during the await)
                 // still see _switchingClip=true and don't trigger preset deselection.
-                Dispatcher.UIThread.Post(() => _switchingClip = false);
+                // Also re-sync combos at Background priority: this runs AFTER any stale
+                // async continuations (which resume at Normal priority) that may have
+                // cleared a preset combo despite the _switchingClip guard.
+                Dispatcher.UIThread.Post(() =>
+                {
+                    _switchingClip = false;
+                    SyncAllCombos();
+                }, Avalonia.Threading.DispatcherPriority.Background);
             }
 
             // If the user clicked another clip while we were switching,
@@ -2207,6 +2216,8 @@ namespace CleanScan.Views
                     gc.SelectedIndex = -1;
                     gc.Text = null;
                     _config.Set("gammac_preset", string.Empty);
+                    try { File.AppendAllText(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "combo_debug.txt"),
+                        $"[FIELD-GAMMAC] {DateTime.Now:HH:mm:ss.fff} key='{key}' _switchingClip={_switchingClip}\n"); } catch {}
                 }
             }
 

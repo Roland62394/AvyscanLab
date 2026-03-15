@@ -696,6 +696,8 @@ public sealed class EncodeController
                 combo.SelectedIndex = -1;
                 combo.Text = null;
             }
+            try { System.IO.File.AppendAllText(System.IO.Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.Desktop), "combo_debug.txt"),
+                $"[RESTORE-GAMMAC] {DateTime.Now:HH:mm:ss.fff} name='{name}' selAfter='{combo.SelectedItem}' idx={combo.SelectedIndex} items={combo.ItemCount}\n"); } catch {}
         }
         finally { _isLoadingGammacPreset = false; }
     }
