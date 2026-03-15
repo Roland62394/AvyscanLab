@@ -1471,7 +1471,7 @@ namespace CleanScan.Views
 
         #region Source management
 
-        private async Task ApplyDetectedSourceAndRefreshAsync(string rawValue)
+        private async Task ApplyDetectedSourceAndRefreshAsync(string rawValue, bool skipLoad = false)
         {
             rawValue ??= string.Empty;
             SetDetectedSourceValue(NormalizeSourceValue(rawValue));
@@ -1488,6 +1488,7 @@ namespace CleanScan.Views
 
             // Reset crop values to 0.
             _suppressTextEvents = true;
+            _sliderSync = true; // Block OnConfigChangedForSlider from posting stale async updates
             try
             {
                 foreach (var cropField in new[] { "Crop_L", "Crop_T", "Crop_R", "Crop_B" })
@@ -1497,7 +1498,11 @@ namespace CleanScan.Views
                         tb.Text = "0";
                 }
             }
-            finally { _suppressTextEvents = false; }
+            finally
+            {
+                _sliderSync = false;
+                _suppressTextEvents = false;
+            }
             SyncAllSliders();
 
             var isFilm = _sourceService.IsVideoSource(rawValue);
@@ -1510,7 +1515,9 @@ namespace CleanScan.Views
                     UpdateImageRangeFields(dir);
             }
 
-            RegenerateScript(showValidationError: true);
+            RegenerateScript(showValidationError: !skipLoad);
+
+            if (skipLoad) return;
 
             if (TryValidateSourceSelection(out var msg))
             {
@@ -1754,6 +1761,7 @@ namespace CleanScan.Views
 
             _suppressTextEvents = true;
             _applyingPreset = true;
+            _sliderSync = true; // Block OnConfigChangedForSlider from posting stale async updates
             try
             {
                 foreach (var name in ScriptService.TextFieldNames)
@@ -1788,6 +1796,7 @@ namespace CleanScan.Views
             }
             finally
             {
+                _sliderSync = false;
                 _suppressTextEvents = false;
                 _applyingPreset = false;
             }
@@ -1885,8 +1894,12 @@ namespace CleanScan.Views
             _clipManager.SaveActiveConfig();
             SaveGammacPresetName();
 
-            // Switch source (this sets ActiveClipIndex via AddOrActivateClip)
-            await ApplyDetectedSourceAndRefreshAsync(Clips[index].Path);
+            // Switch source (this sets ActiveClipIndex via AddOrActivateClip).
+            // skipLoad: true — don't load the script yet; we'll restore the
+            // clip's config first, regenerate once, and load once.  This avoids
+            // a double write+load of ScriptUser.avs that can segfault when
+            // AviSynth is still reading the first version.
+            await ApplyDetectedSourceAndRefreshAsync(Clips[index].Path, skipLoad: true);
 
             // Restore the target clip's filter config
             RestoreClipConfig(ActiveClipIndex);
@@ -1898,7 +1911,7 @@ namespace CleanScan.Views
             RegenerateScript(showValidationError: false);
 
             if (TryValidateSourceSelection(out _))
-                await LoadScriptAsync();
+                await LoadScriptAsync(resetPosition: true);
         }
 
         private void SaveGammacPresetName()

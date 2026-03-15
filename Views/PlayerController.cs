@@ -3,8 +3,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
-using Avalonia.Animation;
-using Avalonia.Animation.Easings;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
@@ -70,6 +68,8 @@ public sealed class PlayerController
     private bool _halfRes;
     private Grid? _mainGrid;
     private CancellationTokenSource? _pulseAnimCts;
+    private DispatcherTimer? _pulseTimer;
+    private double _pulsePhase;
 
     // ── ForceSource state ─────────────────────────────────────────────
     private bool _syncingForceSource;
@@ -224,13 +224,20 @@ public sealed class PlayerController
 
     private void OnMpvPlaybackRestart()
     {
-        _pulseAnimCts?.Cancel();
-        _pulseAnimCts = null;
+        StopPulseAnimation();
         if (_host.FindControl<Button>("VdbPlay") is { } btn)
         {
             btn.Opacity = 1.0;
             btn.Background = _host.ThemeBrush("BgInput");
         }
+    }
+
+    private void StopPulseAnimation()
+    {
+        _pulseTimer?.Stop();
+        _pulseTimer = null;
+        _pulseAnimCts?.Cancel();
+        _pulseAnimCts = null;
     }
 
     private void SetPlayButtonProcessing()
@@ -239,23 +246,16 @@ public sealed class PlayerController
 
         btn.Background = new SolidColorBrush(Color.Parse("#FFCC00"));
 
-        _pulseAnimCts?.Cancel();
-        _pulseAnimCts = new CancellationTokenSource();
-        var ct = _pulseAnimCts.Token;
-
-        var anim = new Animation
+        StopPulseAnimation();
+        _pulsePhase = 0;
+        _pulseTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(30) };
+        _pulseTimer.Tick += (_, _) =>
         {
-            Duration = TimeSpan.FromMilliseconds(700),
-            IterationCount = IterationCount.Infinite,
-            PlaybackDirection = PlaybackDirection.Alternate,
-            Easing = new SineEaseInOut(),
-            Children =
-            {
-                new KeyFrame { Cue = new Cue(0.0), Setters = { new Setter(Avalonia.Visual.OpacityProperty, 0.45) } },
-                new KeyFrame { Cue = new Cue(1.0), Setters = { new Setter(Avalonia.Visual.OpacityProperty, 1.0)  } }
-            }
+            // Sine wave oscillation between 0.45 and 1.0 over ~700ms per half-cycle
+            _pulsePhase += 0.030 / 0.700 * Math.PI;
+            btn.Opacity = 0.725 + 0.275 * Math.Sin(_pulsePhase);
         };
-        anim.RunAsync(btn, ct);
+        _pulseTimer.Start();
     }
 
     private void OnMpvUnexpectedShutdown()
@@ -593,7 +593,7 @@ public sealed class PlayerController
     /// <summary>Resets seek state and slider to prepare for a new clip load.</summary>
     public void ResetPlayerState()
     {
-        _mpvService?.Stop();
+        _mpvService?.Unload();
         _seekDragging = false;
         _seekDuration = 0;
         _totalFrames  = 0;

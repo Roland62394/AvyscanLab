@@ -178,6 +178,10 @@ public sealed class MpvService : IDisposable
     public void LoadFile(string path, double startPos = 0)
     {
         if (_ctx == 0) return;
+        // Stop any in-progress load (AviSynth script parsing) before loading
+        // a new file.  Without this, rapid clip switches can overwrite
+        // ScriptUser.avs while AviSynth is still reading it → segfault.
+        mpv_command(_ctx, ["stop", null]);
         lock (_errorLogLock) { _errorLogs.Clear(); }
         _pendingSeekPos = startPos > 0.5 ? startPos : 0;
         mpv_command(_ctx, ["loadfile", path, null]);
