@@ -1158,7 +1158,7 @@
                 <!-- ════ RECORD OVERLAY (surimpression) ════ -->
                 <Border x:Name="RecordOverlay" IsVisible="False"
                         Grid.Column="0" Grid.ColumnSpan="3"
-                        Background="#F0181C28" ZIndex="10"
+                        Background="{DynamicResource BgDeep}" ZIndex="10"
                         Padding="20,12">
                     <DockPanel HorizontalAlignment="Stretch" Margin="24,0">
 
@@ -1167,7 +1167,7 @@
                                    DockPanel.Dock="Top"
                                    Text="⏺ Record"
                                    FontSize="15" FontWeight="Bold"
-                                   Foreground="White"
+                                   Foreground="{DynamicResource TextLabel}"
                                    HorizontalAlignment="Center"
                                    Margin="0,0,0,8"/>
 
@@ -1213,7 +1213,7 @@
                                               VerticalAlignment="Center"
                                               Click="OnBatchSelectAllClick"/>
                                 </StackPanel>
-                                <Border Background="#1A2030" BorderBrush="{DynamicResource BorderSubtle}"
+                                <Border Background="{DynamicResource BgInput}" BorderBrush="{DynamicResource BorderSubtle}"
                                         BorderThickness="1" CornerRadius="4" Padding="4">
                                     <DockPanel>
                                         <!-- Column headers -->
@@ -1242,7 +1242,7 @@
 
                             <!-- ══ RIGHT: Encoding settings (preset + params grouped) ══ -->
                             <Border Grid.Column="3"
-                                    Background="#10FFFFFF" BorderBrush="{DynamicResource BorderSubtle}"
+                                    Background="{DynamicResource BgPanel}" BorderBrush="{DynamicResource BorderSubtle}"
                                     BorderThickness="1" CornerRadius="6" Padding="20,8">
                                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel Spacing="10">

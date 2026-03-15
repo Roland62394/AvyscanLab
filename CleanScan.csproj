@@ -84,6 +84,21 @@
     </AvaloniaResource>
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Update="Users Guide\CleanScan_Guide_de.pdf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="Users Guide\CleanScan_Guide_en.pdf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="Users Guide\CleanScan_Guide_es.pdf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="Users Guide\CleanScan_Guide_fr.pdf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
