@@ -28,7 +28,7 @@ using CleanScan.ViewModels;
 
 namespace CleanScan.Views
 {
-    public partial class MainWindow : Window, ITourHost, IFilterPresenterHost, IEncodeHost
+    public partial class MainWindow : Window, ITourHost, IFilterPresenterHost, IEncodeHost, IPlayerHost
     {
         #region Constants
 
@@ -462,14 +462,7 @@ namespace CleanScan.Views
         private readonly ThemeService        _themeService = new();
         private readonly Debouncer            _refreshDebouncer = new(TimeSpan.FromMilliseconds(400));
         private readonly Debouncer            _windowStateDebouncer = new(TimeSpan.FromMilliseconds(120));
-        private readonly SemaphoreSlim        _refreshGate      = new(1, 1);
-
-        private MpvService? _mpvService;
-        private bool        _seekDragging;
-        private double      _seekDuration;
-        private int         _totalFrames;
-        private double      _fps;
-        private double      _pendingSeekPos;
+        private PlayerController _playerController = null!; // initialized in constructor
 
         private bool  _suppressTextEvents;
         private bool  _sliderSync;
@@ -560,311 +553,20 @@ namespace CleanScan.Views
             InitSliders();
             _encodeController = new EncodeController(this);
             _encodeController.InitRecordPanel();
-            InitPlayerControls();
+            _playerController = new PlayerController(this);
+            _playerController.FilesDropped += OnPlayerFilesDropped;
+            _playerController.InitPlayerControls();
             RebuildCustomFilterUI();
             RefreshClipPresetCombo();
         }
 
-        private void InitPlayerControls()
-        {
-            DebugLog("InitPlayerControls start");
-            _mpvService = new MpvService();
-
-            if (this.FindControl<MpvHost>("VideoHost") is { } host)
-            {
-                DebugLog("VideoHost found");
-                host.HandleReady += hwnd =>
-                {
-                    DebugLog($"HandleReady hwnd={hwnd}");
-                    _mpvService.Initialize(hwnd);
-                    DebugLog($"After Initialize, IsReady={_mpvService.IsReady}");
-                    if (!_mpvService.IsReady)
-                    {
-                        ShowPlayerStatus("mpv non disponible.\nVérifiez que libmpv-2.dll est présent dans le dossier mpv/.");
-                        return;
-                    }
-
-                    // Check AviSynth at startup so the user sees the status immediately.
-                    var avsCheck = GetAviSynthDiagnostic();
-                    DebugLog("AviSynth startup check: " + avsCheck);
-                    if (!avsCheck.Contains("chargeable OK", StringComparison.Ordinal))
-                        ShowPlayerStatus("AviSynth — " + avsCheck);
-
-                    var srcOk = TryValidateSourceSelection(out _);
-                    DebugLog($"TryValidateSourceSelection={srcOk}");
-                    if (!srcOk)
-                    {
-                        return;
-                    }
-                    _ = LoadScriptAsync();
-                };
-                host.FilesDropped += OnPlayerFilesDropped;
-            }
-            else
-            {
-                DebugLog("VideoHost NOT found — FindControl returned null");
-            }
-
-            _mpvService.PositionChanged    += pos => Dispatcher.UIThread.Post(() => OnMpvPosition(pos));
-            _mpvService.DurationChanged    += dur => Dispatcher.UIThread.Post(() => OnMpvDuration(dur));
-            _mpvService.PauseChanged       += p   => Dispatcher.UIThread.Post(() => OnMpvPauseChanged(p));
-            _mpvService.FileLoaded         += ()  => Dispatcher.UIThread.Post(() => OnMpvFileLoaded());
-
-            _mpvService.PlaybackRestart    += ()  => Dispatcher.UIThread.Post(OnMpvPlaybackRestart);
-            _mpvService.LoadFailed         += msg => Dispatcher.UIThread.Post(() => OnMpvLoadFailed(msg));
-            _mpvService.UnexpectedShutdown += ()  => Dispatcher.UIThread.Post(OnMpvUnexpectedShutdown);
-
-            if (this.FindControl<Slider>("SeekBar") is { } seekBar)
-            {
-                seekBar.AddHandler(PointerPressedEvent,  (_, _) => { _seekDragging = true; },
-                    RoutingStrategies.Bubble, handledEventsToo: true);
-                seekBar.AddHandler(PointerReleasedEvent, (_, _) =>
-                    {
-                        _seekDragging = false;
-                        var pos = seekBar.Value;
-                        // Clamp to the last valid frame: (N-1)/fps.
-                        // Frame-based is exact; duration-based fallback used before first FileLoaded.
-                        if (_totalFrames > 0 && _fps > 0)
-                            pos = Math.Min(pos, (_totalFrames - 1.0) / _fps);
-                        else if (_seekDuration > 0)
-                            pos = Math.Min(pos, _seekDuration - 0.001);
-                        _mpvService?.Seek(pos);
-                    },
-                    RoutingStrategies.Bubble, handledEventsToo: true);
-            }
-        }
-
-        private void OnMpvPosition(double pos)
-        {
-            if (_seekDragging || _seekDuration <= 0) return;
-            if (this.FindControl<Slider>("SeekBar") is { } s) s.Value = pos;
-            UpdateTimeLabel(pos, _seekDuration);
-        }
-
-        private void OnMpvDuration(double dur)
-        {
-            _seekDuration = dur;
-            if (this.FindControl<Slider>("SeekBar") is { } s)
-            {
-                s.Maximum   = dur > 0 ? dur : 1;
-                s.IsEnabled = dur > 0;
-            }
-            UpdateTimeLabel(_mpvService?.GetPosition() ?? 0, dur);
-        }
-
-        private void OnMpvPauseChanged(bool paused)
-        {
-            if (this.FindControl<Button>("VdbPlay") is { } btn)
-                btn.Content = paused ? "▶" : "⏸";
-        }
-
-        private static readonly string _logPath =
-            Path.Combine(Path.GetTempPath(), "cleanscan_debug.txt");
-
-        private static string GetAviSynthDiagnostic()
-        {
-            var system32 = Environment.GetFolderPath(Environment.SpecialFolder.System);
-            var dllPath  = Path.Combine(system32, "AviSynth.dll");
-            if (!File.Exists(dllPath))
-                return $"AviSynth.dll absent de {system32}";
-            try
-            {
-                if (System.Runtime.InteropServices.NativeLibrary.TryLoad(dllPath, out var h))
-                {
-                    System.Runtime.InteropServices.NativeLibrary.Free(h);
-                    return "AviSynth.dll présent et chargeable OK";
-                }
-                return "AviSynth.dll présent dans System32 mais non chargeable (mauvaise architecture ?)";
-            }
-            catch (Exception ex) { return $"AviSynth.dll erreur : {ex.Message}"; }
-        }
-
-        private static void DebugLog(string msg)
-        {
-            try { File.AppendAllText(_logPath, $"{DateTime.Now:HH:mm:ss.fff}  {msg}\n"); }
-            catch { }
-        }
-
-        private void ShowPlayerStatus(string message)
-        {
-            DebugLog("ShowPlayerStatus: " + message.Replace('\n', ' '));
-            Title = "CleanScan";
-
-            if (this.FindControl<Border>("PlayerErrorBanner") is { } banner
-             && this.FindControl<TextBlock>("PlayerErrorText")  is { } text)
-            {
-                text.Text        = message;
-                banner.IsVisible = true;
-            }
-        }
-
-        private void OnMpvLoadFailed(string errorMsg)
-        {
-            DebugLog("OnMpvLoadFailed: " + errorMsg);
-
-            // "unknown file format" peut signifier soit AviSynth absent, soit un script AviSynth
-            // qui plante à l'exécution (ex: paramètre invalide dans un filtre comme GamMac).
-            // On distingue les deux cas via la présence d'AviSynth.dll.
-            if (!_loadingSourceFallback
-             && (errorMsg.Contains("unknown file format", StringComparison.OrdinalIgnoreCase)
-              || errorMsg.Contains("unrecognized file format", StringComparison.OrdinalIgnoreCase)))
-            {
-                var diag = GetAviSynthDiagnostic();
-                DebugLog("AviSynth diag: " + diag);
-
-                // Si AviSynth est installé et chargeable, le script lui-même a planté
-                // (paramètre invalide, plugin manquant, etc.) — pas de fallback vidéo.
-                if (diag.Contains("chargeable", StringComparison.OrdinalIgnoreCase))
-                {
-                    ShowPlayerStatus("Erreur de script AviSynth");
-                    _ = ShowAvsScriptErrorAsync();
-                    return;
-                }
-
-                // AviSynth absent ou non chargeable : fallback lecture directe.
-                var raw = _config.Get("source");
-                if (!string.IsNullOrWhiteSpace(raw))
-                {
-                    var path = _sourceService.NormalizeConfiguredPath(raw);
-                    if (File.Exists(path))
-                    {
-                        _loadingSourceFallback = true;
-                        ShowPlayerStatus($"AviSynth+ non détecté ({diag}).\nLecture directe de la source (sans filtres).");
-                        _mpvService?.LoadFile(path, 0);
-                        return;
-                    }
-                }
-                ShowPlayerStatus($"AviSynth+ non détecté.\n{diag}");
-                return;
-            }
-
-            _loadingSourceFallback = false;
-            ShowPlayerStatus($"Erreur de lecture : {errorMsg}");
-        }
-
-        private async Task ShowAvsScriptErrorAsync()
-        {
-            var scriptPath = _scriptService.GetPrimaryScriptPath();
-            if (string.IsNullOrWhiteSpace(scriptPath)) return;
-
-            var (avsError, fullStderr) = await EncodeController.ProbeAvsScriptError(scriptPath);
-            var primary = !string.IsNullOrWhiteSpace(avsError)
-                ? avsError
-                : "Erreur inconnue dans le script AviSynth.\nOuvrez le script dans AvsPmod pour diagnostiquer.";
-            ShowPlayerStatus(primary);
-            await _dialogService.ShowErrorAsync(this, "Erreur AviSynth", primary, fullStderr);
-        }
-
-        private void OnMpvFileLoaded()
-        {
-            DebugLog("OnMpvFileLoaded — file loaded successfully");
-            Title = "CleanScan";
-
-            if (_loadingSourceFallback)
-            {
-                // Fallback actif : on garde le banner pour signaler le mode dégradé.
-                ShowPlayerStatus("Mode dégradé : lecture directe de la source (AviSynth+ non installé).");
-            }
-            else if (this.FindControl<Border>("PlayerErrorBanner") is { } banner)
-            {
-                banner.IsVisible = false;
-            }
-
-            if (this.FindControl<TextBlock>("DropHintBar") is { } dropHint)
-                dropHint.IsVisible = false;
-
-
-            if (this.FindControl<Slider>("SeekBar") is { } s) s.Value = _pendingSeekPos;
-
-            // Query exact frame count and fps to set an accurate slider maximum.
-            // This prevents seeking past the last valid frame, which would crash AviSynth
-            // (ImageSource has no file for out-of-range indices) and freeze video players at EOF.
-            _guidedTourService.AdvanceOnClipLoaded?.Invoke();
-
-            if (_mpvService is { IsReady: true })
-            {
-                _totalFrames = _mpvService.GetTotalFrames();
-                _fps         = _mpvService.GetFps();
-
-                if (_totalFrames > 0 && _fps > 0 && this.FindControl<Slider>("SeekBar") is { } bar)
-                {
-                    bar.Maximum   = (_totalFrames - 1.0) / _fps;
-                    bar.IsEnabled = true;
-                }
-
-            }
-        }
-
-        private CancellationTokenSource? _pulseAnimCts;
-
-        private void OnMpvPlaybackRestart()
-        {
-            _pulseAnimCts?.Cancel();
-            _pulseAnimCts = null;
-            if (this.FindControl<Button>("VdbPlay") is { } btn)
-            {
-                btn.Opacity = 1.0;
-                btn.Background = ThemeBrush("BgInput");
-            }
-        }
-
-        private void SetPlayButtonProcessing()
-        {
-            if (this.FindControl<Button>("VdbPlay") is not { } btn) return;
-
-            btn.Background = new SolidColorBrush(Color.Parse("#FFCC00"));
-
-            _pulseAnimCts?.Cancel();
-            _pulseAnimCts = new CancellationTokenSource();
-            var ct = _pulseAnimCts.Token;
-
-            var anim = new Animation
-            {
-                Duration = TimeSpan.FromMilliseconds(700),
-                IterationCount = IterationCount.Infinite,
-                PlaybackDirection = PlaybackDirection.Alternate,
-                Easing = new SineEaseInOut(),
-                Children =
-                {
-                    new KeyFrame { Cue = new Cue(0.0), Setters = { new Setter(OpacityProperty, 0.45) } },
-                    new KeyFrame { Cue = new Cue(1.0), Setters = { new Setter(OpacityProperty, 1.0)  } }
-                }
-            };
-            anim.RunAsync(btn, ct);
-        }
-
-        private void OnMpvUnexpectedShutdown()
-        {
-            // mpv shut down unexpectedly (e.g. AviSynth error during seek).
-            // Reinitialise the player and reload the current script.
-            _seekDragging = false;
-            _seekDuration = 0;
-            if (this.FindControl<Slider>("SeekBar") is { } s)
-            {
-                s.Value     = 0;
-                s.Maximum   = 1;
-                s.IsEnabled = false;
-            }
-
-            _mpvService?.Reinitialize();
-
-            if (TryValidateSourceSelection(out _))
-                _ = LoadScriptAsync();
-        }
-
-        private void UpdateTimeLabel(double pos, double dur)
-        {
-            static string Fmt(double s) =>
-                TimeSpan.FromSeconds(s).ToString(s >= 3600 ? @"h\:mm\:ss" : @"m\:ss");
-            if (this.FindControl<TextBlock>("TimeLabel") is { } lbl)
-                lbl.Text = $"{Fmt(pos)} / {Fmt(dur)}";
-
-            if (this.FindControl<TextBlock>("FrameLabel") is { } fl)
-            {
-                var currentFrame = _fps > 0 ? (int)(pos * _fps) : 0;
-                fl.Text = $"{currentFrame} / {_totalFrames}";
-            }
-        }
+        // Player methods delegated to PlayerController
+        private void ShowPlayerStatus(string message) => _playerController?.ShowPlayerStatus(message);
+        private static void DebugLog(string msg) => PlayerController.DebugLog(msg);
+        private static string GetAviSynthDiagnostic() => PlayerController.GetAviSynthDiagnostic();
+        private Task LoadScriptAsync(bool resetPosition = false) => _playerController?.LoadScriptAsync(resetPosition) ?? Task.CompletedTask;
+        private void UpdateTimeLabel(double pos, double dur) => _playerController?.UpdateTimeLabel(pos, dur);
+        private void ApplyTransportTooltips() => _playerController?.ApplyTransportTooltips();
 
         private void InitSliders()
         {
@@ -1155,7 +857,7 @@ namespace CleanScan.Views
             SaveWindowSettings();
             SaveSession();
             _layoutInitialized = false;
-            _mpvService?.Dispose();
+            _playerController.Dispose();
         }
 
         #endregion
@@ -1224,30 +926,6 @@ namespace CleanScan.Views
                 _scriptService.Generate(_config.Snapshot(), _customFilterService.Filters, ViewModel.CurrentLanguageCode);
                 SaveWindowSettings();
             }
-        }
-
-        private void ApplyTransportTooltips()
-        {
-            foreach (var (controlName, textKey) in new[]
-            {
-                ("VdbBeginning", "VdbBeginning"),
-                ("VdbPrevFrame", "VdbPrevFrame"),
-                ("VdbPlay",      "VdbPlay"),
-                ("VdbStop",      "VdbStop"),
-                ("VdbNextFrame", "VdbNextFrame"),
-                ("VdbEnd",       "VdbEnd"),
-                ("SpeedBtn",     "SpeedBtn"),
-                ("HalfResBtn",   "HalfResBtn"),
-                ("RecordBtn",    "RecordBtn"),
-            })
-            {
-                if (this.FindControl<Button>(controlName) is { } btn)
-                    ToolTip.SetTip(btn, GetUiText(textKey));
-            }
-
-            // MaxViewerBtn tooltip depends on state
-            if (this.FindControl<Button>("MaxViewerBtn") is { } maxBtn)
-                ToolTip.SetTip(maxBtn, GetUiText(_viewerMaximized ? "RestoreViewerBtn" : "MaxViewerBtn"));
         }
 
         private void ApplyRecordLabels()
@@ -1737,16 +1415,7 @@ namespace CleanScan.Views
         private void RestoreSessionState(WindowSettings? settings)
         {
             // Restore half-res button visual from config
-            var halfResValue = _config.Get("preview_half");
-            if (bool.TryParse(halfResValue, out var halfRes) && halfRes)
-            {
-                _halfRes = true;
-                if (this.FindControl<Button>("HalfResBtn") is { } btn)
-                {
-                    btn.Background = ThemeBrush("AccentGreen");
-                    btn.Foreground = Brushes.White;
-                }
-            }
+            _playerController.RestoreHalfResVisual();
 
             // Restore expanded filter panels
             if (settings?.OpenPanels is { Length: > 0 } panels)
@@ -2163,24 +1832,13 @@ namespace CleanScan.Views
 
             if (string.IsNullOrWhiteSpace(rawValue))
             {
-                _mpvService?.Unload();
+                _playerController.Unload();
                 RegenerateScript(showValidationError: false);
                 return;
             }
 
             // Stop mpv playback and reset player state for the new clip.
-            _mpvService?.Stop();
-            _seekDragging = false;
-            _seekDuration = 0;
-            _totalFrames  = 0;
-            _fps          = 0;
-            if (this.FindControl<Slider>("SeekBar") is { } seekBar)
-            {
-                seekBar.Value     = 0;
-                seekBar.Maximum   = 1;
-                seekBar.IsEnabled = false;
-            }
-            UpdateTimeLabel(0, 0);
+            _playerController.ResetPlayerState();
 
             // Reset crop values to 0.
             _suppressTextEvents = true;
@@ -3067,104 +2725,20 @@ namespace CleanScan.Views
 
         #endregion
 
-        #region Player / script preview
+        #region Player / script preview (delegated to PlayerController)
 
-        // ── Barre de transport ──────────────────────────────────────────
-        private void OnVdbBeginningClick(object? sender, RoutedEventArgs e) =>
-            _mpvService?.Stop();
-
-        private void OnVdbPrevFrameClick(object? sender, RoutedEventArgs e) =>
-            _mpvService?.FrameBackStep();
-
-        private void OnVdbPlayClick(object? sender, RoutedEventArgs e) =>
-            _mpvService?.TogglePlayPause();
-
-        private void OnVdbNextFrameClick(object? sender, RoutedEventArgs e) =>
-            _mpvService?.FrameStep();
-
-        private static readonly double[] PlaybackSpeeds = [0.25, 0.5, 1.0];
-        private int _speedIndex = 2; // default 1x
-
-        private void OnSpeedClick(object? sender, RoutedEventArgs e)
-        {
-            _speedIndex = (_speedIndex + 1) % PlaybackSpeeds.Length;
-            var speed = PlaybackSpeeds[_speedIndex];
-            _mpvService?.SetSpeed(speed);
-            if (this.FindControl<Button>("SpeedBtn") is { } btn)
-                btn.Content = speed < 1.0 ? $"{speed:G}x" : "1x";
-        }
-
-        private bool _viewerMaximized;
-        private GridLength _savedBottomPanelRow = new(360);
-        private bool _halfRes;
-        private void OnHalfResClick(object? sender, RoutedEventArgs e)
-        {
-            _halfRes = !_halfRes;
-            if (this.FindControl<Button>("HalfResBtn") is { } btn)
-            {
-                btn.Background = _halfRes ? ThemeBrush("AccentGreen") : new SolidColorBrush(Color.Parse("#3B4C64"));
-                btn.Foreground = Brushes.White;
-            }
-            UpdateConfigurationValue("preview_half", _halfRes.ToString().ToLowerInvariant());
-        }
-
-        private void OnMaxViewerClick(object? sender, RoutedEventArgs e)
-        {
-            // Close tooltip immediately so it doesn't eat the next click
-            if (sender is Button b)
-                ToolTip.SetIsOpen(b, false);
-            ToggleViewerMaximized();
-            e.Handled = true;
-        }
-
-        private void ToggleViewerMaximized()
-        {
-            _mainGrid ??= this.FindControl<Grid>("MainGrid");
-            _viewerMaximized = !_viewerMaximized;
-
-            // Hide/show top bar (menu + source row)
-            if (this.FindControl<Border>("TopBar") is { } topBar)
-                topBar.IsVisible = !_viewerMaximized;
-
-            // Hide/show bottom panel (params) + grid splitter
-            if (this.FindControl<Border>("BottomPanel") is { } bottomPanel)
-                bottomPanel.IsVisible = !_viewerMaximized;
-            if (this.FindControl<GridSplitter>("MainSplitter") is { } splitter)
-                splitter.IsVisible = !_viewerMaximized;
-
-            // Adjust grid rows: collapse row 2 (params) when maximized
-            if (_mainGrid is not null && _mainGrid.RowDefinitions.Count >= 3)
-            {
-                if (_viewerMaximized)
-                {
-                    _savedBottomPanelRow = _mainGrid.RowDefinitions[2].Height;
-                    _mainGrid.RowDefinitions[1].Height = new GridLength(0);
-                    _mainGrid.RowDefinitions[2].Height = new GridLength(0);
-                }
-                else
-                {
-                    _mainGrid.RowDefinitions[1].Height = new GridLength(4);
-                    _mainGrid.RowDefinitions[2].Height = _savedBottomPanelRow;
-                }
-            }
-
-            // Update button appearance
-            if (this.FindControl<Button>("MaxViewerBtn") is { } btn)
-            {
-                btn.Content = _viewerMaximized ? "⛶" : "⛶";
-                var tooltipKey = _viewerMaximized ? "RestoreViewerBtn" : "MaxViewerBtn";
-                ToolTip.SetTip(btn, GetUiText(tooltipKey));
-                btn.Background = _viewerMaximized
-                    ? ThemeBrush("AccentGreen")
-                    : ThemeBrush("BgInput");
-                btn.Foreground = _viewerMaximized
-                    ? Brushes.White
-                    : ThemeBrush("TextLabel");
-            }
-
-            // Force layout update before the next input event
-            Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Render);
-        }
+        private void OnVdbBeginningClick(object? sender, RoutedEventArgs e) => _playerController.OnVdbBeginningClick(sender, e);
+        private void OnVdbPrevFrameClick(object? sender, RoutedEventArgs e) => _playerController.OnVdbPrevFrameClick(sender, e);
+        private void OnVdbPlayClick(object? sender, RoutedEventArgs e) => _playerController.OnVdbPlayClick(sender, e);
+        private void OnVdbNextFrameClick(object? sender, RoutedEventArgs e) => _playerController.OnVdbNextFrameClick(sender, e);
+        private void OnVdbEndClick(object? sender, RoutedEventArgs e) => _playerController.OnVdbEndClick(sender, e);
+        private void OnSpeedClick(object? sender, RoutedEventArgs e) => _playerController.OnSpeedClick(sender, e);
+        private void OnHalfResClick(object? sender, RoutedEventArgs e) => _playerController.OnHalfResClick(sender, e);
+        private void OnMaxViewerClick(object? sender, RoutedEventArgs e) => _playerController.OnMaxViewerClick(sender, e);
+        private void ToggleViewerMaximized() => _playerController.ToggleViewerMaximized();
+        private void OnWindowKeyDown(object? sender, KeyEventArgs e) => _playerController.OnWindowKeyDown(sender, e);
+        private void SyncForceSourceCombo(Dictionary<string, string> values) => _playerController.SyncForceSourceCombo(values);
+        private void OnForceSourceChanged(object? sender, SelectionChangedEventArgs e) => _playerController.OnForceSourceChanged(sender, e);
 
         private bool _isEncoding;
         private bool _recordOpen;
@@ -3185,132 +2759,6 @@ namespace CleanScan.Views
         private void UpdateDiskSpaceLabel(string? dirPath) => _encodeController.UpdateDiskSpaceLabel(dirPath);
         private void RefreshEncodingPresetCombo() => _encodeController.RefreshEncodingPresetCombo();
         private void RefreshGammacPresetCombo() => _encodeController.RefreshGammacPresetCombo();
-
-        private bool _syncingForceSource;
-
-        private void SyncForceSourceCombo(Dictionary<string, string> values)
-        {
-            if (this.FindControl<ComboBox>("ForceSourceCombo") is not { } cb) return;
-            _syncingForceSource = true;
-            var current = values.TryGetValue("force_source", out var v) ? v.Trim().Trim('"') : "FFMS2";
-            for (var i = 0; i < cb.ItemCount; i++)
-            {
-                if (cb.Items[i] is ComboBoxItem item &&
-                    string.Equals(item.Tag?.ToString(), current, StringComparison.OrdinalIgnoreCase))
-                {
-                    cb.SelectedIndex = i;
-                    _syncingForceSource = false;
-                    return;
-                }
-            }
-            cb.SelectedIndex = 1; // default FFMS2
-            _syncingForceSource = false;
-        }
-
-        private void OnForceSourceChanged(object? sender, SelectionChangedEventArgs e)
-        {
-            if (_syncingForceSource) return;
-            if (sender is not ComboBox cb || cb.SelectedItem is not ComboBoxItem item) return;
-            var value = item.Tag?.ToString() ?? "";
-            UpdateConfigurationValue("force_source", value);
-            CloseSettingsMenu();
-        }
-
-        private void OnVdbEndClick(object? sender, RoutedEventArgs e)
-        {
-            if (_totalFrames > 0 && _fps > 0)
-                _mpvService?.Seek((_totalFrames - 1.0) / _fps);
-            else if (_seekDuration > 0)
-                _mpvService?.Seek(_seekDuration - 0.001);
-        }
-
-        // ── Raccourcis clavier transport ────────────────────────────────
-        private void OnWindowKeyDown(object? sender, KeyEventArgs e)
-        {
-            if (_isEncoding) return;
-            if (FocusManager?.GetFocusedElement() is TextBox) return;
-
-            switch ((e.Key, e.KeyModifiers))
-            {
-                case (Key.Space, KeyModifiers.None):
-                    e.Handled = true;
-                    _mpvService?.TogglePlayPause();
-                    break;
-
-                case (Key.Left, KeyModifiers.None):
-                    e.Handled = true;
-                    _mpvService?.FrameBackStep();
-                    break;
-
-                case (Key.Left, KeyModifiers.Control):
-                    e.Handled = true;
-                    _mpvService?.Stop();
-                    break;
-
-                case (Key.Right, KeyModifiers.None):
-                    e.Handled = true;
-                    _mpvService?.FrameStep();
-                    break;
-
-                case (Key.Right, KeyModifiers.Control):
-                    e.Handled = true;
-                    if (_totalFrames > 0 && _fps > 0)
-                        _mpvService?.Seek((_totalFrames - 1.0) / _fps);
-                    else if (_seekDuration > 0)
-                        _mpvService?.Seek(_seekDuration - 0.001);
-                    break;
-
-                case (Key.F11, KeyModifiers.None):
-                    e.Handled = true;
-                    ToggleViewerMaximized();
-                    break;
-            }
-        }
-
-        // ── Chargement du script dans le player ─────────────────────────
-        private async Task LoadScriptAsync(bool resetPosition = false)
-        {
-            if (_isClosing || _mpvService is null) return;
-
-            await _refreshGate.WaitAsync();
-            try
-            {
-                if (!TryValidateSourceSelection(out _))
-                {
-                    return;
-                }
-
-                var scriptPath = _scriptService.GetPrimaryScriptPath();
-                if (string.IsNullOrWhiteSpace(scriptPath)) return;
-
-                double pos;
-                if (resetPosition)
-                    pos = 0.0;
-                else if (_mpvService.IsReady)
-                {
-                    var cur = _mpvService.GetPosition();
-                    // If mpv is mid-reload it may report 0 — keep the previous pending position.
-                    pos = (cur < 0.5 && _pendingSeekPos > 0.5) ? _pendingSeekPos : cur;
-                }
-                else
-                    pos = _pendingSeekPos;
-                _pendingSeekPos = pos;
-                _totalFrames = 0;  // will be refreshed in OnMpvFileLoaded
-                _fps         = 0;
-                _loadingSourceFallback = false;
-                DebugLog($"LoadFile: {scriptPath}, pos={pos:F2}, IsReady={_mpvService.IsReady}");
-                try
-                {
-                    var content = File.ReadAllText(scriptPath);
-                    DebugLog($"Script ({content.Length} chars): {content[..Math.Min(400, content.Length)].Replace('\n', '|').Replace('\r', ' ')}");
-                }
-                catch (Exception ex) { DebugLog($"Script read error: {ex.Message}"); }
-                SetPlayButtonProcessing();
-                ShowPlayerStatus("Chargement…");
-                _mpvService.LoadFile(scriptPath, pos);
-            }
-            finally { _refreshGate.Release(); }
-        }
 
         #endregion
 
@@ -3626,7 +3074,7 @@ namespace CleanScan.Views
         PresetService IEncodeHost.GammacPresetService => _gammacPresetService;
         CustomFilterService IEncodeHost.CustomFilterService => _customFilterService;
         ClipManager IEncodeHost.ClipManager => _clipManager;
-        MpvService? IEncodeHost.MpvService => _mpvService;
+        MpvService? IEncodeHost.MpvService => _playerController.MpvService;
         ThemeService IEncodeHost.ThemeService => _themeService;
         IStorageProvider IEncodeHost.StorageProvider => StorageProvider;
         bool IEncodeHost.RecordOpen { get => _recordOpen; set => _recordOpen = value; }
@@ -3639,6 +3087,27 @@ namespace CleanScan.Views
         Regex IEncodeHost.PreviewTrueRegex() => PreviewTrueRegex();
         Regex IEncodeHost.PreviewHalfTrueRegex() => PreviewHalfTrueRegex();
         void IEncodeHost.MoveSliderToPointer(Slider slider, PointerEventArgs e) => MoveSliderToPointer(slider, e);
+
+        // ── IPlayerHost ─────────────────────────────────────────────────
+        T? IPlayerHost.FindControl<T>(string name) where T : class => this.FindControl<T>(name);
+        Window IPlayerHost.Window => this;
+        SolidColorBrush IPlayerHost.ThemeBrush(string key) => ThemeBrush(key);
+        string IPlayerHost.GetUiText(string key) => GetUiText(key);
+        string IPlayerHost.GetLocalizedText(string fr, string en) => GetLocalizedText(fr, en);
+        MainWindowViewModel IPlayerHost.ViewModel => ViewModel;
+        ConfigStore IPlayerHost.Config => _config;
+        IScriptService IPlayerHost.ScriptService => _scriptService;
+        SourceService IPlayerHost.SourceService => _sourceService;
+        IDialogService IPlayerHost.DialogService => _dialogService;
+        bool IPlayerHost.IsClosing => _isClosing;
+        bool IPlayerHost.IsEncoding => _isEncoding;
+        bool IPlayerHost.LoadingSourceFallback { get => _loadingSourceFallback; set => _loadingSourceFallback = value; }
+        bool IPlayerHost.TryValidateSourceSelection(out string errorMessage) => TryValidateSourceSelection(out errorMessage);
+        Action? IPlayerHost.AdvanceOnClipLoaded => _guidedTourService.AdvanceOnClipLoaded;
+        void IPlayerHost.RegenerateScript(bool showValidationError) => RegenerateScript(showValidationError);
+        void IPlayerHost.UpdateConfigurationValue(string name, string value, bool showValidationError) =>
+            UpdateConfigurationValue(name, value, showValidationError);
+        void IPlayerHost.CloseSettingsMenu() => CloseSettingsMenu();
 
         #endregion
     }
