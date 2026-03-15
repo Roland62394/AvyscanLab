@@ -5669,7 +5669,7 @@ namespace CleanScan.Views
                 GetUiText("AboutCompany"),
                 GetUiText("AllRightsReserved"),
                 GetUiText("AboutWebsite"),
-                $"version {GetUiText("AboutVersion")}",
+                GetUiText("AboutVersion"),
                 GetUiText("GamMacCloseButton"),
                 "avares://CleanScan/Assets/Logo.png");
 
