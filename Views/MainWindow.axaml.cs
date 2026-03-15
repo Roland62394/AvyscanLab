@@ -102,12 +102,12 @@ namespace CleanScan.Views
         private bool  _sourceValidationErrorVisible;
         private Grid? _mainGrid;
 
-        private ClipManager _clipManager = null!; // initialized in constructor
+        private readonly ClipManager _clipManager = null!; // initialized in constructor
         private bool _applyingPreset;
 
         // Convenience accessors over ClipManager
-        private List<ClipState> _clips => _clipManager.Clips;
-        private int _activeClipIndex { get => _clipManager.ActiveIndex; set => _clipManager.ActiveIndex = value; }
+        private List<ClipState> Clips => _clipManager.Clips;
+        private int ActiveClipIndex { get => _clipManager.ActiveIndex; set => _clipManager.ActiveIndex = value; }
 
         private EncodeController _encodeController = null!; // initialized in constructor
         private bool _isDroppingFiles;
@@ -331,6 +331,13 @@ namespace CleanScan.Views
             // When blksize changes, cap overlap to blksize/2
             if (field == "degrain_blksize")
                 ClampOverlapToBlksize((int)Math.Round(snapped));
+
+            // Clear GamMac preset name when a GamMac parameter changes manually
+            if (Array.IndexOf(EncodeController.GammacKeys, field) >= 0)
+            {
+                if (this.FindControl<ComboBox>("GammacPresetCombo") is { } gc)
+                { gc.SelectedIndex = -1; gc.Text = null; }
+            }
         }
 
         /// <summary>Ensures overlap ≤ blksize/2 and updates slider max accordingly.</summary>
@@ -364,12 +371,23 @@ namespace CleanScan.Views
 
         private void SyncAllSliders()
         {
-            foreach (var (field, (slider, _)) in _sliderMap)
+            foreach (var (field, (slider, spec)) in _sliderMap)
             {
                 var raw = _config.Get(field);
                 if (!double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var val)) continue;
+                var clamped = Math.Clamp(val, slider.Minimum, slider.Maximum);
                 _sliderSync = true;
-                try { slider.Value = Math.Clamp(val, slider.Minimum, slider.Maximum); }
+                try
+                {
+                    slider.Value = clamped;
+                    // Also sync the TextBox (slider.Value setter won't fire ValueChanged if value unchanged)
+                    if (this.FindControl<TextBox>(field) is { } tb)
+                    {
+                        tb.Text = spec.IsFloat
+                            ? clamped.ToString("F" + spec.Decimals, CultureInfo.InvariantCulture)
+                            : ((int)Math.Round(clamped)).ToString();
+                    }
+                }
                 finally { _sliderSync = false; }
             }
         }
@@ -418,8 +436,9 @@ namespace CleanScan.Views
         }
 
         // ── UIPI drag-drop fix for elevated processes ─────────────────────
-        [DllImport("user32.dll")]
-        private static extern bool ChangeWindowMessageFilterEx(
+        [System.Runtime.InteropServices.LibraryImport("user32.dll")]
+        [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+        private static partial bool ChangeWindowMessageFilterEx(
             nint hwnd, uint message, uint action, nint pChangeFilterStruct);
 
         private const uint WM_DROPFILES_MSG      = 0x0233;
@@ -859,7 +878,7 @@ namespace CleanScan.Views
 
             _layoutInitialized = true;
 
-            if (saved?.TourCompleted != true && _clips.Count == 0)
+            if (saved?.TourCompleted != true && Clips.Count == 0)
                 Dispatcher.UIThread.Post(() => _ = ShowGuidedTourAsync(), DispatcherPriority.Background);
         }
 
@@ -1103,9 +1122,9 @@ namespace CleanScan.Views
             _clipManager.SaveActiveConfig();
 
             var clips = new List<ClipSession>();
-            for (int i = 0; i < _clips.Count; i++)
+            for (int i = 0; i < Clips.Count; i++)
             {
-                var c = _clips[i];
+                var c = Clips[i];
                 clips.Add(new ClipSession(
                     Path:               c.Path,
                     FilterConfig:       c.Config,
@@ -1116,7 +1135,7 @@ namespace CleanScan.Views
             }
 
             var encPresetName = (this.FindControl<ComboBox>("RecordPresetCombo")?.SelectedItem as string)?.Trim();
-            _sessionService.Save(new SessionState(_activeClipIndex, clips, _encodeController.CaptureCurrentEncodingValues(), encPresetName));
+            _sessionService.Save(new SessionState(ActiveClipIndex, clips, _encodeController.CaptureCurrentEncodingValues(), encPresetName));
         }
 
         private void RestoreSessionClips()
@@ -1136,11 +1155,11 @@ namespace CleanScan.Views
             if (validClips.Count == 0) return;
 
             // Rebuild clip state from session
-            _clips.Clear();
+            Clips.Clear();
 
             foreach (var (clip, _) in validClips)
             {
-                _clips.Add(new ClipState
+                Clips.Add(new ClipState
                 {
                     Path = clip.Path,
                     Config = new Dictionary<string, string>(clip.FilterConfig, StringComparer.OrdinalIgnoreCase),
@@ -1155,14 +1174,14 @@ namespace CleanScan.Views
             var targetIndex = session.ActiveClipIndex;
             var newIndex = validClips.FindIndex(v => v.OriginalIndex == targetIndex);
             if (newIndex < 0) newIndex = 0;
-            _activeClipIndex = newIndex;
+            ActiveClipIndex = newIndex;
 
             // Restore active clip's filter config into _config and UI
-            RestoreClipConfig(_activeClipIndex);
+            RestoreClipConfig(ActiveClipIndex);
 
             // Set source directly (without going through ApplyDetectedSourceAndRefreshAsync
             // which calls AddOrActivateClip and would corrupt the restored clip lists)
-            var sourcePath = _clips[_activeClipIndex].Path;
+            var sourcePath = Clips[ActiveClipIndex].Path;
             var normalized = _sourceService.NormalizeConfiguredPath(sourcePath);
             _config.Set("source", normalized);
             _config.Set("film",   normalized);
@@ -1430,10 +1449,10 @@ namespace CleanScan.Views
         /// <summary>Renames the active clip to the next "persoN" if it isn't already one.</summary>
         private void MarkClipAsPerso()
         {
-            if (_activeClipIndex < 0 || _activeClipIndex >= _clips.Count) return;
-            var currentName = _clips[_activeClipIndex].PresetName;
+            if (ActiveClipIndex < 0 || ActiveClipIndex >= Clips.Count) return;
+            var currentName = Clips[ActiveClipIndex].PresetName;
             if (currentName is not null && currentName.StartsWith("perso", StringComparison.OrdinalIgnoreCase)) return;
-            _clips[_activeClipIndex].PresetName = _clipManager.GetNextPersoName();
+            Clips[ActiveClipIndex].PresetName = _clipManager.GetNextPersoName();
             RestoreClipPresetCombo();
             RebuildClipTabs();
         }
@@ -1530,9 +1549,9 @@ namespace CleanScan.Views
                 for (int i = 1; i < paths.Count; i++)
                 {
                     var normalized = _sourceService.NormalizeConfiguredPath(NormalizeSourceValue(paths[i]));
-                    if (!_clips.Any(c => string.Equals(c.Path, normalized, StringComparison.OrdinalIgnoreCase)))
+                    if (!Clips.Any(c => string.Equals(c.Path, normalized, StringComparison.OrdinalIgnoreCase)))
                     {
-                        _clips.Add(new ClipState { Path = normalized, Config = _clipManager.CaptureConfig() });
+                        Clips.Add(new ClipState { Path = normalized, Config = _clipManager.CaptureConfig() });
                     }
                 }
                 if (paths.Count > 1)
@@ -1575,9 +1594,9 @@ namespace CleanScan.Views
                 for (int i = 1; i < valid.Count; i++)
                 {
                     var normalized = _sourceService.NormalizeConfiguredPath(NormalizeSourceValue(valid[i]));
-                    if (!_clips.Any(c => string.Equals(c.Path, normalized, StringComparison.OrdinalIgnoreCase)))
+                    if (!Clips.Any(c => string.Equals(c.Path, normalized, StringComparison.OrdinalIgnoreCase)))
                     {
-                        _clips.Add(new ClipState { Path = normalized, Config = _clipManager.CaptureConfig() });
+                        Clips.Add(new ClipState { Path = normalized, Config = _clipManager.CaptureConfig() });
                     }
                 }
                 if (valid.Count > 1)
@@ -1730,8 +1749,8 @@ namespace CleanScan.Views
         /// <summary>Restores a clip's filter config into _config and refreshes all UI controls.</summary>
         private void RestoreClipConfig(int index)
         {
-            if (index < 0 || index >= _clips.Count) return;
-            var clipCfg = _clips[index].Config;
+            if (index < 0 || index >= Clips.Count) return;
+            var clipCfg = Clips[index].Config;
 
             _suppressTextEvents = true;
             _applyingPreset = true;
@@ -1785,15 +1804,15 @@ namespace CleanScan.Views
             var addBtn = this.FindControl<Button>("AddClipBtn");
             panel.Children.Clear();
 
-            for (int i = 0; i < _clips.Count; i++)
+            for (int i = 0; i < Clips.Count; i++)
             {
                 var index = i;
-                var path = _clips[i].Path;
+                var path = Clips[i].Path;
                 var filename = Path.GetFileName(path);
                 if (string.IsNullOrWhiteSpace(filename)) filename = path;
-                var isActive = i == _activeClipIndex;
+                var isActive = i == ActiveClipIndex;
 
-                var presetName = _clips[i].PresetName;
+                var presetName = Clips[i].PresetName;
                 var presetSuffix = presetName is not null
                     ? $"  [{presetName}]"
                     : string.Empty;
@@ -1860,24 +1879,44 @@ namespace CleanScan.Views
 
         private async void SwitchToClip(int index)
         {
-            if (index < 0 || index >= _clips.Count || index == _activeClipIndex) return;
+            if (index < 0 || index >= Clips.Count || index == ActiveClipIndex) return;
 
-            // Save current clip's filter config
+            // Save current clip's filter config + GamMac preset name
             _clipManager.SaveActiveConfig();
+            SaveGammacPresetName();
 
-            // Switch source (this sets _activeClipIndex via AddOrActivateClip)
-            await ApplyDetectedSourceAndRefreshAsync(_clips[index].Path);
+            // Switch source (this sets ActiveClipIndex via AddOrActivateClip)
+            await ApplyDetectedSourceAndRefreshAsync(Clips[index].Path);
 
             // Restore the target clip's filter config
-            RestoreClipConfig(_activeClipIndex);
+            RestoreClipConfig(ActiveClipIndex);
 
-            // Restore per-clip preset selection
+            // Restore per-clip preset selection + GamMac preset
             RestoreClipPresetCombo();
+            RestoreGammacPresetCombo();
 
             RegenerateScript(showValidationError: false);
 
             if (TryValidateSourceSelection(out _))
                 await LoadScriptAsync();
+        }
+
+        private void SaveGammacPresetName()
+        {
+            if (_clipManager.ActiveClip is not { } clip) return;
+            clip.GammacPresetName = (this.FindControl<ComboBox>("GammacPresetCombo")?.SelectedItem as string)
+                                    ?? this.FindControl<ComboBox>("GammacPresetCombo")?.Text;
+        }
+
+        private void RestoreGammacPresetCombo()
+        {
+            if (this.FindControl<ComboBox>("GammacPresetCombo") is not { } combo) return;
+            var name = _clipManager.ActiveClip?.GammacPresetName;
+            _encodeController.RefreshGammacPresetCombo();
+            if (!string.IsNullOrWhiteSpace(name))
+                combo.SelectedItem = name;
+            else
+                combo.SelectedIndex = -1;
         }
 
         /// <summary>Restores the per-clip preset ComboBox selection without triggering the change handler.</summary>
@@ -1887,8 +1926,8 @@ namespace CleanScan.Views
             _suppressClipPresetChange = true;
             try
             {
-                var presetName = _activeClipIndex >= 0 && _activeClipIndex < _clips.Count
-                    ? _clips[_activeClipIndex].PresetName
+                var presetName = ActiveClipIndex >= 0 && ActiveClipIndex < Clips.Count
+                    ? Clips[ActiveClipIndex].PresetName
                     : null;
 
                 var isPerso = presetName?.StartsWith("perso", StringComparison.OrdinalIgnoreCase) == true;
@@ -1918,7 +1957,7 @@ namespace CleanScan.Views
             var result = _clipManager.Remove(index);
             if (!result.Removed) return;
 
-            if (_clips.Count == 0)
+            if (Clips.Count == 0)
             {
                 RebuildClipTabs();
                 if (_recordOpen) RebuildBatchClipList();
@@ -1928,8 +1967,8 @@ namespace CleanScan.Views
 
             if (result.WasActive)
             {
-                await ApplyDetectedSourceAndRefreshAsync(_clips[_activeClipIndex].Path);
-                RestoreClipConfig(_activeClipIndex);
+                await ApplyDetectedSourceAndRefreshAsync(Clips[ActiveClipIndex].Path);
+                RestoreClipConfig(ActiveClipIndex);
                 RestoreClipPresetCombo();
                 RegenerateScript(showValidationError: false);
                 if (TryValidateSourceSelection(out _))
@@ -2047,12 +2086,12 @@ namespace CleanScan.Views
             // Rename the active clip's preset to a unique "persoN" when a filter value is manually changed
             if (changed && !_applyingPreset && !IsPathField(key)
                 && !PresetService.ExcludedKeys.Contains(key)
-                && _activeClipIndex >= 0 && _activeClipIndex < _clips.Count)
+                && ActiveClipIndex >= 0 && ActiveClipIndex < Clips.Count)
             {
-                var currentName = _clips[_activeClipIndex].PresetName;
+                var currentName = Clips[ActiveClipIndex].PresetName;
                 if (currentName is null || !currentName.StartsWith("perso", StringComparison.OrdinalIgnoreCase))
                 {
-                    _clips[_activeClipIndex].PresetName = _clipManager.GetNextPersoName();
+                    Clips[ActiveClipIndex].PresetName = _clipManager.GetNextPersoName();
                     RestoreClipPresetCombo();
                     RebuildClipTabs();
                 }
@@ -2456,12 +2495,12 @@ namespace CleanScan.Views
 
             // Propagate to all clip configs
             var filterSnap = _clipManager.CaptureConfig();
-            for (int i = 0; i < _clips.Count; i++)
-                _clips[i].Config = new Dictionary<string, string>(filterSnap, StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < Clips.Count; i++)
+                Clips[i].Config = new Dictionary<string, string>(filterSnap, StringComparer.OrdinalIgnoreCase);
 
             // Set the preset name on all clips
-            for (int i = 0; i < _clips.Count; i++)
-                _clips[i].PresetName = presetName;
+            for (int i = 0; i < Clips.Count; i++)
+                Clips[i].PresetName = presetName;
         }
 
         /// <summary>Applies preset values to the current UI/config only (per-clip).</summary>
@@ -2540,8 +2579,8 @@ namespace CleanScan.Views
             if (preset?.Values is null) return;
 
             // Store preset name for this clip
-            if (_activeClipIndex >= 0 && _activeClipIndex < _clips.Count)
-                _clips[_activeClipIndex].PresetName = name;
+            if (ActiveClipIndex >= 0 && ActiveClipIndex < Clips.Count)
+                Clips[ActiveClipIndex].PresetName = name;
 
             await ApplyPresetValuesAsync(new Dictionary<string, string>(preset.Values, StringComparer.OrdinalIgnoreCase));
             RebuildClipTabs();

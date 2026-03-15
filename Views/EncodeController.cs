@@ -624,7 +624,7 @@ public sealed class EncodeController
 
     // ── GamMac presets ───────────────────────────────────────────────
 
-    private static readonly string[] GammacKeys =
+    public static readonly string[] GammacKeys =
         ["LockChan", "LockVal", "Scale", "Th", "HiTh", "X", "Y", "W", "H", "Omin", "Omax", "Verbosity", "ShowPreview"];
 
     private Dictionary<string, string> CaptureGammacValues()
