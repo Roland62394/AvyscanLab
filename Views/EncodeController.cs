@@ -677,6 +677,8 @@ public sealed class EncodeController
             RefreshGammacPresetCombo();
             combo.SelectedItem = name;
             Config.Set("gammac_preset", name);
+            if (_host.ClipManager.ActiveClip is { } clip)
+                clip.GammacPresetName = name;
         }
         finally { _isLoadingGammacPreset = false; }
     }
@@ -690,14 +692,15 @@ public sealed class EncodeController
         try
         {
             if (!string.IsNullOrWhiteSpace(name))
+            {
                 combo.SelectedItem = name;
+                combo.Text = name;
+            }
             else
             {
                 combo.SelectedIndex = -1;
                 combo.Text = null;
             }
-            try { System.IO.File.AppendAllText(System.IO.Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.Desktop), "combo_debug.txt"),
-                $"[RESTORE-GAMMAC] {DateTime.Now:HH:mm:ss.fff} name='{name}' selAfter='{combo.SelectedItem}' idx={combo.SelectedIndex} items={combo.ItemCount}\n"); } catch {}
         }
         finally { _isLoadingGammacPreset = false; }
     }
@@ -714,6 +717,8 @@ public sealed class EncodeController
         RefreshGammacPresetCombo();
         combo.SelectedItem = null;
         Config.Set("gammac_preset", string.Empty);
+        if (_host.ClipManager.ActiveClip is { } clip)
+            clip.GammacPresetName = null;
     }
 
     public void OnGammacPresetSelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -727,6 +732,8 @@ public sealed class EncodeController
             {
                 ApplyGammacValues(preset.Values);
                 Config.Set("gammac_preset", name);
+                if (_host.ClipManager.ActiveClip is { } clip)
+                    clip.GammacPresetName = name;
                 _host.RegenerateScript(showValidationError: false);
                 _ = _host.LoadScriptAsync();
             }
