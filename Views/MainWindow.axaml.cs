@@ -1169,6 +1169,7 @@ namespace CleanScan.Views
         {
             if (sender is MenuItem { Tag: string code })
                 ApplyLanguage(code, persist: true);
+            CloseAllMenus();
         }
 
         private void ApplyLanguage(string languageCode, bool persist)
@@ -1391,6 +1392,12 @@ namespace CleanScan.Views
                 menu.Close();
         }
 
+        private void CloseAllMenus()
+        {
+            if (this.FindControl<Menu>("MainMenu") is { } mainMenu)
+                mainMenu.Close();
+        }
+
         #endregion
 
         #region Theme
@@ -1441,6 +1448,7 @@ namespace CleanScan.Views
             if (sender is not Button { Tag: string theme }) return;
             _themeService.SetTheme(theme);
             ApplyTheme(theme, _themeService.Accent);
+            CloseSettingsMenu();
         }
 
         private void OnAccentClick(object? sender, RoutedEventArgs e)
@@ -1448,6 +1456,7 @@ namespace CleanScan.Views
             if (sender is not Button { Tag: string accent }) return;
             _themeService.SetAccent(accent);
             ApplyTheme(_themeService.Theme, accent);
+            CloseSettingsMenu();
         }
 
         private void ApplyTheme(string theme, string accent)
@@ -1461,7 +1470,7 @@ namespace CleanScan.Views
             // Update Avalonia theme variant (affects Fluent popup/menu surfaces)
             var variant = string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase)
                 ? Avalonia.Styling.ThemeVariant.Light
-                : Avalonia.Styling.ThemeVariant.Dark;
+                : Avalonia.Styling.ThemeVariant.Dark; // Dark and Grey both use Dark variant
             if (Application.Current is { } app)
                 app.RequestedThemeVariant = variant;
 
@@ -1472,16 +1481,12 @@ namespace CleanScan.Views
 
         private void UpdateThemeButtonStates(string theme)
         {
-            var isDark = string.Equals(theme, "Dark", StringComparison.OrdinalIgnoreCase);
-            if (this.FindControl<Button>("ThemeDarkBtn") is { } darkBtn)
+            foreach (var name in new[] { "ThemeDarkBtn", "ThemeGreyBtn", "ThemeLightBtn" })
             {
-                darkBtn.Foreground = isDark ? ThemeBrush("TextLabel") : ThemeBrush("TextPrimary");
-                darkBtn.BorderBrush = isDark ? ThemeBrush("AccentBlue") : ThemeBrush("BorderSubtle");
-            }
-            if (this.FindControl<Button>("ThemeLightBtn") is { } lightBtn)
-            {
-                lightBtn.Foreground = !isDark ? ThemeBrush("TextLabel") : ThemeBrush("TextPrimary");
-                lightBtn.BorderBrush = !isDark ? ThemeBrush("AccentBlue") : ThemeBrush("BorderSubtle");
+                if (this.FindControl<Button>(name) is not { Tag: string tag } btn) continue;
+                var active = string.Equals(tag, theme, StringComparison.OrdinalIgnoreCase);
+                btn.Foreground = active ? ThemeBrush("TextLabel") : ThemeBrush("TextPrimary");
+                btn.BorderBrush = active ? ThemeBrush("AccentBlue") : ThemeBrush("BorderSubtle");
             }
         }
 
@@ -1510,6 +1515,8 @@ namespace CleanScan.Views
                 albl.Text = GetUiText("AccentLabel");
             if (this.FindControl<Button>("ThemeDarkBtn") is { } darkBtn)
                 darkBtn.Content = GetUiText("ThemeDark");
+            if (this.FindControl<Button>("ThemeGreyBtn") is { } greyBtn)
+                greyBtn.Content = GetUiText("ThemeGrey");
             if (this.FindControl<Button>("ThemeLightBtn") is { } lightBtn)
                 lightBtn.Content = GetUiText("ThemeLight");
         }
@@ -3075,9 +3082,9 @@ namespace CleanScan.Views
                 btn.Content = l;
             // else: keep existing Content (e.g. custom filter name set by caller)
 
-            btn.Background  = isEnabled ? ThemeBrush("AccentGreen") : new SolidColorBrush(Color.Parse("#3B4C64"));
-            btn.BorderBrush = new SolidColorBrush(Color.Parse("#3B4C64"));
-            btn.Foreground  = Brushes.White;
+            btn.Background  = isEnabled ? ThemeBrush("AccentGreen") : ThemeBrush("BorderAccent");
+            btn.BorderBrush = ThemeBrush("BorderAccent");
+            btn.Foreground  = isEnabled ? Brushes.White : ThemeBrush("TextLabel");
         }
 
         private void SetColumnEnabled(bool isEnabled, params string[] names)
@@ -3504,7 +3511,8 @@ namespace CleanScan.Views
 
         private async Task OpenCustomFilterDialog(CustomFilter filter)
         {
-            var dialog = new CustomFilterDialog(filter, vm: ViewModel, ownerHeight: Bounds.Height)
+            var dialog = new CustomFilterDialog(filter, vm: ViewModel, ownerHeight: Bounds.Height,
+                themeService: _themeService)
             { OnPreview = OnCustomFilterPreview };
             await dialog.ShowDialog(this);
 
@@ -3534,7 +3542,8 @@ namespace CleanScan.Views
         private async void OnAddCustomFilterClick(object? sender, RoutedEventArgs e)
         {
             var filter = new CustomFilter { Name = "Custom " + _customFilterService.Filters.Count };
-            var dialog = new CustomFilterDialog(filter, isNew: true, vm: ViewModel, ownerHeight: Bounds.Height)
+            var dialog = new CustomFilterDialog(filter, isNew: true, vm: ViewModel, ownerHeight: Bounds.Height,
+                themeService: _themeService)
             {
                 OnPreview = f =>
                 {

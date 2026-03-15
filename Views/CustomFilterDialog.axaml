@@ -9,15 +9,15 @@
        WindowStartupLocation="CenterOwner"
        SystemDecorations="BorderOnly"
        ShowInTaskbar="False"
-       Background="#0F1319"
+       Background="{DynamicResource BgDeep}"
        Icon="/Assets/Ico.ico">
 
    <Window.Styles>
        <Style Selector="Button.dialog-btn /template/ ContentPresenter">
-           <Setter Property="Background" Value="#1C2333"/>
+           <Setter Property="Background" Value="{DynamicResource BgHeader}"/>
        </Style>
        <Style Selector="Button.dialog-btn:pointerover /template/ ContentPresenter">
-           <Setter Property="Background" Value="#252E42"/>
+           <Setter Property="Background" Value="{DynamicResource BgHover}"/>
        </Style>
        <Style Selector="Button#CloseXButton /template/ ContentPresenter">
            <Setter Property="Background" Value="Transparent"/>
@@ -30,7 +30,8 @@
        </Style>
    </Window.Styles>
 
-   <Border BorderBrush="#252E42" BorderThickness="1" Margin="6" Background="#161B24">
+   <Border BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" Margin="6"
+           Background="{DynamicResource BgPanel}">
        <Grid RowDefinitions="Auto,*,Auto">
 
            <!-- Title bar -->
@@ -38,8 +39,8 @@
                    Grid.Row="0"
                    Height="34"
                    Padding="14,0,6,0"
-                   Background="#0F1319"
-                   BorderBrush="#252E42"
+                   Background="{DynamicResource BgDeep}"
+                   BorderBrush="{DynamicResource BorderSubtle}"
                    BorderThickness="0,0,0,1">
                <Grid ColumnDefinitions="*,Auto">
                    <TextBlock x:Name="TitleText"
@@ -47,7 +48,7 @@
                               Text="CUSTOM FILTER"
                               FontSize="10"
                               FontFamily="Consolas,Cascadia Code,monospace"
-                              Foreground="#4A5470"
+                              Foreground="{DynamicResource TextPrimary}"
                               LetterSpacing="2"
                               VerticalAlignment="Center"/>
                    <Button x:Name="CloseXButton"
@@ -56,7 +57,7 @@
                            Padding="0"
                            Background="Transparent"
                            BorderThickness="0"
-                           Foreground="#4A5470"
+                           Foreground="{DynamicResource TextPrimary}"
                            FontSize="13"
                            HorizontalContentAlignment="Center"
                            VerticalContentAlignment="Center"
@@ -72,7 +73,7 @@
                              VerticalScrollBarVisibility="Auto"
                              HorizontalScrollBarVisibility="Disabled"
                              MaxHeight="320">
-                   <StackPanel Margin="20,14,20,8" Spacing="10">
+                   <StackPanel Margin="20,14,20,8" Spacing="24">
 
                        <!-- Name + Position on same row -->
                        <Grid ColumnDefinitions="*,16,*">
@@ -80,88 +81,102 @@
                                <TextBlock x:Name="FilterNameLabel"
                                           Text="Filter name"
                                           FontSize="13" FontWeight="SemiBold"
-                                          Foreground="#E8E8E8"/>
+                                          Foreground="{DynamicResource TextLabel}"/>
                                <TextBox x:Name="FilterNameBox"
                                         Watermark="My custom filter"
                                         FontSize="12"
-                                        Background="#0F1319"
-                                        Foreground="#DBDBDB"
-                                        BorderBrush="#252E42"/>
+                                        Background="{DynamicResource BgInput}"
+                                        Foreground="{DynamicResource TextSecondary}"
+                                        BorderBrush="{DynamicResource BorderSubtle}"/>
                            </StackPanel>
                            <StackPanel Grid.Column="2" Spacing="3">
                                <TextBlock x:Name="PositionLabel"
                                           Text="Position in pipeline"
                                           FontSize="13" FontWeight="SemiBold"
-                                          Foreground="#E8E8E8"/>
+                                          Foreground="{DynamicResource TextLabel}"/>
                                <ComboBox x:Name="PositionCombo"
                                          HorizontalAlignment="Stretch"
-                                         FontSize="12"/>
+                                         FontSize="12"
+                                         Background="{DynamicResource BgInput}"
+                                         Foreground="{DynamicResource TextSecondary}"
+                                         BorderBrush="{DynamicResource BorderSubtle}"/>
                            </StackPanel>
                        </Grid>
 
-                       <!-- DLLs -->
-                       <StackPanel Spacing="3">
-                           <TextBlock x:Name="PluginsLabel"
-                                      Text="Plugins (TryLoadPlugin)"
-                                      FontSize="13" FontWeight="SemiBold"
-                                      Foreground="#E8E8E8"/>
-                           <StackPanel x:Name="DllListPanel" Spacing="2"/>
-                           <Button x:Name="AddDllBtn"
-                                   Content="+ Add DLL..."
-                                   FontSize="11"
-                                   Padding="8,3"
-                                   Classes="dialog-btn"
-                                   Foreground="#7984A5"
-                                   BorderBrush="#252E42"
-                                   BorderThickness="1"
-                                   HorizontalAlignment="Left"/>
-                       </StackPanel>
+                       <!-- DLLs + Scripts on 2 columns -->
+                       <Grid ColumnDefinitions="*,16,*">
+                           <!-- DLLs -->
+                           <StackPanel Grid.Column="0" Spacing="3">
+                               <Grid ColumnDefinitions="*,Auto">
+                                   <TextBlock x:Name="PluginsLabel"
+                                              Grid.Column="0"
+                                              Text="Plugins (TryLoadPlugin)"
+                                              FontSize="13" FontWeight="SemiBold"
+                                              Foreground="{DynamicResource TextLabel}"
+                                              VerticalAlignment="Center"/>
+                                   <Button x:Name="AddDllBtn"
+                                           Grid.Column="1"
+                                           Content="+ Add DLL..."
+                                           FontSize="11"
+                                           Padding="8,3"
+                                           Classes="dialog-btn"
+                                           Foreground="{DynamicResource TextPrimary}"
+                                           BorderBrush="{DynamicResource BorderSubtle}"
+                                           BorderThickness="1"/>
+                               </Grid>
+                               <StackPanel x:Name="DllListPanel" Spacing="2"/>
+                           </StackPanel>
 
-                       <!-- Scripts (.avsi) -->
-                       <StackPanel Spacing="3">
-                           <TextBlock x:Name="ScriptsLabel"
-                                      Text="Scripts (Import .avsi)"
-                                      FontSize="13" FontWeight="SemiBold"
-                                      Foreground="#E8E8E8"/>
-                           <StackPanel x:Name="ScriptListPanel" Spacing="2"/>
-                           <Button x:Name="AddScriptBtn"
-                                   Content="+ Add AVSI..."
-                                   FontSize="11"
-                                   Padding="8,3"
-                                   Classes="dialog-btn"
-                                   Foreground="#7984A5"
-                                   BorderBrush="#252E42"
-                                   BorderThickness="1"
-                                   HorizontalAlignment="Left"/>
-                       </StackPanel>
+                           <!-- Scripts (.avsi) -->
+                           <StackPanel Grid.Column="2" Spacing="3">
+                               <Grid ColumnDefinitions="*,Auto">
+                                   <TextBlock x:Name="ScriptsLabel"
+                                              Grid.Column="0"
+                                              Text="Scripts (Import .avsi)"
+                                              FontSize="13" FontWeight="SemiBold"
+                                              Foreground="{DynamicResource TextLabel}"
+                                              VerticalAlignment="Center"/>
+                                   <Button x:Name="AddScriptBtn"
+                                           Grid.Column="1"
+                                           Content="+ Add AVSI..."
+                                           FontSize="11"
+                                           Padding="8,3"
+                                           Classes="dialog-btn"
+                                           Foreground="{DynamicResource TextPrimary}"
+                                           BorderBrush="{DynamicResource BorderSubtle}"
+                                           BorderThickness="1"/>
+                               </Grid>
+                               <StackPanel x:Name="ScriptListPanel" Spacing="2"/>
+                           </StackPanel>
+                       </Grid>
                    </StackPanel>
                </ScrollViewer>
 
                <!-- Code editor (stretches with window) -->
                <Border Grid.Row="1"
-                       BorderBrush="#252E42"
+                       BorderBrush="{DynamicResource BorderSubtle}"
                        BorderThickness="0,1,0,0"
-                       Padding="20,8">
+                       Padding="20,16">
                    <Grid RowDefinitions="Auto,*">
                        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,4">
                            <StackPanel Grid.Column="0" Spacing="1">
                                <TextBlock x:Name="CodeLabel"
                                           Text="AviSynth code"
                                           FontSize="13" FontWeight="SemiBold"
-                                          Foreground="#E8E8E8"/>
+                                          Foreground="{DynamicResource TextLabel}"/>
                                <TextBlock x:Name="CodeHint"
                                           Text="Use 'c' as the clip variable, {name} for parameters."
                                           FontSize="10"
-                                          Foreground="#555E72"/>
+                                          Foreground="{DynamicResource TextPrimary}"/>
                            </StackPanel>
                            <Button x:Name="PreviewBtn"
                                    Grid.Column="1"
                                    Content="&#x25B6; Preview"
                                    FontSize="11"
                                    Padding="8,3"
-                                   Background="#1C2333"
-                                   Foreground="#3B82C4"
-                                   BorderBrush="#252E42"
+                                   Background="{DynamicResource BgHeader}"
+                                   Foreground="{DynamicResource AccentBlue}"
+                                   BorderBrush="{DynamicResource BorderSubtle}"
                                    BorderThickness="1"
                                    VerticalAlignment="Center"
                                    HorizontalContentAlignment="Center"
@@ -173,9 +188,9 @@
                                 TextWrapping="NoWrap"
                                 FontFamily="Consolas,Courier New,monospace"
                                 FontSize="12"
-                                Background="#0F1319"
-                                Foreground="#DBDBDB"
-                                BorderBrush="#252E42"
+                                Background="{DynamicResource BgInput}"
+                                Foreground="{DynamicResource TextSecondary}"
+                                BorderBrush="{DynamicResource BorderSubtle}"
                                 Watermark="c = MyFilter(c, strength={sigma}, mode={bt_mode})"/>
                    </Grid>
                </Border>
@@ -184,22 +199,22 @@
                <GridSplitter Grid.Row="2"
                              Height="4"
                              HorizontalAlignment="Stretch"
-                             Background="#252E42"
+                             Background="{DynamicResource BorderSubtle}"
                              ResizeDirection="Rows"/>
 
                <!-- Parameters section (resizable) -->
                <ScrollViewer Grid.Row="3"
                              VerticalScrollBarVisibility="Auto"
                              HorizontalScrollBarVisibility="Disabled">
-                   <StackPanel Margin="20,8,20,10" Spacing="2">
+                   <StackPanel Margin="20,16,20,10" Spacing="2">
                        <TextBlock x:Name="ParamsLabel"
                                   Text="Parameters"
                                   FontSize="13" FontWeight="SemiBold"
-                                  Foreground="#E8E8E8"/>
+                                  Foreground="{DynamicResource TextLabel}"/>
                        <TextBlock x:Name="ParamsHint"
                                   Text="Detected from {placeholders} in code above."
                                   FontSize="10"
-                                  Foreground="#555E72"
+                                  Foreground="{DynamicResource TextPrimary}"
                                   Margin="0,0,0,2"/>
                        <StackPanel x:Name="ControlsPanel" Spacing="4"/>
                    </StackPanel>
@@ -209,7 +224,7 @@
 
            <!-- Footer -->
            <Border Grid.Row="2"
-                   BorderBrush="#252E42"
+                   BorderBrush="{DynamicResource BorderSubtle}"
                    BorderThickness="0,1,0,0"
                    Padding="14,10">
                <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto">
@@ -220,7 +235,7 @@
                            MinWidth="90" Height="28"
                            Padding="12,0"
                            Background="#5A2E2E"
-                           Foreground="#DBDBDB"
+                           Foreground="{DynamicResource TextSecondary}"
                            BorderBrush="#C05050"
                            BorderThickness="1"
                            HorizontalContentAlignment="Center"
@@ -234,8 +249,8 @@
                            Padding="12,0"
                            Margin="10,0,0,0"
                            Classes="dialog-btn"
-                           Foreground="#7984A5"
-                           BorderBrush="#252E42"
+                           Foreground="{DynamicResource TextPrimary}"
+                           BorderBrush="{DynamicResource BorderSubtle}"
                            BorderThickness="1"
                            HorizontalContentAlignment="Center"
                            VerticalContentAlignment="Center"/>
@@ -248,8 +263,8 @@
                            Padding="12,0"
                            Margin="10,0,0,0"
                            Classes="dialog-btn"
-                           Foreground="#7984A5"
-                           BorderBrush="#252E42"
+                           Foreground="{DynamicResource TextPrimary}"
+                           BorderBrush="{DynamicResource BorderSubtle}"
                            BorderThickness="1"
                            HorizontalContentAlignment="Center"
                            VerticalContentAlignment="Center"/>
@@ -263,8 +278,8 @@
                                MinWidth="90" Height="28"
                                Padding="12,0"
                                Classes="dialog-btn"
-                               Foreground="#7984A5"
-                               BorderBrush="#252E42"
+                               Foreground="{DynamicResource TextPrimary}"
+                               BorderBrush="{DynamicResource BorderSubtle}"
                                BorderThickness="1"
                                HorizontalContentAlignment="Center"
                                VerticalContentAlignment="Center"/>
@@ -273,8 +288,8 @@
                                MinWidth="90" Height="28"
                                Padding="12,0"
                                Background="#2E5A3D"
-                               Foreground="#DBDBDB"
-                               BorderBrush="#35C156"
+                               Foreground="{DynamicResource TextSecondary}"
+                               BorderBrush="{DynamicResource AccentGreen}"
                                BorderThickness="1"
                                HorizontalContentAlignment="Center"
                                VerticalContentAlignment="Center"/>

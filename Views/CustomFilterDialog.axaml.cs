@@ -24,6 +24,7 @@ public partial class CustomFilterDialog : Window
     private readonly List<string> _scripts;
     private readonly List<CustomFilterControl> _controls;
     private readonly MainWindowViewModel? _vm;
+    private readonly ThemeService? _themeService;
 
     private static readonly Regex PlaceholderRegex = new(@"\{(\w+)\}", RegexOptions.Compiled);
     private static readonly Regex AssignmentRegex = new(@"^\s*(\w+)\s*=\s*(.+?)\s*$", RegexOptions.Compiled);
@@ -79,15 +80,20 @@ public partial class CustomFilterDialog : Window
 
     public CustomFilterDialog() : this(new CustomFilter()) { }
 
-    public CustomFilterDialog(CustomFilter filter, bool isNew = false, MainWindowViewModel? vm = null, double ownerHeight = 0)
+    public CustomFilterDialog(CustomFilter filter, bool isNew = false, MainWindowViewModel? vm = null,
+        double ownerHeight = 0, ThemeService? themeService = null)
     {
         _filter = filter;
         _dlls = [..filter.Dlls];
         _scripts = [..filter.Scripts];
         _controls = filter.Controls.Select(CloneControl).ToList();
         _vm = vm;
+        _themeService = themeService;
 
         InitializeComponent();
+
+        // Apply theme palette to this dialog's resources
+        ApplyThemePalette();
 
         // Restore persisted size/position/grid
         var layout = LoadLayout();
@@ -199,6 +205,19 @@ public partial class CustomFilterDialog : Window
         SaveBtn.Content = L("CfDlgSave");
     }
 
+    private void ApplyThemePalette()
+    {
+        if (_themeService is null) return;
+        var palette = ThemeService.GetPalette(_themeService.Theme, _themeService.Accent);
+        foreach (var (key, hex) in palette)
+            Resources[key] = new SolidColorBrush(Color.Parse(hex));
+    }
+
+    private SolidColorBrush ThemeBrush(string key) =>
+        Resources.TryGetValue(key, out var val) && val is SolidColorBrush b
+            ? b
+            : new SolidColorBrush(Colors.Magenta);
+
     private async System.Threading.Tasks.Task ShowHelp()
     {
         var okBtn = new Button { Content = "OK", MinWidth = 80, HorizontalAlignment = HorizontalAlignment.Right };
@@ -248,8 +267,39 @@ public partial class CustomFilterDialog : Window
         Close();
     }
 
-    private void OnDelete()
+    private async void OnDelete()
     {
+        var filterName = string.IsNullOrWhiteSpace(FilterNameBox.Text) ? "Custom" : FilterNameBox.Text.Trim();
+        var msg = L("CfDlgDeleteConfirm").Replace("$name$", filterName);
+
+        var confirmed = false;
+        var yesBtn = new Button { Content = L("CfDlgConvertYes"), MinWidth = 80 };
+        var noBtn = new Button { Content = L("CfDlgConvertNo"), MinWidth = 80 };
+
+        var dialog = new Window
+        {
+            Title = L("CfDlgDeleteConfirmTitle"),
+            SizeToContent = SizeToContent.WidthAndHeight,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            MaxWidth = 460,
+            Content = new StackPanel
+            {
+                Margin = new Thickness(20),
+                Spacing = 14,
+                Children =
+                {
+                    new TextBlock { Text = msg, TextWrapping = Avalonia.Media.TextWrapping.Wrap, MaxWidth = 400, FontSize = 13 },
+                    new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 10, Children = { yesBtn, noBtn } }
+                }
+            }
+        };
+
+        yesBtn.Click += (_, _) => { confirmed = true; dialog.Close(); };
+        noBtn.Click += (_, _) => dialog.Close();
+        await dialog.ShowDialog(this);
+
+        if (!confirmed) return;
+
         Deleted = true;
         Close();
     }
@@ -257,6 +307,8 @@ public partial class CustomFilterDialog : Window
     private void OnPreviewClick()
     {
         // Apply current form state to filter temporarily for preview
+        _filter.Name = string.IsNullOrWhiteSpace(FilterNameBox.Text)
+            ? "Custom" : FilterNameBox.Text.Trim();
         _filter.Code = CodeBox.Text ?? "";
         _filter.Dlls = [.._dlls];
         _filter.Scripts = [.._scripts];
@@ -421,7 +473,7 @@ public partial class CustomFilterDialog : Window
         {
             Content = L("CfDlgConvertDontShow"),
             MinWidth = 80,
-            Foreground = new SolidColorBrush(Color.Parse("#7984A5")),
+            Foreground = ThemeBrush("TextPrimary"),
             FontSize = 11
         };
 
@@ -569,7 +621,7 @@ public partial class CustomFilterDialog : Window
             {
                 Text = L("CfDlgNoPlaceholder"),
                 FontSize = 10,
-                Foreground = new SolidColorBrush(Color.Parse("#555E72")),
+                Foreground = ThemeBrush("TextPrimary"),
                 FontStyle = FontStyle.Italic
             });
             return;
@@ -583,43 +635,15 @@ public partial class CustomFilterDialog : Window
     {
         var border = new Border
         {
-            Background = new SolidColorBrush(Color.Parse("#0F1319")),
-            BorderBrush = new SolidColorBrush(Color.Parse("#252E42")),
+            Background = ThemeBrush("BgInput"),
+            BorderBrush = ThemeBrush("BorderSubtle"),
             BorderThickness = new Thickness(1),
             Padding = new Thickness(8, 3),
             CornerRadius = new CornerRadius(3)
         };
 
-        // Single-line layout: {name} | type | type-specific fields
+        // Single-line layout: eye | X | {name} | type | type-specific fields
         var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-
-        // {placeholder} label
-        row.Children.Add(new TextBlock
-        {
-            Text = $"{{{ctrl.Placeholder}}}",
-            FontFamily = new FontFamily("Consolas,Courier New,monospace"),
-            FontSize = 12,
-            FontWeight = FontWeight.SemiBold,
-            Foreground = new SolidColorBrush(Color.Parse("#3B82C4")),
-            VerticalAlignment = VerticalAlignment.Center,
-            MinWidth = 120
-        });
-
-        // Type selector
-        var typeCombo = new ComboBox
-        {
-            Width = 95,
-            FontSize = 10,
-            Items = { "slider", "combo", "checkbox", "text" },
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        typeCombo.SelectedItem = ctrl.Type;
-        typeCombo.SelectionChanged += (_, _) =>
-        {
-            ctrl.Type = typeCombo.SelectedItem as string ?? "text";
-            RebuildControlsPanel();
-        };
-        row.Children.Add(typeCombo);
 
         // Eye button — highlight placeholder in code
         var eyeBtn = new Button
@@ -631,14 +655,18 @@ public partial class CustomFilterDialog : Window
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
             Background = Brushes.Transparent,
-            Foreground = new SolidColorBrush(Color.Parse("#7984A5")),
+            Foreground = ThemeBrush("TextPrimary"),
             BorderThickness = new Thickness(0),
             VerticalAlignment = VerticalAlignment.Center
         };
         ToolTip.SetTip(eyeBtn, L("CfDlgShowInCode"));
         eyeBtn.Click += (_, _) =>
         {
-            // Reset all eye buttons to default style, set this one to green bg + white
+            // Check if this eye is already active (green) — toggle off
+            var isActive = eyeBtn.Background is SolidColorBrush sb
+                           && sb.Color == Color.Parse("#2E8B3D");
+
+            // Reset all eye buttons to default style
             foreach (var child in ControlsPanel.Children)
             {
                 if (child is Border b && b.Child is StackPanel sp)
@@ -646,12 +674,22 @@ public partial class CustomFilterDialog : Window
                         if (c is Button btn && btn.Content is string s && s == "\uD83D\uDC41")
                         {
                             btn.Background = Brushes.Transparent;
-                            btn.Foreground = new SolidColorBrush(Color.Parse("#7984A5"));
+                            btn.Foreground = ThemeBrush("TextPrimary");
                         }
             }
-            eyeBtn.Background = new SolidColorBrush(Color.Parse("#2E8B3D"));
-            eyeBtn.Foreground = Brushes.White;
-            HighlightPlaceholderInCode(ctrl.Placeholder);
+
+            if (isActive)
+            {
+                // Deactivate: clear selection in code
+                CodeBox.SelectionStart = CodeBox.SelectionEnd = CodeBox.CaretIndex;
+            }
+            else
+            {
+                // Activate: highlight in green and select in code
+                eyeBtn.Background = new SolidColorBrush(Color.Parse("#2E8B3D"));
+                eyeBtn.Foreground = Brushes.White;
+                HighlightPlaceholderInCode(ctrl.Placeholder);
+            }
         };
         row.Children.Add(eyeBtn);
 
@@ -665,7 +703,7 @@ public partial class CustomFilterDialog : Window
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
             Background = Brushes.Transparent,
-            Foreground = new SolidColorBrush(Color.Parse("#C05050")),
+            Foreground = new SolidColorBrush(Color.Parse("#C05050")),  // red always
             BorderThickness = new Thickness(0),
             VerticalAlignment = VerticalAlignment.Center
         };
@@ -676,6 +714,37 @@ public partial class CustomFilterDialog : Window
                 RemovePlaceholderFromCode(ctrl);
         };
         row.Children.Add(removeBtn);
+
+        // {placeholder} label
+        row.Children.Add(new TextBlock
+        {
+            Text = $"{{{ctrl.Placeholder}}}",
+            FontFamily = new FontFamily("Consolas,Courier New,monospace"),
+            FontSize = 12,
+            FontWeight = FontWeight.SemiBold,
+            Foreground = ThemeBrush("AccentBlue"),
+            VerticalAlignment = VerticalAlignment.Center,
+            MinWidth = 120
+        });
+
+        // Type selector
+        var typeCombo = new ComboBox
+        {
+            Width = 95,
+            FontSize = 10,
+            Background = ThemeBrush("BgPanel"),
+            Foreground = ThemeBrush("TextSecondary"),
+            BorderBrush = ThemeBrush("BorderSubtle"),
+            Items = { "slider", "combo", "checkbox", "text" },
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        typeCombo.SelectedItem = ctrl.Type;
+        typeCombo.SelectionChanged += (_, _) =>
+        {
+            ctrl.Type = typeCombo.SelectedItem as string ?? "text";
+            RebuildControlsPanel();
+        };
+        row.Children.Add(typeCombo);
 
         // Type-specific inline fields
         switch (ctrl.Type)
@@ -698,24 +767,24 @@ public partial class CustomFilterDialog : Window
         return border;
     }
 
-    private static TextBlock MakeFieldLabel(string text) => new()
+    private TextBlock MakeFieldLabel(string text) => new()
     {
         Text = text,
         FontSize = 11,
-        Foreground = new SolidColorBrush(Color.Parse("#9DABC4")),
+        Foreground = ThemeBrush("TextSecondary"),
         VerticalAlignment = VerticalAlignment.Center,
         Margin = new Thickness(0, 0, 2, 0)
     };
 
-    private static TextBox MakeFieldBox(string text, double width) => new()
+    private TextBox MakeFieldBox(string text, double width) => new()
     {
         Text = text,
         FontSize = 11,
         Width = width,
         Padding = new Thickness(4, 2),
-        Background = new SolidColorBrush(Color.Parse("#161B24")),
-        Foreground = new SolidColorBrush(Color.Parse("#DBDBDB")),
-        BorderBrush = new SolidColorBrush(Color.Parse("#252E42")),
+        Background = ThemeBrush("BgPanel"),
+        Foreground = ThemeBrush("TextSecondary"),
+        BorderBrush = ThemeBrush("BorderSubtle"),
         VerticalAlignment = VerticalAlignment.Center,
         HorizontalContentAlignment = HorizontalAlignment.Center,
         VerticalContentAlignment = VerticalAlignment.Center
@@ -836,9 +905,9 @@ public partial class CustomFilterDialog : Window
                 Text = _dlls[idx],
                 FontSize = 11,
                 IsReadOnly = true,
-                Background = new SolidColorBrush(Color.Parse("#0F1319")),
-                Foreground = new SolidColorBrush(Color.Parse("#7984A5")),
-                BorderBrush = new SolidColorBrush(Color.Parse("#252E42"))
+                Background = ThemeBrush("BgInput"),
+                Foreground = ThemeBrush("TextSecondary"),
+                BorderBrush = ThemeBrush("BorderSubtle")
             };
             Grid.SetColumn(pathBox, 0);
             row.Children.Add(pathBox);
@@ -852,7 +921,7 @@ public partial class CustomFilterDialog : Window
                 HorizontalContentAlignment = HorizontalAlignment.Center,
                 VerticalContentAlignment = VerticalAlignment.Center,
                 Background = Brushes.Transparent,
-                Foreground = new SolidColorBrush(Color.Parse("#7984A5")),
+                Foreground = ThemeBrush("TextPrimary"),
                 BorderThickness = new Thickness(0)
             };
             delBtn.Click += (_, _) =>
@@ -919,9 +988,9 @@ public partial class CustomFilterDialog : Window
                 Text = _scripts[idx],
                 FontSize = 11,
                 IsReadOnly = true,
-                Background = new SolidColorBrush(Color.Parse("#0F1319")),
-                Foreground = new SolidColorBrush(Color.Parse("#7984A5")),
-                BorderBrush = new SolidColorBrush(Color.Parse("#252E42"))
+                Background = ThemeBrush("BgInput"),
+                Foreground = ThemeBrush("TextSecondary"),
+                BorderBrush = ThemeBrush("BorderSubtle")
             };
             Grid.SetColumn(pathBox, 0);
             row.Children.Add(pathBox);
@@ -935,7 +1004,7 @@ public partial class CustomFilterDialog : Window
                 HorizontalContentAlignment = HorizontalAlignment.Center,
                 VerticalContentAlignment = VerticalAlignment.Center,
                 Background = Brushes.Transparent,
-                Foreground = new SolidColorBrush(Color.Parse("#7984A5")),
+                Foreground = ThemeBrush("TextPrimary"),
                 BorderThickness = new Thickness(0)
             };
             delBtn.Click += (_, _) =>

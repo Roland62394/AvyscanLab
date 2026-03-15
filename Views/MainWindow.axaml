@@ -504,6 +504,11 @@
                                                     Background="Transparent" Foreground="{DynamicResource TextLabel}"
                                                     BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="3"
                                                     Cursor="Hand" FontFamily="Consolas,Cascadia Code,monospace"/>
+                                            <Button x:Name="ThemeGreyBtn" Content="Grey" Tag="Grey"
+                                                    Click="OnThemeClick" Padding="6,3" FontSize="11"
+                                                    Background="Transparent" Foreground="{DynamicResource TextPrimary}"
+                                                    BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="3"
+                                                    Cursor="Hand" FontFamily="Consolas,Cascadia Code,monospace"/>
                                             <Button x:Name="ThemeLightBtn" Content="Light" Tag="Light"
                                                     Click="OnThemeClick" Padding="6,3" FontSize="11"
                                                     Background="Transparent" Foreground="{DynamicResource TextPrimary}"

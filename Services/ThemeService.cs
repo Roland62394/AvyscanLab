@@ -63,7 +63,7 @@ public sealed class ThemeService
 
     // ── Palette definitions ──
 
-    public static readonly string[] AvailableThemes = ["Dark", "Light"];
+    public static readonly string[] AvailableThemes = ["Dark", "Grey", "Light"];
 
     public static readonly string[] AvailableAccents = ["Blue", "Green", "Red", "Violet", "Orange"];
 
@@ -80,13 +80,16 @@ public sealed class ThemeService
     /// <summary>Returns the full color palette for the given theme + accent combination.</summary>
     public static Dictionary<string, string> GetPalette(string theme, string accent)
     {
-        var isDark = !string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase);
-        var palette = isDark ? new Dictionary<string, string>(DarkBase) : new Dictionary<string, string>(LightBase);
+        var isLight = string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase);
+        var isGrey = string.Equals(theme, "Grey", StringComparison.OrdinalIgnoreCase);
 
-        // Overlay accent-specific colors
+        var basePalette = isLight ? LightBase : isGrey ? GreyBase : DarkBase;
+        var palette = new Dictionary<string, string>(basePalette);
+
+        // Overlay accent-specific colors (Grey uses Dark accent variant)
         if (AccentPalettes.TryGetValue(accent, out var accentColors))
         {
-            var variant = isDark ? accentColors.Dark : accentColors.Light;
+            var variant = isLight ? accentColors.Light : accentColors.Dark;
             foreach (var (key, value) in variant)
                 palette[key] = value;
         }
@@ -110,6 +113,24 @@ public sealed class ThemeService
         ["TextLabel"]    = "#F6F6F6",
         ["AccentGreen"]  = "#35C156",
         ["AccentDimmed"] = "#1E3A2E",
+    };
+
+    // ── Grey base palette ──
+    private static readonly Dictionary<string, string> GreyBase = new()
+    {
+        ["BgDeep"]       = "#2A2D32",
+        ["BgPanel"]      = "#35393F",
+        ["BgHeader"]     = "#3E4248",
+        ["BgInput"]      = "#2F3338",
+        ["BgHover"]      = "#484D54",
+        ["BgPressed"]    = "#404448",
+        ["BorderSubtle"] = "#50555C",
+        ["BorderAccent"] = "#60666E",
+        ["TextPrimary"]  = "#A0A5AD",
+        ["TextSecondary"]= "#DBDBDB",
+        ["TextLabel"]    = "#F0F0F0",
+        ["AccentGreen"]  = "#35C156",
+        ["AccentDimmed"] = "#2A3E30",
     };
 
     // ── Light base palette ──

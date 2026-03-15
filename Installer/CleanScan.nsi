@@ -19,7 +19,7 @@
 
 ; ── App metadata ──
 !define APP_NAME      "CleanScan"
-!define APP_VERSION   "5.0 Beta"
+!define APP_VERSION   "vers. 1.0"
 !define APP_PUBLISHER "ScanFilm SNC"
 !define APP_URL       "https://www.scanfilm.ch"
 !define APP_EXE       "CleanScan.exe"
