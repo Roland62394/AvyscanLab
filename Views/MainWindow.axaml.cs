@@ -28,7 +28,7 @@ using CleanScan.ViewModels;
 
 namespace CleanScan.Views
 {
-    public partial class MainWindow : Window, ITourHost
+    public partial class MainWindow : Window, ITourHost, IFilterPresenterHost, IEncodeHost
     {
         #region Constants
 
@@ -482,21 +482,14 @@ namespace CleanScan.Views
         private bool  _sourceValidationErrorVisible;
         private Grid? _mainGrid;
 
-        private readonly List<string> _clipPaths = [];
-        private readonly List<Dictionary<string, string>> _clipConfigs = [];
-        private readonly List<string?> _clipPresetNames = [];
-        private readonly List<string?> _clipOutputNames = [];
+        private ClipManager _clipManager = null!; // initialized in constructor
         private bool _applyingPreset;
-        private int _activeClipIndex = -1;
 
-        // Batch encoding state
-        private readonly List<bool> _clipBatchSelected = [];
-        private readonly List<string?> _clipBatchEncodingPreset = [];
+        // Convenience accessors over ClipManager
+        private List<ClipState> _clips => _clipManager.Clips;
+        private int _activeClipIndex { get => _clipManager.ActiveIndex; set => _clipManager.ActiveIndex = value; }
 
-        // Encoding preset auto-save
-        private bool _autoSaveEncodingPreset;
-        private bool _isLoadingEncodingPreset;
-        private bool _pendingEncodingPresetPrompt;
+        private EncodeController _encodeController = null!; // initialized in constructor
         private bool _isDroppingFiles;
 
 
@@ -509,6 +502,7 @@ namespace CleanScan.Views
         public MainWindow()
         {
             _config             = new ConfigStore();
+            _clipManager        = new ClipManager(_config);
             _sourceService      = new SourceService();
             _aviService         = new AviService();
             _scriptService      = new ScriptService(_sourceService);
@@ -533,6 +527,7 @@ namespace CleanScan.Views
             IAviService         aviService)
         {
             _config             = config;
+            _clipManager        = new ClipManager(config);
             _sourceService      = sourceService;
             _scriptService      = scriptService;
             _presetService      = presetService;
@@ -563,7 +558,8 @@ namespace CleanScan.Views
             UpdateOptionColumnVisibility();
             RegisterChangeHandlers();
             InitSliders();
-            InitRecordPanel();
+            _encodeController = new EncodeController(this);
+            _encodeController.InitRecordPanel();
             InitPlayerControls();
             RebuildCustomFilterUI();
             RefreshClipPresetCombo();
@@ -751,7 +747,7 @@ namespace CleanScan.Views
             var scriptPath = _scriptService.GetPrimaryScriptPath();
             if (string.IsNullOrWhiteSpace(scriptPath)) return;
 
-            var (avsError, fullStderr) = await ProbeAvsScriptError(scriptPath);
+            var (avsError, fullStderr) = await EncodeController.ProbeAvsScriptError(scriptPath);
             var primary = !string.IsNullOrWhiteSpace(avsError)
                 ? avsError
                 : "Erreur inconnue dans le script AviSynth.\nOuvrez le script dans AvsPmod pour diagnostiquer.";
@@ -1152,10 +1148,9 @@ namespace CleanScan.Views
             _refreshDebouncer.Cancel();
             _config.Changed -= OnConfigChangedForSlider;
 
-            // Kill any running encoding process
-            _encodingCts?.Cancel();
-            if (_encodingProcess is { HasExited: false } proc)
-                try { proc.Kill(entireProcessTree: true); } catch { }
+            // Kill any running encoding process (delegated to EncodeController — not needed,
+            // but ensure encoding lock is released)
+            // EncodeController's process is internal; it handles its own cleanup.
 
             SaveWindowSettings();
             SaveSession();
@@ -1559,7 +1554,7 @@ namespace CleanScan.Views
 
             _layoutInitialized = true;
 
-            if (saved?.TourCompleted != true && _clipPaths.Count == 0)
+            if (saved?.TourCompleted != true && _clips.Count == 0)
                 Dispatcher.UIThread.Post(() => _ = ShowGuidedTourAsync(), DispatcherPriority.Background);
         }
 
@@ -1653,7 +1648,7 @@ namespace CleanScan.Views
                 var panels = _openParamPanels.Count > 0 ? _openParamPanels.ToArray() : null;
                 var lastDir = this.FindControl<TextBox>("RecordDir")?.Text?.Trim();
                 var prevTour = _windowStateService.Load()?.TourCompleted;
-                _windowStateService.Save(s with { Language = ViewModel.CurrentLanguageCode, OpenPanels = panels, LastOutputDir = lastDir, AutoSaveEncodingPreset = _autoSaveEncodingPreset ? true : null, RecordPanelOpen = _recordOpen ? true : null, TourCompleted = prevTour });
+                _windowStateService.Save(s with { Language = ViewModel.CurrentLanguageCode, OpenPanels = panels, LastOutputDir = lastDir, AutoSaveEncodingPreset = _encodeController.AutoSaveEncodingPreset ? true : null, RecordPanelOpen = _recordOpen ? true : null, TourCompleted = prevTour });
             }
         }
 
@@ -1782,7 +1777,7 @@ namespace CleanScan.Views
 
             // Restore "auto-save encoding preset" preference
             if (settings?.AutoSaveEncodingPreset == true)
-                _autoSaveEncodingPreset = true;
+                _encodeController.AutoSaveEncodingPreset = true;
 
             // Restore Record panel visibility
             if (settings?.RecordPanelOpen == true)
@@ -1809,22 +1804,23 @@ namespace CleanScan.Views
         private void SaveSession()
         {
             // Ensure the active clip's config is up to date
-            SaveActiveClipConfig();
+            _clipManager.SaveActiveConfig();
 
             var clips = new List<ClipSession>();
-            for (int i = 0; i < _clipPaths.Count; i++)
+            for (int i = 0; i < _clips.Count; i++)
             {
+                var c = _clips[i];
                 clips.Add(new ClipSession(
-                    Path:               _clipPaths[i],
-                    FilterConfig:       i < _clipConfigs.Count ? _clipConfigs[i] : [],
-                    PresetName:         i < _clipPresetNames.Count ? _clipPresetNames[i] : null,
-                    BatchSelected:      i < _clipBatchSelected.Count && _clipBatchSelected[i],
-                    BatchEncodingPreset: i < _clipBatchEncodingPreset.Count ? _clipBatchEncodingPreset[i] : null,
-                    OutputName:         i < _clipOutputNames.Count ? _clipOutputNames[i] : null));
+                    Path:               c.Path,
+                    FilterConfig:       c.Config,
+                    PresetName:         c.PresetName,
+                    BatchSelected:      c.BatchSelected,
+                    BatchEncodingPreset: c.BatchEncodingPreset,
+                    OutputName:         c.OutputName));
             }
 
             var encPresetName = (this.FindControl<ComboBox>("RecordPresetCombo")?.SelectedItem as string)?.Trim();
-            _sessionService.Save(new SessionState(_activeClipIndex, clips, CaptureEncodingValues(), encPresetName));
+            _sessionService.Save(new SessionState(_activeClipIndex, clips, _encodeController.CaptureCurrentEncodingValues(), encPresetName));
         }
 
         private void RestoreSessionClips()
@@ -1844,21 +1840,19 @@ namespace CleanScan.Views
             if (validClips.Count == 0) return;
 
             // Rebuild clip state from session
-            _clipPaths.Clear();
-            _clipConfigs.Clear();
-            _clipPresetNames.Clear();
-            _clipOutputNames.Clear();
-            _clipBatchSelected.Clear();
-            _clipBatchEncodingPreset.Clear();
+            _clips.Clear();
 
             foreach (var (clip, _) in validClips)
             {
-                _clipPaths.Add(clip.Path);
-                _clipConfigs.Add(new Dictionary<string, string>(clip.FilterConfig, StringComparer.OrdinalIgnoreCase));
-                _clipPresetNames.Add(clip.PresetName);
-                _clipOutputNames.Add(clip.OutputName);
-                _clipBatchSelected.Add(clip.BatchSelected);
-                _clipBatchEncodingPreset.Add(clip.BatchEncodingPreset);
+                _clips.Add(new ClipState
+                {
+                    Path = clip.Path,
+                    Config = new Dictionary<string, string>(clip.FilterConfig, StringComparer.OrdinalIgnoreCase),
+                    PresetName = clip.PresetName,
+                    OutputName = clip.OutputName,
+                    BatchSelected = clip.BatchSelected,
+                    BatchEncodingPreset = clip.BatchEncodingPreset,
+                });
             }
 
             // Determine the active clip index
@@ -1872,7 +1866,7 @@ namespace CleanScan.Views
 
             // Set source directly (without going through ApplyDetectedSourceAndRefreshAsync
             // which calls AddOrActivateClip and would corrupt the restored clip lists)
-            var sourcePath = _clipPaths[_activeClipIndex];
+            var sourcePath = _clips[_activeClipIndex].Path;
             var normalized = _sourceService.NormalizeConfiguredPath(sourcePath);
             _config.Set("source", normalized);
             _config.Set("film",   normalized);
@@ -1890,13 +1884,13 @@ namespace CleanScan.Views
 
             // Restore encoding parameters
             if (session.EncodingValues is { Count: > 0 } encVals)
-                ApplyEncodingValues(encVals);
+                _encodeController.ApplyCurrentEncodingValues(encVals);
 
             // Restore encoding preset combo selection
             if (!string.IsNullOrWhiteSpace(session.EncodingPresetName)
                 && this.FindControl<ComboBox>("RecordPresetCombo") is { } encCombo)
             {
-                RefreshEncodingPresetCombo();
+                _encodeController.RefreshEncodingPresetCombo();
                 encCombo.SelectedItem = session.EncodingPresetName;
             }
         }
@@ -2140,10 +2134,10 @@ namespace CleanScan.Views
         /// <summary>Renames the active clip to the next "persoN" if it isn't already one.</summary>
         private void MarkClipAsPerso()
         {
-            if (_activeClipIndex < 0 || _activeClipIndex >= _clipPresetNames.Count) return;
-            var currentName = _clipPresetNames[_activeClipIndex];
+            if (_activeClipIndex < 0 || _activeClipIndex >= _clips.Count) return;
+            var currentName = _clips[_activeClipIndex].PresetName;
             if (currentName is not null && currentName.StartsWith("perso", StringComparison.OrdinalIgnoreCase)) return;
-            _clipPresetNames[_activeClipIndex] = GetNextPersoName();
+            _clips[_activeClipIndex].PresetName = _clipManager.GetNextPersoName();
             RestoreClipPresetCombo();
             RebuildClipTabs();
         }
@@ -2251,14 +2245,9 @@ namespace CleanScan.Views
                 for (int i = 1; i < paths.Count; i++)
                 {
                     var normalized = _sourceService.NormalizeConfiguredPath(NormalizeSourceValue(paths[i]));
-                    if (!_clipPaths.Any(p => string.Equals(p, normalized, StringComparison.OrdinalIgnoreCase)))
+                    if (!_clips.Any(c => string.Equals(c.Path, normalized, StringComparison.OrdinalIgnoreCase)))
                     {
-                        _clipPaths.Add(normalized);
-                        _clipConfigs.Add(CaptureClipConfig());
-                        _clipPresetNames.Add(null);
-                        _clipOutputNames.Add(null);
-                        _clipBatchSelected.Add(true);
-                        _clipBatchEncodingPreset.Add(null);
+                        _clips.Add(new ClipState { Path = normalized, Config = _clipManager.CaptureConfig() });
                     }
                 }
                 if (paths.Count > 1)
@@ -2301,14 +2290,9 @@ namespace CleanScan.Views
                 for (int i = 1; i < valid.Count; i++)
                 {
                     var normalized = _sourceService.NormalizeConfiguredPath(NormalizeSourceValue(valid[i]));
-                    if (!_clipPaths.Any(p => string.Equals(p, normalized, StringComparison.OrdinalIgnoreCase)))
+                    if (!_clips.Any(c => string.Equals(c.Path, normalized, StringComparison.OrdinalIgnoreCase)))
                     {
-                        _clipPaths.Add(normalized);
-                        _clipConfigs.Add(CaptureClipConfig());
-                        _clipPresetNames.Add(null);
-                        _clipOutputNames.Add(null);
-                        _clipBatchSelected.Add(true);
-                        _clipBatchEncodingPreset.Add(null);
+                        _clips.Add(new ClipState { Path = normalized, Config = _clipManager.CaptureConfig() });
                     }
                 }
                 if (valid.Count > 1)
@@ -2451,47 +2435,18 @@ namespace CleanScan.Views
 
         private void AddOrActivateClip(string path)
         {
-            if (string.IsNullOrWhiteSpace(path)) return;
-            var idx = _clipPaths.FindIndex(p => string.Equals(p, path, StringComparison.OrdinalIgnoreCase));
-            if (idx >= 0)
-                _activeClipIndex = idx;
-            else
-            {
-                _clipPaths.Add(path);
-                // New clip inherits the current config snapshot (filters, not source/crop)
-                _clipConfigs.Add(CaptureClipConfig());
-                _clipPresetNames.Add(null);
-                _clipOutputNames.Add(null);
-                _clipBatchSelected.Add(true);
-                _clipBatchEncodingPreset.Add(null);
-                _activeClipIndex = _clipPaths.Count - 1;
-            }
+            _clipManager.AddOrActivate(path, _clipManager.CaptureConfig());
             RebuildClipTabs();
             if (_recordOpen) RebuildBatchClipList();
         }
 
-        /// <summary>Captures the current filter config (excludes source/crop fields).</summary>
-        private Dictionary<string, string> CaptureClipConfig()
-        {
-            var snap = _config.Snapshot();
-            // Keep only filter-related keys (same exclusions as presets)
-            foreach (var key in PresetService.ExcludedKeys)
-                snap.Remove(key);
-            return snap;
-        }
-
-        /// <summary>Saves the current config into the active clip's config slot.</summary>
-        private void SaveActiveClipConfig()
-        {
-            if (_activeClipIndex >= 0 && _activeClipIndex < _clipConfigs.Count)
-                _clipConfigs[_activeClipIndex] = CaptureClipConfig();
-        }
+        // CaptureClipConfig() and SaveActiveClipConfig() moved to ClipManager
 
         /// <summary>Restores a clip's filter config into _config and refreshes all UI controls.</summary>
         private void RestoreClipConfig(int index)
         {
-            if (index < 0 || index >= _clipConfigs.Count) return;
-            var clipCfg = _clipConfigs[index];
+            if (index < 0 || index >= _clips.Count) return;
+            var clipCfg = _clips[index].Config;
 
             _suppressTextEvents = true;
             _applyingPreset = true;
@@ -2545,15 +2500,15 @@ namespace CleanScan.Views
             var addBtn = this.FindControl<Button>("AddClipBtn");
             panel.Children.Clear();
 
-            for (int i = 0; i < _clipPaths.Count; i++)
+            for (int i = 0; i < _clips.Count; i++)
             {
                 var index = i;
-                var path = _clipPaths[i];
+                var path = _clips[i].Path;
                 var filename = Path.GetFileName(path);
                 if (string.IsNullOrWhiteSpace(filename)) filename = path;
                 var isActive = i == _activeClipIndex;
 
-                var presetName = i < _clipPresetNames.Count ? _clipPresetNames[i] : null;
+                var presetName = _clips[i].PresetName;
                 var presetSuffix = presetName is not null
                     ? $"  [{presetName}]"
                     : string.Empty;
@@ -2620,13 +2575,13 @@ namespace CleanScan.Views
 
         private async void SwitchToClip(int index)
         {
-            if (index < 0 || index >= _clipPaths.Count || index == _activeClipIndex) return;
+            if (index < 0 || index >= _clips.Count || index == _activeClipIndex) return;
 
             // Save current clip's filter config
-            SaveActiveClipConfig();
+            _clipManager.SaveActiveConfig();
 
             // Switch source (this sets _activeClipIndex via AddOrActivateClip)
-            await ApplyDetectedSourceAndRefreshAsync(_clipPaths[index]);
+            await ApplyDetectedSourceAndRefreshAsync(_clips[index].Path);
 
             // Restore the target clip's filter config
             RestoreClipConfig(_activeClipIndex);
@@ -2647,8 +2602,8 @@ namespace CleanScan.Views
             _suppressClipPresetChange = true;
             try
             {
-                var presetName = _activeClipIndex >= 0 && _activeClipIndex < _clipPresetNames.Count
-                    ? _clipPresetNames[_activeClipIndex]
+                var presetName = _activeClipIndex >= 0 && _activeClipIndex < _clips.Count
+                    ? _clips[_activeClipIndex].PresetName
                     : null;
 
                 var isPerso = presetName?.StartsWith("perso", StringComparison.OrdinalIgnoreCase) == true;
@@ -2675,29 +2630,20 @@ namespace CleanScan.Views
 
         private async void RemoveClip(int index)
         {
-            if (index < 0 || index >= _clipPaths.Count) return;
+            var result = _clipManager.Remove(index);
+            if (!result.Removed) return;
 
-            bool removedActive = index == _activeClipIndex;
-            _clipPaths.RemoveAt(index);
-            if (index < _clipConfigs.Count) _clipConfigs.RemoveAt(index);
-            if (index < _clipPresetNames.Count) _clipPresetNames.RemoveAt(index);
-            if (index < _clipOutputNames.Count) _clipOutputNames.RemoveAt(index);
-            if (index < _clipBatchSelected.Count) _clipBatchSelected.RemoveAt(index);
-            if (index < _clipBatchEncodingPreset.Count) _clipBatchEncodingPreset.RemoveAt(index);
-
-            if (_clipPaths.Count == 0)
+            if (_clips.Count == 0)
             {
-                _activeClipIndex = -1;
                 RebuildClipTabs();
                 if (_recordOpen) RebuildBatchClipList();
                 await ApplyDetectedSourceAndRefreshAsync(string.Empty);
                 return;
             }
 
-            if (removedActive)
+            if (result.WasActive)
             {
-                _activeClipIndex = Math.Min(index, _clipPaths.Count - 1);
-                await ApplyDetectedSourceAndRefreshAsync(_clipPaths[_activeClipIndex]);
+                await ApplyDetectedSourceAndRefreshAsync(_clips[_activeClipIndex].Path);
                 RestoreClipConfig(_activeClipIndex);
                 RestoreClipPresetCombo();
                 RegenerateScript(showValidationError: false);
@@ -2706,8 +2652,6 @@ namespace CleanScan.Views
             }
             else
             {
-                if (index < _activeClipIndex)
-                    _activeClipIndex--;
                 RebuildClipTabs();
             }
 
@@ -2751,15 +2695,7 @@ namespace CleanScan.Views
             for (int i = 1; i < newPaths.Count; i++)
             {
                 var normalized = _sourceService.NormalizeConfiguredPath(NormalizeSourceValue(newPaths[i]));
-                if (!_clipPaths.Any(p => string.Equals(p, normalized, StringComparison.OrdinalIgnoreCase)))
-                {
-                    _clipPaths.Add(normalized);
-                    _clipConfigs.Add(CaptureClipConfig());
-                    _clipPresetNames.Add(null);
-                    _clipOutputNames.Add(null);
-                    _clipBatchSelected.Add(true);
-                    _clipBatchEncodingPreset.Add(null);
-                }
+                _clipManager.AddOrActivate(normalized, _clipManager.CaptureConfig());
             }
             if (newPaths.Count > 1)
                 RebuildClipTabs();
@@ -2826,12 +2762,12 @@ namespace CleanScan.Views
             // Rename the active clip's preset to a unique "persoN" when a filter value is manually changed
             if (changed && !_applyingPreset && !IsPathField(key)
                 && !PresetService.ExcludedKeys.Contains(key)
-                && _activeClipIndex >= 0 && _activeClipIndex < _clipPresetNames.Count)
+                && _activeClipIndex >= 0 && _activeClipIndex < _clips.Count)
             {
-                var currentName = _clipPresetNames[_activeClipIndex];
+                var currentName = _clips[_activeClipIndex].PresetName;
                 if (currentName is null || !currentName.StartsWith("perso", StringComparison.OrdinalIgnoreCase))
                 {
-                    _clipPresetNames[_activeClipIndex] = GetNextPersoName();
+                    _clips[_activeClipIndex].PresetName = _clipManager.GetNextPersoName();
                     RestoreClipPresetCombo();
                     RebuildClipTabs();
                 }
@@ -3119,492 +3055,15 @@ namespace CleanScan.Views
 
         #region Custom filters
 
-        private void RebuildCustomFilterUI()
-        {
-            var list = this.FindControl<StackPanel>("CustomFiltersList");
-            if (list is null) return;
+        private CustomFilterPresenter? _customFilterPresenter;
 
-            list.Children.Clear();
+        private CustomFilterPresenter CustomFilters =>
+            _customFilterPresenter ??= new CustomFilterPresenter(this, _customFilterService);
 
-            // Clear all custom param panels in Col 2
-            var container = this.FindControl<StackPanel>("CustomParamPanels");
-            container?.Children.Clear();
-
-            foreach (var filter in _customFilterService.Filters)
-            {
-                AddCustomFilterRow(filter, list);
-
-                // Re-open param panel if it was expanded
-                var panelName = $"CustomPanel_{filter.Id}";
-                if (_openParamPanels.Contains(panelName))
-                    BuildCustomParamPanel(filter);
-            }
-        }
-
-        private void AddCustomFilterRow(CustomFilter filter, StackPanel list)
-        {
-            // Same layout as built-in filters: toggle | spacing | expand ▶
-            // Plus a small ✕ delete button
-            var row = new Grid
-            {
-                ColumnDefinitions = ColumnDefinitions.Parse("*,10,28,4,20"),
-                Tag = filter.Id
-            };
-
-            // Toggle on/off
-            var toggleBtn = new Button
-            {
-                Content = filter.Name,
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
-                Classes = { "toggle" },
-                Tag = filter.Enabled
-            };
-            UpdateToggleButtonPresentation(toggleBtn, filter.Enabled);
-            toggleBtn.Click += (_, _) =>
-            {
-                filter.Enabled = !filter.Enabled;
-                toggleBtn.Tag = filter.Enabled;
-                UpdateToggleButtonPresentation(toggleBtn, filter.Enabled);
-                _customFilterService.Save();
-                RegenerateScript(showValidationError: false);
-                _ = LoadScriptAsync();
-            };
-            Grid.SetColumn(toggleBtn, 0);
-            row.Children.Add(toggleBtn);
-
-            // Expand ▶ (settings panel — TODO)
-            var expandBtn = new Button
-            {
-                Content = "▶",
-                Classes = { "expand-btn" },
-                Tag = $"CustomPanel_{filter.Id}"
-            };
-            expandBtn.Click += OnCustomExpandClick;
-            Grid.SetColumn(expandBtn, 2);
-            row.Children.Add(expandBtn);
-
-            // Edit ✎
-            var editBtn = new Button
-            {
-                Content = "✎",
-                FontSize = 12,
-                Width = 20, Height = 20,
-                Padding = new Thickness(0),
-                HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-                VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Background = Brushes.Transparent,
-                Foreground = ThemeBrush("TextPrimary"),
-                BorderThickness = new Thickness(0)
-            };
-            editBtn.Click += async (_, _) => await OpenCustomFilterDialog(filter);
-            Grid.SetColumn(editBtn, 4);
-            row.Children.Add(editBtn);
-
-            list.Children.Add(row);
-        }
-
-        private void OnCustomExpandClick(object? sender, RoutedEventArgs e)
-        {
-            if (sender is not Button btn || btn.Tag is not string panelName) return;
-
-            // Extract filter id from "CustomPanel_{id}"
-            var filterId = panelName.Replace("CustomPanel_", "");
-            var filter = _customFilterService.GetById(filterId);
-            if (filter is null) return;
-
-            // Toggle panel visibility (same pattern as built-in expand)
-            if (_openParamPanels.Remove(panelName))
-            {
-                // Collapse
-                RemoveCustomParamPanel(panelName);
-                btn.Content = "▶";
-                btn.Classes.Remove("active");
-            }
-            else
-            {
-                // Expand
-                _openParamPanels.Add(panelName);
-                BuildCustomParamPanel(filter);
-                btn.Content = "▶";
-                btn.Classes.Add("active");
-            }
-
-            UpdateParamsPlaceholderVisibility();
-        }
-
-        private void BuildCustomParamPanel(CustomFilter filter)
-        {
-            var panelName = $"CustomPanel_{filter.Id}";
-            var container = this.FindControl<StackPanel>("CustomParamPanels");
-            if (container is null) return;
-
-            // Remove existing if any
-            RemoveCustomParamPanel(panelName);
-
-            if (filter.Controls.Count == 0) return;
-
-            var border = new Border
-            {
-                Name = panelName,
-                BorderBrush = ThemeBrush("BorderSubtle"),
-                BorderThickness = new Thickness(0, 0, 1, 0),
-                Padding = new Thickness(16, 14),
-                MinWidth = 200
-            };
-
-            var stack = new StackPanel { Spacing = 6 };
-            stack.Children.Add(new TextBlock
-            {
-                Text = filter.Name.ToUpperInvariant(),
-                Classes = { "section-title" }
-            });
-
-            foreach (var ctrl in filter.Controls)
-            {
-                var configKey = ScriptService.GetCustomFilterConfigKey(filter.Id, ctrl.Placeholder);
-
-                // Initialize config with default if not set
-                if (string.IsNullOrEmpty(_config.Get(configKey)))
-                    _config.Set(configKey, ctrl.Default);
-
-                switch (ctrl.Type)
-                {
-                    case "slider":
-                        stack.Children.Add(BuildCustomSlider(ctrl, configKey));
-                        break;
-                    case "combo":
-                        stack.Children.Add(BuildCustomCombo(ctrl, configKey));
-                        break;
-                    case "checkbox":
-                        stack.Children.Add(BuildCustomCheckbox(ctrl, configKey));
-                        break;
-                    default:
-                        stack.Children.Add(BuildCustomTextBox(ctrl, configKey));
-                        break;
-                }
-            }
-
-            border.Child = stack;
-            container.Children.Add(border);
-        }
-
-        private void RemoveCustomParamPanel(string panelName)
-        {
-            var container = this.FindControl<StackPanel>("CustomParamPanels");
-            if (container is null) return;
-            for (var i = container.Children.Count - 1; i >= 0; i--)
-            {
-                if (container.Children[i] is Border b && b.Name == panelName)
-                    container.Children.RemoveAt(i);
-            }
-        }
-
-        private Grid BuildCustomSlider(CustomFilterControl ctrl, string configKey)
-        {
-            var grid = new Grid { ColumnDefinitions = ColumnDefinitions.Parse("Auto,Auto,70") };
-
-            var label = new TextBlock
-            {
-                Text = ctrl.Placeholder,
-                Classes = { "param-label" },
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Margin = new Thickness(0, 0, 8, 0)
-            };
-            Grid.SetColumn(label, 0);
-            grid.Children.Add(label);
-
-            var isFloat = ctrl.Step < 1 || ctrl.Step != Math.Floor(ctrl.Step);
-            var slider = new Slider
-            {
-                Minimum = ctrl.Min,
-                Maximum = ctrl.Max,
-                SmallChange = ctrl.Step,
-                LargeChange = ctrl.Step * 10,
-                Classes = { "param-slider" },
-                Value = ParseDouble(_config.Get(configKey) ?? ctrl.Default, ctrl.Min)
-            };
-            Grid.SetColumn(slider, 1);
-            grid.Children.Add(slider);
-
-            var textBox = new TextBox
-            {
-                Text = FormatSliderValue(slider.Value, isFloat),
-                Width = 70
-            };
-            Grid.SetColumn(textBox, 2);
-            grid.Children.Add(textBox);
-
-            // Slider → TextBox (on every value change during drag)
-            var syncing = false;
-            slider.ValueChanged += (_, args) =>
-            {
-                if (syncing) return;
-                syncing = true;
-                var snapped = SnapToStep(args.NewValue, ctrl.Min, ctrl.Step);
-                textBox.Text = FormatSliderValue(snapped, isFloat);
-                syncing = false;
-            };
-
-            // Custom pointer handlers (same pattern as built-in sliders)
-            var pressing = false;
-            slider.AddHandler(PointerPressedEvent, (_, e) =>
-            {
-                if (!e.GetCurrentPoint(slider).Properties.IsLeftButtonPressed) return;
-                pressing = true;
-                e.Pointer.Capture(slider);
-                MoveSliderToPointer(slider, e);
-                e.Handled = true;
-            }, RoutingStrategies.Bubble, handledEventsToo: true);
-
-            slider.AddHandler(PointerMovedEvent, (_, e) =>
-            {
-                if (!pressing) return;
-                MoveSliderToPointer(slider, e);
-                e.Handled = true;
-            }, RoutingStrategies.Bubble, handledEventsToo: true);
-
-            slider.AddHandler(PointerReleasedEvent, (_, e) =>
-            {
-                if (!pressing) return;
-                pressing = false;
-                e.Pointer.Capture(null);
-                var snapped = SnapToStep(slider.Value, ctrl.Min, ctrl.Step);
-                snapped = Math.Clamp(snapped, ctrl.Min, ctrl.Max);
-                slider.Value = snapped;
-                var val = FormatSliderValue(snapped, isFloat);
-                _config.Set(configKey, val);
-                RegenerateScript(showValidationError: false);
-                _ = LoadScriptAsync();
-                e.Handled = true;
-            }, RoutingStrategies.Bubble, handledEventsToo: true);
-
-            // TextBox → Slider + commit
-            textBox.LostFocus += (_, _) =>
-            {
-                if (syncing) return;
-                syncing = true;
-                var parsed = ParseDouble(textBox.Text ?? "", ctrl.Min);
-                parsed = Math.Clamp(parsed, ctrl.Min, ctrl.Max);
-                parsed = SnapToStep(parsed, ctrl.Min, ctrl.Step);
-                slider.Value = parsed;
-                var val = FormatSliderValue(parsed, isFloat);
-                textBox.Text = val;
-                _config.Set(configKey, val);
-                syncing = false;
-                RegenerateScript(showValidationError: false);
-                _ = LoadScriptAsync();
-            };
-
-            // Mouse wheel on TextBox
-            textBox.PointerWheelChanged += (_, e) =>
-            {
-                e.Handled = true;
-                var delta = e.Delta.Y > 0 ? ctrl.Step : -ctrl.Step;
-                var snapped = SnapToStep(slider.Value + delta, ctrl.Min, ctrl.Step);
-                slider.Value = Math.Clamp(snapped, ctrl.Min, ctrl.Max);
-                var val = FormatSliderValue(slider.Value, isFloat);
-                _config.Set(configKey, val);
-                RegenerateScript(showValidationError: false);
-                _ = LoadScriptAsync();
-            };
-
-            return grid;
-        }
-
-        private StackPanel BuildCustomCombo(CustomFilterControl ctrl, string configKey)
-        {
-            var row = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 8 };
-            row.Children.Add(new TextBlock
-            {
-                Text = ctrl.Placeholder,
-                Classes = { "param-label" },
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
-            });
-
-            var combo = new ComboBox();
-            foreach (var opt in ctrl.Options)
-                combo.Items.Add(opt);
-
-            var current = _config.Get(configKey) ?? ctrl.Default;
-            combo.SelectedItem = ctrl.Options.Contains(current) ? current : ctrl.Options.FirstOrDefault();
-
-            combo.SelectionChanged += (_, _) =>
-            {
-                if (combo.SelectedItem is string val)
-                {
-                    _config.Set(configKey, val);
-                    RegenerateScript(showValidationError: false);
-                    _ = LoadScriptAsync();
-                }
-            };
-            row.Children.Add(combo);
-            return row;
-        }
-
-        private StackPanel BuildCustomCheckbox(CustomFilterControl ctrl, string configKey)
-        {
-            var row = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 8 };
-            row.Children.Add(new TextBlock
-            {
-                Text = ctrl.Placeholder,
-                Classes = { "param-label" },
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
-            });
-
-            var current = _config.Get(configKey) ?? ctrl.Default;
-            var isOn = string.Equals(current, ctrl.OnValue, StringComparison.OrdinalIgnoreCase);
-
-            var toggleBtn = new Button
-            {
-                Width = 70,
-                Classes = { "toggle" },
-                Content = isOn ? ctrl.OnValue : ctrl.OffValue,
-                Tag = isOn
-            };
-            UpdateToggleButtonPresentation(toggleBtn, isOn);
-            toggleBtn.Content = isOn ? ctrl.OnValue : ctrl.OffValue; // re-set after presentation
-
-            toggleBtn.Click += (_, _) =>
-            {
-                isOn = !isOn;
-                toggleBtn.Tag = isOn;
-                toggleBtn.Content = isOn ? ctrl.OnValue : ctrl.OffValue;
-                UpdateToggleButtonPresentation(toggleBtn, isOn);
-                toggleBtn.Content = isOn ? ctrl.OnValue : ctrl.OffValue; // re-set
-                _config.Set(configKey, isOn ? ctrl.OnValue : ctrl.OffValue);
-                RegenerateScript(showValidationError: false);
-                _ = LoadScriptAsync();
-            };
-            row.Children.Add(toggleBtn);
-            return row;
-        }
-
-        private StackPanel BuildCustomTextBox(CustomFilterControl ctrl, string configKey)
-        {
-            var row = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 8 };
-            row.Children.Add(new TextBlock
-            {
-                Text = ctrl.Placeholder,
-                Classes = { "param-label" },
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
-            });
-
-            var textBox = new TextBox
-            {
-                Text = _config.Get(configKey) ?? ctrl.Default,
-                Width = 120
-            };
-            textBox.LostFocus += (_, _) =>
-            {
-                _config.Set(configKey, textBox.Text ?? "");
-                RegenerateScript(showValidationError: false);
-                _ = LoadScriptAsync();
-            };
-            row.Children.Add(textBox);
-            return row;
-        }
-
-        private void OnCustomFilterPreview(CustomFilter filter)
-        {
-            // The dialog already updated the filter's fields — just regenerate
-            RegenerateScript(showValidationError: false);
-            _ = LoadScriptAsync();
-        }
-
-        private static string FormatSliderValue(double value, bool isFloat) =>
-            isFloat
-                ? value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)
-                : ((int)Math.Round(value)).ToString(System.Globalization.CultureInfo.InvariantCulture);
-
-        private static double ParseDouble(string text, double fallback)
-        {
-            var normalized = (text ?? "").Trim().Replace(',', '.');
-            return double.TryParse(normalized, System.Globalization.NumberStyles.Float,
-                System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : fallback;
-        }
-
-        private async Task OpenCustomFilterDialog(CustomFilter filter)
-        {
-            var dialog = new CustomFilterDialog(filter, vm: ViewModel, ownerHeight: Bounds.Height,
-                themeService: _themeService)
-            { OnPreview = OnCustomFilterPreview };
-            await dialog.ShowDialog(this);
-
-            if (dialog.Deleted)
-            {
-                _customFilterService.Remove(filter.Id);
-                RebuildCustomFilterUI();
-                RegenerateScript(showValidationError: false);
-                await LoadScriptAsync();
-            }
-            else if (dialog.Saved)
-            {
-                _customFilterService.Save();
-                RebuildCustomFilterUI();
-                RegenerateScript(showValidationError: false);
-                await LoadScriptAsync();
-            }
-            else
-            {
-                // Cancelled — reload original state (undo preview changes)
-                _customFilterService.Load();
-                RegenerateScript(showValidationError: false);
-                _ = LoadScriptAsync();
-            }
-        }
-
-        private async void OnAddCustomFilterClick(object? sender, RoutedEventArgs e)
-        {
-            var filter = new CustomFilter { Name = "Custom " + _customFilterService.Filters.Count };
-            var dialog = new CustomFilterDialog(filter, isNew: true, vm: ViewModel, ownerHeight: Bounds.Height,
-                themeService: _themeService)
-            {
-                OnPreview = f =>
-                {
-                    // For new filters, temporarily add to get a preview
-                    _customFilterService.Add(f);
-                    RegenerateScript(showValidationError: false);
-                    var task = LoadScriptAsync();
-                    _customFilterService.Remove(f.Id);
-                }
-            };
-            await dialog.ShowDialog(this);
-
-            if (dialog.Saved)
-            {
-                filter.Enabled = true;
-                _customFilterService.Add(filter);
-
-                RebuildCustomFilterUI();
-                RegenerateScript(showValidationError: false);
-                await LoadScriptAsync();
-            }
-        }
-
-        private async void OnImportCustomFilterClick(object? sender, RoutedEventArgs e)
-        {
-            var picker = await StorageProvider.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions
-            {
-                Title = GetUiText("CfDlgImportTitle"),
-                AllowMultiple = false,
-                FileTypeFilter = [new Avalonia.Platform.Storage.FilePickerFileType("JSON") { Patterns = ["*.json"] }]
-            });
-
-            if (picker.Count == 0) return;
-
-            var imported = CustomFilterDialog.ImportFromFile(picker[0].Path.LocalPath);
-            if (imported.Count == 0) return;
-
-            foreach (var f in imported)
-            {
-                f.Enabled = true;
-                _customFilterService.Add(f);
-            }
-
-            RebuildCustomFilterUI();
-            RegenerateScript(showValidationError: false);
-            await LoadScriptAsync();
-        }
+        private void RebuildCustomFilterUI() => CustomFilters.RebuildUI();
+        private void OnCustomExpandClick(object? sender, RoutedEventArgs e) => CustomFilters.OnExpandClick(sender, e);
+        private void OnAddCustomFilterClick(object? sender, RoutedEventArgs e) => CustomFilters.OnAddClick(sender, e);
+        private void OnImportCustomFilterClick(object? sender, RoutedEventArgs e) => CustomFilters.OnImportClick(sender, e);
 
         #endregion
 
@@ -3709,1740 +3168,23 @@ namespace CleanScan.Views
 
         private bool _isEncoding;
         private bool _recordOpen;
-        private void InitRecordPanel()
-        {
-            if (this.FindControl<TextBox>("RecordDir") is { } tb)
-            {
-                tb.LostFocus += (_, _) => UpdateDiskSpaceLabel(tb.Text);
-                tb.TextChanged += (_, _) => UpdateDiskSpaceLabel(tb.Text);
-            }
 
-            if (this.FindControl<ComboBox>("RecordEncoder") is { } enc)
-                enc.SelectionChanged += OnRecordEncoderChanged;
-
-            if (this.FindControl<ComboBox>("RecordQualityMode") is { } qm)
-                qm.SelectionChanged += OnRecordQualityModeChanged;
-
-            if (this.FindControl<ComboBox>("RecordChroma") is { } ch)
-                ch.SelectionChanged += OnRecordChromaChanged;
-
-            if (this.FindControl<ComboBox>("RecordContainer") is { } ct)
-                ct.SelectionChanged += (_, _) => OnEncodingSettingChanged();
-
-            if (this.FindControl<ComboBox>("RecordResize") is { } rs)
-                rs.SelectionChanged += (_, _) => { UpdateBitrateHint(); OnEncodingSettingChanged(); };
-
-            if (this.FindControl<TextBox>("RecordBitrate") is { } brTb)
-            {
-                brTb.LostFocus += (_, _) => OnBitrateValidated();
-                brTb.KeyDown += (_, args) =>
-                {
-                    if (args.Key == Avalonia.Input.Key.Enter) OnBitrateValidated();
-                };
-            }
-
-            if (this.FindControl<Slider>("RecordCrfSlider") is { } slider)
-            {
-                slider.PropertyChanged += (_, args) =>
-                {
-                    if (args.Property == Slider.ValueProperty &&
-                        this.FindControl<TextBlock>("RecordCrfValue") is { } lbl)
-                        lbl.Text = ((int)slider.Value).ToString();
-                };
-
-                var crfDragging = false;
-                slider.AddHandler(PointerPressedEvent, (_, e) =>
-                {
-                    if (!e.GetCurrentPoint(slider).Properties.IsLeftButtonPressed) return;
-                    crfDragging = true;
-                    e.Pointer.Capture(slider);
-                    MoveSliderToPointer(slider, e);
-                    e.Handled = true;
-                }, RoutingStrategies.Bubble, handledEventsToo: true);
-
-                slider.AddHandler(PointerMovedEvent, (_, e) =>
-                {
-                    if (!crfDragging) return;
-                    MoveSliderToPointer(slider, e);
-                    e.Handled = true;
-                }, RoutingStrategies.Bubble, handledEventsToo: true);
-
-                slider.AddHandler(PointerReleasedEvent, (_, e) =>
-                {
-                    if (!crfDragging) return;
-                    crfDragging = false;
-                    e.Pointer.Capture(null);
-                    e.Handled = true;
-                    OnEncodingSettingChanged();
-                }, RoutingStrategies.Bubble, handledEventsToo: true);
-            }
-
-            RefreshEncodingPresetCombo();
-            RefreshGammacPresetCombo();
-
-            if (this.FindControl<ComboBox>("RecordPresetCombo") is { } presetCombo)
-            {
-                presetCombo.SelectionChanged += OnRecordPresetSelectionChanged;
-                if (presetCombo.SelectedItem is null)
-                    presetCombo.SelectedItem = DefaultEncodingPresetName;
-            }
-        }
-
-        private void OnRecordPresetSelectionChanged(object? sender, SelectionChangedEventArgs e)
-        {
-            if (sender is not ComboBox combo) return;
-            var name = combo.SelectedItem as string;
-            if (string.IsNullOrWhiteSpace(name)) return;
-
-            var preset = _encodingPresetService.LoadPresets()
-                .FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
-            if (preset?.Values is null) return;
-
-            _isLoadingEncodingPreset = true;
-            try { ApplyEncodingValues(preset.Values); }
-            finally { _isLoadingEncodingPreset = false; }
-        }
-
-        private void OnRecordEncoderChanged(object? sender, SelectionChangedEventArgs e)
-        {
-            if (this.FindControl<ComboBox>("RecordEncoder") is not { } enc) return;
-            var tag = (enc.SelectedItem as ComboBoxItem)?.Tag?.ToString();
-            var isImageSeq = tag is "tiff" or "png" or "jpg";
-            var isLossless = tag is "ffv1" or "utvideo" or "tiff" or "png";
-
-            if (this.FindControl<ComboBox>("RecordContainer") is { } cnt)
-                cnt.IsEnabled = !isImageSeq;
-
-            // Hide quality/chroma controls for lossless encoders
-            if (this.FindControl<Grid>("RecordQualityPanel") is { } qp)
-                qp.IsVisible = !isLossless;
-            if (this.FindControl<StackPanel>("RecordChromaPanel") is { } cp)
-                cp.IsVisible = !isLossless;
-
-            OnEncodingSettingChanged();
-        }
-
-        private void OnRecordQualityModeChanged(object? sender, SelectionChangedEventArgs e)
-        {
-            if (this.FindControl<ComboBox>("RecordQualityMode") is not { } qm) return;
-            var tag = (qm.SelectedItem as ComboBoxItem)?.Tag?.ToString();
-            var isCrf = tag == "crf";
-            if (this.FindControl<StackPanel>("RecordCrfPanel") is { } crfP)
-                crfP.IsVisible = isCrf;
-            if (this.FindControl<StackPanel>("RecordBitratePanel") is { } brP)
-                brP.IsVisible = !isCrf;
-
-            OnEncodingSettingChanged();
-        }
-
-        /// <summary>
-        /// Chroma multiplier relative to 4:2:0.
-        /// 4:2:0 = 12 bits/pixel, 4:2:2 = 16 bits/pixel (×1.33), 4:4:4 = 24 bits/pixel (×2.0).
-        /// </summary>
-        private static double ChromaBitrateMultiplier(string chroma) => chroma switch
-        {
-            "yuv422p" => 16.0 / 12.0,  // ×1.33
-            "yuv444p" => 24.0 / 12.0,  // ×2.00
-            _         => 1.0           // 4:2:0 baseline
-        };
-
-        /// <summary>
-        /// Computes a recommended minimum bitrate (Mb/s) based on resolution and chroma.
-        /// Base reference: ~15 Mb/s for 1080p 4:2:0 (good quality with x264/x265).
-        /// Scales linearly with pixel count and chroma data ratio.
-        /// </summary>
-        private int ComputeMinBitrate()
-        {
-            var chroma = (this.FindControl<ComboBox>("RecordChroma")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "yuv420p";
-            var resize = (this.FindControl<ComboBox>("RecordResize")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "original";
-
-            // Reference: 1080p = 1920×1080 = 2_073_600 pixels → 15 Mb/s for 4:2:0
-            double refPixels = 2_073_600;
-            double refBitrate = 15.0;
-
-            double pixels = resize switch
-            {
-                "1080" => 1920.0 * 1080,
-                "720"  => 1280.0 * 720,
-                "576"  => 1024.0 * 576,
-                "480"  => 854.0 * 480,
-                _      => 1920.0 * 1080  // original: assume ~1080p as safe default
-            };
-
-            var bitrate = refBitrate * (pixels / refPixels) * ChromaBitrateMultiplier(chroma);
-            return Math.Max(1, (int)Math.Ceiling(bitrate));
-        }
-
-        private bool _syncingBitrateChroma;
-
-        private void UpdateBitrateHint()
-        {
-            if (_syncingBitrateChroma) return;
-            if (this.FindControl<TextBox>("RecordBitrate") is not { } tb) return;
-            var min = ComputeMinBitrate();
-            tb.Watermark = $"{min}";
-        }
-
-        private void OnRecordChromaChanged(object? sender, SelectionChangedEventArgs e)
-        {
-            if (_syncingBitrateChroma) return;
-            _syncingBitrateChroma = true;
-            try
-            {
-                UpdateBitrateHint();
-                // If current bitrate is below the new minimum, bump it up
-                if (this.FindControl<TextBox>("RecordBitrate") is { } tb
-                    && int.TryParse(tb.Text?.Trim(), out var current))
-                {
-                    var min = ComputeMinBitrate();
-                    if (current < min) tb.Text = min.ToString();
-                }
-            }
-            finally { _syncingBitrateChroma = false; }
-
-            OnEncodingSettingChanged();
-        }
-
-        /// <summary>
-        /// When the user validates a bitrate (Enter or LostFocus), adjust
-        /// chroma to the highest level the bitrate can support.
-        /// Does NOT touch the bitrate value itself.
-        /// </summary>
-        private void OnBitrateValidated()
-        {
-            if (_syncingBitrateChroma) return;
-            _syncingBitrateChroma = true;
-            try
-            {
-                if (this.FindControl<TextBox>("RecordBitrate") is not { } tb) return;
-                if (this.FindControl<ComboBox>("RecordChroma") is not { } combo) return;
-                if (!int.TryParse(tb.Text?.Trim(), out var bitrate) || bitrate <= 0) return;
-
-                var resize = (this.FindControl<ComboBox>("RecordResize")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "original";
-                double pixels = resize switch
-                {
-                    "1080" => 1920.0 * 1080,
-                    "720"  => 1280.0 * 720,
-                    "576"  => 1024.0 * 576,
-                    "480"  => 854.0 * 480,
-                    _      => 1920.0 * 1080
-                };
-                double refPixels = 2_073_600;
-                double refBitrate = 15.0;
-
-                // Find the best chroma the bitrate can afford (try highest first)
-                string[] chromaOptions = ["yuv444p", "yuv422p", "yuv420p"];
-                string bestChroma = "yuv420p";
-                foreach (var ch in chromaOptions)
-                {
-                    var minBr = (int)Math.Ceiling(refBitrate * (pixels / refPixels) * ChromaBitrateMultiplier(ch));
-                    if (bitrate >= minBr) { bestChroma = ch; break; }
-                }
-
-                // Only change if different from current
-                var currentChroma = (combo.SelectedItem as ComboBoxItem)?.Tag?.ToString();
-                if (currentChroma == bestChroma) return;
-
-                foreach (var item in combo.Items)
-                    if (item is ComboBoxItem ci && ci.Tag?.ToString() == bestChroma)
-                    {
-                        combo.SelectedItem = ci;
-                        break;
-                    }
-            }
-            finally { _syncingBitrateChroma = false; }
-
-            OnEncodingSettingChanged();
-        }
-
-        // ── Encoding presets ──
-
-        private static readonly string[] EncodingPresetKeys =
-            ["encoder", "container", "quality_mode", "crf", "bitrate", "chroma", "resize", "output_dir"];
-
-        private Dictionary<string, string> CaptureEncodingValues()
-        {
-            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["encoder"]      = (this.FindControl<ComboBox>("RecordEncoder")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "x264",
-                ["container"]    = (this.FindControl<ComboBox>("RecordContainer")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "mkv",
-                ["quality_mode"] = (this.FindControl<ComboBox>("RecordQualityMode")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "crf",
-                ["crf"]          = ((int)(this.FindControl<Slider>("RecordCrfSlider")?.Value ?? 18)).ToString(),
-                ["bitrate"]      = this.FindControl<TextBox>("RecordBitrate")?.Text?.Trim() ?? "20",
-                ["chroma"]       = (this.FindControl<ComboBox>("RecordChroma")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "yuv420p",
-                ["resize"]       = (this.FindControl<ComboBox>("RecordResize")?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "original",
-                ["output_dir"]   = this.FindControl<TextBox>("RecordDir")?.Text?.Trim() ?? "",
-            };
-        }
-
-        private void ApplyEncodingValues(Dictionary<string, string> vals)
-        {
-            void SelectByTag(string controlName, string? tag)
-            {
-                if (this.FindControl<ComboBox>(controlName) is not { } combo || tag is null) return;
-                foreach (var item in combo.Items)
-                    if (item is ComboBoxItem ci && ci.Tag?.ToString() == tag) { combo.SelectedItem = ci; break; }
-            }
-
-            if (vals.TryGetValue("encoder", out var enc))      SelectByTag("RecordEncoder", enc);
-            if (vals.TryGetValue("container", out var cnt))    SelectByTag("RecordContainer", cnt);
-            if (vals.TryGetValue("quality_mode", out var qm))  SelectByTag("RecordQualityMode", qm);
-            if (vals.TryGetValue("crf", out var crf) && int.TryParse(crf, out var crfVal))
-            {
-                if (this.FindControl<Slider>("RecordCrfSlider") is { } slider) slider.Value = crfVal;
-            }
-            if (vals.TryGetValue("bitrate", out var br))
-            {
-                if (this.FindControl<TextBox>("RecordBitrate") is { } tb) tb.Text = br;
-            }
-            if (vals.TryGetValue("chroma", out var ch))        SelectByTag("RecordChroma", ch);
-            if (vals.TryGetValue("resize", out var rs))        SelectByTag("RecordResize", rs);
-            if (vals.TryGetValue("output_dir", out var dir) && !string.IsNullOrWhiteSpace(dir))
-            {
-                if (this.FindControl<TextBox>("RecordDir") is { } dirTb) dirTb.Text = dir;
-            }
-        }
-
-        private void RefreshEncodingPresetCombo()
-        {
-            if (this.FindControl<ComboBox>("RecordPresetCombo") is not { } combo) return;
-            EnsureDefaultEncodingPreset();
-            var list = _encodingPresetService.LoadPresets()
-                .OrderBy(p => string.Equals(p.Name, DefaultEncodingPresetName, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
-                .ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
-                .Select(p => p.Name)
-                .ToList();
-            combo.ItemsSource = list;
-        }
-
-        private void EnsureDefaultEncodingPreset()
-        {
-            var presets = _encodingPresetService.LoadPresets();
-            if (!presets.Any(p => string.Equals(p.Name, DefaultEncodingPresetName, StringComparison.OrdinalIgnoreCase)))
-            {
-                presets.Insert(0, new Preset(DefaultEncodingPresetName, CaptureEncodingValues()));
-                _encodingPresetService.SavePresets(presets);
-            }
-        }
-
-        private void OnRecordPresetSaveClick(object? sender, RoutedEventArgs e)
-        {
-            if (this.FindControl<ComboBox>("RecordPresetCombo") is not { } combo) return;
-            // Use typed text (editable combo) or selected item
-            var name = (combo.Text ?? combo.SelectedItem?.ToString())?.Trim();
-            if (string.IsNullOrWhiteSpace(name)) return;
-
-            var presets = _encodingPresetService.LoadPresets();
-            var existing = presets.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
-            if (existing is not null)
-                existing.Values = CaptureEncodingValues();
-            else
-                presets.Add(new Preset(name, CaptureEncodingValues()));
-
-            _encodingPresetService.SavePresets(presets);
-
-            // Guard: refreshing the combo + re-selecting triggers OnRecordPresetSelectionChanged
-            // which would re-apply values and fire visibility handlers (hiding controls).
-            _isLoadingEncodingPreset = true;
-            try
-            {
-                RefreshEncodingPresetCombo();
-                combo.SelectedItem = name;
-            }
-            finally { _isLoadingEncodingPreset = false; }
-
-            // Refresh batch clip list so per-clip preset dropdowns include the new preset
-            if (_recordOpen) RebuildBatchClipList();
-        }
-
-        private void OnRecordPresetLoadClick(object? sender, RoutedEventArgs e)
-        {
-            if (this.FindControl<ComboBox>("RecordPresetCombo") is not { } combo) return;
-            var name = combo.SelectedItem?.ToString();
-            if (string.IsNullOrWhiteSpace(name)) return;
-
-            var preset = _encodingPresetService.LoadPresets()
-                .FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
-            if (preset is null) return;
-            _isLoadingEncodingPreset = true;
-            try { ApplyEncodingValues(preset.Values); }
-            finally { _isLoadingEncodingPreset = false; }
-        }
-
-        private void OnRecordPresetDeleteClick(object? sender, RoutedEventArgs e)
-        {
-            if (this.FindControl<ComboBox>("RecordPresetCombo") is not { } combo) return;
-            var name = combo.SelectedItem?.ToString();
-            if (string.IsNullOrWhiteSpace(name)) return;
-            if (string.Equals(name, DefaultEncodingPresetName, StringComparison.OrdinalIgnoreCase)) return;
-
-            var presets = _encodingPresetService.LoadPresets();
-            presets.RemoveAll(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
-            _encodingPresetService.SavePresets(presets);
-
-            _isLoadingEncodingPreset = true;
-            try
-            {
-                RefreshEncodingPresetCombo();
-                combo.SelectedItem = null;
-                combo.Text = string.Empty;
-            }
-            finally { _isLoadingEncodingPreset = false; }
-
-            // Reset per-clip references to deleted preset back to Default
-            for (int i = 0; i < _clipBatchEncodingPreset.Count; i++)
-            {
-                if (string.Equals(_clipBatchEncodingPreset[i], name, StringComparison.OrdinalIgnoreCase))
-                    _clipBatchEncodingPreset[i] = null;
-            }
-            if (_recordOpen) RebuildBatchClipList();
-        }
-
-        private async void OnEncodingSettingChanged()
-        {
-            if (_isLoadingEncodingPreset || _isInitializing || _isClosing) return;
-            if (_pendingEncodingPresetPrompt) return;
-            if (this.FindControl<ComboBox>("RecordPresetCombo") is not { } combo) return;
-            var presetName = combo.SelectedItem as string;
-            if (string.IsNullOrWhiteSpace(presetName)) return;
-
-            // Auto-save without asking if user checked "don't ask again"
-            if (_autoSaveEncodingPreset)
-            {
-                SaveEncodingPresetByName(presetName);
-                return;
-            }
-
-            _pendingEncodingPresetPrompt = true;
-            try
-            {
-                var result = await ShowEncodingPresetModifiedDialog(presetName);
-                if (result == true)
-                {
-                    SaveEncodingPresetByName(presetName);
-                }
-                else if (result == false)
-                {
-                    // Clear preset selection to avoid confusion
-                    combo.SelectedItem = null;
-                }
-                // null = dialog closed without choosing → do nothing
-            }
-            finally { _pendingEncodingPresetPrompt = false; }
-        }
-
-        private void SaveEncodingPresetByName(string name)
-        {
-            var presets = _encodingPresetService.LoadPresets();
-            var existing = presets.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
-            if (existing is not null)
-                existing.Values = CaptureEncodingValues();
-            else
-                presets.Add(new Preset(name, CaptureEncodingValues()));
-            _encodingPresetService.SavePresets(presets);
-        }
-
-        /// <summary>
-        /// Shows a dialog asking if the user wants to save changes to the active encoding preset.
-        /// Returns true=save, false=discard, null=cancelled.
-        /// </summary>
-        private async Task<bool?> ShowEncodingPresetModifiedDialog(string presetName)
-        {
-            bool? dialogResult = null;
-
-            var checkBox = new CheckBox
-            {
-                Content = GetUiText("PresetModifiedDontAsk"),
-                Margin = new Thickness(0, 4, 0, 0),
-                Foreground = new SolidColorBrush(Color.Parse("#AAAAAA")),
-                FontSize = 11
-            };
-
-            var yesButton = new Button
-            {
-                Content = GetUiText("YesButton"),
-                MinWidth = 80,
-                HorizontalContentAlignment = HorizontalAlignment.Center
-            };
-            var noButton = new Button
-            {
-                Content = GetUiText("NoButton"),
-                MinWidth = 80,
-                HorizontalContentAlignment = HorizontalAlignment.Center
-            };
-
-            var dialog = new Window
-            {
-                Title = GetUiText("PresetModifiedTitle"),
-                SizeToContent = SizeToContent.WidthAndHeight,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                Content = new StackPanel
-                {
-                    Margin = new Thickness(20),
-                    Spacing = 12,
-                    Children =
-                    {
-                        new TextBlock
-                        {
-                            Text = string.Format(GetUiText("PresetModifiedMsg"), presetName),
-                            TextWrapping = TextWrapping.Wrap,
-                            MaxWidth = 400
-                        },
-                        checkBox,
-                        new StackPanel
-                        {
-                            Orientation = Orientation.Horizontal,
-                            Spacing = 8,
-                            HorizontalAlignment = HorizontalAlignment.Center,
-                            Children = { yesButton, noButton }
-                        }
-                    }
-                }
-            };
-
-            yesButton.Click += (_, _) =>
-            {
-                dialogResult = true;
-                if (checkBox.IsChecked == true)
-                    _autoSaveEncodingPreset = true;
-                dialog.Close();
-            };
-            noButton.Click += (_, _) =>
-            {
-                dialogResult = false;
-                dialog.Close();
-            };
-
-            await dialog.ShowDialog(this);
-            return dialogResult;
-        }
-
-        // ── GamMac presets ─────────────────────────────────────────────────
-
-        private static readonly string[] GammacKeys =
-            ["LockChan", "LockVal", "Scale", "Th", "HiTh", "X", "Y", "W", "H", "Omin", "Omax", "Verbosity", "ShowPreview"];
-
-        private bool _isLoadingGammacPreset;
-
-        private Dictionary<string, string> CaptureGammacValues()
-        {
-            var vals = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var key in GammacKeys)
-                vals[key] = _config.Get(key) ?? "";
-            return vals;
-        }
-
-        private void ApplyGammacValues(Dictionary<string, string> vals)
-        {
-            _isLoadingGammacPreset = true;
-            try
-            {
-                foreach (var (key, val) in vals)
-                    if (!string.IsNullOrEmpty(val))
-                        _config.Set(key, val);
-            }
-            finally { _isLoadingGammacPreset = false; }
-        }
-
-        private void RefreshGammacPresetCombo()
-        {
-            if (this.FindControl<ComboBox>("GammacPresetCombo") is not { } combo) return;
-            var list = _gammacPresetService.LoadPresets()
-                .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
-                .Select(p => p.Name)
-                .ToList();
-            combo.ItemsSource = list;
-        }
-
-        private void OnGammacPresetSaveClick(object? sender, RoutedEventArgs e)
-        {
-            if (this.FindControl<ComboBox>("GammacPresetCombo") is not { } combo) return;
-            var name = (combo.Text ?? combo.SelectedItem?.ToString())?.Trim();
-            if (string.IsNullOrWhiteSpace(name)) return;
-
-            var presets = _gammacPresetService.LoadPresets();
-            var existing = presets.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
-            if (existing is not null)
-                existing.Values = CaptureGammacValues();
-            else
-                presets.Add(new Preset(name, CaptureGammacValues()));
-
-            _gammacPresetService.SavePresets(presets);
-            _isLoadingGammacPreset = true;
-            try
-            {
-                RefreshGammacPresetCombo();
-                combo.SelectedItem = name;
-            }
-            finally { _isLoadingGammacPreset = false; }
-        }
-
-        private void OnGammacPresetDeleteClick(object? sender, RoutedEventArgs e)
-        {
-            if (this.FindControl<ComboBox>("GammacPresetCombo") is not { } combo) return;
-            var name = combo.SelectedItem as string;
-            if (string.IsNullOrWhiteSpace(name)) return;
-
-            var presets = _gammacPresetService.LoadPresets();
-            presets.RemoveAll(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
-            _gammacPresetService.SavePresets(presets);
-            RefreshGammacPresetCombo();
-            combo.SelectedItem = null;
-        }
-
-        private void OnGammacPresetSelectionChanged(object? sender, SelectionChangedEventArgs e)
-        {
-            if (_isLoadingGammacPreset || _isInitializing) return;
-            if (sender is ComboBox { SelectedItem: string name } && !string.IsNullOrWhiteSpace(name))
-            {
-                var presets = _gammacPresetService.LoadPresets();
-                var preset = presets.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
-                if (preset?.Values is not null)
-                {
-                    ApplyGammacValues(preset.Values);
-                    RegenerateScript(showValidationError: false);
-                    _ = LoadScriptAsync();
-                }
-            }
-        }
-
-        private void OnRecordClick(object? sender, RoutedEventArgs e)
-        {
-            _recordOpen = !_recordOpen;
-            if (this.FindControl<Button>("RecordBtn") is { } btn)
-            {
-                btn.Background = new SolidColorBrush(Color.Parse(_recordOpen ? "#C62828" : "#3B4C64"));
-                btn.Foreground = Brushes.White;
-            }
-            if (this.FindControl<Border>("RecordOverlay") is { } overlay)
-                overlay.IsVisible = _recordOpen;
-            if (_recordOpen)
-            {
-                RebuildBatchClipList();
-                UpdateDiskSpaceLabel(this.FindControl<TextBox>("RecordDir")?.Text);
-            }
-        }
-
-        private void RebuildBatchClipList()
-        {
-            if (this.FindControl<StackPanel>("BatchClipList") is not { } panel) return;
-            panel.Children.Clear();
-
-            // Sync lists
-            while (_clipBatchSelected.Count < _clipPaths.Count) _clipBatchSelected.Add(true);
-            while (_clipOutputNames.Count < _clipPaths.Count) _clipOutputNames.Add(null);
-            while (_clipBatchEncodingPreset.Count < _clipPaths.Count) _clipBatchEncodingPreset.Add(null);
-
-            var monoFont = new FontFamily("Consolas,Cascadia Code,monospace");
-            EnsureDefaultEncodingPreset();
-            var presetNames = _encodingPresetService.LoadPresets()
-                .OrderBy(p => string.Equals(p.Name, DefaultEncodingPresetName, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
-                .ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
-                .Select(p => p.Name)
-                .ToList();
-
-            for (int i = 0; i < _clipPaths.Count; i++)
-            {
-                var index = i;
-                var filename = Path.GetFileName(_clipPaths[i]);
-                if (string.IsNullOrWhiteSpace(filename)) filename = _clipPaths[i];
-
-                var cb = new CheckBox
-                {
-                    IsChecked = _clipBatchSelected[i],
-                    MinWidth = 0,
-                    Padding = new Thickness(0),
-                    VerticalAlignment = VerticalAlignment.Center,
-                };
-                cb.Click += (_, _) =>
-                {
-                    if (index < _clipBatchSelected.Count)
-                        _clipBatchSelected[index] = cb.IsChecked == true;
-                };
-
-                var nameLabel = new TextBlock
-                {
-                    Text = filename,
-                    FontSize = 12,
-                    FontFamily = monoFont,
-                    Foreground = new SolidColorBrush(Color.Parse("#C8D0E0")),
-                    VerticalAlignment = VerticalAlignment.Center,
-                    TextTrimming = TextTrimming.CharacterEllipsis,
-                };
-                ToolTip.SetTip(nameLabel, _clipPaths[i]);
-
-                var renameBox = new TextBox
-                {
-                    Text = _clipOutputNames[i] ?? "",
-                    FontSize = 12,
-                    FontFamily = monoFont,
-                    Height = 28,
-                    Padding = new Thickness(4, 2),
-                    Foreground = new SolidColorBrush(Color.Parse("#C8D0E0")),
-                    VerticalAlignment = VerticalAlignment.Center,
-                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
-                };
-                renameBox.LostFocus += (_, _) =>
-                {
-                    if (index < _clipOutputNames.Count)
-                    {
-                        var text = renameBox.Text?.Trim();
-                        _clipOutputNames[index] = string.IsNullOrEmpty(text) ? null : text;
-                    }
-                };
-
-                // Select current per-clip preset (null = Default)
-                var clipPreset = i < _clipBatchEncodingPreset.Count ? _clipBatchEncodingPreset[i] : null;
-                var effectivePreset = clipPreset ?? DefaultEncodingPresetName;
-                var selectedPresetName = effectivePreset;
-
-                void SyncRightPanel(string? name)
-                {
-                    if (name is null) return;
-                    var preset = _encodingPresetService.LoadPresets()
-                        .FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
-                    if (preset is null) return;
-                    _isLoadingEncodingPreset = true;
-                    try
-                    {
-                        ApplyEncodingValues(preset.Values);
-                        if (this.FindControl<ComboBox>("RecordPresetCombo") is { } rpc)
-                            rpc.SelectedItem = name;
-                    }
-                    finally { _isLoadingEncodingPreset = false; }
-                }
-
-                // Preset label inside a Border (entire zone is clickable → sync right panel)
-                var presetLabel = new TextBlock
-                {
-                    Text = selectedPresetName,
-                    FontSize = 12,
-                    Foreground = new SolidColorBrush(Color.Parse("#C8D0E0")),
-                    VerticalAlignment = VerticalAlignment.Center,
-                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
-                    TextTrimming = TextTrimming.CharacterEllipsis,
-                };
-                var presetLabelZone = new Border
-                {
-                    Child = presetLabel,
-                    Background = Brushes.Transparent, // hit-test on entire area
-                    Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand),
-                    Padding = new Thickness(4, 0, 4, 0),
-                    Height = 28,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
-                    BorderBrush = new SolidColorBrush(Color.Parse("#3C4558")),
-                    BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(3, 0, 0, 3),
-                };
-                presetLabelZone.PointerPressed += (_, _) => SyncRightPanel(presetLabel.Text);
-
-                // Dropdown button (▾) with flyout to change preset
-                var dropBtn = new Button
-                {
-                    Content = "▾",
-                    FontSize = 14,
-                    Width = 28,
-                    Height = 28,
-                    Padding = new Thickness(0),
-                    HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-                    VerticalContentAlignment = VerticalAlignment.Center,
-                    BorderBrush = new SolidColorBrush(Color.Parse("#3C4558")),
-                    BorderThickness = new Thickness(1, 1, 1, 1),
-                    CornerRadius = new CornerRadius(0, 3, 3, 0),
-                };
-                var flyoutPanel = new StackPanel { Spacing = 0 };
-                var flyout = new Flyout
-                {
-                    Content = flyoutPanel,
-                    Placement = PlacementMode.BottomEdgeAlignedRight,
-                };
-                foreach (var pName in presetNames)
-                {
-                    var itemBtn = new Button
-                    {
-                        Content = pName,
-                        FontSize = 12,
-                        Background = Brushes.Transparent,
-                        BorderThickness = new Thickness(0),
-                        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
-                        HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Left,
-                        Padding = new Thickness(8, 4),
-                        Foreground = new SolidColorBrush(Color.Parse("#C8D0E0")),
-                    };
-                    var capturedName = pName;
-                    itemBtn.Click += (_, _) =>
-                    {
-                        presetLabel.Text = capturedName;
-                        if (index < _clipBatchEncodingPreset.Count)
-                            _clipBatchEncodingPreset[index] = capturedName;
-                        SyncRightPanel(capturedName);
-                        flyout.Hide();
-                    };
-                    flyoutPanel.Children.Add(itemBtn);
-                }
-                dropBtn.Flyout = flyout;
-
-                // Container: text + arrow button
-                var presetCell = new Grid
-                {
-                    ColumnDefinitions = ColumnDefinitions.Parse("*,Auto"),
-                    Height = 24,
-                    VerticalAlignment = VerticalAlignment.Center,
-                };
-                presetCell.Children.Add(presetLabelZone);
-                Grid.SetColumn(presetLabelZone, 0);
-                presetCell.Children.Add(dropBtn);
-                Grid.SetColumn(dropBtn, 1);
-
-                var row = new Grid
-                {
-                    ColumnDefinitions = ColumnDefinitions.Parse("24,2*,8,2*,8,1.5*"),
-                };
-                row.Children.Add(cb);
-                Grid.SetColumn(cb, 0);
-                row.Children.Add(nameLabel);
-                Grid.SetColumn(nameLabel, 1);
-                row.Children.Add(renameBox);
-                Grid.SetColumn(renameBox, 3);
-                row.Children.Add(presetCell);
-                Grid.SetColumn(presetCell, 5);
-
-                panel.Children.Add(row);
-            }
-
-            // Update localized labels
-            if (this.FindControl<TextBlock>("BatchClipListLabel") is { } lbl)
-                lbl.Text = GetUiText("BatchClipListLabel");
-            if (this.FindControl<CheckBox>("BatchSelectAllCheck") is { } allCb)
-                allCb.Content = GetUiText("BatchSelectAll");
-            if (this.FindControl<CheckBox>("ShutdownCheckBox") is { } shutCb)
-                shutCb.Content = GetUiText("ShutdownCheckBox");
-            if (this.FindControl<TextBlock>("BatchColOriginal") is { } colOrig)
-                colOrig.Text = GetUiText("BatchColOriginal");
-            if (this.FindControl<TextBlock>("BatchColRenamed") is { } colRenamed)
-                colRenamed.Text = GetUiText("BatchColRenamed");
-            if (this.FindControl<TextBlock>("BatchColPreset") is { } colPreset)
-                colPreset.Text = GetUiText("BatchColPreset");
-        }
-
-        private void OnBatchSelectAllClick(object? sender, RoutedEventArgs e)
-        {
-            if (sender is not CheckBox allCb) return;
-            var selected = allCb.IsChecked == true;
-            for (int i = 0; i < _clipBatchSelected.Count; i++)
-                _clipBatchSelected[i] = selected;
-            RebuildBatchClipList();
-            // Re-sync the select-all checkbox state
-            if (this.FindControl<CheckBox>("BatchSelectAllCheck") is { } cb)
-                cb.IsChecked = selected;
-        }
-
-        private async void OnRecordDirPickClick(object? sender, RoutedEventArgs e)
-        {
-            var folder = await StorageProvider.OpenFolderPickerAsync(
-                new Avalonia.Platform.Storage.FolderPickerOpenOptions
-                {
-                    Title = GetUiText("RecordDirPickTitle"),
-                    AllowMultiple = false
-                });
-            if (folder.Count > 0 && this.FindControl<TextBox>("RecordDir") is { } tb)
-            {
-                try
-                {
-                    var picked = folder[0].Path.LocalPath;
-                    // Normalize root drives: "E:" → "E:\"
-                    if (picked.Length == 2 && picked[1] == ':')
-                        picked += "\\";
-                    tb.Text = picked;
-                    UpdateDiskSpaceLabel(tb.Text);
-                }
-                catch
-                {
-                    // Fallback: TryGetLocalPath may work when Path.LocalPath throws on root drives
-                    if (folder[0].TryGetLocalPath() is { } fallback)
-                    {
-                        if (fallback.Length == 2 && fallback[1] == ':')
-                            fallback += "\\";
-                        tb.Text = fallback;
-                        UpdateDiskSpaceLabel(tb.Text);
-                    }
-                }
-            }
-        }
-
-        private void OnRecordDirOpenClick(object? sender, RoutedEventArgs e)
-        {
-            var dir = this.FindControl<TextBox>("RecordDir")?.Text?.Trim();
-            if (!string.IsNullOrWhiteSpace(dir) && Directory.Exists(dir))
-                Process.Start(new ProcessStartInfo(dir) { UseShellExecute = true });
-        }
-
-        private void UpdateDiskSpaceLabel(string? dirPath)
-        {
-            if (this.FindControl<TextBlock>("RecordDiskSpace") is not { } lbl) return;
-            if (string.IsNullOrWhiteSpace(dirPath))
-            {
-                lbl.Text = "";
-                return;
-            }
-            try
-            {
-                var root = Path.GetPathRoot(dirPath);
-                if (string.IsNullOrWhiteSpace(root)) { lbl.Text = ""; return; }
-                var drive = new DriveInfo(root);
-                if (!drive.IsReady) { lbl.Text = ""; return; }
-                var freeMb = drive.AvailableFreeSpace / (1024.0 * 1024.0);
-                lbl.Text = freeMb >= 1024
-                    ? $"({freeMb / 1024.0:F1} Go)"
-                    : $"({freeMb:F0} Mo)";
-            }
-            catch { lbl.Text = ""; }
-        }
-
-        private Process? _encodingProcess;
-        private CancellationTokenSource? _encodingCts;
-        private string _lastStderrLine = string.Empty;
-        private readonly List<string> _stderrLines = [];
-
-        /// <summary>
-        /// Returns a safe output name for a clip. For image-sequence sources whose filename
-        /// contains '%' (e.g. "%05d.tiff"), the parent directory name is used instead,
-        /// because ffmpeg's image2 muxer applies printf formatting to the entire output path.
-        /// </summary>
-        private static string GetSafeOutputName(string clipPath)
-        {
-            var name = Path.GetFileNameWithoutExtension(clipPath);
-            if (name.Contains('%'))
-            {
-                var parent = Path.GetFileName(Path.GetDirectoryName(clipPath));
-                if (!string.IsNullOrEmpty(parent))
-                    name = parent;
-                else
-                    name = name.Replace("%", "_");
-            }
-            return name;
-        }
-
-        /// <summary>
-        /// Resolves the first real image file from a sequence pattern (e.g. "D:/A3/%05d.tiff").
-        /// </summary>
-        private static string? ResolveFirstImageFile(string sequencePattern)
-        {
-            var dir = Path.GetDirectoryName(sequencePattern);
-            if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir)) return null;
-            var ext = Path.GetExtension(sequencePattern);
-            if (string.IsNullOrEmpty(ext)) return null;
-            return Directory.EnumerateFiles(dir, $"*{ext}", SearchOption.TopDirectoryOnly)
-                .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
-                .FirstOrDefault();
-        }
-
-        /// <summary>
-        /// Checks whether an image file (TIFF or PNG) has an alpha channel by reading its header.
-        /// Seeks to the IFD for TIFF files, since some writers place it at the end of the file.
-        /// </summary>
-        private static bool ImageHasAlpha(string imagePath)
-        {
-            try
-            {
-                using var fs = File.OpenRead(imagePath);
-                var header = new byte[8];
-                if (fs.Read(header, 0, 8) < 8) return false;
-
-                // PNG: signature 89 50 4E 47, color type at byte 25
-                if (header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47)
-                {
-                    fs.Seek(25, SeekOrigin.Begin);
-                    return fs.ReadByte() is 4 or 6; // GreyAlpha or RGBA
-                }
-
-                // TIFF: II (little-endian) or MM (big-endian)
-                bool le = header[0] == 'I' && header[1] == 'I';
-                if (!le && !(header[0] == 'M' && header[1] == 'M')) return false;
-
-                ushort U16(byte[] b, int o) => le
-                    ? (ushort)(b[o] | (b[o + 1] << 8))
-                    : (ushort)((b[o] << 8) | b[o + 1]);
-                uint U32(byte[] b, int o) => le
-                    ? (uint)(b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (b[o + 3] << 24))
-                    : (uint)((b[o] << 24) | (b[o + 1] << 16) | (b[o + 2] << 8) | b[o + 3]);
-
-                // IFD offset — may point to end of file for some TIFF writers / scanners
-                long ifdOffset = U32(header, 4);
-                fs.Seek(ifdOffset, SeekOrigin.Begin);
-
-                var countBuf = new byte[2];
-                if (fs.Read(countBuf, 0, 2) < 2) return false;
-                int entryCount = U16(countBuf, 0);
-
-                var entry = new byte[12];
-                for (int i = 0; i < entryCount; i++)
-                {
-                    if (fs.Read(entry, 0, 12) < 12) return false;
-                    if (U16(entry, 0) == 277) // SamplesPerPixel
-                        return U16(entry, 8) >= 4;
-                }
-                return false;
-            }
-            catch { return false; }
-        }
-
-        /// <summary>Builds ffmpeg arguments from encoding values dictionary.</summary>
-#pragma warning disable IDE0028
-        private readonly HashSet<string> _usedOutputPaths = new(StringComparer.OrdinalIgnoreCase);
-#pragma warning restore IDE0028
-
-        /// <summary>
-        /// Shows an overwrite confirmation dialog. Returns true if user chooses to overwrite.
-        /// </summary>
-        private async Task<bool> AskOverwriteAsync(string displayName)
-        {
-            var result = false;
-            var yesBtn = new Button { Content = GetUiText("OverwriteYes"), HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center };
-            var noBtn  = new Button { Content = GetUiText("OverwriteNo"),  HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center };
-
-            var dialog = new Window
-            {
-                Title = GetUiText("OverwriteConfirmTitle"),
-                SizeToContent = SizeToContent.WidthAndHeight,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                Content = new StackPanel
-                {
-                    Margin = new Avalonia.Thickness(16),
-                    Spacing = 12,
-                    Children =
-                    {
-                        new TextBlock
-                        {
-                            Text = string.Format(GetUiText("OverwriteConfirm"), displayName),
-                            TextWrapping = TextWrapping.Wrap,
-                            MaxWidth = 400
-                        },
-                        new StackPanel
-                        {
-                            Orientation = Avalonia.Layout.Orientation.Horizontal,
-                            Spacing = 8,
-                            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-                            Children = { yesBtn, noBtn }
-                        }
-                    }
-                }
-            };
-
-            yesBtn.Click += (_, _) => { result = true; dialog.Close(); };
-            noBtn.Click  += (_, _) => dialog.Close();
-            await dialog.ShowDialog(this);
-            return result;
-        }
-
-        private (string ffArgs, string outputPath)? BuildFfmpegArgs(
-            Dictionary<string, string> encVals, string renderScriptPath, string outputDir, string sourceFileName,
-            bool sourceHasAlpha = false)
-        {
-            var encoder   = encVals.GetValueOrDefault("encoder", "x264");
-            var container = encVals.GetValueOrDefault("container", "mkv");
-            var qualityMode = encVals.GetValueOrDefault("quality_mode", "crf");
-            var crfValue  = encVals.GetValueOrDefault("crf", "18");
-            var bitrateText = encVals.GetValueOrDefault("bitrate", "20");
-            var chroma    = encVals.GetValueOrDefault("chroma", "yuv420p");
-            var resize    = encVals.GetValueOrDefault("resize", "original");
-
-            // x264/x265 require even dimensions; pad to nearest even if needed
-            var needsEvenDim = encoder is "x264" or "x265";
-            var scaleFilter = resize != "original"
-                ? $"-vf scale=-2:{resize}"
-                : needsEvenDim
-                    ? "-vf pad=ceil(iw/2)*2:ceil(ih/2)*2"
-                    : "";
-            var isImageSeq = encoder is "tiff" or "png" or "jpg";
-            // Trial limit applied directly in compiled code (not in script)
-            var durationLimit = TrialMaxSeconds > 0 ? $"-t {TrialMaxSeconds}" : "";
-            // Use -f avisynth to explicitly tell ffmpeg to use the AviSynth demuxer
-            var inputArgs = $"-f avisynth -i \"{renderScriptPath}\"";
-
-            string outputPath;
-            string ffArgs;
-
-            if (isImageSeq)
-            {
-                var ext = encoder switch { "tiff" => "tif", "jpg" => "jpg", _ => "png" };
-                var seqDir = Path.Combine(outputDir, sourceFileName);
-                try { Directory.CreateDirectory(seqDir); } catch { return null; }
-                outputPath = Path.Combine(seqDir, $"%05d.{ext}");
-                var pixFmt = sourceHasAlpha ? "rgba" : "rgb24";
-                var imgCodecArgs = encoder switch
-                {
-                    "tiff" => $"-c:v tiff -compression_algo raw -pix_fmt {pixFmt}",
-                    "png"  => $"-c:v png -compression_level 0 -pix_fmt {pixFmt}",
-                    "jpg"  => "-c:v mjpeg -q:v 2 -pix_fmt yuvj444p",
-                    _      => ""
-                };
-                ffArgs = $"-progress pipe:2 {inputArgs} {durationLimit} {scaleFilter} {imgCodecArgs} -y \"{outputPath}\"";
-            }
-            else
-            {
-                // Deduplicate output filenames (e.g. two clips named "video.avi" in different folders)
-                var baseName = sourceFileName;
-                outputPath = Path.Combine(outputDir, $"{baseName}.{container}");
-                int dup = 2;
-                while (_usedOutputPaths.Contains(outputPath))
-                {
-                    outputPath = Path.Combine(outputDir, $"{baseName}_{dup}.{container}");
-                    dup++;
-                }
-                _usedOutputPaths.Add(outputPath);
-
-                var qualityArgs = "";
-                if (encoder is "x264" or "x265")
-                {
-                    qualityArgs = qualityMode == "bitrate"
-                        ? $"-b:v {bitrateText}M"
-                        : $"-crf {crfValue}";
-                }
-
-                var codecArgs = encoder switch
-                {
-                    "x264"    => $"-c:v libx264 {qualityArgs} -preset medium -pix_fmt {chroma}",
-                    "x265"    => $"-c:v libx265 {qualityArgs} -preset medium -pix_fmt {chroma}",
-                    "ffv1"    => "-c:v ffv1 -level 3 -slicecrc 1",
-                    "utvideo" => "-c:v utvideo",
-                    "prores"  => $"-c:v prores_ks -profile:v 3 -pix_fmt {chroma}",
-                    _         => $"-c:v libx264 {qualityArgs} -preset medium -pix_fmt {chroma}"
-                };
-                // -movflags +faststart: move moov atom to start for seekable MP4/MOV
-                var movFlags = container is "mp4" or "mov" ? "-movflags +faststart" : "";
-                ffArgs = $"-progress pipe:2 {inputArgs} {durationLimit} {scaleFilter} {codecArgs} {movFlags} -y \"{outputPath}\"";
-            }
-
-            return (ffArgs, outputPath);
-        }
-
-        /// <summary>Prepares config for a specific clip and regenerates the AVS script.</summary>
-        private string? PrepareClipForEncoding(int clipIndex)
-        {
-            if (clipIndex < 0 || clipIndex >= _clipPaths.Count) return null;
-
-            var sourcePath = _clipPaths[clipIndex];
-            var normalized = _sourceService.NormalizeConfiguredPath(sourcePath);
-
-            // Set source
-            _config.Set("source", normalized);
-            _config.Set("film", normalized);
-            _config.Set("img", normalized);
-
-            // Restore filter config
-            if (clipIndex < _clipConfigs.Count)
-            {
-                var clipCfg = _clipConfigs[clipIndex];
-                foreach (var kv in clipCfg)
-                    _config.Set(kv.Key, kv.Value);
-            }
-
-            // Reset crop
-            foreach (var cropField in new[] { "Crop_L", "Crop_T", "Crop_R", "Crop_B" })
-                _config.Set(cropField, "0");
-            _config.Set("enable_crop", "false");
-
-            // Set source type
-            var isFilm = _sourceService.IsVideoSource(sourcePath);
-            _config.Set("use_img", (!isFilm).ToString().ToLowerInvariant());
-
-            // Generate script
-            _scriptService.Generate(_config.Snapshot(), _customFilterService.Filters, ViewModel.CurrentLanguageCode);
-
-            return GenerateRenderScript();
-        }
-
-        private async void OnRecordStartClick(object? sender, RoutedEventArgs e)
-        {
-            // If encoding is running, cancel it
-            if (_encodingProcess is { HasExited: false })
-            {
-                _encodingCts?.Cancel();
-                try { _encodingProcess.Kill(entireProcessTree: true); } catch { }
-                SetRecordStartButtonState(idle: true);
-                return;
-            }
-
-            var dir = this.FindControl<TextBox>("RecordDir")?.Text?.Trim();
-            if (string.IsNullOrWhiteSpace(dir))
-            {
-                await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), GetUiText("RecordNoDirError"));
-                return;
-            }
-
-            // Collect selected clips
-            var jobs = new List<int>();
-            for (int i = 0; i < _clipPaths.Count; i++)
-            {
-                if (i < _clipBatchSelected.Count && _clipBatchSelected[i])
-                    jobs.Add(i);
-            }
-            if (jobs.Count == 0)
-            {
-                await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), GetUiText("RecordNoClipSelected"));
-                return;
-            }
-
-            // Ensure output dir exists
-            try
-            {
-                // Root paths like "E:\" already exist — CreateDirectory is fine
-                if (!Directory.Exists(dir))
-                    Directory.CreateDirectory(dir);
-            }
-            catch (Exception ex)
-            {
-                await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), ex.Message);
-                return;
-            }
-
-            // Find ffmpeg
-            var ffmpegPath = FindFfmpeg();
-            if (ffmpegPath is null)
-            {
-                await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), GetUiText("RecordFfmpegNotFound"));
-                return;
-            }
-
-            // Verify ffmpeg has AviSynth support
-            var avsSupported = await CheckFfmpegAviSynthSupport(ffmpegPath);
-            if (!avsSupported)
-            {
-                await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"),
-                    "ffmpeg does not support AviSynth input.\nPlease use a ffmpeg build with AviSynth support (e.g. gyan.dev full build).");
-                return;
-            }
-
-            var shutdownAfter = this.FindControl<CheckBox>("ShutdownCheckBox")?.IsChecked == true;
-            var defaultEncoding = CaptureEncodingValues();
-
-            // Save current state for restoration after batch
-            SaveActiveClipConfig();
-            var savedConfig = _config.Snapshot();
-            var savedClipIndex = _activeClipIndex;
-
-            SetRecordStartButtonState(idle: false);
-            SetRecordProgressVisible(true);
-            SetEncodingLock(true);
-            _usedOutputPaths.Clear();
-            _encodingCts = new CancellationTokenSource();
-
-            int successCount = 0;
-            var errors = new List<string>();
-
-            try
-            {
-                for (int jobIdx = 0; jobIdx < jobs.Count; jobIdx++)
-                {
-                    if (_encodingCts.IsCancellationRequested) break;
-
-                    var clipIndex = jobs[jobIdx];
-                    var customName = clipIndex < _clipOutputNames.Count ? _clipOutputNames[clipIndex] : null;
-                    var sourceFileName = !string.IsNullOrEmpty(customName)
-                        ? customName
-                        : GetSafeOutputName(_clipPaths[clipIndex]);
-                    var batchLabel = string.Format(GetUiText("BatchProgress"), jobIdx + 1, jobs.Count);
-                    UpdateRecordProgress(0, $"{batchLabel} — {sourceFileName}");
-
-                    // Resolve per-clip encoding preset (falls back to Default preset, then right-panel)
-                    var clipEncoding = defaultEncoding;
-                    var clipPresetName = clipIndex < _clipBatchEncodingPreset.Count
-                        ? _clipBatchEncodingPreset[clipIndex] : null;
-                    {
-                        var effectiveName = clipPresetName ?? DefaultEncodingPresetName;
-                        var preset = _encodingPresetService.LoadPresets()
-                            .FirstOrDefault(p => string.Equals(p.Name, effectiveName, StringComparison.OrdinalIgnoreCase));
-                        if (preset is not null)
-                            clipEncoding = new Dictionary<string, string>(preset.Values, StringComparer.OrdinalIgnoreCase);
-                    }
-
-                    // Per-clip output dir: preset may override output_dir, fall back to panel dir
-                    var clipDir = clipEncoding.TryGetValue("output_dir", out var presetDir) && !string.IsNullOrWhiteSpace(presetDir)
-                        ? presetDir : dir;
-                    try { if (!Directory.Exists(clipDir)) Directory.CreateDirectory(clipDir); } catch { }
-
-                    // Prepare clip's AVS script
-                    var renderScriptPath = PrepareClipForEncoding(clipIndex);
-                    if (renderScriptPath is null || !File.Exists(renderScriptPath))
-                    {
-                        DebugLog($"Render script missing for clip {clipIndex}: {renderScriptPath}");
-                        errors.Add($"{sourceFileName}: {GetUiText("RecordNoScriptError")}");
-                        continue;
-                    }
-                    DebugLog($"Render script ready: {renderScriptPath} ({new FileInfo(renderScriptPath).Length} bytes)");
-
-                    // Detect alpha channel on source for image-sequence output
-                    var hasAlpha = false;
-                    if (_sourceService.IsImageSource(_clipPaths[clipIndex]))
-                    {
-                        var firstFile = ResolveFirstImageFile(_sourceService.NormalizeConfiguredPath(_clipPaths[clipIndex]));
-                        if (firstFile is not null) hasAlpha = ImageHasAlpha(firstFile);
-                    }
-
-                    // Build ffmpeg args
-                    var result = BuildFfmpegArgs(clipEncoding, renderScriptPath, clipDir, sourceFileName, hasAlpha);
-                    if (result is null)
-                    {
-                        errors.Add($"{sourceFileName}: failed to build output path");
-                        continue;
-                    }
-
-                    var (ffArgs, outputPath) = result.Value;
-
-                    // Safety: prevent output from overwriting the source file
-                    var sourcePath = _clipPaths[clipIndex];
-                    var isImgSeq = clipEncoding.GetValueOrDefault("encoder") is "tiff" or "png" or "jpg";
-                    if (!isImgSeq && string.Equals(Path.GetFullPath(outputPath), Path.GetFullPath(sourcePath), StringComparison.OrdinalIgnoreCase))
-                    {
-                        await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"),
-                            string.Format(GetUiText("OutputSameAsSource"), Path.GetFileName(sourcePath)));
-                        continue;
-                    }
-                    if (isImgSeq)
-                    {
-                        var sourceDir = Path.GetDirectoryName(Path.GetFullPath(sourcePath));
-                        var outputSeqDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
-                        if (string.Equals(sourceDir, outputSeqDir, StringComparison.OrdinalIgnoreCase))
-                        {
-                            await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"),
-                                string.Format(GetUiText("OutputSameAsSource"), Path.GetFileName(sourcePath)));
-                            continue;
-                        }
-                    }
-
-                    // Check if output already exists and ask user
-                    var outputExists = isImgSeq
-                        ? Directory.Exists(Path.GetDirectoryName(outputPath)) &&
-                          Directory.EnumerateFiles(Path.GetDirectoryName(outputPath)!).Any()
-                        : File.Exists(outputPath);
-
-                    if (outputExists)
-                    {
-                        var displayName = isImgSeq
-                            ? Path.GetFileName(Path.GetDirectoryName(outputPath))!
-                            : Path.GetFileName(outputPath);
-                        if (!await AskOverwriteAsync(displayName))
-                            continue;
-                    }
-
-                    _lastStderrLine = string.Empty;
-                    _stderrLines.Clear();
-                    DebugLog($"ffmpeg: {ffmpegPath} {ffArgs}");
-
-                    try
-                    {
-                        var psi = new ProcessStartInfo
-                        {
-                            FileName = ffmpegPath,
-                            Arguments = ffArgs,
-                            UseShellExecute = false,
-                            CreateNoWindow = true,
-                            RedirectStandardError = true,
-                            WorkingDirectory = Path.GetDirectoryName(renderScriptPath) ?? ""
-                        };
-
-                        _encodingProcess = new Process
-                        {
-                            StartInfo = psi,
-                            EnableRaisingEvents = true
-                        };
-
-                        _encodingProcess.Start();
-
-                        // Use trial limit as known duration for progress bar (0 = unlimited)
-                        var stderrTask = ReadFfmpegStderrAsync(
-                            _encodingProcess.StandardError, TrialMaxSeconds, _encodingCts.Token,
-                            batchLabel);
-
-                        await _encodingProcess.WaitForExitAsync(_encodingCts.Token);
-                        // Give stderr reader a few seconds to drain after process exits
-                        // (avoids potential hang if pipe doesn't close promptly)
-                        using (var drainCts = new CancellationTokenSource(TimeSpan.FromSeconds(5)))
-                        {
-                            try { await stderrTask.WaitAsync(drainCts.Token); }
-                            catch (OperationCanceledException) { DebugLog("stderr drain timed out (5s)"); }
-                        }
-
-                        if (_encodingProcess.ExitCode == 0)
-                        {
-                            successCount++;
-                        }
-                        else
-                        {
-                            // Extract meaningful error lines from stderr
-                            var errorLines = _stderrLines
-                                .Where(l => !l.StartsWith("out_time", StringComparison.Ordinal)
-                                         && !l.StartsWith("bitrate=", StringComparison.Ordinal)
-                                         && !l.StartsWith("total_size=", StringComparison.Ordinal)
-                                         && !l.StartsWith("speed=", StringComparison.Ordinal)
-                                         && !l.StartsWith("progress=", StringComparison.Ordinal)
-                                         && !l.StartsWith("frame=", StringComparison.Ordinal)
-                                         && !l.StartsWith("fps=", StringComparison.Ordinal)
-                                         && !l.StartsWith("stream_", StringComparison.Ordinal)
-                                         && !l.StartsWith("dup_frames=", StringComparison.Ordinal)
-                                         && !l.StartsWith("drop_frames=", StringComparison.Ordinal)
-                                         && !string.IsNullOrWhiteSpace(l))
-                                .TakeLast(5)
-                                .ToList();
-                            var msg = errorLines.Count > 0
-                                ? string.Join("\n", errorLines)
-                                : $"ffmpeg exit code {_encodingProcess.ExitCode}";
-                            DebugLog($"ffmpeg error for {sourceFileName}:\n{string.Join("\n", _stderrLines)}");
-                            errors.Add($"{sourceFileName}: {msg}");
-                        }
-                    }
-                    finally
-                    {
-                        _encodingProcess?.Dispose();
-                        _encodingProcess = null;
-                    }
-                }
-            }
-            catch (OperationCanceledException) { /* user cancelled */ }
-            catch (Exception ex)
-            {
-                await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), ex.Message);
-            }
-            finally
-            {
-                _encodingCts = null;
-                SetRecordStartButtonState(idle: true);
-                SetRecordProgressVisible(false);
-                SetEncodingLock(false);
-
-                // Restore original state
-                _config.ReplaceAll(savedConfig);
-                if (savedClipIndex >= 0 && savedClipIndex < _clipPaths.Count)
-                {
-                    _activeClipIndex = savedClipIndex;
-                    RestoreClipConfig(_activeClipIndex);
-                }
-                RegenerateScript(showValidationError: false);
-            }
-
-            // Show result
-            UpdateDiskSpaceLabel(dir);
-            var doneMsg = string.Format(GetUiText("BatchDoneMsg"), successCount, jobs.Count);
-            if (errors.Count > 0)
-                doneMsg += "\n\n" + string.Join("\n", errors);
-            await _dialogService.ShowErrorAsync(this, GetUiText("RecordBtn"), doneMsg);
-
-            if (shutdownAfter && successCount > 0 && errors.Count == 0)
-            {
-                await _dialogService.ShowErrorAsync(this, GetUiText("RecordBtn"), GetUiText("BatchShutdownMsg"));
-                Process.Start("shutdown", "/s /t 60");
-            }
-        }
-
-        private async Task ReadFfmpegStderrAsync(System.IO.StreamReader stderr, double totalDuration, CancellationToken ct, string? batchLabel = null)
-        {
-            try
-            {
-                while (!ct.IsCancellationRequested)
-                {
-                    var line = await stderr.ReadLineAsync(ct);
-                    if (line is null) break; // EOF
-
-                    _lastStderrLine = line;
-                    // Keep last 30 lines for error diagnostics
-                    _stderrLines.Add(line);
-                    if (_stderrLines.Count > 30) _stderrLines.RemoveAt(0);
-
-                    // Parse "-progress pipe:2" output: "out_time_us=<microseconds>"
-                    if (line.StartsWith("out_time_us=", StringComparison.Ordinal))
-                    {
-                        if (long.TryParse(line.AsSpan("out_time_us=".Length), out var us) && us >= 0)
-                        {
-                            var seconds = us / 1_000_000.0;
-                            var elapsed = TimeSpan.FromSeconds(seconds);
-                            string label;
-                            double pct;
-                            if (totalDuration > 0)
-                            {
-                                pct = Math.Min(100.0, seconds / totalDuration * 100.0);
-                                label = $"{pct:F1}%  —  {elapsed:hh\\:mm\\:ss}";
-                            }
-                            else
-                            {
-                                pct = 0;
-                                label = $"{elapsed:hh\\:mm\\:ss}";
-                            }
-                            if (batchLabel is not null) label = $"{batchLabel}  {label}";
-                            Dispatcher.UIThread.Post(() => UpdateRecordProgress(pct, label));
-                        }
-                    }
-                    // Fallback: parse classic "frame=...time=HH:MM:SS" lines
-                    else if (line.Contains("time=", StringComparison.Ordinal))
-                    {
-                        var idx = line.IndexOf("time=", StringComparison.Ordinal);
-                        if (idx >= 0)
-                        {
-                            var timePart = line.AsSpan(idx + 5);
-                            var spaceIdx = timePart.IndexOf(' ');
-                            if (spaceIdx > 0) timePart = timePart[..spaceIdx];
-                            if (TimeSpan.TryParse(timePart, CultureInfo.InvariantCulture, out var ts))
-                            {
-                                string label;
-                                double pct;
-                                if (totalDuration > 0)
-                                {
-                                    pct = Math.Min(100.0, ts.TotalSeconds / totalDuration * 100.0);
-                                    label = $"{pct:F1}%  —  {ts:hh\\:mm\\:ss}";
-                                }
-                                else
-                                {
-                                    pct = 0;
-                                    label = $"{ts:hh\\:mm\\:ss}";
-                                }
-                                if (batchLabel is not null) label = $"{batchLabel}  {label}";
-                                Dispatcher.UIThread.Post(() => UpdateRecordProgress(pct, label));
-                            }
-                        }
-                    }
-                }
-            }
-            catch (OperationCanceledException) { }
-            catch { }
-        }
-
-        private void UpdateRecordProgress(double percent, string label)
-        {
-            if (this.FindControl<ProgressBar>("RecordProgressBar") is { } bar)
-                bar.Value = percent;
-            if (this.FindControl<TextBlock>("RecordProgressText") is { } txt)
-                txt.Text = label;
-        }
-
-        private void SetRecordProgressVisible(bool visible)
-        {
-            if (this.FindControl<StackPanel>("RecordProgressPanel") is { } panel)
-                panel.IsVisible = visible;
-        }
-
-        private void SetRecordStartButtonState(bool idle)
-        {
-            if (this.FindControl<Button>("RecordStartBtn") is not { } btn) return;
-            if (idle)
-            {
-                btn.Content = GetUiText("RecordStartBtn");
-                btn.Background = ThemeBrush("AccentGreen");
-            }
-            else
-            {
-                btn.Content = GetUiText("RecordStopBtn");
-                btn.Background = new SolidColorBrush(Color.Parse("#C62828"));
-            }
-        }
-
-        private void SetEncodingLock(bool locked)
-        {
-            _isEncoding = locked;
-
-            // Stop mpv playback when encoding starts
-            if (locked)
-                _mpvService?.Stop();
-
-            // Disable/enable transport buttons (including Record toggle)
-            foreach (var name in new[] { "VdbBeginning", "VdbPrevFrame", "VdbPlay", "VdbNextFrame", "VdbEnd", "SpeedBtn", "HalfResBtn", "RecordBtn" })
-            {
-                if (this.FindControl<Button>(name) is { } btn)
-                {
-                    btn.IsEnabled = !locked;
-                    if (name == "RecordBtn")
-                        btn.Opacity = locked ? 0.4 : 1.0;
-                }
-            }
-            if (this.FindControl<Slider>("SeekBar") is { } seek)
-                seek.IsEnabled = !locked;
-
-            // Disable/enable clip preset combo in transport bar
-            if (this.FindControl<ComboBox>("ClipPresetCombo") is { } clipPreset)
-                clipPreset.IsEnabled = !locked;
-
-            // Disable/enable clip tabs (file selection)
-            if (this.FindControl<Border>("ClipTabsContainer") is { } clipTabs)
-                clipTabs.IsEnabled = !locked;
-
-            // Disable/enable top menu bar (Infos, Preset, Settings, Language, About)
-            if (this.FindControl<Menu>("MainMenu") is { } menu)
-                menu.IsEnabled = !locked;
-
-            // Disable/enable encoding settings (clip list, params) but not Stop button
-            if (this.FindControl<Grid>("RecordSettingsGrid") is { } recGrid)
-                recGrid.IsEnabled = !locked;
-            if (this.FindControl<CheckBox>("ShutdownCheckBox") is { } shutCb)
-                shutCb.IsEnabled = !locked;
-        }
-
-        private string? GenerateRenderScript()
-        {
-            var scriptPath = _scriptService.GetPrimaryScriptPath();
-            if (scriptPath is null || !File.Exists(scriptPath)) return null;
-
-            var renderPath = Path.Combine(
-                Path.GetDirectoryName(scriptPath)!,
-                "ScriptRender.avs");
-
-            var content = File.ReadAllText(scriptPath);
-            // Force preview=false and preview_half=false for final render
-            content = PreviewTrueRegex().Replace(content, "${1}false");
-            content = PreviewHalfTrueRegex().Replace(content, "${1}false");
-
-            File.WriteAllText(renderPath, content);
-            return renderPath;
-        }
-
-        /// <summary>
-        /// Runs ffmpeg -i on the .avs script to capture the AviSynth error from stderr.
-        /// Returns (avsError, fullStderr): avsError = cleaned [avisynth] lines, fullStderr = raw output.
-        /// </summary>
-        private static async Task<(string AvsError, string FullStderr)> ProbeAvsScriptError(string avsPath)
-        {
-            var ffmpeg = FindFfmpeg();
-            if (ffmpeg is null || !File.Exists(avsPath)) return ("", "");
-
-            try
-            {
-                var proc = new Process
-                {
-                    StartInfo = new ProcessStartInfo
-                    {
-                        FileName = ffmpeg,
-                        Arguments = $"-i \"{avsPath}\" -f null -",
-                        UseShellExecute = false,
-                        CreateNoWindow = true,
-                        RedirectStandardError = true,
-                        RedirectStandardOutput = true,
-                    }
-                };
-                proc.Start();
-
-                var stderr = await proc.StandardError.ReadToEndAsync();
-                await proc.WaitForExitAsync();
-
-                if (string.IsNullOrWhiteSpace(stderr)) return ("", "");
-
-                // Extract and clean [avisynth @ ...] lines as primary error
-                var avsLines = new List<string>();
-                int scriptLineNum = -1;
-                foreach (var line in stderr.Split('\n'))
-                {
-                    var trimmed = line.Trim();
-                    if (string.IsNullOrEmpty(trimmed)) continue;
-                    if (trimmed.Contains("[avisynth", StringComparison.OrdinalIgnoreCase))
-                    {
-                        var clean = System.Text.RegularExpressions.Regex.Replace(
-                            trimmed, @"^\[avisynth\s*@\s*[0-9a-fA-F]+\]\s*", "");
-                        avsLines.Add(clean);
-
-                        // Extract line number from patterns like "(script.avs, line 607)" or "line 42"
-                        var lineMatch = System.Text.RegularExpressions.Regex.Match(
-                            clean, @"line\s+(\d+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-                        if (lineMatch.Success && scriptLineNum < 0)
-                            scriptLineNum = int.Parse(lineMatch.Groups[1].Value);
-                    }
-                }
-
-                // Show script context: by line number if available, or by searching filter name
-                if (File.Exists(avsPath))
-                {
-                    try
-                    {
-                        var scriptLines = await File.ReadAllLinesAsync(avsPath);
-
-                        // If no explicit line number, search for the filter/function name in the script
-                        // Error format: "FilterName: error message" → extract "FilterName"
-                        if (scriptLineNum < 0 && avsLines.Count > 0)
-                        {
-                            var filterMatch = System.Text.RegularExpressions.Regex.Match(
-                                avsLines[0], @"^(\w+)\s*:");
-                            if (filterMatch.Success)
-                            {
-                                var filterName = filterMatch.Groups[1].Value;
-                                // Find last occurrence (most likely the call site, not the function definition)
-                                for (var i = scriptLines.Length - 1; i >= 0; i--)
-                                {
-                                    if (scriptLines[i].Contains(filterName, StringComparison.OrdinalIgnoreCase)
-                                     && !scriptLines[i].TrimStart().StartsWith("#"))
-                                    {
-                                        scriptLineNum = i + 1;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-
-                        if (scriptLineNum > 0)
-                        {
-                            var from = Math.Max(0, scriptLineNum - 3);
-                            var to   = Math.Min(scriptLines.Length, scriptLineNum + 2);
-                            avsLines.Add("");
-                            avsLines.Add($"── Script ligne {scriptLineNum} ──");
-                            for (var i = from; i < to; i++)
-                            {
-                                var marker = (i + 1 == scriptLineNum) ? "►" : " ";
-                                avsLines.Add($" {marker} {i + 1,4}│ {scriptLines[i]}");
-                            }
-                        }
-                    }
-                    catch { /* ignore read errors */ }
-                }
-
-                var avsError = avsLines.Count > 0 ? string.Join("\n", avsLines) : "";
-                return (avsError, stderr.Trim());
-            }
-            catch { return ("", ""); }
-        }
-
-
-        private static string? FindFfmpeg()
-        {
-            var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? string.Empty;
-
-            // Check in Plugins/ffmpeg/ (bundled)
-            var bundled = Path.Combine(exeDir, "Plugins", "ffmpeg", "ffmpeg.exe");
-            if (File.Exists(bundled)) return bundled;
-
-            // Check next to the exe
-            var local = Path.Combine(exeDir, "ffmpeg.exe");
-            if (File.Exists(local)) return local;
-
-            // Check in PATH
-            var pathDirs = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator) ?? [];
-            foreach (var d in pathDirs)
-            {
-                var candidate = Path.Combine(d.Trim(), "ffmpeg.exe");
-                if (File.Exists(candidate)) return candidate;
-            }
-            return null;
-        }
-
-        private static async Task<bool> CheckFfmpegAviSynthSupport(string ffmpegPath)
-        {
-            try
-            {
-                var proc = new Process
-                {
-                    StartInfo = new ProcessStartInfo
-                    {
-                        FileName = ffmpegPath,
-                        Arguments = "-demuxers",
-                        UseShellExecute = false,
-                        CreateNoWindow = true,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true
-                    }
-                };
-                proc.Start();
-                var output = await proc.StandardOutput.ReadToEndAsync();
-                await proc.WaitForExitAsync();
-                proc.Dispose();
-                return output.Contains("avisynth", StringComparison.OrdinalIgnoreCase);
-            }
-            catch { return false; }
-        }
+        // ── Encoding delegations to EncodeController ──
+        private void OnRecordClick(object? sender, RoutedEventArgs e) => _encodeController.OnRecordClick(sender, e);
+        private void RebuildBatchClipList() => _encodeController.RebuildBatchClipList();
+        private void OnBatchSelectAllClick(object? sender, RoutedEventArgs e) => _encodeController.OnBatchSelectAllClick(sender, e);
+        private void OnRecordDirPickClick(object? sender, RoutedEventArgs e) => _encodeController.OnRecordDirPickClick(sender, e);
+        private void OnRecordDirOpenClick(object? sender, RoutedEventArgs e) => _encodeController.OnRecordDirOpenClick(sender, e);
+        private void OnRecordStartClick(object? sender, RoutedEventArgs e) => _encodeController.OnRecordStartClick(sender, e);
+        private void OnRecordPresetSaveClick(object? sender, RoutedEventArgs e) => _encodeController.OnRecordPresetSaveClick(sender, e);
+        private void OnRecordPresetLoadClick(object? sender, RoutedEventArgs e) => _encodeController.OnRecordPresetLoadClick(sender, e);
+        private void OnRecordPresetDeleteClick(object? sender, RoutedEventArgs e) => _encodeController.OnRecordPresetDeleteClick(sender, e);
+        private void OnGammacPresetSaveClick(object? sender, RoutedEventArgs e) => _encodeController.OnGammacPresetSaveClick(sender, e);
+        private void OnGammacPresetDeleteClick(object? sender, RoutedEventArgs e) => _encodeController.OnGammacPresetDeleteClick(sender, e);
+        private void OnGammacPresetSelectionChanged(object? sender, SelectionChangedEventArgs e) => _encodeController.OnGammacPresetSelectionChanged(sender, e);
+        private void UpdateDiskSpaceLabel(string? dirPath) => _encodeController.UpdateDiskSpaceLabel(dirPath);
+        private void RefreshEncodingPresetCombo() => _encodeController.RefreshEncodingPresetCombo();
+        private void RefreshGammacPresetCombo() => _encodeController.RefreshGammacPresetCombo();
 
         private bool _syncingForceSource;
 
@@ -5638,13 +3380,13 @@ namespace CleanScan.Views
             await ApplyPresetValuesAsync(values);
 
             // Propagate to all clip configs
-            var filterSnap = CaptureClipConfig();
-            for (int i = 0; i < _clipConfigs.Count; i++)
-                _clipConfigs[i] = new Dictionary<string, string>(filterSnap, StringComparer.OrdinalIgnoreCase);
+            var filterSnap = _clipManager.CaptureConfig();
+            for (int i = 0; i < _clips.Count; i++)
+                _clips[i].Config = new Dictionary<string, string>(filterSnap, StringComparer.OrdinalIgnoreCase);
 
             // Set the preset name on all clips
-            for (int i = 0; i < _clipPresetNames.Count; i++)
-                _clipPresetNames[i] = presetName;
+            for (int i = 0; i < _clips.Count; i++)
+                _clips[i].PresetName = presetName;
         }
 
         /// <summary>Applies preset values to the current UI/config only (per-clip).</summary>
@@ -5682,7 +3424,7 @@ namespace CleanScan.Views
             UpdateOptionColumnVisibility();
 
             // Save into current clip config
-            SaveActiveClipConfig();
+            _clipManager.SaveActiveConfig();
 
             if (TryValidateSourceSelection(out _))
                 await _refreshDebouncer.DebounceAsync(() => LoadScriptAsync());
@@ -5690,14 +3432,7 @@ namespace CleanScan.Views
             finally { _applyingPreset = false; }
         }
 
-        /// <summary>Returns a unique "persoN" name not already used by another clip.</summary>
-        private string GetNextPersoName()
-        {
-            int n = 1;
-            while (_clipPresetNames.Contains($"perso{n}", StringComparer.OrdinalIgnoreCase))
-                n++;
-            return $"perso{n}";
-        }
+        // GetNextPersoName() moved to ClipManager
 
         /// <summary>Populates the per-clip preset ComboBox from saved presets.</summary>
         private void RefreshClipPresetCombo()
@@ -5730,8 +3465,8 @@ namespace CleanScan.Views
             if (preset?.Values is null) return;
 
             // Store preset name for this clip
-            if (_activeClipIndex >= 0 && _activeClipIndex < _clipPresetNames.Count)
-                _clipPresetNames[_activeClipIndex] = name;
+            if (_activeClipIndex >= 0 && _activeClipIndex < _clips.Count)
+                _clips[_activeClipIndex].PresetName = name;
 
             await ApplyPresetValuesAsync(new Dictionary<string, string>(preset.Values, StringComparer.OrdinalIgnoreCase));
             RebuildClipTabs();
@@ -5835,31 +3570,75 @@ namespace CleanScan.Views
 
         #endregion
 
-        #region ITourHost
+        #region Interface implementations (ITourHost, IFilterPresenterHost)
 
+        // ── ITourHost ────────────────────────────────────────────────
         T? ITourHost.FindControl<T>(string name) where T : class => this.FindControl<T>(name);
         SolidColorBrush ITourHost.ThemeBrush(string key) => ThemeBrush(key);
         string ITourHost.GetUiText(string key) => GetUiText(key);
         string ITourHost.CurrentLanguageCode => ViewModel.CurrentLanguageCode;
         Size ITourHost.ClientSize => ClientSize;
         bool ITourHost.IsRecordPanelOpen => _recordOpen;
-
         void ITourHost.ToggleRecordPanel() => OnRecordClick(null, new RoutedEventArgs());
-
         void ITourHost.ExpandPanel(string expandButtonName)
         {
             if (this.FindControl<Button>(expandButtonName) is { } btn)
                 OnExpandButtonClick(btn, new RoutedEventArgs());
         }
-
         void ITourHost.ApplyLanguage(string code, bool persist) => ApplyLanguage(code, persist);
-
         void ITourHost.MarkTourCompleted()
         {
             var settings = _windowStateService.Load();
             if (settings is not null)
                 _windowStateService.Save(settings with { TourCompleted = true });
         }
+
+        // ── IFilterPresenterHost ─────────────────────────────────────
+        T? IFilterPresenterHost.FindControl<T>(string name) where T : class => this.FindControl<T>(name);
+        Window IFilterPresenterHost.Window => this;
+        SolidColorBrush IFilterPresenterHost.ThemeBrush(string key) => ThemeBrush(key);
+        string IFilterPresenterHost.GetUiText(string key) => GetUiText(key);
+        MainWindowViewModel IFilterPresenterHost.ViewModel => ViewModel;
+        ConfigStore IFilterPresenterHost.Config => _config;
+        double IFilterPresenterHost.WindowHeight => Bounds.Height;
+        ThemeService? IFilterPresenterHost.ThemeService => _themeService;
+        HashSet<string> IFilterPresenterHost.OpenParamPanels => _openParamPanels;
+        void IFilterPresenterHost.UpdateToggleButtonPresentation(Button btn, bool isEnabled) =>
+            UpdateToggleButtonPresentation(btn, isEnabled);
+        void IFilterPresenterHost.UpdateParamsPlaceholderVisibility() =>
+            UpdateParamsPlaceholderVisibility();
+        void IFilterPresenterHost.RegenerateScript(bool showValidationError) =>
+            RegenerateScript(showValidationError);
+        Task IFilterPresenterHost.LoadScriptAsync(bool resetPosition) =>
+            LoadScriptAsync(resetPosition);
+
+        // ── IEncodeHost ────────────────────────────────────────────────
+        T? IEncodeHost.FindControl<T>(string name) where T : class => this.FindControl<T>(name);
+        Window IEncodeHost.Window => this;
+        SolidColorBrush IEncodeHost.ThemeBrush(string key) => ThemeBrush(key);
+        string IEncodeHost.GetUiText(string key) => GetUiText(key);
+        MainWindowViewModel IEncodeHost.ViewModel => ViewModel;
+        ConfigStore IEncodeHost.Config => _config;
+        IScriptService IEncodeHost.ScriptService => _scriptService;
+        SourceService IEncodeHost.SourceService => _sourceService;
+        IDialogService IEncodeHost.DialogService => _dialogService;
+        PresetService IEncodeHost.EncodingPresetService => _encodingPresetService;
+        PresetService IEncodeHost.GammacPresetService => _gammacPresetService;
+        CustomFilterService IEncodeHost.CustomFilterService => _customFilterService;
+        ClipManager IEncodeHost.ClipManager => _clipManager;
+        MpvService? IEncodeHost.MpvService => _mpvService;
+        ThemeService IEncodeHost.ThemeService => _themeService;
+        IStorageProvider IEncodeHost.StorageProvider => StorageProvider;
+        bool IEncodeHost.RecordOpen { get => _recordOpen; set => _recordOpen = value; }
+        bool IEncodeHost.IsEncoding { get => _isEncoding; set => _isEncoding = value; }
+        bool IEncodeHost.IsInitializing => _isInitializing;
+        bool IEncodeHost.IsClosing => _isClosing;
+        void IEncodeHost.RegenerateScript(bool showValidationError) => RegenerateScript(showValidationError);
+        Task IEncodeHost.LoadScriptAsync(bool resetPosition) => LoadScriptAsync(resetPosition);
+        void IEncodeHost.RestoreClipConfig(int index) => RestoreClipConfig(index);
+        Regex IEncodeHost.PreviewTrueRegex() => PreviewTrueRegex();
+        Regex IEncodeHost.PreviewHalfTrueRegex() => PreviewHalfTrueRegex();
+        void IEncodeHost.MoveSliderToPointer(Slider slider, PointerEventArgs e) => MoveSliderToPointer(slider, e);
 
         #endregion
     }
