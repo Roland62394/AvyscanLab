@@ -104,6 +104,8 @@ namespace CleanScan.Views
 
         private readonly ClipManager _clipManager = null!; // initialized in constructor
         private bool _applyingPreset;
+        private bool _switchingClip;
+        private int  _pendingClipSwitch = -1;
 
         // Convenience accessors over ClipManager
         private List<ClipState> Clips => _clipManager.Clips;
@@ -337,6 +339,7 @@ namespace CleanScan.Views
             {
                 if (this.FindControl<ComboBox>("GammacPresetCombo") is { } gc)
                 { gc.SelectedIndex = -1; gc.Text = null; }
+                _config.Set("gammac_preset", string.Empty);
             }
         }
 
@@ -424,6 +427,15 @@ namespace CleanScan.Views
                 presetCombo.SelectedItem = "standard";
             if (this.FindControl<ComboBox>("denoise_preset") is { } denoisePresetCombo)
                 denoisePresetCombo.SelectedItem = "standard";
+
+            // Persist default combo values to _config so they survive clip switching
+            _config.Set("sharp_preset",      "standard");
+            _config.Set("degrain_preset",    "standard");
+            _config.Set("denoise_preset",    "standard");
+            _config.Set("Sharp_Mode",        SharpModeOptions[0]);
+            _config.Set("degrain_mode",      DegrainModeOptions[0]);
+            _config.Set("degrain_prefilter", DegrainPrefilterOptions[0]);
+            _config.Set("denoise_mode",      DenoiseModeOptions[0]);
         }
 
         private void SetComboSource(string name, string[] options)
@@ -1782,16 +1794,33 @@ namespace CleanScan.Views
                     _config.Set(name, parsed.ToString().ToLowerInvariant());
                 }
 
-                // Restore filter preset combo selections
+                // Restore filter preset combo selections AND their config values
                 foreach (var presetKey in new[] { "sharp_preset", "degrain_preset", "denoise_preset" })
                 {
+                    var presetVal = clipCfg.TryGetValue(presetKey, out var pv) ? pv : string.Empty;
+                    _config.Set(presetKey, presetVal);
+
                     if (this.FindControl<ComboBox>(presetKey) is { } presetCombo)
                     {
-                        if (clipCfg.TryGetValue(presetKey, out var presetVal) && !string.IsNullOrEmpty(presetVal))
+                        if (!string.IsNullOrEmpty(presetVal))
                             presetCombo.SelectedItem = presetVal;
                         else
                             presetCombo.SelectedIndex = -1;
                     }
+                }
+
+                // Restore GammacPresetCombo the same way (config key → combo)
+                {
+                    var gVal = clipCfg.TryGetValue("gammac_preset", out var gv) ? gv : string.Empty;
+                    _config.Set("gammac_preset", gVal);
+                    _encodeController.RestoreGammacPresetSelection(!string.IsNullOrEmpty(gVal) ? gVal : null);
+                }
+
+                // Restore custom filter config keys (cf_*) so dynamic panels pick up correct values
+                foreach (var (key, value) in clipCfg)
+                {
+                    if (key.StartsWith("cf_", StringComparison.OrdinalIgnoreCase))
+                        _config.Set(key, value);
                 }
             }
             finally
@@ -1802,7 +1831,49 @@ namespace CleanScan.Views
             }
 
             SyncAllSliders();
+            SyncAllCombos();
             UpdateOptionColumnVisibility();
+
+            // Rebuild custom filter param panels so ComboBoxes reflect restored values
+            RebuildCustomFilterUI();
+        }
+
+        /// <summary>Re-applies all ComboBox selections from _config after a clip restore.</summary>
+        private void SyncAllCombos()
+        {
+            _suppressTextEvents = true;
+            try
+            {
+                // Standard filter combos (degrain_mode, degrain_prefilter, denoise_mode, Sharp_Mode)
+                foreach (var name in ScriptService.TextFieldNames)
+                {
+                    if (this.FindControl<Control>(name) is not ComboBox cb) continue;
+                    var value = _config.Get(name);
+                    if (!string.IsNullOrEmpty(value))
+                        ApplyComboChoice(cb, name, value);
+                }
+
+                // Filter preset combos
+                foreach (var presetKey in new[] { "sharp_preset", "degrain_preset", "denoise_preset" })
+                {
+                    if (this.FindControl<ComboBox>(presetKey) is not { } presetCombo) continue;
+                    var value = _config.Get(presetKey);
+                    if (!string.IsNullOrEmpty(value))
+                        presetCombo.SelectedItem = value;
+                    else
+                        presetCombo.SelectedIndex = -1;
+                }
+
+                // GammacPresetCombo
+                {
+                    var gVal = _config.Get("gammac_preset");
+                    _encodeController.RestoreGammacPresetSelection(!string.IsNullOrEmpty(gVal) ? gVal : null);
+                }
+            }
+            finally
+            {
+                _suppressTextEvents = false;
+            }
         }
 
         private void RebuildClipTabs()
@@ -1890,46 +1961,55 @@ namespace CleanScan.Views
         {
             if (index < 0 || index >= Clips.Count || index == ActiveClipIndex) return;
 
-            // Save current clip's filter config + GamMac preset name
-            _clipManager.SaveActiveConfig();
-            SaveGammacPresetName();
+            if (_switchingClip)
+            {
+                // A switch is already in progress — remember the latest request
+                // so we jump to it once the current switch finishes.
+                _pendingClipSwitch = index;
+                return;
+            }
 
-            // Switch source (this sets ActiveClipIndex via AddOrActivateClip).
-            // skipLoad: true — don't load the script yet; we'll restore the
-            // clip's config first, regenerate once, and load once.  This avoids
-            // a double write+load of ScriptUser.avs that can segfault when
-            // AviSynth is still reading the first version.
-            await ApplyDetectedSourceAndRefreshAsync(Clips[index].Path, skipLoad: true);
+            _switchingClip = true;
+            try
+            {
+                // Save current clip's filter config (includes all preset keys in _config)
+                _clipManager.SaveActiveConfig();
 
-            // Restore the target clip's filter config
-            RestoreClipConfig(ActiveClipIndex);
+                // Switch source (this sets ActiveClipIndex via AddOrActivateClip).
+                // skipLoad: true — don't load the script yet; we'll restore the
+                // clip's config first, regenerate once, and load once.  This avoids
+                // a double write+load of ScriptUser.avs that can segfault when
+                // AviSynth is still reading the first version.
+                await ApplyDetectedSourceAndRefreshAsync(Clips[index].Path, skipLoad: true);
 
-            // Restore per-clip preset selection + GamMac preset
-            RestoreClipPresetCombo();
-            RestoreGammacPresetCombo();
+                // Restore the target clip's filter config (includes all filter preset combos + Gammac)
+                RestoreClipConfig(ActiveClipIndex);
 
-            RegenerateScript(showValidationError: false);
+                // Restore per-clip preset selection
+                RestoreClipPresetCombo();
 
-            if (TryValidateSourceSelection(out _))
-                await LoadScriptAsync(resetPosition: true);
-        }
+                RegenerateScript(showValidationError: false);
 
-        private void SaveGammacPresetName()
-        {
-            if (_clipManager.ActiveClip is not { } clip) return;
-            clip.GammacPresetName = (this.FindControl<ComboBox>("GammacPresetCombo")?.SelectedItem as string)
-                                    ?? this.FindControl<ComboBox>("GammacPresetCombo")?.Text;
-        }
+                if (TryValidateSourceSelection(out _))
+                    await LoadScriptAsync(resetPosition: true);
 
-        private void RestoreGammacPresetCombo()
-        {
-            if (this.FindControl<ComboBox>("GammacPresetCombo") is not { } combo) return;
-            var name = _clipManager.ActiveClip?.GammacPresetName;
-            _encodeController.RefreshGammacPresetCombo();
-            if (!string.IsNullOrWhiteSpace(name))
-                combo.SelectedItem = name;
-            else
-                combo.SelectedIndex = -1;
+            }
+            finally
+            {
+                // Defer resetting _switchingClip so that async continuations
+                // (e.g. LostFocus handlers on TextBoxes that fire during the await)
+                // still see _switchingClip=true and don't trigger preset deselection.
+                Dispatcher.UIThread.Post(() => _switchingClip = false);
+            }
+
+            // If the user clicked another clip while we were switching,
+            // honour the last requested index now.
+            if (_pendingClipSwitch >= 0)
+            {
+                var next = _pendingClipSwitch;
+                _pendingClipSwitch = -1;
+                SwitchToClip(next);
+            }
         }
 
         /// <summary>Restores the per-clip preset ComboBox selection without triggering the change handler.</summary>
@@ -2097,7 +2177,8 @@ namespace CleanScan.Views
                 return;
 
             // Rename the active clip's preset to a unique "persoN" when a filter value is manually changed
-            if (changed && !_applyingPreset && !IsPathField(key)
+            // Skip during clip switching — restored values are not manual changes
+            if (changed && !_applyingPreset && !_switchingClip && !IsPathField(key)
                 && !PresetService.ExcludedKeys.Contains(key)
                 && ActiveClipIndex >= 0 && ActiveClipIndex < Clips.Count)
             {
@@ -2117,6 +2198,15 @@ namespace CleanScan.Views
                     try { filterCombo.SelectedIndex = -1; }
                     finally { _suppressTextEvents = false; }
                     _config.Set(filterPresetCombo, string.Empty);
+                }
+
+                // Deselect GammacPresetCombo when a Gammac parameter is manually changed
+                if (Array.IndexOf(EncodeController.GammacKeys, key) >= 0
+                    && this.FindControl<ComboBox>("GammacPresetCombo") is { } gc)
+                {
+                    gc.SelectedIndex = -1;
+                    gc.Text = null;
+                    _config.Set("gammac_preset", string.Empty);
                 }
             }
 

@@ -676,6 +676,26 @@ public sealed class EncodeController
         {
             RefreshGammacPresetCombo();
             combo.SelectedItem = name;
+            Config.Set("gammac_preset", name);
+        }
+        finally { _isLoadingGammacPreset = false; }
+    }
+
+    /// <summary>Restores the GammacPresetCombo selection without triggering value re-application.</summary>
+    public void RestoreGammacPresetSelection(string? name)
+    {
+        if (_host.FindControl<ComboBox>("GammacPresetCombo") is not { } combo) return;
+        RefreshGammacPresetCombo();
+        _isLoadingGammacPreset = true;
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(name))
+                combo.SelectedItem = name;
+            else
+            {
+                combo.SelectedIndex = -1;
+                combo.Text = null;
+            }
         }
         finally { _isLoadingGammacPreset = false; }
     }
@@ -691,6 +711,7 @@ public sealed class EncodeController
         _host.GammacPresetService.SavePresets(presets);
         RefreshGammacPresetCombo();
         combo.SelectedItem = null;
+        Config.Set("gammac_preset", string.Empty);
     }
 
     public void OnGammacPresetSelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -703,6 +724,7 @@ public sealed class EncodeController
             if (preset?.Values is not null)
             {
                 ApplyGammacValues(preset.Values);
+                Config.Set("gammac_preset", name);
                 _host.RegenerateScript(showValidationError: false);
                 _ = _host.LoadScriptAsync();
             }
