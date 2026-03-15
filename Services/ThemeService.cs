@@ -178,6 +178,14 @@ public sealed class ThemeService
 
     private sealed record AccentVariants(Dictionary<string, string> Dark, Dictionary<string, string> Light);
 
+    /// <summary>Read a themed brush from Application.Current.Resources.</summary>
+    public static Avalonia.Media.SolidColorBrush Brush(string key) =>
+        Avalonia.Application.Current?.Resources.TryGetResource(key, null, out var val) == true
+        && val is Avalonia.Media.SolidColorBrush b
+            ? b
+            : new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse(
+                DarkBase.TryGetValue(key, out var hex) ? hex : "#FF00FF"));
+
     private sealed class ThemeData
     {
         public string? Theme { get; set; }

@@ -20,15 +20,12 @@ public sealed class DialogService : IDialogService
 {
     private const string AviSynthDownloadUrl = "https://github.com/AviSynth/AviSynthPlus/releases";
 
+    private static SolidColorBrush TB(string key) => ThemeService.Brush(key);
+
     public async Task ShowErrorAsync(Window owner, string title, string message, string? details = null)
     {
         var monoFont = new FontFamily("Consolas, Cascadia Code, monospace");
-        var bgPanel  = new SolidColorBrush(Color.Parse("#161B24"));
-        var bgField  = new SolidColorBrush(Color.Parse("#0D1117"));
         var fgError  = new SolidColorBrush(Color.Parse("#FF6B6B"));
-        var fgText   = new SolidColorBrush(Color.Parse("#DBDBDB"));
-        var fgDim    = new SolidColorBrush(Color.Parse("#7984A5"));
-        var border   = new SolidColorBrush(Color.Parse("#30363D"));
 
         var titleBlock = new TextBlock
         {
@@ -44,7 +41,7 @@ public sealed class DialogService : IDialogService
         var messageBlock = new TextBlock
         {
             Text = message,
-            Foreground = fgText,
+            Foreground = TB("TextSecondary"),
             FontFamily = monoFont,
             FontSize = 13,
             TextWrapping = TextWrapping.Wrap,
@@ -67,9 +64,9 @@ public sealed class DialogService : IDialogService
                 MaxHeight = 250,
                 FontFamily = monoFont,
                 FontSize = 11,
-                Background = bgField,
-                Foreground = fgDim,
-                BorderBrush = border,
+                Background = TB("BgDeep"),
+                Foreground = TB("TextPrimary"),
+                BorderBrush = TB("BorderSubtle"),
                 BorderThickness = new Thickness(1),
                 Padding = new Thickness(10, 8),
             };
@@ -78,7 +75,7 @@ public sealed class DialogService : IDialogService
             {
                 Header = "Détails (sortie ffmpeg)",
                 IsExpanded = false,
-                Foreground = fgDim,
+                Foreground = TB("TextPrimary"),
                 FontFamily = monoFont,
                 FontSize = 11,
                 Content = detailsBox,
@@ -91,9 +88,9 @@ public sealed class DialogService : IDialogService
         {
             Content = "Copier",
             MinWidth = 96, Height = 30,
-            Background = new SolidColorBrush(Color.Parse("#1C2333")),
-            Foreground = fgText,
-            BorderBrush = border,
+            Background = TB("BgHeader"),
+            Foreground = TB("TextSecondary"),
+            BorderBrush = TB("BorderSubtle"),
             BorderThickness = new Thickness(1),
             FontFamily = monoFont,
             HorizontalContentAlignment = HorizontalAlignment.Center,
@@ -103,9 +100,9 @@ public sealed class DialogService : IDialogService
         {
             Content = "OK",
             MinWidth = 96, Height = 30,
-            Background = new SolidColorBrush(Color.Parse("#1C2333")),
-            Foreground = fgText,
-            BorderBrush = border,
+            Background = TB("BgHeader"),
+            Foreground = TB("TextSecondary"),
+            BorderBrush = TB("BorderSubtle"),
             BorderThickness = new Thickness(1),
             FontFamily = monoFont,
             HorizontalContentAlignment = HorizontalAlignment.Center,
@@ -134,13 +131,13 @@ public sealed class DialogService : IDialogService
             Title = title,
             Width = 580,
             SizeToContent = SizeToContent.Height,
-            Background = new SolidColorBrush(Color.Parse("#0F1319")),
+            Background = TB("BgDeep"),
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             Content = new Border
             {
                 Margin = new Thickness(16),
                 Padding = new Thickness(16),
-                Background = bgPanel,
+                Background = TB("BgPanel"),
                 BorderBrush = new SolidColorBrush(Color.Parse("#C62828")),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(6),
@@ -273,9 +270,9 @@ public sealed class DialogService : IDialogService
             Width = 300,
             ItemsSource = ordered,
             DisplayMemberBinding = new Avalonia.Data.Binding(nameof(Preset.Name)),
-            Background = new SolidColorBrush(Color.Parse("#1A2030")),
-            Foreground = new SolidColorBrush(Color.Parse("#7984A5")),
-            BorderBrush = new SolidColorBrush(Color.Parse("#252E42")),
+            Background = TB("BgInput"),
+            Foreground = TB("TextPrimary"),
+            BorderBrush = TB("BorderSubtle"),
             BorderThickness = new Thickness(1),
             FontFamily = monoFont,
             Padding = new Thickness(8, 0),
@@ -286,9 +283,9 @@ public sealed class DialogService : IDialogService
         var nameBox = new TextBox
         {
             Width = 300,
-            Background = new SolidColorBrush(Color.Parse("#1A2030")),
-            Foreground = new SolidColorBrush(Color.Parse("#7984A5")),
-            BorderBrush = new SolidColorBrush(Color.Parse("#252E42")),
+            Background = TB("BgInput"),
+            Foreground = TB("TextSecondary"),
+            BorderBrush = TB("BorderSubtle"),
             BorderThickness = new Thickness(1),
             FontFamily = monoFont,
             Height = 30,
@@ -304,9 +301,9 @@ public sealed class DialogService : IDialogService
             MinWidth = minWidth,
             Height = 30,
             Padding = new Thickness(8, 0),
-            Background = new SolidColorBrush(Color.Parse("#1C2333")),
-            Foreground = new SolidColorBrush(Color.Parse("#DBDBDB")),
-            BorderBrush = new SolidColorBrush(Color.Parse("#252E42")),
+            Background = TB("BgHeader"),
+            Foreground = TB("TextSecondary"),
+            BorderBrush = TB("BorderSubtle"),
             BorderThickness = new Thickness(1),
             FontFamily = monoFont,
             HorizontalContentAlignment = HorizontalAlignment.Center,
@@ -334,14 +331,14 @@ public sealed class DialogService : IDialogService
             Title = vm.GetUiText("PresetDialogTitle"),
             Width = 560,
             SizeToContent = SizeToContent.Height,
-            Background = new SolidColorBrush(Color.Parse("#0F1319")),
+            Background = TB("BgDeep"),
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             Content = new Border
             {
                 Margin = new Thickness(16),
                 Padding = new Thickness(14),
-                Background = new SolidColorBrush(Color.Parse("#161B24")),
-                BorderBrush = new SolidColorBrush(Color.Parse("#252E42")),
+                Background = TB("BgPanel"),
+                BorderBrush = TB("BorderSubtle"),
                 BorderThickness = new Thickness(1),
                 Child = new StackPanel
                 {
@@ -351,7 +348,7 @@ public sealed class DialogService : IDialogService
                         new TextBlock
                         {
                             Text = vm.GetUiText("PresetMenuItem"),
-                            Foreground = new SolidColorBrush(Color.Parse("#F6F6F6")),
+                            Foreground = TB("TextLabel"),
                             FontSize = 11,
                             FontWeight = FontWeight.SemiBold,
                             LetterSpacing = 1.5,
@@ -359,8 +356,8 @@ public sealed class DialogService : IDialogService
                         },
                         new Border
                         {
-                            Background = new SolidColorBrush(Color.Parse("#1E2A3A")),
-                            BorderBrush = new SolidColorBrush(Color.Parse("#3B82C4")),
+                            Background = TB("BgHeader"),
+                            BorderBrush = TB("AccentBlue"),
                             BorderThickness = new Thickness(1),
                             CornerRadius = new CornerRadius(4),
                             Padding = new Thickness(10, 6),
@@ -368,7 +365,7 @@ public sealed class DialogService : IDialogService
                             Child = new TextBlock
                             {
                                 Text = vm.GetUiText("PresetGlobalWarning"),
-                                Foreground = new SolidColorBrush(Color.Parse("#7EB8E0")),
+                                Foreground = TB("AccentBlue"),
                                 FontSize = 11,
                                 FontFamily = monoFont,
                                 TextWrapping = TextWrapping.Wrap
@@ -378,7 +375,7 @@ public sealed class DialogService : IDialogService
                         new TextBlock
                         {
                             Text = vm.GetUiText("PresetNameLabel"),
-                            Foreground = new SolidColorBrush(Color.Parse("#F6F6F6")),
+                            Foreground = TB("TextLabel"),
                             FontSize = 11,
                             FontWeight = FontWeight.SemiBold,
                             LetterSpacing = 1.5,
@@ -493,14 +490,10 @@ public sealed class DialogService : IDialogService
         };
 
         var monoFont = new FontFamily("Consolas,Cascadia Code,monospace");
-        var bgField = new SolidColorBrush(Color.Parse("#1A2030"));
-        var fgField = new SolidColorBrush(Color.Parse("#DBDBDB"));
-        var borderField = new SolidColorBrush(Color.Parse("#252E42"));
-        var fgLabel = new SolidColorBrush(Color.Parse("#F6F6F6"));
 
         TextBlock MakeLabel(string text) => new()
         {
-            Text = text, Foreground = fgLabel, FontSize = 11,
+            Text = text, Foreground = TB("TextLabel"), FontSize = 11,
             FontWeight = FontWeight.SemiBold, FontFamily = monoFont,
             Margin = new Thickness(0, 4, 0, 2)
         };
@@ -508,8 +501,8 @@ public sealed class DialogService : IDialogService
         TextBox MakeField(string placeholder = "", int height = 30) => new()
         {
             Watermark = placeholder, Height = height,
-            Background = bgField, Foreground = fgField,
-            BorderBrush = borderField, BorderThickness = new Thickness(1),
+            Background = TB("BgInput"), Foreground = TB("TextSecondary"),
+            BorderBrush = TB("BorderSubtle"), BorderThickness = new Thickness(1),
             FontFamily = monoFont, Padding = new Thickness(8, 4),
             VerticalContentAlignment = VerticalAlignment.Center
         };
@@ -521,8 +514,8 @@ public sealed class DialogService : IDialogService
         var categoryCombo = new ComboBox
         {
             Height = 30, HorizontalAlignment = HorizontalAlignment.Stretch,
-            Background = bgField, Foreground = fgField,
-            BorderBrush = borderField, BorderThickness = new Thickness(1),
+            Background = TB("BgInput"), Foreground = TB("TextSecondary"),
+            BorderBrush = TB("BorderSubtle"), BorderThickness = new Thickness(1),
             FontFamily = monoFont,
             ItemsSource = new[]
             {
@@ -586,8 +579,8 @@ public sealed class DialogService : IDialogService
                           "Décrivez votre problème ou suggestion...",
                           "Beschreiben Sie Ihr Problem oder Ihren Vorschlag...",
                           "Describa su problema o sugerencia..."),
-            Background = bgField, Foreground = fgField,
-            BorderBrush = borderField, BorderThickness = new Thickness(1),
+            Background = TB("BgInput"), Foreground = TB("TextSecondary"),
+            BorderBrush = TB("BorderSubtle"), BorderThickness = new Thickness(1),
             FontFamily = monoFont, Padding = new Thickness(8, 6),
             VerticalContentAlignment = VerticalAlignment.Top
         };
@@ -615,8 +608,8 @@ public sealed class DialogService : IDialogService
         {
             Content = L("Close", "Fermer", "Schließen", "Cerrar"),
             MinWidth = 96, Height = 32, Padding = new Thickness(16, 0),
-            Background = new SolidColorBrush(Color.Parse("#1C2333")),
-            Foreground = fgField, FontFamily = monoFont,
+            Background = TB("BgHeader"),
+            Foreground = TB("TextSecondary"), FontFamily = monoFont,
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center
         };
@@ -625,13 +618,13 @@ public sealed class DialogService : IDialogService
         {
             Title = "Contact",
             Width = 480, SizeToContent = SizeToContent.Height,
-            Background = new SolidColorBrush(Color.Parse("#0F1319")),
+            Background = TB("BgDeep"),
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             Content = new Border
             {
                 Margin = new Thickness(16), Padding = new Thickness(14),
-                Background = new SolidColorBrush(Color.Parse("#161B24")),
-                BorderBrush = borderField, BorderThickness = new Thickness(1),
+                Background = TB("BgPanel"),
+                BorderBrush = TB("BorderSubtle"), BorderThickness = new Thickness(1),
                 Child = new StackPanel
                 {
                     Spacing = 6,
@@ -641,12 +634,12 @@ public sealed class DialogService : IDialogService
                         nameBox,
                         MakeLabel(L("Email", "Email", "E-Mail", "Email")),
                         emailBox,
-                        MakeLabel(L("Category", "Cat\u00e9gorie", "Kategorie", "Categor\u00eda")),
+                        MakeLabel(L("Category", "Catégorie", "Kategorie", "Categoría")),
                         categoryCombo,
                         bugHelpText,
                         MakeLabel(L("Message", "Message", "Nachricht", "Mensaje")),
                         messageBox,
-                        MakeLabel(L("Rating", "Note", "Bewertung", "Valoraci\u00f3n")),
+                        MakeLabel(L("Rating", "Note", "Bewertung", "Valoración")),
                         starPanel,
                         statusText,
                         new StackPanel
@@ -676,7 +669,7 @@ public sealed class DialogService : IDialogService
             }
 
             sendButton.IsEnabled = false;
-            statusText.Foreground = new SolidColorBrush(Color.Parse("#7984A5"));
+            statusText.Foreground = TB("TextPrimary");
             statusText.Text = L("Sending...", "Envoi en cours...", "Wird gesendet...", "Enviando...");
 
             try

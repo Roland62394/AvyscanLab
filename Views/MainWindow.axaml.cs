@@ -1463,16 +1463,22 @@ namespace CleanScan.Views
         {
             var palette = ThemeService.GetPalette(theme, accent);
 
-            // Update window resources
+            // Update application-level resources so ALL windows inherit the palette
+            if (Application.Current is { } app)
+            {
+                foreach (var (key, hex) in palette)
+                    app.Resources[key] = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse(hex));
+
+                // Update Avalonia theme variant (affects Fluent popup/menu surfaces)
+                var variant = string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase)
+                    ? Avalonia.Styling.ThemeVariant.Light
+                    : Avalonia.Styling.ThemeVariant.Dark; // Dark and Grey both use Dark variant
+                app.RequestedThemeVariant = variant;
+            }
+
+            // Also set on this window for direct ThemeBrush() lookups
             foreach (var (key, hex) in palette)
                 Resources[key] = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse(hex));
-
-            // Update Avalonia theme variant (affects Fluent popup/menu surfaces)
-            var variant = string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase)
-                ? Avalonia.Styling.ThemeVariant.Light
-                : Avalonia.Styling.ThemeVariant.Dark; // Dark and Grey both use Dark variant
-            if (Application.Current is { } app)
-                app.RequestedThemeVariant = variant;
 
             // Update theme button visual states
             UpdateThemeButtonStates(theme);

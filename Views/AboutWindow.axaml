@@ -7,7 +7,7 @@
        WindowStartupLocation="CenterScreen"
        SystemDecorations="None"
        ShowInTaskbar="False"
-       Background="#0F1319"
+       Background="{DynamicResource BgDeep}"
        Icon="/Assets/Ico.ico">
    <Window.Styles>
        <Style Selector="Button#CloseXButton /template/ ContentPresenter">
@@ -19,9 +19,16 @@
        <Style Selector="Button#CloseXButton:pointerover">
            <Setter Property="Foreground" Value="#C05050"/>
        </Style>
+       <Style Selector="Button#CloseButton /template/ ContentPresenter">
+           <Setter Property="Background" Value="{DynamicResource BgHeader}"/>
+       </Style>
+       <Style Selector="Button#CloseButton:pointerover /template/ ContentPresenter">
+           <Setter Property="Background" Value="{DynamicResource BgHover}"/>
+       </Style>
    </Window.Styles>
 
-   <Border BorderBrush="#252E42" BorderThickness="1" Margin="8" Background="#161B24">
+   <Border BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" Margin="8"
+           Background="{DynamicResource BgPanel}">
        <Grid RowDefinitions="Auto,*,Auto">
 
            <!-- Barre de titre personnalisée (déplaçable) -->
@@ -29,15 +36,15 @@
                    Grid.Row="0"
                    Height="34"
                    Padding="14,0,6,0"
-                   Background="#0F1319"
-                   BorderBrush="#252E42"
+                   Background="{DynamicResource BgDeep}"
+                   BorderBrush="{DynamicResource BorderSubtle}"
                    BorderThickness="0,0,0,1">
                <Grid ColumnDefinitions="*,Auto">
                    <TextBlock x:Name="TitleBarLabel"
                               Grid.Column="0"
                               FontSize="10"
                               FontFamily="Consolas,Cascadia Code,monospace"
-                              Foreground="#4A5470"
+                              Foreground="{DynamicResource TextPrimary}"
                               LetterSpacing="2"
                               VerticalAlignment="Center"/>
                    <Button x:Name="CloseXButton"
@@ -47,11 +54,11 @@
                            Padding="0"
                            Background="Transparent"
                            BorderThickness="0"
-                           Foreground="#4A5470"
+                           Foreground="{DynamicResource TextPrimary}"
                            FontSize="13"
                            HorizontalContentAlignment="Center"
                            VerticalContentAlignment="Center"
-                           Content="✕"/>
+                           Content="&#x2715;"/>
                </Grid>
            </Border>
 
@@ -70,14 +77,14 @@
                           FontSize="13"
                           FontWeight="SemiBold"
                           FontFamily="Consolas,Cascadia Code,monospace"
-                          Foreground="#F0F0F0"
+                          Foreground="{DynamicResource TextLabel}"
                           LetterSpacing="2"
                           HorizontalAlignment="Center"
                           Margin="0,0,0,4"/>
                <TextBlock x:Name="VersionTextBlock"
                           FontSize="11"
                           FontFamily="Consolas,Cascadia Code,monospace"
-                          Foreground="#7984A5"
+                          Foreground="{DynamicResource TextPrimary}"
                           HorizontalAlignment="Center"
                           Margin="0,0,0,10"/>
                <TextBlock x:Name="WebsiteTextBlock"
@@ -88,13 +95,13 @@
                <TextBlock x:Name="RightsTextBlock"
                           FontSize="10"
                           FontFamily="Consolas,Cascadia Code,monospace"
-                          Foreground="#555E72"
+                          Foreground="{DynamicResource TextPrimary}"
                           HorizontalAlignment="Center"/>
            </StackPanel>
 
            <!-- Pied de page -->
            <Border Grid.Row="2"
-                   BorderBrush="#252E42"
+                   BorderBrush="{DynamicResource BorderSubtle}"
                    BorderThickness="0,1,0,0"
                    Padding="14,8,14,12">
                <Button x:Name="CloseButton"
@@ -104,9 +111,9 @@
                        MinWidth="96"
                        Height="26"
                        Padding="12,0"
-                       Background="#1C2333"
-                       Foreground="#DBDBDB"
-                       BorderBrush="#252E42"
+                       Background="{DynamicResource BgHeader}"
+                       Foreground="{DynamicResource TextSecondary}"
+                       BorderBrush="{DynamicResource BorderSubtle}"
                        BorderThickness="1"/>
            </Border>
 
