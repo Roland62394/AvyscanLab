@@ -36,6 +36,7 @@ namespace CleanScan.Views
         private const string WindowSettingsFileName = "window-settings.json";
         private const string PresetsFileName        = "presets.json";
         private const string EncodingPresetsFileName = "encoding_presets.json";
+        private const string GammacPresetsFileName   = "gammac_presets.json";
         private const string SessionFileName         = "session.json";
         private const string CustomFiltersFileName   = "custom_filters.json";
         private const string DefaultEncodingPresetName = "Default";
@@ -452,6 +453,7 @@ namespace CleanScan.Views
         private readonly IScriptService       _scriptService;
         private readonly IPresetService       _presetService;
         private readonly PresetService        _encodingPresetService;
+        private readonly PresetService        _gammacPresetService;
         private readonly IWindowStateService  _windowStateService;
         private readonly IDialogService       _dialogService;
         private readonly IAviService          _aviService;
@@ -512,6 +514,7 @@ namespace CleanScan.Views
             _scriptService      = new ScriptService(_sourceService);
             _presetService      = new PresetService(GetAppDataPath(PresetsFileName));
             _encodingPresetService = new PresetService(GetAppDataPath(EncodingPresetsFileName));
+            _gammacPresetService  = new PresetService(GetAppDataPath(GammacPresetsFileName));
             _windowStateService = new WindowStateService(GetAppDataPath(WindowSettingsFileName));
             _sessionService     = new SessionService(GetAppDataPath(SessionFileName));
             _customFilterService = new CustomFilterService(GetAppDataPath(CustomFiltersFileName));
@@ -534,6 +537,7 @@ namespace CleanScan.Views
             _scriptService      = scriptService;
             _presetService      = presetService;
             _encodingPresetService = new PresetService(GetAppDataPath(EncodingPresetsFileName));
+            _gammacPresetService  = new PresetService(GetAppDataPath(GammacPresetsFileName));
             _windowStateService = windowStateService;
             _sessionService     = new SessionService(GetAppDataPath(SessionFileName));
             _customFilterService = new CustomFilterService(GetAppDataPath(CustomFiltersFileName));
@@ -1279,6 +1283,10 @@ namespace CleanScan.Views
                 prSave.Content = GetUiText("RecordPresetSaveBtn");
             if (this.FindControl<Button>("RecordPresetDeleteBtn") is { } prDel)
                 prDel.Content = GetUiText("RecordPresetDeleteBtn");
+            if (this.FindControl<Button>("GammacPresetSaveBtn") is { } gmSave)
+                gmSave.Content = GetUiText("RecordPresetSaveBtn");
+            if (this.FindControl<Button>("GammacPresetDelBtn") is { } gmDel)
+                gmDel.Content = GetUiText("RecordPresetDeleteBtn");
             if (this.FindControl<Button>("RecordStartBtn") is { } startBtn)
                 startBtn.Content = GetUiText("RecordStartBtn");
             if (this.FindControl<CheckBox>("ShutdownCheckBox") is { } shutCb)
@@ -3770,6 +3778,7 @@ namespace CleanScan.Views
             }
 
             RefreshEncodingPresetCombo();
+            RefreshGammacPresetCombo();
 
             if (this.FindControl<ComboBox>("RecordPresetCombo") is { } presetCombo)
             {
@@ -4206,6 +4215,95 @@ namespace CleanScan.Views
 
             await dialog.ShowDialog(this);
             return dialogResult;
+        }
+
+        // ── GamMac presets ─────────────────────────────────────────────────
+
+        private static readonly string[] GammacKeys =
+            ["LockChan", "LockVal", "Scale", "Th", "HiTh", "X", "Y", "W", "H", "Omin", "Omax", "Verbosity", "ShowPreview"];
+
+        private bool _isLoadingGammacPreset;
+
+        private Dictionary<string, string> CaptureGammacValues()
+        {
+            var vals = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var key in GammacKeys)
+                vals[key] = _config.Get(key) ?? "";
+            return vals;
+        }
+
+        private void ApplyGammacValues(Dictionary<string, string> vals)
+        {
+            _isLoadingGammacPreset = true;
+            try
+            {
+                foreach (var (key, val) in vals)
+                    if (!string.IsNullOrEmpty(val))
+                        _config.Set(key, val);
+            }
+            finally { _isLoadingGammacPreset = false; }
+        }
+
+        private void RefreshGammacPresetCombo()
+        {
+            if (this.FindControl<ComboBox>("GammacPresetCombo") is not { } combo) return;
+            var list = _gammacPresetService.LoadPresets()
+                .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(p => p.Name)
+                .ToList();
+            combo.ItemsSource = list;
+        }
+
+        private void OnGammacPresetSaveClick(object? sender, RoutedEventArgs e)
+        {
+            if (this.FindControl<ComboBox>("GammacPresetCombo") is not { } combo) return;
+            var name = (combo.Text ?? combo.SelectedItem?.ToString())?.Trim();
+            if (string.IsNullOrWhiteSpace(name)) return;
+
+            var presets = _gammacPresetService.LoadPresets();
+            var existing = presets.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+            if (existing is not null)
+                existing.Values = CaptureGammacValues();
+            else
+                presets.Add(new Preset(name, CaptureGammacValues()));
+
+            _gammacPresetService.SavePresets(presets);
+            _isLoadingGammacPreset = true;
+            try
+            {
+                RefreshGammacPresetCombo();
+                combo.SelectedItem = name;
+            }
+            finally { _isLoadingGammacPreset = false; }
+        }
+
+        private void OnGammacPresetDeleteClick(object? sender, RoutedEventArgs e)
+        {
+            if (this.FindControl<ComboBox>("GammacPresetCombo") is not { } combo) return;
+            var name = combo.SelectedItem as string;
+            if (string.IsNullOrWhiteSpace(name)) return;
+
+            var presets = _gammacPresetService.LoadPresets();
+            presets.RemoveAll(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+            _gammacPresetService.SavePresets(presets);
+            RefreshGammacPresetCombo();
+            combo.SelectedItem = null;
+        }
+
+        private void OnGammacPresetSelectionChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            if (_isLoadingGammacPreset || _isInitializing) return;
+            if (sender is ComboBox { SelectedItem: string name } && !string.IsNullOrWhiteSpace(name))
+            {
+                var presets = _gammacPresetService.LoadPresets();
+                var preset = presets.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+                if (preset?.Values is not null)
+                {
+                    ApplyGammacValues(preset.Values);
+                    RegenerateScript(showValidationError: false);
+                    _ = LoadScriptAsync();
+                }
+            }
         }
 
         private void OnRecordClick(object? sender, RoutedEventArgs e)

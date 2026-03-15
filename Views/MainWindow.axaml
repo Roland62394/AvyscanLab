@@ -1047,6 +1047,21 @@
                                         Padding="16,14">
                                     <StackPanel Spacing="6">
                                         <TextBlock Classes="section-title" Text="GAMMAC"/>
+                                        <!-- GamMac preset -->
+                                        <Grid ColumnDefinitions="*,6,Auto,6,Auto" HorizontalAlignment="Stretch">
+                                            <ComboBox x:Name="GammacPresetCombo" Grid.Column="0"
+                                                      FontSize="11" HorizontalAlignment="Stretch"
+                                                      IsEditable="True"
+                                                      SelectionChanged="OnGammacPresetSelectionChanged"/>
+                                            <Button x:Name="GammacPresetSaveBtn" Grid.Column="2"
+                                                    Content="Save" FontSize="11" Height="24" MinWidth="46" Padding="6,0"
+                                                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                                    Click="OnGammacPresetSaveClick"/>
+                                            <Button x:Name="GammacPresetDelBtn" Grid.Column="4"
+                                                    Content="Del" FontSize="11" Height="24" MinWidth="38" Padding="6,0"
+                                                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                                    Click="OnGammacPresetDeleteClick"/>
+                                        </Grid>
                                         <Grid ColumnDefinitions="Auto,Auto,70">
                                             <TextBlock Grid.Column="0" x:Name="Label_LockChan" Classes="param-label" Text="LockChan" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                             <Slider Grid.Column="1" x:Name="Slide_LockChan" Classes="param-slider" Minimum="-3" Maximum="2" SmallChange="1"/>
