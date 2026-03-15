@@ -5780,7 +5780,7 @@ namespace CleanScan.Views
             {
                 FontSize = 13, TextWrapping = TextWrapping.Wrap,
                 TextAlignment = TextAlignment.Center,
-                Foreground = new SolidColorBrush(Color.Parse("#CCCCCC")),
+                Foreground = ThemeBrush("TextSecondary"),
                 MaxWidth = 340, LineHeight = 20,
                 Margin = new Thickness(0, 0, 0, 18),
             };
@@ -5803,7 +5803,7 @@ namespace CleanScan.Views
             var skipBtn = new Button
             {
                 MinWidth = 60, Background = Brushes.Transparent,
-                Foreground = new SolidColorBrush(Color.Parse("#8899AA")),
+                Foreground = ThemeBrush("TextPrimary"),
                 HorizontalContentAlignment = HorizontalAlignment.Center,
                 Cursor = new Cursor(StandardCursorType.Hand),
             };
@@ -5811,7 +5811,7 @@ namespace CleanScan.Views
             {
                 MinWidth = 70,
                 Background = ThemeBrush("BorderSubtle"),
-                Foreground = new SolidColorBrush(Color.Parse("#CCCCCC")),
+                Foreground = ThemeBrush("TextSecondary"),
                 HorizontalContentAlignment = HorizontalAlignment.Center,
                 Cursor = new Cursor(StandardCursorType.Hand),
             };
@@ -5837,7 +5837,7 @@ namespace CleanScan.Views
             var stepLabel = new TextBlock
             {
                 FontSize = 11,
-                Foreground = new SolidColorBrush(Color.Parse("#556677")),
+                Foreground = ThemeBrush("TextPrimary"),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Margin = new Thickness(0, 10, 0, 0),
             };
@@ -5846,7 +5846,7 @@ namespace CleanScan.Views
             var langLabel = new TextBlock
             {
                 FontSize = 12,
-                Foreground = new SolidColorBrush(Color.Parse("#8899AA")),
+                Foreground = ThemeBrush("TextPrimary"),
                 VerticalAlignment = VerticalAlignment.Center,
             };
             var langRow = new StackPanel
@@ -5863,7 +5863,7 @@ namespace CleanScan.Views
                     Content = label, Tag = code, MinWidth = 70, FontSize = 12,
                     HorizontalContentAlignment = HorizontalAlignment.Center,
                     Cursor = new Cursor(StandardCursorType.Hand),
-                    Foreground = new SolidColorBrush(Color.Parse("#CCCCCC")),
+                    Foreground = ThemeBrush("TextSecondary"),
                 });
             }
 
@@ -5884,8 +5884,8 @@ namespace CleanScan.Views
             // ── Callout card (shown in a Popup so it stays above NativeControlHost) ──
             var card = new Border
             {
-                Background        = new SolidColorBrush(Color.Parse("#1A2233")),
-                BorderBrush       = new SolidColorBrush(Color.Parse("#3B82F6")),
+                Background        = ThemeBrush("BgPanel"),
+                BorderBrush       = ThemeBrush("AccentBlue"),
                 BorderThickness   = new Thickness(1),
                 CornerRadius      = new CornerRadius(10),
                 Padding           = new Thickness(28, 24),
@@ -6061,17 +6061,16 @@ namespace CleanScan.Views
                     {
                         if (child is not Button lb || lb.Tag is not string code) continue;
                         bool cur = string.Equals(code, curLang, StringComparison.OrdinalIgnoreCase);
-                        lb.Background = new SolidColorBrush(Color.Parse(cur ? "#3B82F6" : "#252E42"));
-                        lb.Foreground = new SolidColorBrush(Color.Parse(cur ? "#FFFFFF" : "#CCCCCC"));
+                        lb.Background = cur ? ThemeBrush("AccentBlue") : ThemeBrush("BorderSubtle");
+                        lb.Foreground = cur ? Brushes.White : ThemeBrush("TextSecondary");
                     }
                 }
 
                 // Dots
                 for (int i = 0; i < dots.Length; i++)
-                    dots[i].Background = new SolidColorBrush(
-                        i == step  ? Color.Parse("#3B82F6")
-                      : i < step   ? Color.Parse("#6AA3D8")
-                      :              Color.Parse("#3A3A3A"));
+                    dots[i].Background = i == step  ? ThemeBrush("AccentBlue")
+                      : i < step   ? ThemeBrush("BorderAccent")
+                      :              ThemeBrush("BorderSubtle");
 
                 // ── Position the card next to the target ─────────────────
                 double ww = ClientSize.Width;

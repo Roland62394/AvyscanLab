@@ -220,33 +220,36 @@ public partial class CustomFilterDialog : Window
 
     private async System.Threading.Tasks.Task ShowHelp()
     {
-        var okBtn = new Button { Content = "OK", MinWidth = 80, HorizontalAlignment = HorizontalAlignment.Right };
+        var okBtn = new Button { Content = "OK", MinWidth = 80, HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(0, 8, 0, 0) };
+        var scrollContent = new ScrollViewer
+        {
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+            Content = new TextBlock
+            {
+                Text = L("CfDlgHelpBody"),
+                TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+                FontSize = 13,
+                LineHeight = 20
+            }
+        };
+        Grid.SetRow(scrollContent, 0);
+        Grid.SetRow(okBtn, 1);
+        var helpGrid = new Grid
+        {
+            RowDefinitions = RowDefinitions.Parse("*,Auto"),
+            Margin = new Thickness(16)
+        };
+        helpGrid.Children.Add(scrollContent);
+        helpGrid.Children.Add(okBtn);
         var dialog = new Window
         {
             Title = L("CfDlgHelpTitle"),
             Width = 520,
-            SizeToContent = SizeToContent.Height,
+            Height = 440,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            MaxHeight = 600,
-            Content = new Border
-            {
-                Padding = new Thickness(20),
-                Child = new StackPanel
-                {
-                    Spacing = 10,
-                    Children =
-                    {
-                        new TextBlock
-                        {
-                            Text = L("CfDlgHelpBody"),
-                            TextWrapping = Avalonia.Media.TextWrapping.Wrap,
-                            FontSize = 13,
-                            LineHeight = 20
-                        },
-                        okBtn
-                    }
-                }
-            }
+            CanResize = false,
+            Content = helpGrid
         };
         okBtn.Click += (_, _) => dialog.Close();
         await dialog.ShowDialog(this);

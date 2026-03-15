@@ -21,15 +21,19 @@
        </Style>
        <Style Selector="Button#DeleteBtn /template/ ContentPresenter">
            <Setter Property="Background" Value="#5A2E2E"/>
+           <Setter Property="Foreground" Value="White"/>
        </Style>
        <Style Selector="Button#DeleteBtn:pointerover /template/ ContentPresenter">
            <Setter Property="Background" Value="#7A3E3E"/>
+           <Setter Property="Foreground" Value="White"/>
        </Style>
        <Style Selector="Button#SaveBtn /template/ ContentPresenter">
            <Setter Property="Background" Value="#2E5A3D"/>
+           <Setter Property="Foreground" Value="White"/>
        </Style>
        <Style Selector="Button#SaveBtn:pointerover /template/ ContentPresenter">
            <Setter Property="Background" Value="#3E7A4D"/>
+           <Setter Property="Foreground" Value="White"/>
        </Style>
        <Style Selector="Button#CloseXButton /template/ ContentPresenter">
            <Setter Property="Background" Value="Transparent"/>
@@ -245,7 +249,7 @@
                            MinWidth="90" Height="28"
                            Padding="12,0"
                            Background="#5A2E2E"
-                           Foreground="{DynamicResource TextSecondary}"
+                           Foreground="White"
                            BorderBrush="#C05050"
                            BorderThickness="1"
                            HorizontalContentAlignment="Center"
@@ -298,7 +302,7 @@
                                MinWidth="90" Height="28"
                                Padding="12,0"
                                Background="#2E5A3D"
-                               Foreground="{DynamicResource TextSecondary}"
+                               Foreground="White"
                                BorderBrush="{DynamicResource AccentGreen}"
                                BorderThickness="1"
                                HorizontalContentAlignment="Center"
