@@ -741,6 +741,8 @@ namespace CleanScan.Views
         {
             if (this.FindControl<Menu>("MainMenu") is { } mainMenu)
                 mainMenu.Close();
+            if (this.FindControl<Menu>("MainMenuRight") is { } rightMenu)
+                rightMenu.Close();
         }
 
         #endregion
@@ -2617,6 +2619,21 @@ namespace CleanScan.Views
         private async void OnPresetClick(object? sender, RoutedEventArgs e)
         {
             await _dialogService.ShowPresetDialogAsync(this, _presetService, _config, ApplyPresetSelectionAsync, ViewModel);
+
+            var savedPresetNames = _presetService.LoadPresets()
+                .Select(p => p.Name)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var clip in Clips)
+            {
+                if (string.IsNullOrWhiteSpace(clip.PresetName))
+                    continue;
+
+                var isPerso = clip.PresetName.StartsWith("perso", StringComparison.OrdinalIgnoreCase);
+                if (!isPerso && !savedPresetNames.Contains(clip.PresetName))
+                    clip.PresetName = null;
+            }
+
             RestoreClipPresetCombo();
             RebuildClipTabs();
         }
