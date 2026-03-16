@@ -2038,7 +2038,10 @@ namespace CleanScan.Views
             var name = ActiveClipIndex >= 0 && ActiveClipIndex < Clips.Count
                 ? Clips[ActiveClipIndex].PresetName
                 : null;
-            box.Text = string.IsNullOrWhiteSpace(name) ? string.Empty : name;
+
+            var isPerso = !string.IsNullOrWhiteSpace(name)
+                && name.StartsWith("perso", StringComparison.OrdinalIgnoreCase);
+            box.Text = string.IsNullOrWhiteSpace(name) || isPerso ? string.Empty : name;
         }
 
         /// <summary>Restores the per-clip preset ComboBox selection without triggering the change handler.</summary>
