@@ -51,6 +51,7 @@ public interface IEncodeHost
     void RegenerateScript(bool showValidationError = true);
     Task LoadScriptAsync(bool resetPosition = false);
     void RestoreClipConfig(int index);
+    void ClearActiveGlobalPresetName();
     Regex PreviewTrueRegex();
     Regex PreviewHalfTrueRegex();
     void MoveSliderToPointer(Slider slider, PointerEventArgs e);
@@ -740,6 +741,9 @@ public sealed class EncodeController
                 Config.Set("gammac_preset", name);
                 if (_host.ClipManager.ActiveClip is { } clip)
                     clip.GammacPresetName = name;
+
+                _host.ClearActiveGlobalPresetName();
+
                 _host.RegenerateScript(showValidationError: false);
                 _ = _host.LoadScriptAsync();
             }

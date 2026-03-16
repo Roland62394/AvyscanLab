@@ -741,6 +741,8 @@ namespace CleanScan.Views
         {
             if (this.FindControl<Menu>("MainMenu") is { } mainMenu)
                 mainMenu.Close();
+            if (this.FindControl<Menu>("MainMenuRight") is { } rightMenu)
+                rightMenu.Close();
         }
 
         #endregion
@@ -1902,7 +1904,9 @@ namespace CleanScan.Views
                 var isActive = i == ActiveClipIndex;
 
                 var presetName = Clips[i].PresetName;
-                var presetSuffix = presetName is not null
+                var showPresetSuffix = !string.IsNullOrWhiteSpace(presetName)
+                    && !presetName.StartsWith("perso", StringComparison.OrdinalIgnoreCase);
+                var presetSuffix = showPresetSuffix
                     ? $"  [{presetName}]"
                     : string.Empty;
 
@@ -2036,7 +2040,10 @@ namespace CleanScan.Views
             var name = ActiveClipIndex >= 0 && ActiveClipIndex < Clips.Count
                 ? Clips[ActiveClipIndex].PresetName
                 : null;
-            box.Text = string.IsNullOrWhiteSpace(name) ? "aucun" : name;
+
+            var isPerso = !string.IsNullOrWhiteSpace(name)
+                && name.StartsWith("perso", StringComparison.OrdinalIgnoreCase);
+            box.Text = string.IsNullOrWhiteSpace(name) || isPerso ? string.Empty : name;
         }
 
         /// <summary>Restores the per-clip preset ComboBox selection without triggering the change handler.</summary>
@@ -2102,6 +2109,15 @@ namespace CleanScan.Views
             }
 
             if (_recordOpen) RebuildBatchClipList();
+        }
+
+        private void ClearActiveGlobalPresetName()
+        {
+            if (ActiveClipIndex < 0 || ActiveClipIndex >= Clips.Count) return;
+
+            Clips[ActiveClipIndex].PresetName = null;
+            RestoreClipPresetCombo();
+            RebuildClipTabs();
         }
 
         private async void OnAddClipClick(object? sender, RoutedEventArgs e)
@@ -2617,6 +2633,21 @@ namespace CleanScan.Views
         private async void OnPresetClick(object? sender, RoutedEventArgs e)
         {
             await _dialogService.ShowPresetDialogAsync(this, _presetService, _config, ApplyPresetSelectionAsync, ViewModel);
+
+            var savedPresetNames = _presetService.LoadPresets()
+                .Select(p => p.Name)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var clip in Clips)
+            {
+                if (string.IsNullOrWhiteSpace(clip.PresetName))
+                    continue;
+
+                var isPerso = clip.PresetName.StartsWith("perso", StringComparison.OrdinalIgnoreCase);
+                if (!isPerso && !savedPresetNames.Contains(clip.PresetName))
+                    clip.PresetName = null;
+            }
+
             RestoreClipPresetCombo();
             RebuildClipTabs();
         }
@@ -2888,6 +2919,7 @@ namespace CleanScan.Views
         void IEncodeHost.RegenerateScript(bool showValidationError) => RegenerateScript(showValidationError);
         Task IEncodeHost.LoadScriptAsync(bool resetPosition) => LoadScriptAsync(resetPosition);
         void IEncodeHost.RestoreClipConfig(int index) => RestoreClipConfig(index);
+        void IEncodeHost.ClearActiveGlobalPresetName() => ClearActiveGlobalPresetName();
         Regex IEncodeHost.PreviewTrueRegex() => PreviewTrueRegex();
         Regex IEncodeHost.PreviewHalfTrueRegex() => PreviewHalfTrueRegex();
         void IEncodeHost.MoveSliderToPointer(Slider slider, PointerEventArgs e) => MoveSliderToPointer(slider, e);
