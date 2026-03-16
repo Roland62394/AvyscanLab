@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Avalonia.Controls.Shapes;
 using Avalonia.Media;
 using CleanScan.ViewModels;
 using CleanScan.Views;
@@ -253,21 +254,20 @@ public sealed class DialogService : IDialogService
         await dialog.ShowDialog(owner);
     }
 
-    public async Task ShowPresetDialogAsync(
+    public async Task<(string Name, Dictionary<string, string> Values, bool ApplyToAll)?> ShowPresetDialogAsync(
         Window owner,
         IPresetService presets,
         ConfigStore config,
-        Func<string, Dictionary<string, string>, bool, Task> applyCallback,
         MainWindowViewModel vm,
         string? activePresetName = null)
     {
+        (string Name, Dictionary<string, string> Values, bool ApplyToAll)? applyResult = null;
         var presetList = presets.LoadPresets();
         var ordered = presetList.OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase).ToList();
         var monoFont = UiConstants.MonoFont;
 
         var comboBox = new ComboBox
         {
-            Width = 320,
             ItemsSource = ordered,
             DisplayMemberBinding = new Avalonia.Data.Binding(nameof(Preset.Name)),
             Background = TB("BgInput"),
@@ -275,8 +275,9 @@ public sealed class DialogService : IDialogService
             BorderBrush = TB("BorderSubtle"),
             BorderThickness = new Thickness(1),
             FontFamily = monoFont,
+            Height = 32,
             Padding = new Thickness(8, 0),
-            HorizontalAlignment = HorizontalAlignment.Left,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalContentAlignment = VerticalAlignment.Center
         };
 
@@ -284,31 +285,48 @@ public sealed class DialogService : IDialogService
         {
             Content = label,
             MinWidth = minWidth,
-            Height = 30,
-            Padding = new Thickness(8, 0),
+            Height = 32,
+            Padding = new Thickness(12, 0),
             Background = TB("BgHeader"),
             Foreground = TB("TextSecondary"),
             BorderBrush = TB("BorderSubtle"),
             BorderThickness = new Thickness(1),
             FontFamily = monoFont,
             HorizontalContentAlignment = HorizontalAlignment.Center,
-            VerticalContentAlignment = VerticalAlignment.Center
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand)
         };
 
         var newButton = MakePresetActionButton(vm.GetUiText("PresetNewButton"));
-        var applyButton = MakePresetActionButton(vm.GetUiText("PresetApplyButton"));
+        var applyButton = new Button
+        {
+            Content = vm.GetUiText("PresetApplyButton"),
+            MinWidth = 110,
+            Height = 32,
+            Padding = new Thickness(12, 0),
+            Background = new SolidColorBrush(Color.Parse("#2A5A8C")),
+            Foreground = Brushes.White,
+            BorderBrush = new SolidColorBrush(Color.Parse("#3B82C4")),
+            BorderThickness = new Thickness(1),
+            FontFamily = monoFont,
+            FontWeight = FontWeight.SemiBold,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand)
+        };
         var closeButton = MakePresetActionButton(vm.GetUiText("GamMacCloseButton"));
 
         // Red cross button to delete the selected preset
         var deleteXButton = new Button
         {
             Content = "✕",
-            Width = 30, Height = 30,
+            Width = 32, Height = 32,
             Padding = new Thickness(0),
-            Background = Brushes.Transparent,
-            Foreground = new SolidColorBrush(Color.Parse("#C62828")),
-            BorderThickness = new Thickness(0),
-            FontSize = 16, FontWeight = FontWeight.Bold,
+            Background = TB("BgInput"),
+            Foreground = new SolidColorBrush(Color.Parse("#E53935")),
+            BorderBrush = TB("BorderSubtle"),
+            BorderThickness = new Thickness(1),
+            FontSize = 14, FontWeight = FontWeight.Bold,
             FontFamily = monoFont,
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
@@ -323,7 +341,7 @@ public sealed class DialogService : IDialogService
             FontFamily = monoFont,
             FontSize = 12,
             VerticalContentAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(4, 0, 0, 0)
+            Margin = new Thickness(0, 2, 0, 0)
         };
 
         void RefreshCombo()
@@ -339,29 +357,36 @@ public sealed class DialogService : IDialogService
             FontSize = 15,
             FontWeight = FontWeight.SemiBold,
             FontFamily = monoFont,
-            Margin = new Thickness(0, 0, 0, 6)
+            Margin = new Thickness(0, 0, 0, 2)
         };
 
-        // Row with combobox + delete cross + apply-all checkbox
-        var comboRow = new StackPanel
+        // Row: combobox (stretch) + delete cross
+        var comboRow = new DockPanel
         {
-            Orientation = Orientation.Horizontal,
-            Spacing = 6,
-            VerticalAlignment = VerticalAlignment.Center,
-            Children = { comboBox, deleteXButton, applyAllCheckBox }
+            Children =
+            {
+                new StackPanel
+                {
+                    [DockPanel.DockProperty] = Dock.Right,
+                    Orientation = Orientation.Horizontal,
+                    Margin = new Thickness(6, 0, 0, 0),
+                    Children = { deleteXButton }
+                },
+                comboBox
+            }
         };
 
         var dialog = new Window
         {
             Title = vm.GetUiText("PresetDialogTitle"),
-            Width = 560,
+            Width = 480,
             SizeToContent = SizeToContent.Height,
             Background = TB("BgDeep"),
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             Content = new Border
             {
-                Margin = new Thickness(16),
-                Padding = new Thickness(14),
+                Margin = new Thickness(14),
+                Padding = new Thickness(16),
                 Background = TB("BgPanel"),
                 BorderBrush = TB("BorderSubtle"),
                 BorderThickness = new Thickness(1),
@@ -373,9 +398,10 @@ public sealed class DialogService : IDialogService
                     {
                         dialogTitle,
                         comboRow,
+                        applyAllCheckBox,
+                        new Rectangle { Height = 1, Fill = TB("BorderSubtle"), Margin = new Thickness(0, 4, 0, 4) },
                         new DockPanel
                         {
-                            Margin = new Thickness(0, 6, 0, 0),
                             Children =
                             {
                                 new StackPanel
@@ -389,7 +415,7 @@ public sealed class DialogService : IDialogService
                                 {
                                     Orientation = Orientation.Horizontal,
                                     Spacing = 8,
-                                    Children = { newButton, applyButton }
+                                    Children = { applyButton, newButton }
                                 }
                             }
                         }
@@ -594,12 +620,13 @@ public sealed class DialogService : IDialogService
                 if (!confirmed) return;
             }
 
-            await applyCallback(p.Name, new Dictionary<string, string>(p.Values, StringComparer.OrdinalIgnoreCase), applyToAll);
+            applyResult = (p.Name, new Dictionary<string, string>(p.Values, StringComparer.OrdinalIgnoreCase), applyToAll);
             dialog.Close();
         };
 
         closeButton.Click += (_, _) => dialog.Close();
         await dialog.ShowDialog(owner);
+        return applyResult;
     }
 
     public async Task<bool> ShowAviSynthMissingDialogAsync(Window owner, MainWindowViewModel vm)

@@ -2643,13 +2643,17 @@ namespace CleanScan.Views
             var currentPresetName = ActiveClipIndex >= 0 && ActiveClipIndex < Clips.Count
                 ? Clips[ActiveClipIndex].PresetName
                 : null;
-            await _dialogService.ShowPresetDialogAsync(this, _presetService, _config, ApplyPresetSelectionAsync, ViewModel, currentPresetName);
+            var result = await _dialogService.ShowPresetDialogAsync(this, _presetService, _config, ViewModel, currentPresetName);
 
             if (btn is not null)
             {
                 btn.Background = originalBg;
                 btn.BorderBrush = ThemeService.Brush("BorderSubtle");
             }
+
+            // Apply preset after dialog is fully closed
+            if (result is { } r)
+                await ApplyPresetSelectionAsync(r.Name, r.Values, r.ApplyToAll);
 
             var savedPresetNames = _presetService.LoadPresets()
                 .Select(p => p.Name)
@@ -2719,7 +2723,7 @@ namespace CleanScan.Views
                 && bool.TryParse(uiv, out var parsedUseImage) && parsedUseImage;
             UpdateSourceSelection(isFilmSelected: !useImage, updateConfig: true);
             SyncAllSliders();
-            RegenerateScript(showValidationError: true);
+            RegenerateScript(showValidationError: false);
             UpdateOptionColumnVisibility();
 
             // Save into current clip config
