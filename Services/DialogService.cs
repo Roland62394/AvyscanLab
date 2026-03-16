@@ -258,7 +258,8 @@ public sealed class DialogService : IDialogService
         IPresetService presets,
         ConfigStore config,
         Func<string, Dictionary<string, string>, bool, Task> applyCallback,
-        MainWindowViewModel vm)
+        MainWindowViewModel vm,
+        string? activePresetName = null)
     {
         var presetList = presets.LoadPresets();
         var ordered = presetList.OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase).ToList();
@@ -295,16 +296,41 @@ public sealed class DialogService : IDialogService
         };
 
         var newButton = MakePresetActionButton(vm.GetUiText("PresetNewButton"));
-        var deleteButton = MakePresetActionButton(vm.GetUiText("PresetDeleteButton"));
+        var applyButton = MakePresetActionButton(vm.GetUiText("PresetApplyButton"));
         var closeButton = MakePresetActionButton(vm.GetUiText("GamMacCloseButton"));
+
+        // Red cross button to delete the selected preset
+        var deleteXButton = new Button
+        {
+            Content = "✕",
+            Width = 30, Height = 30,
+            Padding = new Thickness(0),
+            Background = Brushes.Transparent,
+            Foreground = new SolidColorBrush(Color.Parse("#C62828")),
+            BorderThickness = new Thickness(0),
+            FontSize = 16, FontWeight = FontWeight.Bold,
+            FontFamily = monoFont,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand)
+        };
+
+        // Checkbox: apply to all clips
+        var applyAllCheckBox = new CheckBox
+        {
+            Content = vm.GetUiText("PresetApplyAllCheckbox"),
+            Foreground = TB("TextSecondary"),
+            FontFamily = monoFont,
+            FontSize = 12,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(4, 0, 0, 0)
+        };
 
         void RefreshCombo()
         {
             ordered = presetList.OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase).ToList();
             comboBox.ItemsSource = ordered;
         }
-
-        var suppressSelectionApply = false;
 
         var dialogTitle = new TextBlock
         {
@@ -314,6 +340,15 @@ public sealed class DialogService : IDialogService
             FontWeight = FontWeight.SemiBold,
             FontFamily = monoFont,
             Margin = new Thickness(0, 0, 0, 6)
+        };
+
+        // Row with combobox + delete cross + apply-all checkbox
+        var comboRow = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 6,
+            VerticalAlignment = VerticalAlignment.Center,
+            Children = { comboBox, deleteXButton, applyAllCheckBox }
         };
 
         var dialog = new Window
@@ -337,93 +372,33 @@ public sealed class DialogService : IDialogService
                     Children =
                     {
                         dialogTitle,
-                        comboBox,
-                        new StackPanel
+                        comboRow,
+                        new DockPanel
                         {
                             Margin = new Thickness(0, 6, 0, 0),
-                            Orientation = Orientation.Horizontal,
-                            HorizontalAlignment = HorizontalAlignment.Left,
-                            Spacing = 8,
-                            Children = { newButton, deleteButton }
-                        },
-                        new StackPanel
-                        {
-                            Margin = new Thickness(0, 6, 0, 0),
-                            Orientation = Orientation.Horizontal,
-                            HorizontalAlignment = HorizontalAlignment.Right,
-                            Spacing = 8,
-                            Children = { closeButton }
+                            Children =
+                            {
+                                new StackPanel
+                                {
+                                    Orientation = Orientation.Horizontal,
+                                    Spacing = 8,
+                                    [DockPanel.DockProperty] = Dock.Right,
+                                    Children = { closeButton }
+                                },
+                                new StackPanel
+                                {
+                                    Orientation = Orientation.Horizontal,
+                                    Spacing = 8,
+                                    Children = { newButton, applyButton }
+                                }
+                            }
                         }
                     }
                 }
             }
         };
 
-        async Task<bool?> AskApplyScopeAsync(string presetName)
-        {
-            bool? result = null;
-            var thisClipButton = MakePresetActionButton(vm.GetUiText("PresetApplyThisClipButton"), 120);
-            var allClipsButton = MakePresetActionButton(vm.GetUiText("PresetApplyAllClipsButton"), 120);
-            var cancelButton = MakePresetActionButton(vm.GetUiText("GamMacCloseButton"), 120);
-
-            var scopeTitle = new TextBlock
-            {
-                Text = vm.GetUiText("PresetApplyTitle"),
-                Foreground = new SolidColorBrush(Color.Parse("#64B5F6")),
-                FontSize = 15,
-                FontWeight = FontWeight.SemiBold,
-                FontFamily = monoFont,
-                Margin = new Thickness(0, 0, 0, 6)
-            };
-
-            var scopeDialog = new Window
-            {
-                Title = vm.GetUiText("PresetApplyTitle"),
-                SizeToContent = SizeToContent.WidthAndHeight,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                Background = TB("BgDeep"),
-                Content = new Border
-                {
-                    Margin = new Thickness(16),
-                    Padding = new Thickness(14),
-                    Background = TB("BgPanel"),
-                    BorderBrush = TB("BorderSubtle"),
-                    BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(6),
-                    Child = new StackPanel
-                    {
-                        Spacing = 12,
-                        MaxWidth = 480,
-                        Children =
-                        {
-                            scopeTitle,
-                            new TextBlock
-                            {
-                                Text = string.Format(vm.GetUiText("PresetApplyScopeMessage"), presetName),
-                                TextWrapping = TextWrapping.Wrap,
-                                Foreground = TB("TextSecondary"),
-                                FontFamily = monoFont
-                            },
-                            new StackPanel
-                            {
-                                Orientation = Orientation.Horizontal,
-                                HorizontalAlignment = HorizontalAlignment.Right,
-                                Spacing = 8,
-                                Children = { thisClipButton, allClipsButton, cancelButton }
-                            }
-                        }
-                    }
-                }
-            };
-
-            thisClipButton.Click += (_, _) => { result = false; scopeDialog.Close(); };
-            allClipsButton.Click += (_, _) => { result = true; scopeDialog.Close(); };
-            cancelButton.Click += (_, _) => scopeDialog.Close();
-            await scopeDialog.ShowDialog(dialog);
-            return result;
-        }
-
-        async Task<(bool Created, string Name, bool ApplyToAll)> PromptCreatePresetAsync()
+        async Task<(bool Created, string Name)> PromptCreatePresetAsync()
         {
             var nameBox = new TextBox
             {
@@ -437,23 +412,6 @@ public sealed class DialogService : IDialogService
                 Padding = new Thickness(8, 0),
                 TextAlignment = TextAlignment.Left,
                 VerticalContentAlignment = VerticalAlignment.Center
-            };
-
-            var scopeCombo = new ComboBox
-            {
-                Width = 320,
-                SelectedIndex = 0,
-                ItemsSource = new[]
-                {
-                    vm.GetUiText("PresetApplyThisClipButton"),
-                    vm.GetUiText("PresetApplyAllClipsButton")
-                },
-                Background = TB("BgInput"),
-                Foreground = TB("TextPrimary"),
-                BorderBrush = TB("BorderSubtle"),
-                BorderThickness = new Thickness(1),
-                FontFamily = monoFont,
-                Padding = new Thickness(8, 0)
             };
 
             bool created = false;
@@ -493,7 +451,6 @@ public sealed class DialogService : IDialogService
                             new TextBlock { Text = vm.GetUiText("PresetCreateNameLabel"), FontFamily = monoFont, Foreground = TB("TextLabel") },
                             nameBox,
                             new TextBlock { Text = vm.GetUiText("PresetCreateHint"), TextWrapping = TextWrapping.Wrap, FontFamily = monoFont, Foreground = TB("TextSecondary"), MaxWidth = 420, Margin = new Thickness(0,4,0,4) },
-                            scopeCombo,
                             new StackPanel
                             {
                                 Orientation = Orientation.Horizontal,
@@ -527,46 +484,118 @@ public sealed class DialogService : IDialogService
             await createDialog.ShowDialog(dialog);
 
             var newName = (nameBox.Text ?? string.Empty).Trim();
-            var applyToAll = scopeCombo.SelectedIndex == 1;
-            return (created && !string.IsNullOrWhiteSpace(newName), newName, applyToAll);
+            return (created && !string.IsNullOrWhiteSpace(newName), newName);
         }
 
-        comboBox.SelectionChanged += async (_, _) =>
+        async Task<bool> AskConfirmAsync(string title, string message)
         {
-            if (suppressSelectionApply) return;
-            if (comboBox.SelectedItem is not Preset p || p.Values is null) return;
-            var applyToAll = await AskApplyScopeAsync(p.Name);
-            if (applyToAll is null) return;
-            await applyCallback(p.Name, new Dictionary<string, string>(p.Values, StringComparer.OrdinalIgnoreCase), applyToAll.Value);
-        };
+            bool confirmed = false;
+            var confirmBtn = MakePresetActionButton(vm.GetUiText("PresetConfirmButton"), 120);
+            var cancelBtn = MakePresetActionButton(vm.GetUiText("GamMacCloseButton"), 120);
 
+            var confirmDialog = new Window
+            {
+                Title = title,
+                SizeToContent = SizeToContent.WidthAndHeight,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Background = TB("BgDeep"),
+                Content = new Border
+                {
+                    Margin = new Thickness(16),
+                    Padding = new Thickness(14),
+                    Background = TB("BgPanel"),
+                    BorderBrush = TB("BorderSubtle"),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(6),
+                    Child = new StackPanel
+                    {
+                        Spacing = 12,
+                        MaxWidth = 420,
+                        Children =
+                        {
+                            new TextBlock
+                            {
+                                Text = title,
+                                Foreground = new SolidColorBrush(Color.Parse("#64B5F6")),
+                                FontSize = 15, FontWeight = FontWeight.SemiBold,
+                                FontFamily = monoFont,
+                                Margin = new Thickness(0, 0, 0, 6)
+                            },
+                            new TextBlock
+                            {
+                                Text = message,
+                                TextWrapping = TextWrapping.Wrap,
+                                Foreground = TB("TextSecondary"),
+                                FontFamily = monoFont
+                            },
+                            new StackPanel
+                            {
+                                Orientation = Orientation.Horizontal,
+                                HorizontalAlignment = HorizontalAlignment.Right,
+                                Spacing = 8,
+                                Children = { confirmBtn, cancelBtn }
+                            }
+                        }
+                    }
+                }
+            };
+
+            confirmBtn.Click += (_, _) => { confirmed = true; confirmDialog.Close(); };
+            cancelBtn.Click += (_, _) => confirmDialog.Close();
+            await confirmDialog.ShowDialog(dialog);
+            return confirmed;
+        }
+
+        // Pre-select active preset without triggering anything
+        if (!string.IsNullOrWhiteSpace(activePresetName))
+        {
+            comboBox.SelectedItem = ordered.FirstOrDefault(p => string.Equals(p.Name, activePresetName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // "Set preset" — save current settings as a new preset
         newButton.Click += async (_, _) =>
         {
-            var created = await PromptCreatePresetAsync();
-            if (!created.Created) return;
+            var result = await PromptCreatePresetAsync();
+            if (!result.Created) return;
 
             var captured = presets.CaptureCurrentValues(config);
-            presetList.Add(new Preset(created.Name, captured));
+            presetList.Add(new Preset(result.Name, captured));
             presets.SavePresets(presetList);
             RefreshCombo();
-            suppressSelectionApply = true;
-            try
-            {
-                comboBox.SelectedItem = ordered.FirstOrDefault(p => string.Equals(p.Name, created.Name, StringComparison.OrdinalIgnoreCase));
-            }
-            finally { suppressSelectionApply = false; }
-
-            await applyCallback(created.Name, new Dictionary<string, string>(captured, StringComparer.OrdinalIgnoreCase), created.ApplyToAll);
+            comboBox.SelectedItem = ordered.FirstOrDefault(p => string.Equals(p.Name, result.Name, StringComparison.OrdinalIgnoreCase));
         };
 
-        deleteButton.Click += (_, _) =>
+        // Red cross — delete selected preset with confirmation
+        deleteXButton.Click += async (_, _) =>
         {
             if (comboBox.SelectedItem is not Preset target) return;
+            var confirmed = await AskConfirmAsync(
+                vm.GetUiText("PresetDeleteConfirmTitle"),
+                string.Format(vm.GetUiText("PresetDeleteConfirmMessage"), target.Name));
+            if (!confirmed) return;
+
             presetList.RemoveAll(p => string.Equals(p.Name, target.Name, StringComparison.OrdinalIgnoreCase));
             presets.SavePresets(presetList);
             RefreshCombo();
             comboBox.SelectedItem = null;
-            comboBox.Text = string.Empty;
+        };
+
+        // "Apply" — apply selected preset (to active clip, or all clips if checkbox checked)
+        applyButton.Click += async (_, _) =>
+        {
+            if (comboBox.SelectedItem is not Preset p || p.Values is null) return;
+            var applyToAll = applyAllCheckBox.IsChecked == true;
+
+            if (applyToAll)
+            {
+                var confirmed = await AskConfirmAsync(
+                    vm.GetUiText("PresetApplyAllConfirmTitle"),
+                    string.Format(vm.GetUiText("PresetApplyAllConfirmMessage"), p.Name));
+                if (!confirmed) return;
+            }
+
+            await applyCallback(p.Name, new Dictionary<string, string>(p.Values, StringComparer.OrdinalIgnoreCase), applyToAll);
+            dialog.Close();
         };
 
         closeButton.Click += (_, _) => dialog.Close();

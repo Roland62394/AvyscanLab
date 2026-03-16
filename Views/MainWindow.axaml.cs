@@ -2043,7 +2043,7 @@ namespace CleanScan.Views
 
             var isPerso = !string.IsNullOrWhiteSpace(name)
                 && name.StartsWith("perso", StringComparison.OrdinalIgnoreCase);
-            box.Text = string.IsNullOrWhiteSpace(name) || isPerso ? string.Empty : name;
+            box.Text = string.IsNullOrWhiteSpace(name) || isPerso ? "---" : name;
         }
 
         /// <summary>Restores the per-clip preset ComboBox selection without triggering the change handler.</summary>
@@ -2633,13 +2633,23 @@ namespace CleanScan.Views
         private async void OnPresetClick(object? sender, RoutedEventArgs e)
         {
             var btn = this.FindControl<Button>("PresetBtn");
+            var originalBg = btn?.Background;
             if (btn is not null)
-                btn.Foreground = new SolidColorBrush(Color.Parse("#35C156"));
+            {
+                btn.Background = new SolidColorBrush(Color.Parse("#1E3A2E"));
+                btn.BorderBrush = new SolidColorBrush(Color.Parse("#35C156"));
+            }
 
-            await _dialogService.ShowPresetDialogAsync(this, _presetService, _config, ApplyPresetSelectionAsync, ViewModel);
+            var currentPresetName = ActiveClipIndex >= 0 && ActiveClipIndex < Clips.Count
+                ? Clips[ActiveClipIndex].PresetName
+                : null;
+            await _dialogService.ShowPresetDialogAsync(this, _presetService, _config, ApplyPresetSelectionAsync, ViewModel, currentPresetName);
 
             if (btn is not null)
-                btn.Foreground = ThemeService.Brush("TextPrimary");
+            {
+                btn.Background = originalBg;
+                btn.BorderBrush = ThemeService.Brush("BorderSubtle");
+            }
 
             var savedPresetNames = _presetService.LoadPresets()
                 .Select(p => p.Name)
