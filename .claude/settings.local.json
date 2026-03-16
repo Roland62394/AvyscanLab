@@ -60,7 +60,9 @@
       "Bash(python:*)",
       "Bash(pip install:*)",
       "Bash(pip show:*)",
-      "Read(//c/Windows/Fonts/**)"
+      "Read(//c/Windows/Fonts/**)",
+      "Bash(mkdir:*)",
+      "Bash(xxd:*)"
     ]
   }
 }

@@ -70,9 +70,6 @@ public sealed class PlayerController
     private CancellationTokenSource? _pulseAnimCts;
     private DispatcherTimer? _pulseTimer;
     private double _pulsePhase;
-    private DispatcherTimer? _scanLineTimer;
-    private double _scanLinePos;
-    private bool _scanLineDown = true;
 
     // ── ForceSource state ─────────────────────────────────────────────
     private bool _syncingForceSource;
@@ -194,7 +191,6 @@ public sealed class PlayerController
     private void OnMpvFileLoaded()
     {
         DebugLog("OnMpvFileLoaded — file loaded successfully");
-        HideLoadingSpinner();
         _host.Window.Title = "CleanScan";
 
         if (_host.LoadingSourceFallback)
@@ -262,45 +258,6 @@ public sealed class PlayerController
         _pulseTimer.Start();
     }
 
-    private void ShowLoadingSpinner()
-    {
-        if (_host.FindControl<Border>("LoadingOverlay") is { } overlay)
-            overlay.IsVisible = true;
-
-        _scanLinePos = 0;
-        _scanLineDown = true;
-        _scanLineTimer?.Stop();
-        _scanLineTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(20) };
-        _scanLineTimer.Tick += (_, _) =>
-        {
-            if (_host.FindControl<Border>("ScanLine") is not { } line) return;
-            const double height = 100; // matches Grid height
-            const double speed = 1.5;
-
-            if (_scanLineDown)
-            {
-                _scanLinePos += speed;
-                if (_scanLinePos >= height) { _scanLinePos = height; _scanLineDown = false; }
-            }
-            else
-            {
-                _scanLinePos -= speed;
-                if (_scanLinePos <= 0) { _scanLinePos = 0; _scanLineDown = true; }
-            }
-            line.Margin = new Thickness(0, _scanLinePos, 0, 0);
-        };
-        _scanLineTimer.Start();
-    }
-
-    private void HideLoadingSpinner()
-    {
-        _scanLineTimer?.Stop();
-        _scanLineTimer = null;
-
-        if (_host.FindControl<Border>("LoadingOverlay") is { } overlay)
-            overlay.IsVisible = false;
-    }
-
     private void OnMpvUnexpectedShutdown()
     {
         _seekDragging = false;
@@ -321,7 +278,6 @@ public sealed class PlayerController
     private void OnMpvLoadFailed(string errorMsg)
     {
         DebugLog("OnMpvLoadFailed: " + errorMsg);
-        HideLoadingSpinner();
 
         if (!_host.LoadingSourceFallback
          && (errorMsg.Contains("unknown file format", StringComparison.OrdinalIgnoreCase)
@@ -624,7 +580,7 @@ public sealed class PlayerController
             }
             catch (Exception ex) { DebugLog($"Script read error: {ex.Message}"); }
             SetPlayButtonProcessing();
-            ShowLoadingSpinner();
+            ShowPlayerStatus("Chargement\u2026");
             _mpvService.LoadFile(scriptPath, pos);
         }
         finally { _refreshGate.Release(); }
