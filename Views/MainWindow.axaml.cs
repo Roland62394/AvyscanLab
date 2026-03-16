@@ -2706,6 +2706,7 @@ namespace CleanScan.Views
         private async Task ApplyPresetValuesAsync(Dictionary<string, string> values)
         {
             _applyingPreset = true;
+            _suppressTextEvents = true;
             try
             {
             // Ignore source files and crop values from presets
@@ -2742,7 +2743,7 @@ namespace CleanScan.Views
             if (TryValidateSourceSelection(out _))
                 await _refreshDebouncer.DebounceAsync(() => LoadScriptAsync());
             }
-            finally { _applyingPreset = false; }
+            finally { _applyingPreset = false; _suppressTextEvents = false; }
         }
 
         // GetNextPersoName() moved to ClipManager

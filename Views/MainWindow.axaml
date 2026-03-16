@@ -720,7 +720,28 @@
             <Border Background="Black" MinHeight="100">
                 <Grid>
                     <local:MpvHost x:Name="VideoHost"/>
-<Border x:Name="PlayerErrorBanner" IsVisible="False"
+
+                    <!-- Loading overlay: film strip + scan line -->
+                    <Border x:Name="LoadingOverlay" IsVisible="False"
+                            Background="#CC000000" IsHitTestVisible="False"
+                            ClipToBounds="True">
+                        <Grid HorizontalAlignment="Center" VerticalAlignment="Center"
+                              Width="80" Height="100" ClipToBounds="True">
+                            <!-- Film strip icon (Unicode) -->
+                            <TextBlock Text="🎞" FontSize="52"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Opacity="0.6"/>
+                            <!-- Scan line -->
+                            <Border x:Name="ScanLine"
+                                    Height="2" VerticalAlignment="Top"
+                                    HorizontalAlignment="Stretch"
+                                    Background="#80FFFFFF"
+                                    Margin="0,0,0,0"/>
+                        </Grid>
+                    </Border>
+
+                    <Border x:Name="PlayerErrorBanner" IsVisible="False"
                             Background="#DD111111" VerticalAlignment="Center"
                             HorizontalAlignment="Stretch" Padding="16,12">
                         <TextBlock x:Name="PlayerErrorText"
