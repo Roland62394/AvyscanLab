@@ -257,17 +257,16 @@ public sealed class DialogService : IDialogService
         Window owner,
         IPresetService presets,
         ConfigStore config,
-        Func<string, Dictionary<string, string>, Task> applyCallback,
+        Func<string, Dictionary<string, string>, bool, Task> applyCallback,
         MainWindowViewModel vm)
     {
         var presetList = presets.LoadPresets();
         var ordered = presetList.OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase).ToList();
-
         var monoFont = UiConstants.MonoFont;
 
         var comboBox = new ComboBox
         {
-            Width = 300,
+            Width = 320,
             ItemsSource = ordered,
             DisplayMemberBinding = new Avalonia.Data.Binding(nameof(Preset.Name)),
             Background = TB("BgInput"),
@@ -277,21 +276,6 @@ public sealed class DialogService : IDialogService
             FontFamily = monoFont,
             Padding = new Thickness(8, 0),
             HorizontalAlignment = HorizontalAlignment.Left,
-            VerticalContentAlignment = VerticalAlignment.Center
-        };
-
-        var nameBox = new TextBox
-        {
-            Width = 300,
-            Background = TB("BgInput"),
-            Foreground = TB("TextSecondary"),
-            BorderBrush = TB("BorderSubtle"),
-            BorderThickness = new Thickness(1),
-            FontFamily = monoFont,
-            Height = 30,
-            Padding = new Thickness(8, 0),
-            HorizontalAlignment = HorizontalAlignment.Left,
-            TextAlignment = TextAlignment.Left,
             VerticalContentAlignment = VerticalAlignment.Center
         };
 
@@ -310,9 +294,8 @@ public sealed class DialogService : IDialogService
             VerticalContentAlignment = VerticalAlignment.Center
         };
 
-        var saveButton = MakePresetActionButton(vm.GetUiText("PresetSaveButton"));
+        var newButton = MakePresetActionButton(vm.GetUiText("PresetNewButton"));
         var deleteButton = MakePresetActionButton(vm.GetUiText("PresetDeleteButton"));
-        var loadButton = MakePresetActionButton(vm.GetUiText("PresetLoadButton"));
         var closeButton = MakePresetActionButton(vm.GetUiText("GamMacCloseButton"));
 
         void RefreshCombo()
@@ -321,10 +304,7 @@ public sealed class DialogService : IDialogService
             comboBox.ItemsSource = ordered;
         }
 
-        comboBox.SelectionChanged += (_, _) =>
-        {
-            if (comboBox.SelectedItem is Preset p) nameBox.Text = p.Name;
-        };
+        var suppressSelectionApply = false;
 
         var dialog = new Window
         {
@@ -345,94 +325,204 @@ public sealed class DialogService : IDialogService
                     Spacing = 10,
                     Children =
                     {
-                        new TextBlock
-                        {
-                            Text = vm.GetUiText("PresetMenuItem"),
-                            Foreground = TB("TextLabel"),
-                            FontSize = 11,
-                            FontWeight = FontWeight.SemiBold,
-                            LetterSpacing = 1.5,
-                            FontFamily = monoFont
-                        },
-                        new Border
-                        {
-                            Background = TB("BgHeader"),
-                            BorderBrush = TB("AccentBlue"),
-                            BorderThickness = new Thickness(1),
-                            CornerRadius = new CornerRadius(4),
-                            Padding = new Thickness(10, 6),
-                            Margin = new Thickness(0, 2, 0, 4),
-                            Child = new TextBlock
-                            {
-                                Text = vm.GetUiText("PresetGlobalWarning"),
-                                Foreground = TB("AccentBlue"),
-                                FontSize = 11,
-                                FontFamily = monoFont,
-                                TextWrapping = TextWrapping.Wrap
-                            }
-                        },
                         comboBox,
-                        new TextBlock
-                        {
-                            Text = vm.GetUiText("PresetNameLabel"),
-                            Foreground = TB("TextLabel"),
-                            FontSize = 11,
-                            FontWeight = FontWeight.SemiBold,
-                            LetterSpacing = 1.5,
-                            FontFamily = monoFont,
-                            Margin = new Thickness(0, 6, 0, 0)
-                        },
-                        nameBox,
                         new StackPanel
                         {
                             Margin = new Thickness(0, 6, 0, 0),
                             Orientation = Orientation.Horizontal,
                             HorizontalAlignment = HorizontalAlignment.Right,
                             Spacing = 8,
-                            Children = { saveButton, deleteButton, loadButton, closeButton }
+                            Children = { newButton, deleteButton, closeButton }
                         }
                     }
                 }
             }
         };
 
-        string TrimmedName() => (nameBox.Text ?? string.Empty).Trim();
-        Preset? FindPreset() =>
-            comboBox.SelectedItem as Preset
-            ?? presetList.FirstOrDefault(p => string.Equals(p.Name, TrimmedName(), StringComparison.OrdinalIgnoreCase));
-
-        saveButton.Click += (_, _) =>
+        async Task<bool?> AskApplyScopeAsync(string presetName)
         {
-            var name = TrimmedName();
-            if (string.IsNullOrWhiteSpace(name)) return;
+            bool? result = null;
+            var thisClipButton = MakePresetActionButton(vm.GetUiText("PresetApplyThisClipButton"), 120);
+            var allClipsButton = MakePresetActionButton(vm.GetUiText("PresetApplyAllClipsButton"), 120);
+            var cancelButton = MakePresetActionButton(vm.GetUiText("GamMacCloseButton"), 120);
 
-            var existing = presetList.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
-            if (existing is not null)
-                existing.Values = presets.CaptureCurrentValues(config);
-            else
-                presetList.Add(new Preset(name, presets.CaptureCurrentValues(config)));
+            var scopeDialog = new Window
+            {
+                Title = vm.GetUiText("PresetApplyTitle"),
+                SizeToContent = SizeToContent.WidthAndHeight,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Background = TB("BgDeep"),
+                Content = new Border
+                {
+                    Margin = new Thickness(16),
+                    Padding = new Thickness(14),
+                    Background = TB("BgPanel"),
+                    BorderBrush = TB("BorderSubtle"),
+                    BorderThickness = new Thickness(1),
+                    Child = new StackPanel
+                    {
+                        Spacing = 12,
+                        MaxWidth = 480,
+                        Children =
+                        {
+                            new TextBlock
+                            {
+                                Text = string.Format(vm.GetUiText("PresetApplyScopeMessage"), presetName),
+                                TextWrapping = TextWrapping.Wrap,
+                                Foreground = TB("TextSecondary"),
+                                FontFamily = monoFont
+                            },
+                            new StackPanel
+                            {
+                                Orientation = Orientation.Horizontal,
+                                HorizontalAlignment = HorizontalAlignment.Right,
+                                Spacing = 8,
+                                Children = { thisClipButton, allClipsButton, cancelButton }
+                            }
+                        }
+                    }
+                }
+            };
 
+            thisClipButton.Click += (_, _) => { result = false; scopeDialog.Close(); };
+            allClipsButton.Click += (_, _) => { result = true; scopeDialog.Close(); };
+            cancelButton.Click += (_, _) => scopeDialog.Close();
+            await scopeDialog.ShowDialog(dialog);
+            return result;
+        }
+
+        async Task<(bool Created, string Name, bool ApplyToAll)> PromptCreatePresetAsync()
+        {
+            var nameBox = new TextBox
+            {
+                Width = 320,
+                Background = TB("BgInput"),
+                Foreground = TB("TextSecondary"),
+                BorderBrush = TB("BorderSubtle"),
+                BorderThickness = new Thickness(1),
+                FontFamily = monoFont,
+                Height = 30,
+                Padding = new Thickness(8, 0),
+                TextAlignment = TextAlignment.Left,
+                VerticalContentAlignment = VerticalAlignment.Center
+            };
+
+            var scopeCombo = new ComboBox
+            {
+                Width = 320,
+                SelectedIndex = 0,
+                ItemsSource = new[]
+                {
+                    vm.GetUiText("PresetApplyThisClipButton"),
+                    vm.GetUiText("PresetApplyAllClipsButton")
+                },
+                Background = TB("BgInput"),
+                Foreground = TB("TextPrimary"),
+                BorderBrush = TB("BorderSubtle"),
+                BorderThickness = new Thickness(1),
+                FontFamily = monoFont,
+                Padding = new Thickness(8, 0)
+            };
+
+            bool created = false;
+            var createButton = MakePresetActionButton(vm.GetUiText("PresetCreateConfirmButton"), 180);
+            var cancelButton = MakePresetActionButton(vm.GetUiText("GamMacCloseButton"), 120);
+
+            var createDialog = new Window
+            {
+                Title = vm.GetUiText("PresetCreateTitle"),
+                SizeToContent = SizeToContent.WidthAndHeight,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Background = TB("BgDeep"),
+                Content = new Border
+                {
+                    Margin = new Thickness(16),
+                    Padding = new Thickness(14),
+                    Background = TB("BgPanel"),
+                    BorderBrush = TB("BorderSubtle"),
+                    BorderThickness = new Thickness(1),
+                    Child = new StackPanel
+                    {
+                        Spacing = 8,
+                        Children =
+                        {
+                            new TextBlock { Text = vm.GetUiText("PresetCreateNameLabel"), FontFamily = monoFont, Foreground = TB("TextLabel") },
+                            nameBox,
+                            new TextBlock { Text = vm.GetUiText("PresetCreateHint"), TextWrapping = TextWrapping.Wrap, FontFamily = monoFont, Foreground = TB("TextSecondary"), MaxWidth = 420, Margin = new Thickness(0,4,0,4) },
+                            scopeCombo,
+                            new StackPanel
+                            {
+                                Orientation = Orientation.Horizontal,
+                                HorizontalAlignment = HorizontalAlignment.Right,
+                                Spacing = 8,
+                                Children = { createButton, cancelButton }
+                            }
+                        }
+                    }
+                }
+            };
+
+            createButton.Click += async (_, _) =>
+            {
+                var name = (nameBox.Text ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(name))
+                    return;
+
+                var exists = presetList.Any(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+                if (exists)
+                {
+                    await ShowErrorAsync(createDialog, vm.GetUiText("PresetDuplicateNameTitle"), string.Format(vm.GetUiText("PresetDuplicateNameMessage"), name));
+                    return;
+                }
+
+                created = true;
+                createDialog.Close();
+            };
+            cancelButton.Click += (_, _) => createDialog.Close();
+
+            await createDialog.ShowDialog(dialog);
+
+            var newName = (nameBox.Text ?? string.Empty).Trim();
+            var applyToAll = scopeCombo.SelectedIndex == 1;
+            return (created && !string.IsNullOrWhiteSpace(newName), newName, applyToAll);
+        }
+
+        comboBox.SelectionChanged += async (_, _) =>
+        {
+            if (suppressSelectionApply) return;
+            if (comboBox.SelectedItem is not Preset p || p.Values is null) return;
+            var applyToAll = await AskApplyScopeAsync(p.Name);
+            if (applyToAll is null) return;
+            await applyCallback(p.Name, new Dictionary<string, string>(p.Values, StringComparer.OrdinalIgnoreCase), applyToAll.Value);
+        };
+
+        newButton.Click += async (_, _) =>
+        {
+            var created = await PromptCreatePresetAsync();
+            if (!created.Created) return;
+
+            var captured = presets.CaptureCurrentValues(config);
+            presetList.Add(new Preset(created.Name, captured));
             presets.SavePresets(presetList);
             RefreshCombo();
-            comboBox.SelectedItem = ordered.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+            suppressSelectionApply = true;
+            try
+            {
+                comboBox.SelectedItem = ordered.FirstOrDefault(p => string.Equals(p.Name, created.Name, StringComparison.OrdinalIgnoreCase));
+            }
+            finally { suppressSelectionApply = false; }
+
+            await applyCallback(created.Name, new Dictionary<string, string>(captured, StringComparer.OrdinalIgnoreCase), created.ApplyToAll);
         };
 
         deleteButton.Click += (_, _) =>
         {
-            var target = FindPreset();
-            if (target is null) return;
+            if (comboBox.SelectedItem is not Preset target) return;
             presetList.RemoveAll(p => string.Equals(p.Name, target.Name, StringComparison.OrdinalIgnoreCase));
             presets.SavePresets(presetList);
             RefreshCombo();
             comboBox.SelectedItem = null;
-            nameBox.Text = string.Empty;
-        };
-
-        loadButton.Click += async (_, _) =>
-        {
-            var target = FindPreset();
-            if (target?.Values is not null)
-                await applyCallback(target.Name, new Dictionary<string, string>(target.Values, StringComparer.OrdinalIgnoreCase));
+            comboBox.Text = string.Empty;
         };
 
         closeButton.Click += (_, _) => dialog.Close();
