@@ -254,14 +254,14 @@ public sealed class DialogService : IDialogService
         await dialog.ShowDialog(owner);
     }
 
-    public async Task<(string Name, Dictionary<string, string> Values, bool ApplyToAll)?> ShowPresetDialogAsync(
+    public async Task<PresetDialogResult> ShowPresetDialogAsync(
         Window owner,
         IPresetService presets,
         ConfigStore config,
         MainWindowViewModel vm,
         string? activePresetName = null)
     {
-        (string Name, Dictionary<string, string> Values, bool ApplyToAll)? applyResult = null;
+        var result = new PresetDialogResult();
         var presetList = presets.LoadPresets();
         var ordered = presetList.OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase).ToList();
         var monoFont = UiConstants.MonoFont;
@@ -614,6 +614,7 @@ public sealed class DialogService : IDialogService
             var captured = presets.CaptureCurrentValues(config);
             target.Values = new Dictionary<string, string>(captured, StringComparer.OrdinalIgnoreCase);
             presets.SavePresets(presetList);
+            result.UpdatedPresets[target.Name] = new Dictionary<string, string>(captured, StringComparer.OrdinalIgnoreCase);
         };
 
         // Red cross — delete selected preset with confirmation
@@ -645,13 +646,13 @@ public sealed class DialogService : IDialogService
                 if (!confirmed) return;
             }
 
-            applyResult = (p.Name, new Dictionary<string, string>(p.Values, StringComparer.OrdinalIgnoreCase), applyToAll);
+            result.Apply = (p.Name, new Dictionary<string, string>(p.Values, StringComparer.OrdinalIgnoreCase), applyToAll);
             dialog.Close();
         };
 
         closeButton.Click += (_, _) => dialog.Close();
         await dialog.ShowDialog(owner);
-        return applyResult;
+        return result;
     }
 
     public async Task<bool> ShowAviSynthMissingDialogAsync(Window owner, MainWindowViewModel vm)

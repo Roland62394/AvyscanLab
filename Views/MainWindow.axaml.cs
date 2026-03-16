@@ -2652,8 +2652,18 @@ namespace CleanScan.Views
             }
 
             // Apply preset after dialog is fully closed
-            if (result is { } r)
+            if (result.Apply is { } r)
                 await ApplyPresetSelectionAsync(r.Name, r.Values, r.ApplyToAll);
+
+            // Propagate updated presets to all clips using those presets
+            foreach (var (updatedName, updatedValues) in result.UpdatedPresets)
+            {
+                for (int i = 0; i < Clips.Count; i++)
+                {
+                    if (string.Equals(Clips[i].PresetName, updatedName, StringComparison.OrdinalIgnoreCase))
+                        Clips[i].Config = new Dictionary<string, string>(updatedValues, StringComparer.OrdinalIgnoreCase);
+                }
+            }
 
             var savedPresetNames = _presetService.LoadPresets()
                 .Select(p => p.Name)
