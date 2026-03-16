@@ -457,7 +457,8 @@
 
                 <!-- Menu strip -->
                 <Border Background="{DynamicResource BgHeader}" Padding="0">
-                    <Menu x:Name="MainMenu" HorizontalAlignment="Stretch">
+                    <DockPanel LastChildFill="False">
+                    <Menu x:Name="MainMenu" HorizontalAlignment="Stretch" DockPanel.Dock="Left">
                         <Menu.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <DockPanel LastChildFill="False" HorizontalAlignment="Stretch"/>
@@ -468,7 +469,7 @@
                             <MenuItem x:Name="ScriptPreviewMenuItem" Header="Script preview" Click="OnScriptPreviewClick"/>
                             <MenuItem x:Name="GuidedTourMenuItem"    Header="Guided tour"    Click="OnGuidedTourClick"/>
                         </MenuItem>
-                        <MenuItem x:Name="PresetMenuItem" Header="Preset" Click="OnPresetClick"/>
+                        <MenuItem x:Name="PresetMenuItem" Header="+" Click="OnPresetClick"/>
                         <MenuItem x:Name="SettingsMenu" Header="Settings">
                             <MenuItem StaysOpenOnClick="True" Focusable="False">
                                 <MenuItem.Header>
@@ -539,6 +540,19 @@
                             <MenuItem x:Name="LanguageSpanishMenuItem" Header="Español"  Tag="es" Click="OnLanguageClick"/>
                         </MenuItem>
                     </Menu>
+                    <StackPanel DockPanel.Dock="Left"
+                                Orientation="Horizontal"
+                                Spacing="6"
+                                Margin="8,0,0,0"
+                                VerticalAlignment="Center">
+                        <TextBlock Text="Preset:" VerticalAlignment="Center"/>
+                        <TextBox x:Name="ActivePresetNameBox"
+                                 Width="140"
+                                 IsReadOnly="True"
+                                 IsTabStop="False"
+                                 Text="aucun"/>
+                    </StackPanel>
+                    </DockPanel>
                 </Border>
 
                 <!-- Source row -->
