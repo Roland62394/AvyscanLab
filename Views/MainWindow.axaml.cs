@@ -2036,7 +2036,7 @@ namespace CleanScan.Views
 
         private void UpdateActivePresetNameDisplay()
         {
-            if (this.FindControl<TextBox>("ActivePresetNameBox") is not { } box) return;
+            if (this.FindControl<TextBlock>("ActivePresetNameBox") is not { } box) return;
             var name = ActiveClipIndex >= 0 && ActiveClipIndex < Clips.Count
                 ? Clips[ActiveClipIndex].PresetName
                 : null;
@@ -2632,7 +2632,14 @@ namespace CleanScan.Views
 
         private async void OnPresetClick(object? sender, RoutedEventArgs e)
         {
+            var btn = this.FindControl<Button>("PresetBtn");
+            if (btn is not null)
+                btn.Foreground = new SolidColorBrush(Color.Parse("#35C156"));
+
             await _dialogService.ShowPresetDialogAsync(this, _presetService, _config, ApplyPresetSelectionAsync, ViewModel);
+
+            if (btn is not null)
+                btn.Foreground = ThemeService.Brush("TextPrimary");
 
             var savedPresetNames = _presetService.LoadPresets()
                 .Select(p => p.Name)

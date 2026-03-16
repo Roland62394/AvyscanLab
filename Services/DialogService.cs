@@ -342,9 +342,17 @@ public sealed class DialogService : IDialogService
                         {
                             Margin = new Thickness(0, 6, 0, 0),
                             Orientation = Orientation.Horizontal,
+                            HorizontalAlignment = HorizontalAlignment.Left,
+                            Spacing = 8,
+                            Children = { newButton, deleteButton }
+                        },
+                        new StackPanel
+                        {
+                            Margin = new Thickness(0, 6, 0, 0),
+                            Orientation = Orientation.Horizontal,
                             HorizontalAlignment = HorizontalAlignment.Right,
                             Spacing = 8,
-                            Children = { newButton, deleteButton, closeButton }
+                            Children = { closeButton }
                         }
                     }
                 }
