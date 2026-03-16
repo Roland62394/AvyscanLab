@@ -468,7 +468,15 @@
                             <MenuItem x:Name="ScriptPreviewMenuItem" Header="Script preview" Click="OnScriptPreviewClick"/>
                             <MenuItem x:Name="GuidedTourMenuItem"    Header="Guided tour"    Click="OnGuidedTourClick"/>
                         </MenuItem>
-                        <MenuItem x:Name="PresetMenuItem" Header="Preset" Click="OnPresetClick"/>
+                        <MenuItem x:Name="PresetMenuItem" Header="+" Click="OnPresetClick"/>
+                        <MenuItem StaysOpenOnClick="True" Focusable="False">
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal" Spacing="6" Margin="2,0,0,0">
+                                    <TextBlock Text="Preset:" VerticalAlignment="Center"/>
+                                    <TextBox x:Name="ActivePresetNameBox" Width="140" IsReadOnly="True" IsTabStop="False" Text="aucun"/>
+                                </StackPanel>
+                            </MenuItem.Header>
+                        </MenuItem>
                         <MenuItem x:Name="SettingsMenu" Header="Settings">
                             <MenuItem StaysOpenOnClick="True" Focusable="False">
                                 <MenuItem.Header>

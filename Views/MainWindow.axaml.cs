@@ -340,8 +340,8 @@ namespace CleanScan.Views
                 if (this.FindControl<ComboBox>("GammacPresetCombo") is { } gc)
                 { gc.SelectedIndex = -1; gc.Text = null; }
                 _config.Set("gammac_preset", string.Empty);
-                try { File.AppendAllText(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "combo_debug.txt"),
-                    $"[COMMIT-GAMMAC] {DateTime.Now:HH:mm:ss.fff} field='{field}' _switchingClip={_switchingClip}\n"); } catch {}
+                if (ActiveClipIndex >= 0 && ActiveClipIndex < Clips.Count)
+                    Clips[ActiveClipIndex].GammacPresetName = null;
             }
         }
 
@@ -1814,6 +1814,9 @@ namespace CleanScan.Views
                 // Restore GammacPresetCombo the same way (config key → combo)
                 {
                     var gVal = clipCfg.TryGetValue("gammac_preset", out var gv) ? gv : string.Empty;
+                    if (string.IsNullOrEmpty(gVal))
+                        gVal = Clips[index].GammacPresetName ?? string.Empty;
+
                     _config.Set("gammac_preset", gVal);
                     _encodeController.RestoreGammacPresetSelection(!string.IsNullOrEmpty(gVal) ? gVal : null);
                 }
@@ -1957,6 +1960,8 @@ namespace CleanScan.Views
             // Re-add the "+" button at the end
             if (addBtn is not null)
                 panel.Children.Add(addBtn);
+
+            UpdateActivePresetNameDisplay();
         }
 
         private async void SwitchToClip(int index)
@@ -2021,6 +2026,15 @@ namespace CleanScan.Views
             }
         }
 
+        private void UpdateActivePresetNameDisplay()
+        {
+            if (this.FindControl<TextBox>("ActivePresetNameBox") is not { } box) return;
+            var name = ActiveClipIndex >= 0 && ActiveClipIndex < Clips.Count
+                ? Clips[ActiveClipIndex].PresetName
+                : null;
+            box.Text = string.IsNullOrWhiteSpace(name) ? "aucun" : name;
+        }
+
         /// <summary>Restores the per-clip preset ComboBox selection without triggering the change handler.</summary>
         private void RestoreClipPresetCombo()
         {
@@ -2052,6 +2066,8 @@ namespace CleanScan.Views
                 }
             }
             finally { _suppressClipPresetChange = false; }
+
+            UpdateActivePresetNameDisplay();
         }
 
         private async void RemoveClip(int index)
@@ -2216,8 +2232,8 @@ namespace CleanScan.Views
                     gc.SelectedIndex = -1;
                     gc.Text = null;
                     _config.Set("gammac_preset", string.Empty);
-                    try { File.AppendAllText(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "combo_debug.txt"),
-                        $"[FIELD-GAMMAC] {DateTime.Now:HH:mm:ss.fff} key='{key}' _switchingClip={_switchingClip}\n"); } catch {}
+                    if (ActiveClipIndex >= 0 && ActiveClipIndex < Clips.Count)
+                        Clips[ActiveClipIndex].GammacPresetName = null;
                 }
             }
 
@@ -2861,6 +2877,7 @@ namespace CleanScan.Views
         bool IEncodeHost.IsEncoding { get => _isEncoding; set => _isEncoding = value; }
         bool IEncodeHost.IsInitializing => _isInitializing;
         bool IEncodeHost.IsClosing => _isClosing;
+        bool IEncodeHost.IsSwitchingClip => _switchingClip;
         void IEncodeHost.RegenerateScript(bool showValidationError) => RegenerateScript(showValidationError);
         Task IEncodeHost.LoadScriptAsync(bool resetPosition) => LoadScriptAsync(resetPosition);
         void IEncodeHost.RestoreClipConfig(int index) => RestoreClipConfig(index);

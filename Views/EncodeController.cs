@@ -46,6 +46,7 @@ public interface IEncodeHost
     bool IsEncoding { get; set; }
     bool IsInitializing { get; }
     bool IsClosing { get; }
+    bool IsSwitchingClip { get; }
 
     void RegenerateScript(bool showValidationError = true);
     Task LoadScriptAsync(bool resetPosition = false);
@@ -677,6 +678,8 @@ public sealed class EncodeController
             RefreshGammacPresetCombo();
             combo.SelectedItem = name;
             Config.Set("gammac_preset", name);
+            if (_host.ClipManager.ActiveClip is { } clip)
+                clip.GammacPresetName = name;
         }
         finally { _isLoadingGammacPreset = false; }
     }
@@ -690,14 +693,15 @@ public sealed class EncodeController
         try
         {
             if (!string.IsNullOrWhiteSpace(name))
+            {
                 combo.SelectedItem = name;
+                combo.Text = name;
+            }
             else
             {
                 combo.SelectedIndex = -1;
                 combo.Text = null;
             }
-            try { System.IO.File.AppendAllText(System.IO.Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.Desktop), "combo_debug.txt"),
-                $"[RESTORE-GAMMAC] {DateTime.Now:HH:mm:ss.fff} name='{name}' selAfter='{combo.SelectedItem}' idx={combo.SelectedIndex} items={combo.ItemCount}\n"); } catch {}
         }
         finally { _isLoadingGammacPreset = false; }
     }
@@ -714,19 +718,28 @@ public sealed class EncodeController
         RefreshGammacPresetCombo();
         combo.SelectedItem = null;
         Config.Set("gammac_preset", string.Empty);
+        if (_host.ClipManager.ActiveClip is { } clip)
+            clip.GammacPresetName = null;
     }
 
     public void OnGammacPresetSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (_isLoadingGammacPreset || _host.IsInitializing) return;
+        if (_isLoadingGammacPreset || _host.IsInitializing || _host.IsSwitchingClip) return;
         if (sender is ComboBox { SelectedItem: string name } && !string.IsNullOrWhiteSpace(name))
         {
+            // Ignore stale/programmatic SelectionChanged events (e.g. during rapid clip switches)
+            // when the selected value already matches the current config.
+            if (string.Equals(Config.Get("gammac_preset"), name, StringComparison.OrdinalIgnoreCase))
+                return;
+
             var presets = _host.GammacPresetService.LoadPresets();
             var preset = presets.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
             if (preset?.Values is not null)
             {
                 ApplyGammacValues(preset.Values);
                 Config.Set("gammac_preset", name);
+                if (_host.ClipManager.ActiveClip is { } clip)
+                    clip.GammacPresetName = name;
                 _host.RegenerateScript(showValidationError: false);
                 _ = _host.LoadScriptAsync();
             }
