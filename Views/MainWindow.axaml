@@ -468,7 +468,6 @@
                             <MenuItem x:Name="ScriptPreviewMenuItem" Header="Script preview" Click="OnScriptPreviewClick"/>
                             <MenuItem x:Name="GuidedTourMenuItem"    Header="Guided tour"    Click="OnGuidedTourClick"/>
                         </MenuItem>
-                        <MenuItem x:Name="PresetMenuItem" Header="Preset" Click="OnPresetClick"/>
                         <MenuItem x:Name="SettingsMenu" Header="Settings">
                             <MenuItem StaysOpenOnClick="True" Focusable="False">
                                 <MenuItem.Header>
@@ -665,16 +664,11 @@
                                 ToolTip.ShowDelay="1000"
                                 Click="OnMaxViewerClick"/>
                         <Rectangle Width="1" Height="22" Fill="{DynamicResource BorderSubtle}" Margin="8,0"/>
-                        <ComboBox x:Name="ClipPresetCombo"
-                                  MinWidth="130" MaxWidth="220"
-                                  FontSize="11" Padding="8,3"
-                                  Background="{DynamicResource BgInput}"
-                                  BorderBrush="{DynamicResource BorderSubtle}"
-                                  Foreground="{DynamicResource TextPrimary}"
-                                  VerticalAlignment="Center"
-                                  PlaceholderText="Preset (ce clip)"
-                                  SelectionChanged="OnClipPresetChanged"
-                                  ToolTip.Tip="Appliquer un preset uniquement à ce clip"/>
+                        <Button x:Name="GlobalPresetBtn" Classes="transport"
+                                Content="Preset"
+                                FontSize="12" MinWidth="82" Padding="12,4"
+                                ToolTip.Tip="Manage presets"
+                                Click="OnPresetClick"/>
                         <Rectangle Width="1" Height="22" Fill="{DynamicResource BorderSubtle}" Margin="8,0"/>
                         <Button x:Name="RecordBtn" Classes="transport" Content="⏺ Record"
                                 FontSize="12" MinWidth="120" Padding="16,4"

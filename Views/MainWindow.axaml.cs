@@ -186,7 +186,6 @@ namespace CleanScan.Views
             _playerController.FilesDropped += OnPlayerFilesDropped;
             _playerController.InitPlayerControls();
             RebuildCustomFilterUI();
-            RefreshClipPresetCombo();
         }
 
         // Player methods delegated to PlayerController
@@ -543,7 +542,6 @@ namespace CleanScan.Views
                 ("UserGuideMenuItem",     "UserGuideMenuItem"),
                 ("ScriptPreviewMenuItem", "ScriptPreviewMenuItem"),
                 ("GuidedTourMenuItem",   "GuidedTourMenuItem"),
-                ("PresetMenuItem",        "PresetMenuItem"),
                 ("AboutMenuItem",         "AboutMenuItem"),
                 ("FeedbackMenuItem",     "FeedbackMenuItem"),
                 ("SettingsMenu",         "SettingsMenu"),
@@ -552,6 +550,12 @@ namespace CleanScan.Views
             {
                 if (this.FindControl<MenuItem>(controlName) is { } item)
                     item.Header = GetUiText(textKey);
+            }
+
+            if (this.FindControl<Button>("GlobalPresetBtn") is { } globalPresetBtn)
+            {
+                globalPresetBtn.Content = GetUiText("GlobalPresetButton");
+                ToolTip.SetTip(globalPresetBtn, GetUiText("GlobalPresetTooltip"));
             }
 
             if (this.FindControl<MenuItem>("LanguagesMenu") is { } langMenu)
@@ -2599,25 +2603,28 @@ namespace CleanScan.Views
 
         private async void OnPresetClick(object? sender, RoutedEventArgs e)
         {
-            await _dialogService.ShowPresetDialogAsync(this, _presetService, _config, ApplyPresetToAllClipsAsync, ViewModel);
-            RefreshClipPresetCombo();
+            await _dialogService.ShowPresetDialogAsync(this, _presetService, _config, ApplyPresetSelectionAsync, ViewModel);
             RestoreClipPresetCombo();
             RebuildClipTabs();
         }
 
-        /// <summary>Applies preset values to the current UI/config AND propagates to all clip configs.</summary>
-        private async Task ApplyPresetToAllClipsAsync(string presetName, Dictionary<string, string> values)
+        /// <summary>Applies preset values either to active clip or all clips.</summary>
+        private async Task ApplyPresetSelectionAsync(string presetName, Dictionary<string, string> values, bool applyToAllClips)
         {
             await ApplyPresetValuesAsync(values);
 
-            // Propagate to all clip configs
-            var filterSnap = _clipManager.CaptureConfig();
-            for (int i = 0; i < Clips.Count; i++)
-                Clips[i].Config = new Dictionary<string, string>(filterSnap, StringComparer.OrdinalIgnoreCase);
+            if (ActiveClipIndex >= 0 && ActiveClipIndex < Clips.Count)
+                Clips[ActiveClipIndex].PresetName = presetName;
 
-            // Set the preset name on all clips
-            for (int i = 0; i < Clips.Count; i++)
-                Clips[i].PresetName = presetName;
+            if (applyToAllClips)
+            {
+                var filterSnap = _clipManager.CaptureConfig();
+                for (int i = 0; i < Clips.Count; i++)
+                {
+                    Clips[i].Config = new Dictionary<string, string>(filterSnap, StringComparer.OrdinalIgnoreCase);
+                    Clips[i].PresetName = presetName;
+                }
+            }
         }
 
         /// <summary>Applies preset values to the current UI/config only (per-clip).</summary>
