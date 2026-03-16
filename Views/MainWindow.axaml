@@ -457,8 +457,8 @@
 
                 <!-- Menu strip -->
                 <Border Background="{DynamicResource BgHeader}" Padding="0">
-                    <DockPanel LastChildFill="False">
-                    <Menu x:Name="MainMenu" HorizontalAlignment="Stretch" DockPanel.Dock="Left">
+                    <DockPanel LastChildFill="True">
+                    <Menu x:Name="MainMenu" HorizontalAlignment="Left" DockPanel.Dock="Left">
                         <Menu.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <DockPanel LastChildFill="False" HorizontalAlignment="Stretch"/>
@@ -530,14 +530,24 @@
                             <Separator/>
                             <MenuItem x:Name="ResetSettingsMenuItem" Header="Reset settings" Click="OnResetSettingsClick"/>
                         </MenuItem>
-                        <MenuItem x:Name="AboutMenuItem" Header="A propos" DockPanel.Dock="Right" Click="OnAboutClick"/>
-                        <MenuItem x:Name="FeedbackMenuItem" Header="Contact" DockPanel.Dock="Right" Click="OnFeedbackClick"/>
-                        <MenuItem x:Name="LanguagesMenu" Header="Language" DockPanel.Dock="Right">
+                    </Menu>
+
+                    <Menu x:Name="MainMenuRight" HorizontalAlignment="Right" DockPanel.Dock="Right">
+                        <Menu.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </Menu.ItemsPanel>
+                        <MenuItem x:Name="LanguagesMenu" Header="Language">
                             <MenuItem x:Name="LanguageEnglishMenuItem" Header="English"  Tag="en" Click="OnLanguageClick"/>
                             <MenuItem x:Name="LanguageFrenchMenuItem"  Header="Français" Tag="fr" Click="OnLanguageClick"/>
                             <MenuItem x:Name="LanguageGermanMenuItem"  Header="Deutsch"  Tag="de" Click="OnLanguageClick"/>
                             <MenuItem x:Name="LanguageSpanishMenuItem" Header="Español"  Tag="es" Click="OnLanguageClick"/>
                         </MenuItem>
+                        <MenuItem Header="¦" IsEnabled="False" Focusable="False"/>
+                        <MenuItem x:Name="FeedbackMenuItem" Header="Contact" Click="OnFeedbackClick"/>
+                        <MenuItem Header="¦" IsEnabled="False" Focusable="False"/>
+                        <MenuItem x:Name="AboutMenuItem" Header="A propos" Click="OnAboutClick"/>
                     </Menu>
                     </DockPanel>
                 </Border>
