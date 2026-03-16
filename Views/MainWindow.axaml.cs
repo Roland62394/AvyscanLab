@@ -1904,7 +1904,9 @@ namespace CleanScan.Views
                 var isActive = i == ActiveClipIndex;
 
                 var presetName = Clips[i].PresetName;
-                var presetSuffix = presetName is not null
+                var showPresetSuffix = !string.IsNullOrWhiteSpace(presetName)
+                    && !presetName.StartsWith("perso", StringComparison.OrdinalIgnoreCase);
+                var presetSuffix = showPresetSuffix
                     ? $"  [{presetName}]"
                     : string.Empty;
 
