@@ -677,7 +677,7 @@
                         <TextBlock Text="Preset:" VerticalAlignment="Center" Margin="4,0,0,0"/>
                         <TextBlock x:Name="ActivePresetNameBox"
                                    VerticalAlignment="Center"
-                                   MinWidth="80"
+                                   Margin="4,0,4,0"
                                    Text=""/>
                         <Button x:Name="PresetBtn" Classes="transport" Content="👁"
                                 ToolTip.Tip="Preset" Click="OnPresetClick"/>
