@@ -298,6 +298,8 @@ public sealed class DialogService : IDialogService
         };
 
         var newButton = MakePresetActionButton(vm.GetUiText("PresetNewButton"));
+        var updateButton = MakePresetActionButton(vm.GetUiText("PresetUpdateButton"));
+        updateButton.IsEnabled = false;
         var applyButton = new Button
         {
             Content = vm.GetUiText("PresetApplyButton"),
@@ -312,7 +314,8 @@ public sealed class DialogService : IDialogService
             FontWeight = FontWeight.SemiBold,
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
-            Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand)
+            Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand),
+            IsEnabled = false
         };
         var closeButton = MakePresetActionButton(vm.GetUiText("GamMacCloseButton"));
 
@@ -379,7 +382,7 @@ public sealed class DialogService : IDialogService
         var dialog = new Window
         {
             Title = vm.GetUiText("PresetDialogTitle"),
-            Width = 480,
+            Width = 620,
             SizeToContent = SizeToContent.Height,
             Background = TB("BgDeep"),
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
@@ -415,7 +418,7 @@ public sealed class DialogService : IDialogService
                                 {
                                     Orientation = Orientation.Horizontal,
                                     Spacing = 8,
-                                    Children = { applyButton, newButton }
+                                    Children = { applyButton, newButton, updateButton }
                                 }
                             }
                         }
@@ -572,6 +575,14 @@ public sealed class DialogService : IDialogService
             return confirmed;
         }
 
+        // Sync update button enabled state with combobox selection
+        comboBox.SelectionChanged += (_, _) =>
+        {
+            var hasSelection = comboBox.SelectedItem is Preset;
+            updateButton.IsEnabled = hasSelection;
+            applyButton.IsEnabled = hasSelection;
+        };
+
         // Pre-select active preset without triggering anything
         if (!string.IsNullOrWhiteSpace(activePresetName))
         {
@@ -589,6 +600,20 @@ public sealed class DialogService : IDialogService
             presets.SavePresets(presetList);
             RefreshCombo();
             comboBox.SelectedItem = ordered.FirstOrDefault(p => string.Equals(p.Name, result.Name, StringComparison.OrdinalIgnoreCase));
+        };
+
+        // "Update preset" — overwrite selected preset with current settings
+        updateButton.Click += async (_, _) =>
+        {
+            if (comboBox.SelectedItem is not Preset target) return;
+            var confirmed = await AskConfirmAsync(
+                vm.GetUiText("PresetUpdateConfirmTitle"),
+                string.Format(vm.GetUiText("PresetUpdateConfirmMessage"), target.Name));
+            if (!confirmed) return;
+
+            var captured = presets.CaptureCurrentValues(config);
+            target.Values = new Dictionary<string, string>(captured, StringComparer.OrdinalIgnoreCase);
+            presets.SavePresets(presetList);
         };
 
         // Red cross — delete selected preset with confirmation
