@@ -544,9 +544,7 @@
                             <MenuItem x:Name="LanguageGermanMenuItem"  Header="Deutsch"  Tag="de" Click="OnLanguageClick"/>
                             <MenuItem x:Name="LanguageSpanishMenuItem" Header="Español"  Tag="es" Click="OnLanguageClick"/>
                         </MenuItem>
-                        <MenuItem Header="¦" IsEnabled="False" Focusable="False"/>
                         <MenuItem x:Name="FeedbackMenuItem" Header="Contact" Click="OnFeedbackClick"/>
-                        <MenuItem Header="¦" IsEnabled="False" Focusable="False"/>
                         <MenuItem x:Name="AboutMenuItem" Header="A propos" Click="OnAboutClick"/>
                     </Menu>
                     </DockPanel>
@@ -682,7 +680,7 @@
                                  IsTabStop="False"
                                  VerticalAlignment="Center"
                                  MinWidth="80"
-                                 Text="aucun"/>
+                                 Text=""/>
                         <Button x:Name="PresetBtn" Classes="transport" Content="+"
                                 ToolTip.Tip="Preset" Click="OnPresetClick"/>
                         <Rectangle Width="1" Height="22" Fill="{DynamicResource BorderSubtle}" Margin="8,0"/>
