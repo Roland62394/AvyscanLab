@@ -2111,6 +2111,15 @@ namespace CleanScan.Views
             if (_recordOpen) RebuildBatchClipList();
         }
 
+        private void ClearActiveGlobalPresetName()
+        {
+            if (ActiveClipIndex < 0 || ActiveClipIndex >= Clips.Count) return;
+
+            Clips[ActiveClipIndex].PresetName = null;
+            RestoreClipPresetCombo();
+            RebuildClipTabs();
+        }
+
         private async void OnAddClipClick(object? sender, RoutedEventArgs e)
         {
             if (StorageProvider is not { } sp) return;
@@ -2910,6 +2919,7 @@ namespace CleanScan.Views
         void IEncodeHost.RegenerateScript(bool showValidationError) => RegenerateScript(showValidationError);
         Task IEncodeHost.LoadScriptAsync(bool resetPosition) => LoadScriptAsync(resetPosition);
         void IEncodeHost.RestoreClipConfig(int index) => RestoreClipConfig(index);
+        void IEncodeHost.ClearActiveGlobalPresetName() => ClearActiveGlobalPresetName();
         Regex IEncodeHost.PreviewTrueRegex() => PreviewTrueRegex();
         Regex IEncodeHost.PreviewHalfTrueRegex() => PreviewHalfTrueRegex();
         void IEncodeHost.MoveSliderToPointer(Slider slider, PointerEventArgs e) => MoveSliderToPointer(slider, e);
