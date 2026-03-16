@@ -306,6 +306,16 @@ public sealed class DialogService : IDialogService
 
         var suppressSelectionApply = false;
 
+        var dialogTitle = new TextBlock
+        {
+            Text = vm.GetUiText("PresetDialogTitle"),
+            Foreground = new SolidColorBrush(Color.Parse("#64B5F6")),
+            FontSize = 15,
+            FontWeight = FontWeight.SemiBold,
+            FontFamily = monoFont,
+            Margin = new Thickness(0, 0, 0, 6)
+        };
+
         var dialog = new Window
         {
             Title = vm.GetUiText("PresetDialogTitle"),
@@ -320,11 +330,13 @@ public sealed class DialogService : IDialogService
                 Background = TB("BgPanel"),
                 BorderBrush = TB("BorderSubtle"),
                 BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
                 Child = new StackPanel
                 {
                     Spacing = 10,
                     Children =
                     {
+                        dialogTitle,
                         comboBox,
                         new StackPanel
                         {
@@ -346,6 +358,16 @@ public sealed class DialogService : IDialogService
             var allClipsButton = MakePresetActionButton(vm.GetUiText("PresetApplyAllClipsButton"), 120);
             var cancelButton = MakePresetActionButton(vm.GetUiText("GamMacCloseButton"), 120);
 
+            var scopeTitle = new TextBlock
+            {
+                Text = vm.GetUiText("PresetApplyTitle"),
+                Foreground = new SolidColorBrush(Color.Parse("#64B5F6")),
+                FontSize = 15,
+                FontWeight = FontWeight.SemiBold,
+                FontFamily = monoFont,
+                Margin = new Thickness(0, 0, 0, 6)
+            };
+
             var scopeDialog = new Window
             {
                 Title = vm.GetUiText("PresetApplyTitle"),
@@ -359,12 +381,14 @@ public sealed class DialogService : IDialogService
                     Background = TB("BgPanel"),
                     BorderBrush = TB("BorderSubtle"),
                     BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(6),
                     Child = new StackPanel
                     {
                         Spacing = 12,
                         MaxWidth = 480,
                         Children =
                         {
+                            scopeTitle,
                             new TextBlock
                             {
                                 Text = string.Format(vm.GetUiText("PresetApplyScopeMessage"), presetName),
@@ -428,6 +452,16 @@ public sealed class DialogService : IDialogService
             var createButton = MakePresetActionButton(vm.GetUiText("PresetCreateConfirmButton"), 180);
             var cancelButton = MakePresetActionButton(vm.GetUiText("GamMacCloseButton"), 120);
 
+            var createTitle = new TextBlock
+            {
+                Text = vm.GetUiText("PresetCreateTitle"),
+                Foreground = new SolidColorBrush(Color.Parse("#64B5F6")),
+                FontSize = 15,
+                FontWeight = FontWeight.SemiBold,
+                FontFamily = monoFont,
+                Margin = new Thickness(0, 0, 0, 6)
+            };
+
             var createDialog = new Window
             {
                 Title = vm.GetUiText("PresetCreateTitle"),
@@ -441,11 +475,13 @@ public sealed class DialogService : IDialogService
                     Background = TB("BgPanel"),
                     BorderBrush = TB("BorderSubtle"),
                     BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(6),
                     Child = new StackPanel
                     {
                         Spacing = 8,
                         Children =
                         {
+                            createTitle,
                             new TextBlock { Text = vm.GetUiText("PresetCreateNameLabel"), FontFamily = monoFont, Foreground = TB("TextLabel") },
                             nameBox,
                             new TextBlock { Text = vm.GetUiText("PresetCreateHint"), TextWrapping = TextWrapping.Wrap, FontFamily = monoFont, Foreground = TB("TextSecondary"), MaxWidth = 420, Margin = new Thickness(0,4,0,4) },
