@@ -1964,6 +1964,8 @@ namespace CleanScan.Views
             // Re-add the "+" button at the end
             if (addBtn is not null)
                 panel.Children.Add(addBtn);
+
+            UpdateActivePresetNameDisplay();
         }
 
         private async void SwitchToClip(int index)
@@ -2028,6 +2030,15 @@ namespace CleanScan.Views
             }
         }
 
+        private void UpdateActivePresetNameDisplay()
+        {
+            if (this.FindControl<TextBox>("ActivePresetNameBox") is not { } box) return;
+            var name = ActiveClipIndex >= 0 && ActiveClipIndex < Clips.Count
+                ? Clips[ActiveClipIndex].PresetName
+                : null;
+            box.Text = string.IsNullOrWhiteSpace(name) ? "aucun" : name;
+        }
+
         /// <summary>Restores the per-clip preset ComboBox selection without triggering the change handler.</summary>
         private void RestoreClipPresetCombo()
         {
@@ -2059,6 +2070,8 @@ namespace CleanScan.Views
                 }
             }
             finally { _suppressClipPresetChange = false; }
+
+            UpdateActivePresetNameDisplay();
         }
 
         private async void RemoveClip(int index)
