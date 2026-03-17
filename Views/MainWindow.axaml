@@ -769,10 +769,23 @@
                             <!-- OPTIONS -->
                             <!-- FILTERS -->
                             <StackPanel DockPanel.Dock="Top" Spacing="4">
-                                <Grid ColumnDefinitions="*,Auto,4,Auto">
+                                <Grid ColumnDefinitions="*,Auto,4,Auto,4,Auto">
                                     <TextBlock Grid.Column="0" Classes="group-label" Text="FILTERS"
                                                VerticalAlignment="Center"/>
-                                    <Button Grid.Column="1" x:Name="ImportCustomFilterBtn"
+                                    <Button Grid.Column="1" x:Name="ResetFilterOrderBtn"
+                                            Content="&#x21BA;"
+                                            FontSize="13"
+                                            Width="24" Height="22"
+                                            Padding="0"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            Background="{DynamicResource BgHeader}"
+                                            Foreground="{DynamicResource TextPrimary}"
+                                            BorderBrush="{DynamicResource BorderSubtle}"
+                                            BorderThickness="1"
+                                            ToolTip.Tip="Default order"
+                                            Click="OnResetFilterOrderClick"/>
+                                    <Button Grid.Column="3" x:Name="ImportCustomFilterBtn"
                                             Content="&#x2193;"
                                             FontSize="13" FontWeight="Bold"
                                             Width="24" Height="22"
@@ -785,7 +798,7 @@
                                             BorderThickness="1"
                                             ToolTip.Tip="Import"
                                             Click="OnImportCustomFilterClick"/>
-                                    <Button Grid.Column="3" x:Name="AddCustomFilterBtn"
+                                    <Button Grid.Column="5" x:Name="AddCustomFilterBtn"
                                             Content="+"
                                             FontSize="14" FontWeight="Bold"
                                             Width="24" Height="22"

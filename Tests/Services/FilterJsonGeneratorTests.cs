@@ -124,7 +124,7 @@ public class FilterJsonGeneratorTests
                    \                                  : EnsureColorspaceSafe(result, base_pix, matrix=matrix)
             }
 
-            c = DenoiseFilm(c, mode="{mode}", strength={strength}, dist={dist}, grey={grey}, matrix=src_matrix)
+            c = DenoiseFilm(c, mode="{mode}", strength={strength}, dist={dist}, grey={grey})
             """,
         Controls =
         [
@@ -202,7 +202,7 @@ public class FilterJsonGeneratorTests
                    \                                  : EnsureColorspaceSafe(result, base_pix, matrix=matrix)
             }
 
-            c = DegrainFilm(c, mode="{mode}", thSAD={thSAD}, thSADC={thSADC}, blksize={blksize}, overlap={overlap}, pel={pel}, search={search}, prefilter="{prefilter}", matrix=src_matrix)
+            c = DegrainFilm(c, mode="{mode}", thSAD={thSAD}, thSADC={thSADC}, blksize={blksize}, overlap={overlap}, pel={pel}, search={search}, prefilter="{prefilter}")
             """,
         Controls =
         [
@@ -293,7 +293,7 @@ public class FilterJsonGeneratorTests
               return EnsureColorspaceSafe(sharp_s, base_pix, matrix=matrix)
             }
 
-            c = SharpenAdvanced(c, mode="{mode}", strength={strength}, radius={radius}, threshold={threshold}, matrix=src_matrix)
+            c = SharpenAdvanced(c, mode="{mode}", strength={strength}, radius={radius}, threshold={threshold})
             """,
         Controls =
         [

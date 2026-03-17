@@ -2687,6 +2687,7 @@ namespace CleanScan.Views
         private void OnCustomExpandClick(object? sender, RoutedEventArgs e) => CustomFilters.OnExpandClick(sender, e);
         private void OnAddCustomFilterClick(object? sender, RoutedEventArgs e) => CustomFilters.OnAddClick(sender, e);
         private void OnImportCustomFilterClick(object? sender, RoutedEventArgs e) => CustomFilters.OnImportClick(sender, e);
+        private void OnResetFilterOrderClick(object? sender, RoutedEventArgs e) => CustomFilters.OnResetOrderClick();
 
         #endregion
 

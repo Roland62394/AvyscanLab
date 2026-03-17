@@ -148,39 +148,100 @@ public sealed class CustomFilterPresenter
         await _host.LoadScriptAsync();
     }
 
+    public void OnResetOrderClick()
+    {
+        // Restore default positions from Filters/*.json for built-in filters
+        var exeDir = System.IO.Path.GetDirectoryName(Environment.ProcessPath);
+        var filtersDir = exeDir is not null ? System.IO.Path.Combine(exeDir, "Filters") : null;
+        var defaults = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        if (filtersDir is not null && System.IO.Directory.Exists(filtersDir))
+        {
+            foreach (var jsonFile in System.IO.Directory.GetFiles(filtersDir, "*.json"))
+            {
+                try
+                {
+                    var json = System.IO.File.ReadAllText(jsonFile);
+                    var f = System.Text.Json.JsonSerializer.Deserialize<CustomFilter>(json);
+                    if (f is not null && !string.IsNullOrWhiteSpace(f.Id))
+                        defaults[f.Id] = f.Position;
+                }
+                catch { /* skip */ }
+            }
+        }
+
+        // Also restore stab8mm1 default position
+        if (!defaults.ContainsKey("stab8mm1"))
+            defaults["stab8mm1"] = "BeforePipeline";
+
+        foreach (var filter in _filterService.Filters)
+        {
+            if (defaults.TryGetValue(filter.Id, out var defaultPos))
+                filter.Position = defaultPos;
+            // User-created filters without a default keep their current position
+        }
+
+        _filterService.Save();
+        RebuildUI();
+        _host.RegenerateScript(showValidationError: false);
+        _ = _host.LoadScriptAsync();
+    }
+
     // ── Private: row / panel construction ────────────────────────────
+
+    private Point? _dragStartPos;
+    private string? _dragFilterId;
 
     private void AddFilterRow(CustomFilter filter, StackPanel list)
     {
         var row = new Grid
         {
-            ColumnDefinitions = ColumnDefinitions.Parse("18,4,*,10,28,4,20"),
-            Tag = filter.Id
+            ColumnDefinitions = ColumnDefinitions.Parse("*,10,28,4,20"),
+            Tag = filter.Id,
+            Cursor = new Cursor(StandardCursorType.Hand)
         };
 
-        // Drag handle
-        var handle = new TextBlock
+        // Drag reordering — pure pointer tracking (no DragDrop API)
+        row.AddHandler(InputElement.PointerPressedEvent, (_, e) =>
         {
-            Text = "⠿", FontSize = 14,
-            VerticalAlignment = VerticalAlignment.Center,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Foreground = _host.ThemeBrush("TextSecondary"),
-            Cursor = new Cursor(StandardCursorType.Hand),
-            Opacity = 0.6
-        };
-        Grid.SetColumn(handle, 0);
-        row.Children.Add(handle);
+            if (!e.GetCurrentPoint(row).Properties.IsLeftButtonPressed) return;
+            _dragStartPos = e.GetPosition(list);
+            _dragFilterId = filter.Id;
+            _isDragging = false;
+        }, RoutingStrategies.Tunnel);
 
-        // Initiate drag from handle
-        handle.PointerPressed += async (_, e) =>
+        row.AddHandler(InputElement.PointerMovedEvent, (_, e) =>
         {
-            if (!e.GetCurrentPoint(handle).Properties.IsLeftButtonPressed) return;
-            var data = new DataObject();
-            data.Set("FilterId", filter.Id);
-            row.Opacity = 0.4;
-            await DragDrop.DoDragDrop(e, data, DragDropEffects.Move);
-            row.Opacity = 1.0;
-        };
+            if (_dragStartPos is null || _dragFilterId != filter.Id) return;
+            var pos = e.GetPosition(list);
+            var dist = Math.Abs(pos.Y - _dragStartPos.Value.Y);
+            if (!_isDragging && dist < 14) return;
+
+            if (!_isDragging)
+            {
+                _isDragging = true;
+                _draggedRow = row;
+                row.Opacity = 0.4;
+                e.Pointer.Capture(list); // capture to list so we track moves beyond row bounds
+            }
+
+            var insertIndex = GetInsertIndexFromY(list, pos.Y, filter.Id);
+            ShowDropIndicator(list, insertIndex);
+            e.Handled = true;
+        }, RoutingStrategies.Tunnel);
+
+        row.AddHandler(InputElement.PointerReleasedEvent, (_, e) =>
+        {
+            if (_isDragging && _dragFilterId == filter.Id)
+            {
+                var pos = e.GetPosition(list);
+                var insertIndex = GetInsertIndexFromY(list, pos.Y, filter.Id);
+                FinishDrag(list, filter.Id, insertIndex);
+                e.Handled = true;
+            }
+            _dragStartPos = null;
+            _isDragging = false;
+        }, RoutingStrategies.Tunnel);
 
         // Sync enabled state from config (preset may have changed it)
         var enabledKey = ScriptService.GetCustomFilterEnabledKey(filter.Id);
@@ -218,7 +279,7 @@ public sealed class CustomFilterPresenter
             _host.RegenerateScript(showValidationError: false);
             _ = _host.LoadScriptAsync();
         };
-        Grid.SetColumn(toggleBtn, 2);
+        Grid.SetColumn(toggleBtn, 0);
         row.Children.Add(toggleBtn);
 
         var expandBtn = new Button
@@ -227,8 +288,14 @@ public sealed class CustomFilterPresenter
             Classes = { "expand-btn" },
             Tag = $"CustomPanel_{filter.Id}"
         };
+        if (filter.Controls.Count == 0)
+        {
+            // No params to expand — hide button but keep column space for alignment
+            expandBtn.Opacity = 0;
+            expandBtn.IsHitTestVisible = false;
+        }
         expandBtn.Click += OnExpandClick;
-        Grid.SetColumn(expandBtn, 4);
+        Grid.SetColumn(expandBtn, 2);
         row.Children.Add(expandBtn);
 
         var editBtn = new Button
@@ -243,7 +310,7 @@ public sealed class CustomFilterPresenter
             BorderThickness = new Thickness(0)
         };
         editBtn.Click += async (_, _) => await OpenDialog(filter);
-        Grid.SetColumn(editBtn, 6);
+        Grid.SetColumn(editBtn, 4);
         row.Children.Add(editBtn);
 
         list.Children.Add(row);
@@ -561,59 +628,60 @@ public sealed class CustomFilterPresenter
         slider.Value = SnapToStep(raw, slider.Minimum, slider.SmallChange);
     }
 
-    // ── Drag & drop reordering ───────────────────────────────────────
+    // ── Pointer-based drag reordering ──────────────────────────────────
 
     private Border? _dropIndicator;
+    private bool _isDragging;
+    private Grid? _draggedRow;
 
     private void SetupDragDrop(StackPanel list)
     {
-        DragDrop.SetAllowDrop(list, true);
-
-        list.AddHandler(DragDrop.DragOverEvent, (_, e) =>
+        // Capture PointerMoved/Released on the list itself so we track the pointer
+        // even when it leaves the dragged row (pointer is captured to list).
+        list.AddHandler(InputElement.PointerMovedEvent, (_, e) =>
         {
-            if (!e.Data.Contains("FilterId")) { e.DragEffects = DragDropEffects.None; return; }
-            e.DragEffects = DragDropEffects.Move;
-
-            // Show drop indicator
-            var insertIndex = GetInsertIndex(list, e);
+            if (!_isDragging || _dragFilterId is null) return;
+            var pos = e.GetPosition(list);
+            var insertIndex = GetInsertIndexFromY(list, pos.Y, _dragFilterId);
             ShowDropIndicator(list, insertIndex);
-        });
+        }, RoutingStrategies.Bubble, handledEventsToo: true);
 
-        list.AddHandler(DragDrop.DragLeaveEvent, (_, _) =>
+        list.AddHandler(InputElement.PointerReleasedEvent, (_, e) =>
         {
-            RemoveDropIndicator(list);
-        });
+            if (!_isDragging || _dragFilterId is null) return;
+            var pos = e.GetPosition(list);
+            var insertIndex = GetInsertIndexFromY(list, pos.Y, _dragFilterId);
+            FinishDrag(list, _dragFilterId, insertIndex);
+            e.Handled = true;
+        }, RoutingStrategies.Bubble, handledEventsToo: true);
 
-        list.AddHandler(DragDrop.DropEvent, (_, e) =>
+        // Cancel drag if pointer leaves the list area
+        list.PointerExited += (_, _) =>
         {
-            RemoveDropIndicator(list);
-            if (!e.Data.Contains("FilterId")) return;
-            var draggedId = e.Data.Get("FilterId") as string;
-            if (string.IsNullOrEmpty(draggedId)) return;
-
-            var insertIndex = GetInsertIndex(list, e);
-            ReorderFilter(draggedId, insertIndex);
-        });
+            if (!_isDragging) return;
+            CancelDrag(list);
+        };
     }
 
-    private static int GetInsertIndex(StackPanel list, DragEventArgs e)
+    private int GetInsertIndexFromY(StackPanel list, double y, string draggedId)
     {
-        var pos = e.GetPosition(list);
-        var y = pos.Y;
         var index = 0;
-
         foreach (var child in list.Children)
         {
-            if (child is not Control c) { index++; continue; }
-            var childTop = c.Bounds.Top;
-            var childMid = childTop + c.Bounds.Height / 2;
-            if (y < childMid) return index;
+            if (child == _dropIndicator) continue;
+            if (child is Grid g && g.Tag is string id && id == draggedId) continue;
+
+            if (child is Control c)
+            {
+                var mid = c.Bounds.Top + c.Bounds.Height / 2;
+                if (y < mid) return index;
+            }
             index++;
         }
         return index;
     }
 
-    private void ShowDropIndicator(StackPanel list, int insertIndex)
+    private void ShowDropIndicator(StackPanel list, int logicalIndex)
     {
         RemoveDropIndicator(list);
 
@@ -621,12 +689,22 @@ public sealed class CustomFilterPresenter
         {
             Height = 2,
             Background = _host.ThemeBrush("AccentGreen"),
-            Margin = new Thickness(18, -1, 0, -1),
+            Margin = new Thickness(0, -1, 0, -1),
             HorizontalAlignment = HorizontalAlignment.Stretch
         };
 
-        var clampedIndex = Math.Min(insertIndex, list.Children.Count);
-        list.Children.Insert(clampedIndex, _dropIndicator);
+        // Convert logical index to visual index (skip the dragged row)
+        var visualIndex = 0;
+        var logical = 0;
+        foreach (var child in list.Children)
+        {
+            if (logical >= logicalIndex) break;
+            if (child == _draggedRow) { visualIndex++; continue; }
+            logical++;
+            visualIndex++;
+        }
+
+        list.Children.Insert(Math.Min(visualIndex, list.Children.Count), _dropIndicator);
     }
 
     private void RemoveDropIndicator(StackPanel list)
@@ -636,9 +714,15 @@ public sealed class CustomFilterPresenter
         _dropIndicator = null;
     }
 
-    private void ReorderFilter(string draggedId, int visualInsertIndex)
+    private void FinishDrag(StackPanel list, string draggedId, int insertIndex)
     {
-        // Build the current display order (sorted by position)
+        RemoveDropIndicator(list);
+        if (_draggedRow is not null) _draggedRow.Opacity = 1.0;
+        _draggedRow = null;
+        _isDragging = false;
+        _dragStartPos = null;
+
+        // Build current display order (sorted by position)
         var sorted = _filterService.Filters
             .OrderBy(f => ScriptService.InjectionPositionToOrder(f.Position))
             .ToList();
@@ -646,22 +730,27 @@ public sealed class CustomFilterPresenter
         var dragged = sorted.FirstOrDefault(f => f.Id == draggedId);
         if (dragged is null) return;
 
-        var oldIndex = sorted.IndexOf(dragged);
         sorted.Remove(dragged);
-
-        // Adjust insert index (drop indicator accounts for the dragged item)
-        var newIndex = visualInsertIndex;
-        if (newIndex > oldIndex) newIndex--;
-        newIndex = Math.Clamp(newIndex, 0, sorted.Count);
+        var newIndex = Math.Clamp(insertIndex, 0, sorted.Count);
         sorted.Insert(newIndex, dragged);
 
-        // Reassign numeric positions (10, 20, 30, ...)
+        // Reassign numeric positions (100, 110, 120, ...) — must be >= 50
+        // so filters land in __MODULE_PIPELINE__ (after src_matrix), not PRE
         for (var i = 0; i < sorted.Count; i++)
-            sorted[i].Position = ((i + 1) * 10).ToString();
+            sorted[i].Position = (100 + i * 10).ToString();
 
         _filterService.Save();
         RebuildUI();
         _host.RegenerateScript(showValidationError: false);
         _ = _host.LoadScriptAsync();
+    }
+
+    private void CancelDrag(StackPanel list)
+    {
+        RemoveDropIndicator(list);
+        if (_draggedRow is not null) _draggedRow.Opacity = 1.0;
+        _draggedRow = null;
+        _isDragging = false;
+        _dragStartPos = null;
     }
 }
