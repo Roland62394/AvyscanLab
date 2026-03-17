@@ -63,6 +63,12 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
     [GeneratedRegex(@"^#\s*__CUSTOM_PLUGINS__\s*$", RegexOptions.Multiline)]
     private static partial Regex CustomPluginsMarkerRegex();
 
+    [GeneratedRegex(@"^# __MODULE_FUNCTIONS__[ \t]*\r?$", RegexOptions.Multiline)]
+    private static partial Regex ModuleFunctionsMarkerRegex();
+
+    [GeneratedRegex(@"^# __MODULE_PIPELINE__[ \t]*\r?$", RegexOptions.Multiline)]
+    private static partial Regex ModulePipelineMarkerRegex();
+
     // ── IScriptService ──────────────────────────────────────────────────────
 
     public void Generate(Dictionary<string, string> configValues, string lang = "en") =>
@@ -78,7 +84,13 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
             return;
         }
 
-        var contents = BuildContents(File.ReadAllText(templatePath), configValues);
+        var template = File.ReadAllText(templatePath);
+
+        // Assemble built-in modules into the template (replaces __MODULE_FUNCTIONS__ / __MODULE_PIPELINE__)
+        var builtInModules = ScriptModuleRegistry.GetBuiltInModules();
+        template = AssembleModules(template, builtInModules);
+
+        var contents = BuildContents(template, configValues);
         contents = InjectCustomFilters(contents, customFilters, configValues);
         // Normalize line endings to \r\n (Windows) for AviSynth compatibility
         contents = contents.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\r\n");
@@ -635,5 +647,83 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
 
             return sb.ToString();
         });
+    }
+
+    // ── Module assembly ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Replaces __MODULE_FUNCTIONS__ and __MODULE_PIPELINE__ markers in the template
+    /// with the assembled code from the provided script modules.
+    /// Modules are sorted by Position; each module's InjectionPointAfter marker
+    /// is emitted after its pipeline code for custom filter injection.
+    /// </summary>
+    public static string AssembleModules(string template, IReadOnlyList<ScriptModule> modules)
+    {
+        var sorted = modules.OrderBy(m => m.Position).ToList();
+
+        // ── 1. Replace __MODULE_FUNCTIONS__ with all module function definitions ──
+        template = ModuleFunctionsMarkerRegex().Replace(template, _ =>
+        {
+            var sb = new StringBuilder();
+            foreach (var m in sorted)
+            {
+                if (string.IsNullOrWhiteSpace(m.Functions)) continue;
+                sb.Append(m.Functions);
+                sb.AppendLine();
+            }
+            // Remove trailing newline to avoid extra blank line before _BuildPreview
+            var result = sb.ToString();
+            return result.TrimEnd('\r', '\n');
+        });
+
+        // ── 2. Replace __MODULE_PIPELINE__ with assembled pipeline steps ──
+        template = ModulePipelineMarkerRegex().Replace(template, _ =>
+        {
+            var sb = new StringBuilder();
+            foreach (var m in sorted)
+            {
+                if (string.IsNullOrWhiteSpace(m.PipelineCode)) continue;
+                sb.Append(m.PipelineCode);
+                sb.AppendLine();
+
+                if (!string.IsNullOrWhiteSpace(m.InjectionPointAfter))
+                {
+                    sb.AppendLine();
+                    sb.AppendLine($"# __CUSTOM_INJECT_{m.InjectionPointAfter}__");
+                    sb.AppendLine();
+                }
+            }
+            // Remove trailing newline
+            var result = sb.ToString();
+            return result.TrimEnd('\r', '\n');
+        });
+
+        return template;
+    }
+
+    /// <summary>
+    /// Computes the maximum temporal radius required by the active modules.
+    /// Used to determine border padding for ImageSource clips.
+    /// </summary>
+    public static int ComputeMaxTemporalRadius(IReadOnlyList<ScriptModule> modules,
+        Dictionary<string, string>? configValues = null)
+    {
+        var max = 0;
+        foreach (var m in modules)
+        {
+            if (m.TemporalRadius <= 0) continue;
+
+            // If module has an enable key, check if it's enabled
+            if (m.EnableKey is not null && configValues is not null)
+            {
+                if (!configValues.TryGetValue(m.EnableKey, out var v) ||
+                    !bool.TryParse(v, out var enabled) || !enabled)
+                    continue;
+            }
+
+            if (m.TemporalRadius > max)
+                max = m.TemporalRadius;
+        }
+        return max;
     }
 }
