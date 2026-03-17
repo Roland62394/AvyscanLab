@@ -1828,6 +1828,12 @@ namespace CleanScan.Views
                 }
 
                 // Restore custom filter config keys (cf_*) so dynamic panels pick up correct values
+                // Clear old cf_ keys first, then apply the clip's saved values
+                foreach (var key in _config.Snapshot().Keys)
+                {
+                    if (key.StartsWith("cf_", StringComparison.OrdinalIgnoreCase))
+                        _config.Remove(key);
+                }
                 foreach (var (key, value) in clipCfg)
                 {
                     if (key.StartsWith("cf_", StringComparison.OrdinalIgnoreCase))
@@ -1895,12 +1901,26 @@ namespace CleanScan.Views
             var addBtn = this.FindControl<Button>("AddClipBtn");
             panel.Children.Clear();
 
+            // Detect duplicate filenames to disambiguate with parent folder
+            var fileNames = Clips.Select(c => Path.GetFileName(c.Path) ?? c.Path).ToList();
+            var duplicateNames = fileNames
+                .GroupBy(n => n, StringComparer.OrdinalIgnoreCase)
+                .Where(g => g.Count() > 1)
+                .Select(g => g.Key)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
             for (int i = 0; i < Clips.Count; i++)
             {
                 var index = i;
                 var path = Clips[i].Path;
                 var filename = Path.GetFileName(path);
                 if (string.IsNullOrWhiteSpace(filename)) filename = path;
+                if (duplicateNames.Contains(filename))
+                {
+                    var parent = Path.GetFileName(Path.GetDirectoryName(path));
+                    if (!string.IsNullOrWhiteSpace(parent))
+                        filename = $"{parent}/{filename}";
+                }
                 var isActive = i == ActiveClipIndex;
 
                 var presetName = Clips[i].PresetName;
@@ -2730,10 +2750,25 @@ namespace CleanScan.Views
                 _config.Set(name, parsed.ToString().ToLowerInvariant());
             }
 
-            var useImage = values.TryGetValue(UseImageConfigName, out var uiv)
-                && bool.TryParse(uiv, out var parsedUseImage) && parsedUseImage;
+            // Replace custom filter config keys (cf_*): clear old values, apply preset's
+            var cfPrefix = ScriptService.CustomFilterConfigPrefix;
+            foreach (var key in _config.Snapshot().Keys)
+            {
+                if (key.StartsWith(cfPrefix, StringComparison.OrdinalIgnoreCase))
+                    _config.Remove(key);
+            }
+            foreach (var kv in values)
+            {
+                if (kv.Key.StartsWith(cfPrefix, StringComparison.OrdinalIgnoreCase))
+                    _config.Set(kv.Key, kv.Value);
+            }
+
+            // use_img is excluded from presets — read from the current clip's config instead
+            var useImage = bool.TryParse(_config.Get(UseImageConfigName), out var parsedUseImage)
+                && parsedUseImage;
             UpdateSourceSelection(isFilmSelected: !useImage, updateConfig: true);
             SyncAllSliders();
+            RebuildCustomFilterUI(); // refresh toggle states & param values from config
             RegenerateScript(showValidationError: false);
             UpdateOptionColumnVisibility();
 
@@ -2925,6 +2960,11 @@ namespace CleanScan.Views
             RegenerateScript(showValidationError);
         Task IFilterPresenterHost.LoadScriptAsync(bool resetPosition) =>
             LoadScriptAsync(resetPosition);
+        void IFilterPresenterHost.OnCustomFilterValueChanged()
+        {
+            if (!_applyingPreset && !_switchingClip)
+                MarkClipAsPerso();
+        }
 
         // ── IEncodeHost ────────────────────────────────────────────────
         T? IEncodeHost.FindControl<T>(string name) where T : class => this.FindControl<T>(name);

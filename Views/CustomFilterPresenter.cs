@@ -31,6 +31,7 @@ public interface IFilterPresenterHost
     void UpdateParamsPlaceholderVisibility();
     void RegenerateScript(bool showValidationError = true);
     Task LoadScriptAsync(bool resetPosition = false);
+    void OnCustomFilterValueChanged();
 }
 
 public sealed class CustomFilterPresenter
@@ -107,6 +108,7 @@ public sealed class CustomFilterPresenter
         {
             filter.Enabled = true;
             _filterService.Add(filter);
+            _host.Config.Set(ScriptService.GetCustomFilterEnabledKey(filter.Id), "true");
             RebuildUI();
             _host.RegenerateScript(showValidationError: false);
             await _host.LoadScriptAsync();
@@ -131,6 +133,7 @@ public sealed class CustomFilterPresenter
         {
             f.Enabled = true;
             _filterService.Add(f);
+            _host.Config.Set(ScriptService.GetCustomFilterEnabledKey(f.Id), "true");
         }
         RebuildUI();
         _host.RegenerateScript(showValidationError: false);
@@ -147,6 +150,23 @@ public sealed class CustomFilterPresenter
             Tag = filter.Id
         };
 
+        // Sync enabled state from config (preset may have changed it)
+        var enabledKey = ScriptService.GetCustomFilterEnabledKey(filter.Id);
+        var cfgEnabled = _host.Config.Get(enabledKey);
+        if (!string.IsNullOrEmpty(cfgEnabled) && bool.TryParse(cfgEnabled, out var parsedEnabled))
+        {
+            if (filter.Enabled != parsedEnabled)
+            {
+                filter.Enabled = parsedEnabled;
+                _filterService.Save();
+            }
+        }
+        else
+        {
+            // First time: write current enabled state to config so presets can capture it
+            _host.Config.Set(enabledKey, filter.Enabled.ToString().ToLowerInvariant());
+        }
+
         var toggleBtn = new Button
         {
             Content = filter.Name,
@@ -160,6 +180,8 @@ public sealed class CustomFilterPresenter
             filter.Enabled = !filter.Enabled;
             toggleBtn.Tag = filter.Enabled;
             _host.UpdateToggleButtonPresentation(toggleBtn, filter.Enabled);
+            _host.Config.Set(enabledKey, filter.Enabled.ToString().ToLowerInvariant());
+            _host.OnCustomFilterValueChanged();
             _filterService.Save();
             _host.RegenerateScript(showValidationError: false);
             _ = _host.LoadScriptAsync();
@@ -210,6 +232,8 @@ public sealed class CustomFilterPresenter
 
         if (dialog.Deleted)
         {
+            // Remove config keys for this filter (enabled + all placeholders)
+            RemoveFilterConfigKeys(filter);
             _filterService.Remove(filter.Id);
             RebuildUI();
             _host.RegenerateScript(showValidationError: false);
@@ -455,9 +479,23 @@ public sealed class CustomFilterPresenter
 
     // ── Helpers ──────────────────────────────────────────────────────
 
+    private void RemoveFilterConfigKeys(CustomFilter filter)
+    {
+        var prefix = $"{ScriptService.CustomFilterConfigPrefix}{filter.Id}_";
+        var enabledKey = ScriptService.GetCustomFilterEnabledKey(filter.Id);
+        var snapshot = _host.Config.Snapshot();
+        foreach (var key in snapshot.Keys)
+        {
+            if (key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+                || key.Equals(enabledKey, StringComparison.OrdinalIgnoreCase))
+                _host.Config.Remove(key);
+        }
+    }
+
     private void CommitValue(string configKey, string value)
     {
         _host.Config.Set(configKey, value);
+        _host.OnCustomFilterValueChanged();
         _host.RegenerateScript(showValidationError: false);
         _ = _host.LoadScriptAsync();
     }

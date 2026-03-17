@@ -500,6 +500,13 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
     public static string GetCustomFilterConfigKey(string filterId, string placeholder) =>
         $"{CustomFilterConfigPrefix}{filterId}_{placeholder}";
 
+    /// <summary>Config key suffix for the custom filter enabled toggle.</summary>
+    public const string CustomFilterEnabledSuffix = "_enabled";
+
+    /// <summary>Returns the config key for a custom filter's enabled state.</summary>
+    public static string GetCustomFilterEnabledKey(string filterId) =>
+        $"{CustomFilterConfigPrefix}{filterId}{CustomFilterEnabledSuffix}";
+
     /// <summary>
     /// Resolves a DLL name to a full path. If the path is already absolute and exists,
     /// returns it as-is. Otherwise searches the AviSynth+ plugins64+ folder.

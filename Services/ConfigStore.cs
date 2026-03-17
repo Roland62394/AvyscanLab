@@ -33,6 +33,8 @@ public sealed class ConfigStore
         return true;
     }
 
+    public bool Remove(string key) => _values.Remove(key);
+
     public Dictionary<string, string> Snapshot()
         => _values.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.OrdinalIgnoreCase);
 
