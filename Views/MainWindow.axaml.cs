@@ -1897,6 +1897,56 @@ namespace CleanScan.Views
         {
             if (this.FindControl<WrapPanel>("ClipTabsPanel") is not { } panel) return;
 
+            // Attach drag handlers to the panel once (captures pointer movement between tabs)
+            if (!_tabPanelEventsAttached)
+            {
+                _tabPanelEventsAttached = true;
+                panel.AddHandler(PointerMovedEvent, (_, e) =>
+                {
+                    if (_tabDragSourceIndex < 0) return;
+                    var pos = e.GetPosition(panel);
+                    if (!_tabDragging)
+                    {
+                        var delta = pos - _tabDragStartPoint;
+                        if (Math.Abs(delta.X) < 8 && Math.Abs(delta.Y) < 8) return;
+                        _tabDragging = true;
+                        if (_tabDragSourceTab is { } src)
+                        {
+                            src.Cursor = new Cursor(StandardCursorType.DragMove);
+                            src.Opacity = 0.6;
+                        }
+                        e.Pointer.Capture(panel);
+                    }
+                    UpdateTabDropIndicator(panel, pos);
+                }, RoutingStrategies.Tunnel);
+
+                panel.AddHandler(PointerReleasedEvent, (_, e) =>
+                {
+                    if (_tabDragSourceIndex < 0) return;
+                    if (_tabDragSourceTab is { } src)
+                    {
+                        src.Cursor = new Cursor(StandardCursorType.Hand);
+                        src.Opacity = 1.0;
+                    }
+                    e.Pointer.Capture(null);
+                    if (_tabDragging)
+                    {
+                        var pos = e.GetPosition(panel);
+                        var targetIndex = GetTabDropIndex(panel, pos);
+                        if (targetIndex >= 0 && targetIndex != _tabDragSourceIndex)
+                            MoveClip(_tabDragSourceIndex, targetIndex);
+                        ClearTabDropIndicator(panel);
+                    }
+                    else if (_tabDragSourceIndex >= 0)
+                    {
+                        SwitchToClip(_tabDragSourceIndex);
+                    }
+                    _tabDragSourceIndex = -1;
+                    _tabDragSourceTab = null;
+                    _tabDragging = false;
+                }, RoutingStrategies.Tunnel);
+            }
+
             // Keep only the "+" button (last child)
             var addBtn = this.FindControl<Button>("AddClipBtn");
             panel.Children.Clear();
@@ -1979,7 +2029,16 @@ namespace CleanScan.Views
                     Cursor = new Cursor(StandardCursorType.Hand),
                     Child = stack,
                 };
-                tab.PointerPressed += (_, _) => SwitchToClip(index);
+                tab.PointerPressed += (_, e) =>
+                {
+                    if (e.GetCurrentPoint(tab).Properties.IsLeftButtonPressed)
+                    {
+                        _tabDragSourceIndex = index;
+                        _tabDragSourceTab = tab;
+                        _tabDragStartPoint = e.GetPosition(panel);
+                        _tabDragging = false;
+                    }
+                };
                 ToolTip.SetTip(tab, path);
 
                 panel.Children.Add(tab);
@@ -1990,6 +2049,97 @@ namespace CleanScan.Views
                 panel.Children.Add(addBtn);
 
             UpdateActivePresetNameDisplay();
+        }
+
+        // ── Tab drag-reorder state ───────────────────────────────────
+        private int _tabDragSourceIndex = -1;
+        private Border? _tabDragSourceTab;
+        private Point _tabDragStartPoint;
+        private bool _tabDragging;
+        private bool _tabPanelEventsAttached;
+        private Border? _tabDropIndicator;
+
+        /// <summary>Returns the clip tab Borders in panel order (excludes indicator and "+" button).</summary>
+        private List<Border> GetClipTabBorders(WrapPanel panel)
+        {
+            var tabs = new List<Border>();
+            foreach (var child in panel.Children)
+            {
+                if (child is Border b && b != _tabDropIndicator && b.Child is StackPanel)
+                    tabs.Add(b);
+            }
+            return tabs;
+        }
+
+        private int GetTabDropIndex(WrapPanel panel, Point pos)
+        {
+            var tabs = GetClipTabBorders(panel);
+            for (int i = 0; i < tabs.Count; i++)
+            {
+                var mid = tabs[i].Bounds.X + tabs[i].Bounds.Width / 2;
+                if (pos.X < mid) return i;
+            }
+            return tabs.Count > 0 ? tabs.Count - 1 : 0;
+        }
+
+        private void UpdateTabDropIndicator(WrapPanel panel, Point pos)
+        {
+            var tabs = GetClipTabBorders(panel);
+            int target = GetTabDropIndex(panel, pos);
+            if (tabs.Count == 0) { ClearTabDropIndicator(panel); return; }
+
+            if (_tabDropIndicator is null)
+            {
+                _tabDropIndicator = new Border
+                {
+                    Width = 2, Height = 24,
+                    Background = ThemeBrush("AccentBlue"),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(-1, 0),
+                    IsHitTestVisible = false,
+                };
+            }
+
+            // Remove old indicator first
+            if (panel.Children.Contains(_tabDropIndicator))
+                panel.Children.Remove(_tabDropIndicator);
+
+            // Insert indicator before the target tab
+            var insertBefore = target < tabs.Count ? tabs[target] : null;
+            var insertIndex = insertBefore is not null
+                ? panel.Children.IndexOf(insertBefore)
+                : panel.Children.Count - (this.FindControl<Button>("AddClipBtn") is not null ? 1 : 0);
+            if (insertIndex < 0) insertIndex = 0;
+            panel.Children.Insert(insertIndex, _tabDropIndicator);
+        }
+
+        private void ClearTabDropIndicator(WrapPanel panel)
+        {
+            if (_tabDropIndicator is not null && panel.Children.Contains(_tabDropIndicator))
+                panel.Children.Remove(_tabDropIndicator);
+        }
+
+        private void MoveClip(int fromIndex, int toIndex)
+        {
+            if (fromIndex < 0 || fromIndex >= Clips.Count) return;
+            if (toIndex < 0) toIndex = 0;
+            if (toIndex >= Clips.Count) toIndex = Clips.Count - 1;
+            if (fromIndex == toIndex) return;
+
+            var clip = Clips[fromIndex];
+            Clips.RemoveAt(fromIndex);
+            Clips.Insert(toIndex, clip);
+
+            // Update ActiveIndex to follow the moved clip if it was active
+            if (ActiveClipIndex == fromIndex)
+                _clipManager.ActiveIndex = toIndex;
+            else if (fromIndex < ActiveClipIndex && toIndex >= ActiveClipIndex)
+                _clipManager.ActiveIndex--;
+            else if (fromIndex > ActiveClipIndex && toIndex <= ActiveClipIndex)
+                _clipManager.ActiveIndex++;
+
+            RebuildClipTabs();
+            if (_recordOpen) RebuildBatchClipList();
         }
 
         private async void SwitchToClip(int index)
