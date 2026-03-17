@@ -750,9 +750,9 @@
                 Background="{DynamicResource BgPanel}"
                 BorderBrush="{DynamicResource BorderSubtle}"
                 BorderThickness="0,1,0,0">
-            <Grid>
+            <Grid x:Name="FilterGrid">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="240" MinWidth="120"/>  <!-- Colonne boutons toggle -->
+                    <ColumnDefinition Width="280" MinWidth="120"/>  <!-- Colonne boutons toggle -->
                     <ColumnDefinition Width="5"/>                   <!-- Séparateur -->
                     <ColumnDefinition Width="*"/>                   <!-- Colonne réglages filtre -->
                 </Grid.ColumnDefinitions>
@@ -783,7 +783,6 @@
                                             Foreground="{DynamicResource TextPrimary}"
                                             BorderBrush="{DynamicResource BorderSubtle}"
                                             BorderThickness="1"
-                                            ToolTip.Tip="Default order"
                                             Click="OnResetFilterOrderClick"/>
                                     <Button Grid.Column="3" x:Name="ImportCustomFilterBtn"
                                             Content="&#x2193;"
@@ -796,7 +795,6 @@
                                             Foreground="{DynamicResource TextPrimary}"
                                             BorderBrush="{DynamicResource BorderSubtle}"
                                             BorderThickness="1"
-                                            ToolTip.Tip="Import"
                                             Click="OnImportCustomFilterClick"/>
                                     <Button Grid.Column="5" x:Name="AddCustomFilterBtn"
                                             Content="+"

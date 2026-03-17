@@ -45,7 +45,36 @@ public sealed class CustomFilterPresenter
         _filterService = filterService;
     }
 
+    private const string PositionKeySuffix = "_position";
+
     // ── Public API called from MainWindow ────────────────────────────
+
+    /// <summary>Writes all filter positions to ConfigStore so presets capture them.</summary>
+    public void SyncPositionsToConfig()
+    {
+        foreach (var f in _filterService.Filters)
+        {
+            var key = ScriptService.GetCustomFilterConfigKey(f.Id, "position");
+            _host.Config.Set(key, f.Position);
+        }
+    }
+
+    /// <summary>Reads filter positions from ConfigStore (after preset apply) and updates filters.</summary>
+    public void ApplyPositionsFromConfig()
+    {
+        var changed = false;
+        foreach (var f in _filterService.Filters)
+        {
+            var key = ScriptService.GetCustomFilterConfigKey(f.Id, "position");
+            var pos = _host.Config.Get(key);
+            if (!string.IsNullOrEmpty(pos) && pos != f.Position)
+            {
+                f.Position = pos;
+                changed = true;
+            }
+        }
+        if (changed) _filterService.Save();
+    }
 
     public void RebuildUI()
     {
@@ -71,6 +100,9 @@ public sealed class CustomFilterPresenter
 
         // Set up drag & drop on the list
         SetupDragDrop(list);
+
+        // Ensure positions are in ConfigStore for preset capture
+        SyncPositionsToConfig();
     }
 
     public void OnExpandClick(object? sender, RoutedEventArgs e)
@@ -182,6 +214,7 @@ public sealed class CustomFilterPresenter
         }
 
         _filterService.Save();
+        SyncPositionsToConfig();
         RebuildUI();
         _host.RegenerateScript(showValidationError: false);
         _ = _host.LoadScriptAsync();
@@ -740,6 +773,7 @@ public sealed class CustomFilterPresenter
             sorted[i].Position = (100 + i * 10).ToString();
 
         _filterService.Save();
+        SyncPositionsToConfig();
         RebuildUI();
         _host.RegenerateScript(showValidationError: false);
         _ = _host.LoadScriptAsync();

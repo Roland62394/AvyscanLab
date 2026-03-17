@@ -585,7 +585,11 @@ namespace CleanScan.Views
                 dropBar.Text = GetUiText("DropHintBar");
 
             if (this.FindControl<Button>("ImportCustomFilterBtn") is { } importBtn)
-                ToolTip.SetTip(importBtn, GetUiText("CfDlgImportTitle"));
+                ToolTip.SetTip(importBtn, GetUiText("FilterImportTip"));
+            if (this.FindControl<Button>("AddCustomFilterBtn") is { } addBtn)
+                ToolTip.SetTip(addBtn, GetUiText("FilterAddTip"));
+            if (this.FindControl<Button>("ResetFilterOrderBtn") is { } resetBtn)
+                ToolTip.SetTip(resetBtn, GetUiText("FilterResetOrderTip"));
 
             if (persist && IsVisible)
             {
@@ -903,6 +907,9 @@ namespace CleanScan.Views
             if (saved?.BottomPanelHeight is { } bph)
                 MainGrid.RowDefinitions[2].Height = new GridLength(Math.Clamp(bph, 60, 800), GridUnitType.Pixel);
 
+            if (saved?.FilterColumnWidth is { } fcw)
+                FilterGrid.ColumnDefinitions[0].Width = new GridLength(Math.Clamp(fcw, 120, 600), GridUnitType.Pixel);
+
             _layoutInitialized = true;
 
             if (saved?.TourCompleted != true && Clips.Count == 0)
@@ -988,7 +995,8 @@ namespace CleanScan.Views
             if (WindowState != WindowState.Normal) return;
             if (_isInitializing || !_layoutInitialized) return;
             var bottomH = BottomPanel.Bounds.Height is > 0 and var bh ? (double?)bh : null;
-            _lastGoodSettings = new WindowSettings(Bounds.Width, Bounds.Height, Position.X, Position.Y, ViewModel.CurrentLanguageCode, bottomH);
+            var filterColW = FilterGrid.ColumnDefinitions[0].Width.Value;
+            _lastGoodSettings = new WindowSettings(Bounds.Width, Bounds.Height, Position.X, Position.Y, ViewModel.CurrentLanguageCode, bottomH, FilterColumnWidth: filterColW);
         }
 
         private void SaveWindowSettings()
@@ -2898,6 +2906,7 @@ namespace CleanScan.Views
                 && parsedUseImage;
             UpdateSourceSelection(isFilmSelected: !useImage, updateConfig: true);
             SyncAllSliders();
+            CustomFilters.ApplyPositionsFromConfig(); // restore filter order from preset
             RebuildCustomFilterUI(); // refresh toggle states & param values from config
             RegenerateScript(showValidationError: false);
             UpdateOptionColumnVisibility();

@@ -3,7 +3,7 @@
   "Name": "Flip Horizontal",
   "Dlls": [],
   "Scripts": [],
-  "Code": "c = c.FlipHorizontal()",
+  "Code": "c = c.FlipHorizontal()\nsrc = src.FlipHorizontal()",
   "Position": "FlipH",
   "Controls": []
 }
