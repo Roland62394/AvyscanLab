@@ -1,0 +1,9 @@
+{
+  "Id": "flip_v",
+  "Name": "Flip Vertical",
+  "Dlls": [],
+  "Scripts": [],
+  "Code": "c = c.FlipVertical()",
+  "Position": "FlipV",
+  "Controls": []
+}

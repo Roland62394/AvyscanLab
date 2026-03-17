@@ -1,0 +1,142 @@
+{
+  "Id": "gammac",
+  "Name": "GamMac",
+  "Dlls": [],
+  "Scripts": [],
+  "Code": "if (FunctionExists(\"GamMac\")) {\n  try {\n    base_pix = PixelType(c)\n    mx  = _MatrixAuto(c)\n    rgb = EnsureColorspaceSafe(c, \"RGB24\", matrix=mx)\n    rgb = GamMac(rgb,\n      \\ LockChan={LockChan}, LockVal={LockVal},\n      \\ x={X}, y={Y}, w={W}, h={H},\n      \\ Scale={Scale}, Th={Th}, HiTh={HiTh},\n      \\ Omin={Omin}, Omax={Omax}, Show={Show}, Verbosity={Verbosity})\n    c = EnsureColorspaceSafe(rgb, base_pix, matrix=mx)\n  } catch(err) { pipeline_err = \"GamMac: \" + err }\n}",
+  "Position": "GamMac",
+  "Controls": [
+    {
+      "Placeholder": "LockChan",
+      "Type": "slider",
+      "Default": "1",
+      "Min": -3,
+      "Max": 2,
+      "Step": 1,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    },
+    {
+      "Placeholder": "LockVal",
+      "Type": "slider",
+      "Default": "250",
+      "Min": 1,
+      "Max": 255,
+      "Step": 1,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    },
+    {
+      "Placeholder": "Scale",
+      "Type": "slider",
+      "Default": "2",
+      "Max": 2,
+      "Step": 1,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    },
+    {
+      "Placeholder": "Th",
+      "Type": "slider",
+      "Default": "0.12",
+      "Max": 1,
+      "Step": 0.01,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    },
+    {
+      "Placeholder": "HiTh",
+      "Type": "slider",
+      "Default": "0.25",
+      "Max": 1,
+      "Step": 0.01,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    },
+    {
+      "Placeholder": "X",
+      "Type": "slider",
+      "Default": "0",
+      "Max": 10000,
+      "Step": 1,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    },
+    {
+      "Placeholder": "Y",
+      "Type": "slider",
+      "Default": "0",
+      "Max": 10000,
+      "Step": 1,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    },
+    {
+      "Placeholder": "W",
+      "Type": "slider",
+      "Default": "0",
+      "Max": 10000,
+      "Step": 1,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    },
+    {
+      "Placeholder": "H",
+      "Type": "slider",
+      "Default": "0",
+      "Max": 10000,
+      "Step": 1,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    },
+    {
+      "Placeholder": "Omin",
+      "Type": "slider",
+      "Default": "0",
+      "Max": 255,
+      "Step": 1,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    },
+    {
+      "Placeholder": "Omax",
+      "Type": "slider",
+      "Default": "255",
+      "Max": 255,
+      "Step": 1,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    },
+    {
+      "Placeholder": "Show",
+      "Type": "checkbox",
+      "Default": "false",
+      "Max": 100,
+      "Step": 1,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    },
+    {
+      "Placeholder": "Verbosity",
+      "Type": "slider",
+      "Default": "4",
+      "Max": 6,
+      "Step": 1,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    }
+  ]
+}

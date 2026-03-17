@@ -29,6 +29,25 @@ public static class ScriptModuleRegistry
         EnableKey = "enable_gammac",
         TemporalRadius = 0,
         InjectionPointAfter = "AfterGamMac",
+        ConfigSection =
+            """
+            enable_gammac        = false
+
+            # GamMac
+            LockChan  = 1
+            LockVal   = 250
+            Scale     = 2
+            Th        = 0.12
+            HiTh      = 0.25
+            X         = 0
+            Y         = 0
+            W         = 0
+            H         = 0
+            Omin      = 0
+            Omax      = 255
+            Show      = false
+            Verbosity = 4
+            """,
         Functions = "",
         PipelineCode =
             """
@@ -59,6 +78,34 @@ public static class ScriptModuleRegistry
         EnableKey = "enable_denoise",
         TemporalRadius = 1,
         InjectionPointAfter = "AfterDenoise",
+        ConfigSection =
+            """
+            enable_denoise       = false  # RemoveDirt/MC — STEP 1 (film dust/dirt)
+
+            # =============================================================
+            # DENOISE — RemoveDirt/MC (dust, stains, film defects)
+            # ORDER : FIRST, before any other processing
+            # =============================================================
+            denoise_mode     = "removedirtmc"
+            #   "removedirtmc"  → RemoveDirtMC  (best, motion-compensated)
+            #   "removedirt"    → RemoveDirt    (faster, no compensation)
+
+            # Temporal detection threshold (pixel difference vs neighbouring frames)
+            # RECOMMENDED VALUES based on film dirt level:
+            #   Clean film    : denoise_strength = 6
+            #   Average film  : denoise_strength = 10   ← recommended
+            #   Dirty film    : denoise_strength = 14   (reasonable max)
+            #   NEVER above 18-20, high risk of artefacts
+            denoise_strength = 10
+
+            # Spatial search radius for repair (dist in RestoreMotionBlocks)
+            # Default 3 — increase to remove larger stains (e.g. 3→6→10)
+            # Too high a value = risk of reconstruction with incorrect texture
+            denoise_dist     = 3
+
+            # true = luma only (faster) ; false = luma+chroma (better colour rendering)
+            denoise_grey     = false
+            """,
         Functions =
             """
 
@@ -127,6 +174,57 @@ public static class ScriptModuleRegistry
         EnableKey = "enable_degrain",
         TemporalRadius = 3,
         InjectionPointAfter = "AfterDegrain",
+        ConfigSection =
+            """
+            enable_degrain       = false  # MVTools2 MDegrain — STEP 2 (grain/noise)
+
+            # =============================================================
+            # DEGRAIN — MVTools2 MDegrain (film grain, sensor noise)
+            # ORDER : AFTER RemoveDirt, BEFORE colour corrections
+            # FIX: replaced TemporalSoften with MDegrain2/3
+            # =============================================================
+            degrain_mode     = "mdegrain2"
+            #   "mdegrain3" → MDegrain3 (best, 3 temporal references)
+            #   "mdegrain2" → MDegrain2 (good quality/speed balance)  ← recommended
+            #   "mdegrain1" → MDegrain1 (faster, less effective)
+            #   "temporal"  → TemporalSoften (fallback without MVTools2)
+
+            # Thresholds for MDegrain (luma / chroma)
+            # Higher value = stronger degrain
+            #   Fine grain    : thSAD=200, thSADC=150
+            #   Medium grain  : thSAD=350, thSADC=250  ← recommended for 8/16mm film
+            #   Heavy grain   : thSAD=500, thSADC=400
+            degrain_thSAD    = 350  # luma threshold  (SAD per block)
+            degrain_thSADC   = 250  # chroma threshold
+
+            # PERFORMANCE — impact on speed (most to least impactful):
+            #
+            #  pel — sub-pixel precision of MSuper:
+            #    pel=2 → ½ pixel, MSuper internally at 4x resolution → SLOW
+            #    pel=1 → full pixel, ~2x faster, imperceptible loss on grain ← RECOMMENDED
+            #
+            #  blksize / overlap — analysis block size:
+            #    blksize=8,  overlap=4  → precise on small grain, SLOW (4x more blocks)
+            #    blksize=16, overlap=8  → good speed/quality balance               ← RECOMMENDED
+            #    blksize=32, overlap=16 → very fast, less precise on small grain
+            #    (overlap must always = blksize/2)
+            #
+            #  search — motion vector search algorithm:
+            #    search=3 → exhaustive, slowest but most precise
+            #    search=2 → hexagonal,  good speed/precision balance               ← RECOMMENDED
+            #    search=0 → oneway,     fastest, less precise
+            #
+            degrain_blksize  = 16   # FAST: 8→16 (4x fewer blocks to analyse)
+            degrain_overlap  = 8    # FAST: 4→8  (always blksize/2)
+            degrain_pel      = 1    # FAST: 2→1  (~2x faster, imperceptible on grain)
+            degrain_search   = 2    # NEW: hexagonal — good speed/precision balance
+
+            # Prefilter for MVTools analysis (does not affect the final clip)
+            degrain_prefilter = "remgrain"
+            #   "remgrain"  → RemoveGrain(2) — fast and effective  ← RECOMMENDED
+            #   "blur"      → Blur(1.0)     — alternative
+            #   "none"      → no prefiltering (less precise)
+            """,
         Functions =
             """
 
@@ -233,6 +331,17 @@ public static class ScriptModuleRegistry
         EnableKey = "enable_luma_levels",
         TemporalRadius = 0,
         InjectionPointAfter = "AfterLuma",
+        ConfigSection =
+            """
+            enable_luma_levels   = false
+
+            # Luma Levels
+            Lum_Bright   = 0.0
+            Lum_Contrast = 1.05
+            Lum_Sat      = 1.10
+            Lum_Hue      = 0.0
+            Lum_GammaY   = 1.30
+            """,
         Functions = "",
         PipelineCode =
             """
@@ -264,6 +373,16 @@ public static class ScriptModuleRegistry
         EnableKey = "enable_sharp",
         TemporalRadius = 0,
         InjectionPointAfter = "AfterSharpen",
+        ConfigSection =
+            """
+            enable_sharp         = false  # ALWAYS LAST
+
+            # Sharpen (ALWAYS LAST — after all corrections)
+            Sharp_Mode      = "simple"   # "simple" | "edge"
+            Sharp_Strength  = 8          # scale 1–20 (5=light, 8=standard, 12=medium, 16=strong, 20=very strong)
+            Sharp_Radius    = 1.5
+            Sharp_Threshold = 5          # increased: better protection against residual noise
+            """,
         Functions =
             """
 

@@ -1,56 +1,214 @@
-using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using CleanScan.Services;
 using Xunit;
 
 namespace CleanScan.Tests.Services;
 
-public class ScriptModuleAssemblyTests
+public partial class ScriptModuleAssemblyTests
 {
+    /// <summary>
+    /// When all modules are active, the assembled script contains all config vars,
+    /// all function definitions, and all pipeline steps.
+    /// </summary>
     [Fact]
-    public void AssembleModules_ProducesIdenticalOutput_ToOriginalTemplate()
+    public void AssembleModules_AllEnabled_ContainsEverything()
     {
         var repoRoot = FindRepoRoot();
-        var originalPath = Path.Combine(repoRoot, "Tests", "Fixtures", "ScriptMaster.original.avs");
-        if (!File.Exists(originalPath)) return;
+        var templatePath = Path.Combine(repoRoot, "ScriptMaster.en.avs");
+        if (!File.Exists(templatePath)) return;
 
-        var original = NormalizeLineEndings(File.ReadAllText(originalPath));
-        var template = File.ReadAllText(Path.Combine(repoRoot, "ScriptMaster.en.avs"));
+        var template = File.ReadAllText(templatePath);
         var modules = ScriptModuleRegistry.GetBuiltInModules();
-        var assembled = NormalizeLineEndings(ScriptService.AssembleModules(template, modules));
 
-        // Write assembled to file for external diff
-        File.WriteAllText(Path.Combine(repoRoot, "Tests", "Fixtures", "ScriptMaster.assembled.avs"), assembled);
-
-        var origLines = original.Split('\n');
-        var asmLines = assembled.Split('\n');
-
-        for (int i = 0; i < System.Math.Max(origLines.Length, asmLines.Length); i++)
+        // All filters enabled
+        var config = new System.Collections.Generic.Dictionary<string, string>
         {
-            var origLine = i < origLines.Length ? origLines[i] : "<EOF>";
-            var asmLine = i < asmLines.Length ? asmLines[i] : "<EOF>";
-            if (origLine != asmLine)
-            {
-                // Show 3 lines of context
-                var ctx = new System.Text.StringBuilder();
-                ctx.AppendLine($"First difference at line {i + 1} (orig has {origLines.Length} lines, asm has {asmLines.Length} lines):");
-                for (int j = System.Math.Max(0, i - 3); j <= System.Math.Min(i + 3, System.Math.Max(origLines.Length, asmLines.Length) - 1); j++)
-                {
-                    var marker = j == i ? ">>>" : "   ";
-                    var oL = j < origLines.Length ? origLines[j] : "<EOF>";
-                    var aL = j < asmLines.Length ? asmLines[j] : "<EOF>";
-                    ctx.AppendLine($"{marker} L{j + 1:D3} ORIG: [{oL}]");
-                    ctx.AppendLine($"{marker} L{j + 1:D3} ASM:  [{aL}]");
-                }
-                Assert.Fail(ctx.ToString());
-            }
-        }
+            ["enable_gammac"] = "true",
+            ["enable_denoise"] = "true",
+            ["enable_degrain"] = "true",
+            ["enable_luma_levels"] = "true",
+            ["enable_sharp"] = "true",
+        };
 
-        Assert.Equal(original.Length, assembled.Length);
+        var assembled = ScriptService.AssembleModules(template, modules, config);
+
+        // All config vars present
+        Assert.Contains("enable_denoise", assembled);
+        Assert.Contains("denoise_mode", assembled);
+        Assert.Contains("degrain_thSAD", assembled);
+        Assert.Contains("Lum_Bright", assembled);
+        Assert.Contains("LockChan", assembled);
+        Assert.Contains("Sharp_Mode", assembled);
+
+        // All functions present
+        Assert.Contains("DenoiseFilm", assembled);
+        Assert.Contains("DegrainFilm", assembled);
+        Assert.Contains("SharpenAdvanced", assembled);
+
+        // All pipeline steps present
+        Assert.Contains("DenoiseFilm(c,", assembled);
+        Assert.Contains("DegrainFilm(c,", assembled);
+        Assert.Contains("SharpenAdvanced(c,", assembled);
+
+        // Core always present
+        Assert.Contains("EnsureColorspaceSafe", assembled);
+        Assert.Contains("src_path = src", assembled);
+    }
+
+    /// <summary>
+    /// Verifies that custom filters are correctly converted to modules
+    /// and inserted at the right pipeline position.
+    /// </summary>
+    [Fact]
+    public void ConvertCustomFiltersToModules_MapsPositionCorrectly()
+    {
+        var filters = new[]
+        {
+            new CleanScan.Models.CustomFilter
+            {
+                Id = "test1", Name = "Test Filter", Enabled = true,
+                Position = "AfterDenoise", Code = "c = c"
+            },
+            new CleanScan.Models.CustomFilter
+            {
+                Id = "test2", Name = "Disabled", Enabled = false,
+                Position = "AfterGamMac", Code = "c = c"
+            },
+        };
+
+        var modules = ScriptService.ConvertCustomFiltersToModules(filters);
+
+        Assert.Single(modules); // only enabled filter
+        Assert.Equal(250, modules[0].Position); // AfterDenoise = 250
+        Assert.Equal("custom_test1", modules[0].Id);
+        Assert.Contains("Test Filter", modules[0].PipelineCode);
+    }
+
+    /// <summary>
+    /// Verifies that custom filter placeholders are resolved from config values.
+    /// </summary>
+    [Fact]
+    public void ConvertCustomFiltersToModules_ResolvesPlaceholders()
+    {
+        var filters = new[]
+        {
+            new CleanScan.Models.CustomFilter
+            {
+                Id = "abc", Name = "Blur", Enabled = true,
+                Position = "AfterSharpen", Code = "c = Blur(c, {radius})",
+                Controls = [new() { Placeholder = "radius", Default = "1.0" }]
+            },
+        };
+
+        var config = new System.Collections.Generic.Dictionary<string, string>
+        {
+            ["cf_abc_radius"] = "2.5"
+        };
+
+        var modules = ScriptService.ConvertCustomFiltersToModules(filters, config);
+        Assert.Contains("Blur(c, 2.5)", modules[0].PipelineCode);
+    }
+
+    /// <summary>
+    /// When all filters are disabled, neither function definitions nor pipeline steps
+    /// should appear in the assembled script.
+    /// </summary>
+    [Fact]
+    public void AssembleModules_ExcludesDisabledModules()
+    {
+        var repoRoot = FindRepoRoot();
+        var templatePath = Path.Combine(repoRoot, "ScriptMaster.en.avs");
+        if (!File.Exists(templatePath)) return;
+
+        var template = File.ReadAllText(templatePath);
+        var modules = ScriptModuleRegistry.GetBuiltInModules();
+
+        // All filters disabled
+        var config = new System.Collections.Generic.Dictionary<string, string>
+        {
+            ["enable_gammac"] = "false",
+            ["enable_denoise"] = "false",
+            ["enable_degrain"] = "false",
+            ["enable_luma_levels"] = "false",
+            ["enable_sharp"] = "false",
+        };
+
+        var assembled = ScriptService.AssembleModules(template, modules, config);
+
+        // No filter functions should be present
+        Assert.DoesNotContain("DenoiseFilm", assembled);
+        Assert.DoesNotContain("DegrainFilm", assembled);
+        Assert.DoesNotContain("SharpenAdvanced", assembled);
+
+        // No pipeline step code should be present
+        Assert.DoesNotContain("enable_gammac && FunctionExists", assembled);
+        Assert.DoesNotContain("DenoiseFilm(c,", assembled);
+        Assert.DoesNotContain("DegrainFilm(c,", assembled);
+        Assert.DoesNotContain("Tweak(luma_yuv", assembled);
+        Assert.DoesNotContain("SharpenAdvanced(c,", assembled);
+
+        // Core helpers and source should still be present
+        Assert.Contains("EnsureColorspaceSafe", assembled);
+        Assert.Contains("_BuildPreview", assembled);
+        Assert.Contains("src_path = src", assembled);
+    }
+
+    /// <summary>
+    /// When only Denoise is enabled, only DenoiseFilm function and STEP 2 should appear.
+    /// </summary>
+    [Fact]
+    public void AssembleModules_IncludesOnlyEnabledModules()
+    {
+        var repoRoot = FindRepoRoot();
+        var templatePath = Path.Combine(repoRoot, "ScriptMaster.en.avs");
+        if (!File.Exists(templatePath)) return;
+
+        var template = File.ReadAllText(templatePath);
+        var modules = ScriptModuleRegistry.GetBuiltInModules();
+
+        var config = new System.Collections.Generic.Dictionary<string, string>
+        {
+            ["enable_gammac"] = "false",
+            ["enable_denoise"] = "true",
+            ["enable_degrain"] = "false",
+            ["enable_luma_levels"] = "false",
+            ["enable_sharp"] = "false",
+        };
+
+        var assembled = ScriptService.AssembleModules(template, modules, config);
+
+        // Only DenoiseFilm should be present
+        Assert.Contains("DenoiseFilm", assembled);
+        Assert.DoesNotContain("DegrainFilm", assembled);
+        Assert.DoesNotContain("SharpenAdvanced", assembled);
+        Assert.DoesNotContain("enable_gammac && FunctionExists", assembled);
+
+        // Only Denoise call in pipeline
+        Assert.Contains("DenoiseFilm(c,", assembled);
+        Assert.DoesNotContain("enable_gammac && FunctionExists", assembled);
+        Assert.DoesNotContain("DegrainFilm(c,", assembled);
+        Assert.DoesNotContain("SharpenAdvanced(c,", assembled);
     }
 
     private static string NormalizeLineEndings(string s) =>
         s.Replace("\r\n", "\n").Replace("\r", "\n");
+
+    /// <summary>Strips __CUSTOM_INJECT_xxx__ and __CUSTOM_PLUGINS__ markers and surrounding blank lines.</summary>
+    private static string StripMarkers(string s)
+    {
+        // Remove marker lines
+        s = MarkerLineRegex().Replace(s, "");
+        // Collapse runs of 3+ blank lines to 2
+        s = ExcessiveBlanksRegex().Replace(s, "\n\n");
+        return s;
+    }
+
+    [GeneratedRegex(@"^# __CUSTOM_(?:INJECT_\w+|PLUGINS)__[ \t]*\n?", RegexOptions.Multiline)]
+    private static partial Regex MarkerLineRegex();
+
+    [GeneratedRegex(@"\n{3,}")]
+    private static partial Regex ExcessiveBlanksRegex();
 
     private static string FindRepoRoot()
     {

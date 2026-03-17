@@ -28,11 +28,6 @@ enable_flip_h = false
 enable_flip_v = false
 
 enable_crop          = false
-enable_denoise       = false  # RemoveDirt/MC — STEP 1 (film dust/dirt)
-enable_degrain       = false  # MVTools2 MDegrain — STEP 2 (grain/noise)
-enable_luma_levels   = false
-enable_gammac        = false
-enable_sharp         = false  # ALWAYS LAST
 
 preview       = true
 preview_half  = false
@@ -44,6 +39,24 @@ Crop_L = 550
 Crop_T = 500
 Crop_R = 1000
 Crop_B = 500
+
+enable_gammac        = false
+
+# GamMac
+LockChan  = 1
+LockVal   = 250
+Scale     = 2
+Th        = 0.12
+HiTh      = 0.25
+X         = 0
+Y         = 0
+W         = 0
+H         = 0
+Omin      = 0
+Omax      = 255
+Show      = false
+Verbosity = 4
+enable_denoise       = false  # RemoveDirt/MC — STEP 1 (film dust/dirt)
 
 # =============================================================
 # DENOISE — RemoveDirt/MC (dust, stains, film defects)
@@ -68,6 +81,7 @@ denoise_dist     = 3
 
 # true = luma only (faster) ; false = luma+chroma (better colour rendering)
 denoise_grey     = false
+enable_degrain       = false  # MVTools2 MDegrain — STEP 2 (grain/noise)
 
 # =============================================================
 # DEGRAIN — MVTools2 MDegrain (film grain, sensor noise)
@@ -115,6 +129,7 @@ degrain_prefilter = "remgrain"
 #   "remgrain"  → RemoveGrain(2) — fast and effective  ← RECOMMENDED
 #   "blur"      → Blur(1.0)     — alternative
 #   "none"      → no prefiltering (less precise)
+enable_luma_levels   = false
 
 # Luma Levels
 Lum_Bright   = 0.0
@@ -122,21 +137,7 @@ Lum_Contrast = 1.05
 Lum_Sat      = 1.10
 Lum_Hue      = 0.0
 Lum_GammaY   = 1.30
-
-# GamMac
-LockChan  = 1
-LockVal   = 250
-Scale     = 2
-Th        = 0.12
-HiTh      = 0.25
-X         = 0
-Y         = 0
-W         = 0
-H         = 0
-Omin      = 0
-Omax      = 255
-Show      = false
-Verbosity = 4
+enable_sharp         = false  # ALWAYS LAST
 
 # Sharpen (ALWAYS LAST — after all corrections)
 Sharp_Mode      = "simple"   # "simple" | "edge"
@@ -161,11 +162,9 @@ global ffms_threads   = -1
 global ffms_fpsnum    = -1
 global ffms_fpsden    = 1
 
-
 # =========================
 # END CONFIGURATION
 # =========================
-
 
 # =========================
 # PLUGINS (x64)
@@ -177,8 +176,6 @@ function TryLoadPlugin(string path) {
 
 # All AviSynth plugins (LSMASHSource, RgTools, FFMS2, GamMac, MaskTools2,
 # MVTools2, RemoveDirt) are installed in AviSynth+ plugins64+ and auto-loaded.
-
-# __CUSTOM_PLUGINS__
 
 # =========================
 # HELPERS
@@ -308,8 +305,6 @@ function OpenVideoSourceSmart(string path, string "force", bool "show_label", in
   return _OpenWithLabel(chosen, v, overlay_size=source_overlay_size, show_overlay=show_label)
 }
 
-
-
 # =========================
 # FILTER 1 — DENOISE / REMOVEDIRT
 # Role  : Remove dust, stains, film scratches
@@ -349,7 +344,6 @@ function DenoiseFilm(clip c, string "mode", float "strength", int "dist", bool "
   return (PixelType(result) == base_pix) ? result
        \                                  : EnsureColorspaceSafe(result, base_pix, matrix=matrix)
 }
-
 
 # =========================
 # FILTER 2 — DEGRAIN (MVTools2 MDegrain)
@@ -425,7 +419,6 @@ function DegrainFilm(clip c, string "mode", int "thSAD", int "thSADC",
        \                                  : EnsureColorspaceSafe(result, base_pix, matrix=matrix)
 }
 
-
 # =========================
 # FILTER 3 — SHARPEN (unchanged, always last)
 # =========================
@@ -499,7 +492,6 @@ function _BuildPreview(clip src_clip, clip final_clip, int "label_size", bool "a
   return StackHorizontal(src_show, res_show)
 }
 
-
 # =========================
 # SOURCE
 # =========================
@@ -544,7 +536,6 @@ if (use_img) {
   src = Trim(src, 0, 0).Loop(n_img_pad) + src + Trim(src, n_img_orig - 1, n_img_orig - 1).Loop(n_img_pad)
 }
 
-
 # =========================
 # PIPELINE — FIXED ORDER v2
 #
@@ -566,8 +557,6 @@ if (use_img) {
 c = src
 pipeline_err = ""
 
-# __CUSTOM_INJECT_BeforePipeline__
-
 # STEP 1 — GamMac FIRST (selective RGB correction — neutralises colour cast before RemoveDirt)
 if (enable_gammac && FunctionExists("GamMac")) {
   try {
@@ -583,8 +572,6 @@ if (enable_gammac && FunctionExists("GamMac")) {
   } catch(err) { pipeline_err = "GamMac: " + err }
 }
 
-# __CUSTOM_INJECT_AfterGamMac__
-
 # STEP 2 — Dust / film stains (RemoveDirt)
 if (enable_denoise) {
   c = DenoiseFilm(c,
@@ -594,8 +581,6 @@ if (enable_denoise) {
     \ grey     = denoise_grey,
     \ matrix   = src_matrix)
 }
-
-# __CUSTOM_INJECT_AfterDenoise__
 
 # STEP 3 — Film grain (MVTools2 MDegrain)
 if (enable_degrain) {
@@ -610,8 +595,6 @@ if (enable_degrain) {
     \ prefilter = degrain_prefilter,
     \ matrix    = src_matrix)
 }
-
-# __CUSTOM_INJECT_AfterDegrain__
 
 # STEP 4 — Manual adjustments (Tweak + ColorYUV)
 if (enable_luma_levels) {
@@ -629,8 +612,6 @@ if (enable_luma_levels) {
   c = EnsureColorspaceSafe(luma_yuv, base_pix, matrix=mx)
 }
 
-# __CUSTOM_INJECT_AfterLuma__
-
 # STEP 5 — Sharpen (ALWAYS LAST)
 if (enable_sharp) {
   c = SharpenAdvanced(c,
@@ -640,8 +621,6 @@ if (enable_sharp) {
     \ threshold = Sharp_Threshold,
     \ matrix    = src_matrix)
 }
-
-# __CUSTOM_INJECT_AfterSharpen__
 
 final = c
 

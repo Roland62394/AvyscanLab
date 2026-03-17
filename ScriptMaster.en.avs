@@ -24,125 +24,9 @@ force_source = "FFMS2"  # "FFMS2" | "" = auto (FFMS2 -> LSMASH -> LWLIBAV -> AVI
 show_source_used = true
 
 # ------------ OPTIONS ------------
-enable_flip_h = false
-enable_flip_v = false
-
-enable_crop          = false
-enable_denoise       = false  # RemoveDirt/MC — STEP 1 (film dust/dirt)
-enable_degrain       = false  # MVTools2 MDegrain — STEP 2 (grain/noise)
-enable_luma_levels   = false
-enable_gammac        = false
-enable_sharp         = false  # ALWAYS LAST
-
 preview       = true
 preview_half  = false
 threads  = 4
-
-# ------------ PARAMS ------------
-# Crop (no resizing)
-Crop_L = 550
-Crop_T = 500
-Crop_R = 1000
-Crop_B = 500
-
-# =============================================================
-# DENOISE — RemoveDirt/MC (dust, stains, film defects)
-# ORDER : FIRST, before any other processing
-# =============================================================
-denoise_mode     = "removedirtmc"
-#   "removedirtmc"  → RemoveDirtMC  (best, motion-compensated)
-#   "removedirt"    → RemoveDirt    (faster, no compensation)
-
-# Temporal detection threshold (pixel difference vs neighbouring frames)
-# RECOMMENDED VALUES based on film dirt level:
-#   Clean film    : denoise_strength = 6
-#   Average film  : denoise_strength = 10   ← recommended
-#   Dirty film    : denoise_strength = 14   (reasonable max)
-#   NEVER above 18-20, high risk of artefacts
-denoise_strength = 10
-
-# Spatial search radius for repair (dist in RestoreMotionBlocks)
-# Default 3 — increase to remove larger stains (e.g. 3→6→10)
-# Too high a value = risk of reconstruction with incorrect texture
-denoise_dist     = 3
-
-# true = luma only (faster) ; false = luma+chroma (better colour rendering)
-denoise_grey     = false
-
-# =============================================================
-# DEGRAIN — MVTools2 MDegrain (film grain, sensor noise)
-# ORDER : AFTER RemoveDirt, BEFORE colour corrections
-# FIX: replaced TemporalSoften with MDegrain2/3
-# =============================================================
-degrain_mode     = "mdegrain2"
-#   "mdegrain3" → MDegrain3 (best, 3 temporal references)
-#   "mdegrain2" → MDegrain2 (good quality/speed balance)  ← recommended
-#   "mdegrain1" → MDegrain1 (faster, less effective)
-#   "temporal"  → TemporalSoften (fallback without MVTools2)
-
-# Thresholds for MDegrain (luma / chroma)
-# Higher value = stronger degrain
-#   Fine grain    : thSAD=200, thSADC=150
-#   Medium grain  : thSAD=350, thSADC=250  ← recommended for 8/16mm film
-#   Heavy grain   : thSAD=500, thSADC=400
-degrain_thSAD    = 350  # luma threshold  (SAD per block)
-degrain_thSADC   = 250  # chroma threshold
-
-# PERFORMANCE — impact on speed (most to least impactful):
-#
-#  pel — sub-pixel precision of MSuper:
-#    pel=2 → ½ pixel, MSuper internally at 4x resolution → SLOW
-#    pel=1 → full pixel, ~2x faster, imperceptible loss on grain ← RECOMMENDED
-#
-#  blksize / overlap — analysis block size:
-#    blksize=8,  overlap=4  → precise on small grain, SLOW (4x more blocks)
-#    blksize=16, overlap=8  → good speed/quality balance               ← RECOMMENDED
-#    blksize=32, overlap=16 → very fast, less precise on small grain
-#    (overlap must always = blksize/2)
-#
-#  search — motion vector search algorithm:
-#    search=3 → exhaustive, slowest but most precise
-#    search=2 → hexagonal,  good speed/precision balance               ← RECOMMENDED
-#    search=0 → oneway,     fastest, less precise
-#
-degrain_blksize  = 16   # FAST: 8→16 (4x fewer blocks to analyse)
-degrain_overlap  = 8    # FAST: 4→8  (always blksize/2)
-degrain_pel      = 1    # FAST: 2→1  (~2x faster, imperceptible on grain)
-degrain_search   = 2    # NEW: hexagonal — good speed/precision balance
-
-# Prefilter for MVTools analysis (does not affect the final clip)
-degrain_prefilter = "remgrain"
-#   "remgrain"  → RemoveGrain(2) — fast and effective  ← RECOMMENDED
-#   "blur"      → Blur(1.0)     — alternative
-#   "none"      → no prefiltering (less precise)
-
-# Luma Levels
-Lum_Bright   = 0.0
-Lum_Contrast = 1.05
-Lum_Sat      = 1.10
-Lum_Hue      = 0.0
-Lum_GammaY   = 1.30
-
-# GamMac
-LockChan  = 1
-LockVal   = 250
-Scale     = 2
-Th        = 0.12
-HiTh      = 0.25
-X         = 0
-Y         = 0
-W         = 0
-H         = 0
-Omin      = 0
-Omax      = 255
-Show      = false
-Verbosity = 4
-
-# Sharpen (ALWAYS LAST — after all corrections)
-Sharp_Mode      = "simple"   # "simple" | "edge"
-Sharp_Strength  = 8          # scale 1–20 (5=light, 8=standard, 12=medium, 16=strong, 20=very strong)
-Sharp_Radius    = 1.5
-Sharp_Threshold = 5          # increased: better protection against residual noise
 
 # Preview
 preview_label_size = 40
@@ -308,8 +192,6 @@ function OpenVideoSourceSmart(string path, string "force", bool "show_label", in
   return _OpenWithLabel(chosen, v, overlay_size=source_overlay_size, show_overlay=show_label)
 }
 
-# __MODULE_FUNCTIONS__
-
 function _BuildPreview(clip src_clip, clip final_clip, int "label_size", bool "already_half") {
   label_size = Default(label_size, 28)
   already_half = Default(already_half, false)
@@ -343,29 +225,9 @@ if (use_img) {
   src = OpenVideoSourceSmart(src_path, force=force_source, show_label=(show_source_used && preview), source_overlay_size=source_label_size)
 }
 
-src = ApplyMirrors(src, enable_flip_h, enable_flip_v)
-
-if (enable_crop) {
-  src = CropSafe(src, Crop_L, Crop_T, Crop_R, Crop_B)
-}
-
 src = src.KillAudio().AssumeFPS(play_speed)
 
-# Half-resolution preview: resize source BEFORE heavy processing for speed
-if (preview_half && preview) {
-  _hw = src.Width()  / 2
-  _hh = src.Height() / 2
-  _hw = _hw - _hw % 2
-  _hh = _hh - _hh % 2
-  src = src.BicubicResize(_hw, _hh)
-}
-
-src_matrix = _MatrixAuto(src)
-
 # Border padding for temporal filters (prevents out-of-range access with ImageSource).
-# MVTools2 MDegrain2/3 requests frames beyond clip boundaries for motion references.
-# With ImageSource, those frames have no corresponding file → crash.
-# We prepend/append copies of the first/last frame, then strip the padding at output.
 n_img_orig = 0
 n_img_pad  = 0
 if (use_img) {
@@ -376,28 +238,27 @@ if (use_img) {
 
 
 # =========================
-# PIPELINE — FIXED ORDER v2
-#
-#  v1  :  Degrain → Denoise → Color → Sharpen
-#  v2  :  Denoise → Degrain → GamMac → LumaLevels → Sharpen
-#  v3  :  GamMac → Denoise → Degrain → LumaLevels → Sharpen  ← CURRENT
-#
-#  Why this order?
-#  1. GamMac FIRST : neutralises colour cast (e.g. strong pink tint)
-#     before RemoveDirt. RemoveDirt operates in YV12; a strong colour cast
-#     biases chroma components and masks stains → less reliable detection.
-#     After GamMac, stains have better contrast on a neutral background.
-#  2. RemoveDirt AFTER GamMac : detects dust better on a balanced image.
-#  3. MDegrain AFTER RemoveDirt : MVTools2 vectors more accurate without dust.
-#  4. LumaLevels : fine adjustments on clean image.
-#  5. Sharpen LAST : does not re-amplify residual noise/grain.
+# PIPELINE
 # =========================
 
 c = src
 pipeline_err = ""
 
-# __CUSTOM_INJECT_BeforePipeline__
+# ── Geometry (before half-preview resize) ──
+# __MODULE_PIPELINE_PRE__
 
+# Half-resolution preview: resize AFTER geometry, BEFORE heavy processing
+if (preview_half && preview) {
+  _hw = c.Width()  / 2
+  _hh = c.Height() / 2
+  _hw = _hw - _hw % 2
+  _hh = _hh - _hh % 2
+  c = c.BicubicResize(_hw, _hh)
+}
+
+src_matrix = _MatrixAuto(c)
+
+# ── Processing filters ──
 # __MODULE_PIPELINE__
 
 final = c

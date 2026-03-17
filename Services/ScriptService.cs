@@ -30,7 +30,6 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
 
     public static readonly string[] BoolFieldNames =
     [
-        "enable_flip_h", "enable_flip_v", "enable_crop",
         "enable_degrain", "enable_denoise", "denoise_grey",
         "enable_luma_levels", "enable_gammac", "enable_sharp",
         "preview", "preview_half", "Show"
@@ -63,8 +62,14 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
     [GeneratedRegex(@"^#\s*__CUSTOM_PLUGINS__\s*$", RegexOptions.Multiline)]
     private static partial Regex CustomPluginsMarkerRegex();
 
+    [GeneratedRegex(@"^# __MODULE_CONFIG__[ \t]*\r?$", RegexOptions.Multiline)]
+    private static partial Regex ModuleConfigMarkerRegex();
+
     [GeneratedRegex(@"^# __MODULE_FUNCTIONS__[ \t]*\r?$", RegexOptions.Multiline)]
     private static partial Regex ModuleFunctionsMarkerRegex();
+
+    [GeneratedRegex(@"^# __MODULE_PIPELINE_PRE__[ \t]*\r?$", RegexOptions.Multiline)]
+    private static partial Regex ModulePipelinePreMarkerRegex();
 
     [GeneratedRegex(@"^# __MODULE_PIPELINE__[ \t]*\r?$", RegexOptions.Multiline)]
     private static partial Regex ModulePipelineMarkerRegex();
@@ -86,12 +91,16 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
 
         var template = File.ReadAllText(templatePath);
 
-        // Assemble built-in modules into the template (replaces __MODULE_FUNCTIONS__ / __MODULE_PIPELINE__)
-        var builtInModules = ScriptModuleRegistry.GetBuiltInModules();
-        template = AssembleModules(template, builtInModules);
+        // Convert ALL filters (built-in + user-created) to modules — no distinction
+        var allModules = customFilters is not null
+            ? ConvertCustomFiltersToModules(customFilters, configValues)
+            : new List<ScriptModule>();
+
+        // Assemble active modules only (replaces __MODULE_PIPELINE__, __CUSTOM_PLUGINS__)
+        template = AssembleModules(template, allModules, configValues);
 
         var contents = BuildContents(template, configValues);
-        contents = InjectCustomFilters(contents, customFilters, configValues);
+
         // Normalize line endings to \r\n (Windows) for AviSynth compatibility
         contents = contents.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\r\n");
         foreach (var scriptPath in GetScriptPaths())
@@ -652,53 +661,153 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
     // ── Module assembly ─────────────────────────────────────────────────────
 
     /// <summary>
-    /// Replaces __MODULE_FUNCTIONS__ and __MODULE_PIPELINE__ markers in the template
-    /// with the assembled code from the provided script modules.
-    /// Modules are sorted by Position; each module's InjectionPointAfter marker
-    /// is emitted after its pipeline code for custom filter injection.
+    /// Maps custom filter injection position strings to numeric pipeline order.
+    /// Values sit between built-in module positions to preserve insertion order.
     /// </summary>
-    public static string AssembleModules(string template, IReadOnlyList<ScriptModule> modules)
+    /// <summary>Pipeline position threshold: modules below this go before half-preview resize.</summary>
+    private const int PrePipelineThreshold = 50;
+
+    private static readonly Dictionary<string, int> InjectionPositionOrder = new(StringComparer.OrdinalIgnoreCase)
     {
-        var sorted = modules.OrderBy(m => m.Position).ToList();
+        ["FlipH"]          = 10,
+        ["FlipV"]          = 15,
+        ["Crop"]           = 20,
+        ["BeforePipeline"] = 40,
+        ["GamMac"]         = 100,
+        ["AfterGamMac"]    = 150,
+        ["Denoise"]        = 200,
+        ["AfterDenoise"]   = 250,
+        ["Degrain"]        = 300,
+        ["AfterDegrain"]   = 350,
+        ["Luma"]           = 400,
+        ["AfterLuma"]      = 450,
+        ["Sharpen"]        = 500,
+        ["AfterSharpen"]   = 550,
+    };
 
-        // ── 1. Replace __MODULE_FUNCTIONS__ with all module function definitions ──
-        template = ModuleFunctionsMarkerRegex().Replace(template, _ =>
+    /// <summary>Converts a position name to a numeric pipeline order. Accepts numeric strings directly.</summary>
+    public static int InjectionPositionToOrder(string position)
+    {
+        if (int.TryParse(position, out var numeric)) return numeric;
+        return InjectionPositionOrder.TryGetValue(position, out var order) ? order : 550;
+    }
+
+    /// <summary>
+    /// Converts enabled custom filters to ScriptModules with resolved placeholders.
+    /// </summary>
+    public static List<ScriptModule> ConvertCustomFiltersToModules(
+        IReadOnlyList<CustomFilter> filters, Dictionary<string, string>? configValues = null)
+    {
+        var modules = new List<ScriptModule>();
+        foreach (var f in filters)
         {
-            var sb = new StringBuilder();
-            foreach (var m in sorted)
-            {
-                if (string.IsNullOrWhiteSpace(m.Functions)) continue;
-                sb.Append(m.Functions);
-                sb.AppendLine();
-            }
-            // Remove trailing newline to avoid extra blank line before _BuildPreview
-            var result = sb.ToString();
-            return result.TrimEnd('\r', '\n');
-        });
+            if (!f.Enabled || string.IsNullOrWhiteSpace(f.Code)) continue;
 
-        // ── 2. Replace __MODULE_PIPELINE__ with assembled pipeline steps ──
-        template = ModulePipelineMarkerRegex().Replace(template, _ =>
-        {
-            var sb = new StringBuilder();
-            foreach (var m in sorted)
+            // Resolve placeholders in code
+            var code = f.Code.TrimEnd();
+            foreach (var ctrl in f.Controls)
             {
-                if (string.IsNullOrWhiteSpace(m.PipelineCode)) continue;
-                sb.Append(m.PipelineCode);
-                sb.AppendLine();
-
-                if (!string.IsNullOrWhiteSpace(m.InjectionPointAfter))
+                var configKey = GetCustomFilterConfigKey(f.Id, ctrl.Placeholder);
+                var value = ctrl.Default;
+                if (configValues is not null &&
+                    configValues.TryGetValue(configKey, out var cfgVal) &&
+                    !string.IsNullOrEmpty(cfgVal))
                 {
-                    sb.AppendLine();
-                    sb.AppendLine($"# __CUSTOM_INJECT_{m.InjectionPointAfter}__");
-                    sb.AppendLine();
+                    value = cfgVal;
                 }
+                code = code.Replace($"{{{ctrl.Placeholder}}}", value, StringComparison.OrdinalIgnoreCase);
             }
-            // Remove trailing newline
-            var result = sb.ToString();
-            return result.TrimEnd('\r', '\n');
+
+            modules.Add(new ScriptModule
+            {
+                Id = $"custom_{f.Id}",
+                Name = f.Name,
+                Position = InjectionPositionToOrder(f.Position),
+                TemporalRadius = 0,
+                Dlls = [.. f.Dlls.Where(d => !string.IsNullOrWhiteSpace(d)).Select(d => d.Trim())],
+                Scripts = [.. f.Scripts.Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s.Trim())],
+                PipelineCode = $"# ── Custom filter: {f.Name} ──\n{code}",
+            });
+        }
+        return modules;
+    }
+
+    /// <summary>
+    /// Replaces __MODULE_FUNCTIONS__, __MODULE_PIPELINE__, and __CUSTOM_PLUGINS__ markers
+    /// in the template with the assembled code from the provided script modules.
+    /// Only active modules are included: modules with an EnableKey are skipped if
+    /// the corresponding config value is not "true".
+    /// </summary>
+    public static string AssembleModules(string template, IReadOnlyList<ScriptModule> modules,
+        Dictionary<string, string>? configValues = null)
+    {
+        var active = modules
+            .Where(m => IsModuleActive(m, configValues))
+            .OrderBy(m => m.Position)
+            .ToList();
+
+        // ── 1. Replace __CUSTOM_PLUGINS__ with TryLoadPlugin/Import calls from active modules ──
+        template = CustomPluginsMarkerRegex().Replace(template, _ =>
+        {
+            var allDlls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var allScripts = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var m in active)
+            {
+                foreach (var dll in m.Dlls)
+                    if (!string.IsNullOrWhiteSpace(dll))
+                        allDlls.Add(dll);
+                foreach (var script in m.Scripts)
+                    if (!string.IsNullOrWhiteSpace(script))
+                        allScripts.Add(script);
+            }
+
+            if (allDlls.Count == 0 && allScripts.Count == 0) return "";
+
+            var sb = new StringBuilder();
+            sb.AppendLine("# ── Custom filter plugins ──");
+            foreach (var dll in allDlls)
+                sb.AppendLine($"TryLoadPlugin(\"{ResolveDllPath(dll)}\")");
+            foreach (var script in allScripts)
+                sb.AppendLine($"Import(\"{ResolveScriptPath(script)}\")");
+            return sb.ToString().TrimEnd('\r', '\n');
         });
+
+        // ── 2. Replace __MODULE_PIPELINE_PRE__ with geometry modules (Position < 50) ──
+        template = ModulePipelinePreMarkerRegex().Replace(template, _ =>
+            BuildPipelineBlock(active.Where(m => m.Position < PrePipelineThreshold)));
+
+        // ── 3. Replace __MODULE_PIPELINE__ with processing modules (Position >= 50) ──
+        template = ModulePipelineMarkerRegex().Replace(template, _ =>
+            BuildPipelineBlock(active.Where(m => m.Position >= PrePipelineThreshold)));
 
         return template;
+    }
+
+    private static string BuildPipelineBlock(IEnumerable<ScriptModule> modules)
+    {
+        var sb = new StringBuilder();
+        foreach (var m in modules)
+        {
+            if (string.IsNullOrWhiteSpace(m.PipelineCode)) continue;
+            sb.AppendLine($"# ── {m.Name} ──");
+            sb.Append(m.PipelineCode);
+            sb.AppendLine();
+            sb.AppendLine();
+        }
+        return sb.ToString().TrimEnd('\r', '\n');
+    }
+
+    /// <summary>
+    /// Returns true if a module should be included in the assembled script.
+    /// Modules without an EnableKey are always active.
+    /// Modules with an EnableKey are active only if configValues contains "true" for that key.
+    /// </summary>
+    private static bool IsModuleActive(ScriptModule module, Dictionary<string, string>? configValues)
+    {
+        if (module.EnableKey is null) return true; // always active (custom filters, etc.)
+        if (configValues is null) return true;     // no config = include all
+        return configValues.TryGetValue(module.EnableKey, out var v)
+            && bool.TryParse(v, out var enabled) && enabled;
     }
 
     /// <summary>

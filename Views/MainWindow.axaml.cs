@@ -134,6 +134,7 @@ namespace CleanScan.Views
             _windowStateService = new WindowStateService(GetAppDataPath(WindowSettingsFileName));
             _sessionService     = new SessionService(GetAppDataPath(SessionFileName));
             _customFilterService = new CustomFilterService(GetAppDataPath(CustomFiltersFileName));
+            _customFilterService.ImportBuiltInFilters();
             _dialogService      = new DialogService();
 
             InitializeWindow();
@@ -158,6 +159,7 @@ namespace CleanScan.Views
             _windowStateService = windowStateService;
             _sessionService     = new SessionService(GetAppDataPath(SessionFileName));
             _customFilterService = new CustomFilterService(GetAppDataPath(CustomFiltersFileName));
+            _customFilterService.ImportBuiltInFilters();
             _dialogService      = dialogService;
             _aviService         = aviService;
 
@@ -566,7 +568,7 @@ namespace CleanScan.Views
             if (this.FindControl<TextBlock>("SourceLoaderLabel") is { } srcLbl)
                 srcLbl.Text = GetUiText("SourceLoaderLabel");
 
-            foreach (var expandName in new[] { "CropExpandBtn", "GammacExpandBtn", "DenoiseExpandBtn", "DegrainExpandBtn", "LumaExpandBtn", "SharpExpandBtn" })
+            foreach (var expandName in AllExpandBtns)
             {
                 if (this.FindControl<Button>(expandName) is { } expandBtn)
                     ToolTip.SetTip(expandBtn, GetUiText("ExpandBtnTooltip"));
@@ -594,6 +596,11 @@ namespace CleanScan.Views
 
         private void ApplyRecordLabels()
         {
+            if (this.FindControl<Button>("preview") is { } pvBtn)
+            {
+                pvBtn.Content = GetUiText("PreviewBtn");
+                ToolTip.SetTip(pvBtn, GetUiText("PreviewTip"));
+            }
             if (this.FindControl<Button>("RecordBtn") is { } btn)
                 btn.Content = "⏺ " + GetUiText("RecordBtn");
             if (this.FindControl<TextBlock>("RecordOverlayTitle") is { } title)
@@ -2493,19 +2500,13 @@ namespace CleanScan.Views
 #pragma warning restore IDE0028
 
         private static readonly string[] AllParamPanels =
-            ["CropParams", "DegrainParams", "DenoiseParams", "LumaParams", "GammacParams", "SharpParams"];
+            [];
 
         private static readonly string[] AllExpandBtns =
-            ["CropExpandBtn", "DegrainExpandBtn", "DenoiseExpandBtn", "LumaExpandBtn", "GammacExpandBtn", "SharpExpandBtn"];
+            [];
 
-        private static readonly Dictionary<string, string> ParamPanelToOptionToggle = new(StringComparer.Ordinal)
+        private static readonly Dictionary<string, string> ParamPanelToOptionToggle = new(StringComparer.OrdinalIgnoreCase)
         {
-            ["CropParams"] = "enable_crop",
-            ["DegrainParams"] = "enable_degrain",
-            ["DenoiseParams"] = "enable_denoise",
-            ["LumaParams"] = "enable_luma_levels",
-            ["GammacParams"] = "enable_gammac",
-            ["SharpParams"] = "enable_sharp"
         };
 
         private bool IsParamPanelEnabled(string panelName) =>
@@ -2632,27 +2633,6 @@ namespace CleanScan.Views
 
         private void UpdateOptionColumnVisibility()
         {
-            _mainGrid ??= this.FindControl<Grid>("MainGrid");
-
-            var crop    = IsOptionEnabled("enable_crop");
-            var degrain = IsOptionEnabled("enable_degrain");
-            var denoise = IsOptionEnabled("enable_denoise");
-            var luma    = IsOptionEnabled("enable_luma_levels");
-            var gammac  = IsOptionEnabled("enable_gammac");
-            var sharp   = IsOptionEnabled("enable_sharp");
-
-            SetColumnEnabled(crop,              "CropScrollViewer");
-            SetColumnEnabled(crop,              "CropSplitterBefore", "CropSplitterAfter");
-            SetColumnEnabled(true,              "DegrainColumn");
-            SetColumnEnabled(degrain,           "DegrainScrollViewer");
-            SetColumnEnabled(degrain || denoise,"DegrainDenoiseSplitter");
-            SetColumnEnabled(true,              "DenoiseColumn");
-            SetColumnEnabled(denoise,           "DenoiseScrollViewer");
-            SetColumnEnabled(luma,              "LumaSplitterBefore", "LumaLevelsScrollViewer");
-            SetColumnEnabled(luma && gammac,    "LumaGammacSplitter");
-            SetColumnEnabled(gammac,            "GammacScrollViewer");
-            SetColumnEnabled(gammac && sharp,   "GammacSplitterAfter");
-            SetColumnEnabled(sharp,             "SharpenScrollViewer");
         }
 
         private bool IsOptionEnabled(string name) => GetOptionToggleValue(name);
@@ -2689,8 +2669,7 @@ namespace CleanScan.Views
         }
 
         private static bool IsOptionToggle(string name) =>
-            name is "enable_crop" or "enable_degrain" or "enable_denoise"
-                 or "enable_luma_levels" or "enable_gammac" or "enable_sharp";
+            false;
 
         private static string GetBoolControlName(string name) =>
             string.Equals(name, "Show", StringComparison.OrdinalIgnoreCase) ? "ShowPreview" : name;

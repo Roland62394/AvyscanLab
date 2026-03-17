@@ -70,6 +70,14 @@
     </Content>
   </ItemGroup>
 
+  <!-- Built-in filter definitions (JSON) — auto-imported on first startup -->
+  <ItemGroup>
+    <Content Include="Filters\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
   <!-- Plugins MIT/ISC bundled (RgTools, L-Smash-Works, ffmpeg) -->
   <ItemGroup>
     <!-- Copie tout le contenu Plugins (dll, avsi, etc.) en gardant l'arborescence -->

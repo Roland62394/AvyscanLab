@@ -24,8 +24,14 @@ public sealed class ScriptModule
     /// <summary>Max temporal radius in frames (0 = frame-local, 3 = MDegrain3).</summary>
     public int TemporalRadius { get; init; }
 
-    /// <summary>Plugin DLLs to load (deduplicated at merge time).</summary>
+    /// <summary>AviSynth config variable declarations (enable toggle + parameters).</summary>
+    public string ConfigSection { get; init; } = "";
+
+    /// <summary>Plugin DLLs to load via TryLoadPlugin (deduplicated at merge time).</summary>
     public List<string> Dlls { get; init; } = [];
+
+    /// <summary>AviSynth script imports (.avsi) to load via Import (deduplicated at merge time).</summary>
+    public List<string> Scripts { get; init; } = [];
 
     /// <summary>AviSynth function definitions (e.g. DenoiseFilm, DegrainFilm).</summary>
     public string Functions { get; init; } = "";

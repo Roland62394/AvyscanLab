@@ -81,15 +81,7 @@ public static class FilterPresets
     public static readonly Dictionary<string, string> OptionButtonLabels = new(StringComparer.OrdinalIgnoreCase)
     {
         ["preview"]           = "Preview",
-        ["enable_flip_h"]     = "Flip h",
-        ["enable_flip_v"]     = "Flip v",
-        ["enable_crop"]       = "Crop",
-        ["enable_degrain"]    = "Degrain",
-        ["enable_denoise"]    = "Denoise",
         ["denoise_grey"]      = "grey",
-        ["enable_luma_levels"] = "Luma levels",
-        ["enable_gammac"]     = "Gammac",
-        ["enable_sharp"]      = "Sharp",
         ["ShowPreview"]       = "Show"
     };
 

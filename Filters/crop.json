@@ -1,0 +1,50 @@
+{
+  "Id": "crop",
+  "Name": "Crop",
+  "Dlls": [],
+  "Scripts": [],
+  "Code": "c = CropSafe(c, {left}, {top}, {right}, {bottom})",
+  "Position": "Crop",
+  "Controls": [
+    {
+      "Placeholder": "left",
+      "Type": "slider",
+      "Default": "0",
+      "Max": 4000,
+      "Step": 2,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    },
+    {
+      "Placeholder": "top",
+      "Type": "slider",
+      "Default": "0",
+      "Max": 4000,
+      "Step": 2,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    },
+    {
+      "Placeholder": "right",
+      "Type": "slider",
+      "Default": "0",
+      "Max": 4000,
+      "Step": 2,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    },
+    {
+      "Placeholder": "bottom",
+      "Type": "slider",
+      "Default": "0",
+      "Max": 4000,
+      "Step": 2,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    }
+  ]
+}

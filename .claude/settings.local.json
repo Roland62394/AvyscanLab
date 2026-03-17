@@ -62,7 +62,12 @@
       "Bash(pip show:*)",
       "Read(//c/Windows/Fonts/**)",
       "Bash(mkdir:*)",
-      "Bash(xxd:*)"
+      "Bash(xxd:*)",
+      "Bash(echo \"$APPDATA\")",
+      "Read(//c/Users/larde/AppData/Roaming/CleanScan/**)",
+      "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); print\\(f''''{len\\(data\\)} filters''''\\); [print\\(f''''  - {f[Name]} \\(pos={f[Position]}, enabled={f[Enabled]}\\)''''\\) for f in data]\")",
+      "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); print\\(f''''{len\\(data\\)} filters:''''\\); [print\\(f''''  {f[\"\"Id\"\"]}: {f[\"\"Name\"\"]}''''\\) for f in data]\")",
+      "Bash(python3 -c \":*)"
     ]
   }
 }

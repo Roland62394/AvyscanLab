@@ -1,0 +1,55 @@
+{
+  "Id": "sharpen",
+  "Name": "Sharpen",
+  "Dlls": [],
+  "Scripts": [],
+  "Code": "function SharpenAdvanced(clip c, string \"mode\", float \"strength\", float \"radius\", int \"threshold\", string \"matrix\")\n{\n  mode      = Default(mode, \"simple\")\n  strength  = Default(strength, 8)\n  radius    = Default(radius, 1.5)\n  threshold = Default(threshold, 5)\n  matrix    = Default(matrix, _MatrixAuto(c))\n\n  base_pix = PixelType(c)\n  blur_r = Min((radius - 1.0) * 0.45 + 0.15, 1.5)\n\n  if (mode == \"edge\") {\n    yuv = EnsureColorspaceSafe(c, \"YV24\", matrix=matrix)\n    blurred = yuv.Blur(blur_r)\n    sharp = mt_lutxy(yuv, blurred, \"x \" + String(strength) + \" x y - * + 0 max 255 min\", U=1, V=1)\n    edge_h    = yuv.mt_edge(thY1=0, thY2=255, \"8 16 8 0 0 0 -8 -16 -8 4\")\n    edge_v    = yuv.mt_edge(thY1=0, thY2=255, \"8 0 -8 16 0 -16 8 0 -8 4\")\n    edge_mask = mt_logic(edge_h, edge_v, \"max\") \\\n              .mt_lut(\"x 128 / 0.86 ^ 255 *\", U=1, V=1)\n    edge_mask = edge_mask.mt_inflate().mt_inflate().Blur(1.0)\n    edge_mask = (threshold > 0)\n              \\ ? edge_mask.mt_lut(\"x \" + String(threshold) + \" < 0 x ?\", U=1, V=1)\n              \\ : edge_mask\n    result = mt_merge(yuv, sharp, edge_mask, U=1, V=1)\n    return EnsureColorspaceSafe(result, base_pix, matrix=matrix)\n  }\n\n  yuv_s   = EnsureColorspaceSafe(c, \"YV24\", matrix=matrix)\n  blurred = yuv_s.Blur(blur_r)\n  sharp_s = mt_lutxy(yuv_s, blurred, \"x \" + String(strength) + \" x y - * + 0 max 255 min\", U=1, V=1)\n  return EnsureColorspaceSafe(sharp_s, base_pix, matrix=matrix)\n}\n\nc = SharpenAdvanced(c, mode=\"{mode}\", strength={strength}, radius={radius}, threshold={threshold}, matrix=src_matrix)",
+  "Position": "Sharpen",
+  "Controls": [
+    {
+      "Placeholder": "mode",
+      "Type": "combo",
+      "Default": "simple",
+      "Max": 100,
+      "Step": 1,
+      "Options": [
+        "simple",
+        "edge"
+      ],
+      "OnValue": "true",
+      "OffValue": "false"
+    },
+    {
+      "Placeholder": "strength",
+      "Type": "slider",
+      "Default": "8",
+      "Min": 1,
+      "Max": 20,
+      "Step": 1,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    },
+    {
+      "Placeholder": "radius",
+      "Type": "slider",
+      "Default": "1.5",
+      "Min": 0.5,
+      "Max": 3,
+      "Step": 0.1,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    },
+    {
+      "Placeholder": "threshold",
+      "Type": "slider",
+      "Default": "5",
+      "Max": 255,
+      "Step": 1,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    }
+  ]
+}

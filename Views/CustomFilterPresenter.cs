@@ -56,13 +56,21 @@ public sealed class CustomFilterPresenter
         var container = _host.FindControl<StackPanel>("CustomParamPanels");
         container?.Children.Clear();
 
-        foreach (var filter in _filterService.Filters)
+        // Sort filters by pipeline position for display
+        var sorted = _filterService.Filters
+            .OrderBy(f => ScriptService.InjectionPositionToOrder(f.Position))
+            .ToList();
+
+        foreach (var filter in sorted)
         {
             AddFilterRow(filter, list);
             var panelName = $"CustomPanel_{filter.Id}";
             if (_host.OpenParamPanels.Contains(panelName))
                 BuildParamPanel(filter);
         }
+
+        // Set up drag & drop on the list
+        SetupDragDrop(list);
     }
 
     public void OnExpandClick(object? sender, RoutedEventArgs e)
@@ -146,8 +154,32 @@ public sealed class CustomFilterPresenter
     {
         var row = new Grid
         {
-            ColumnDefinitions = ColumnDefinitions.Parse("*,10,28,4,20"),
+            ColumnDefinitions = ColumnDefinitions.Parse("18,4,*,10,28,4,20"),
             Tag = filter.Id
+        };
+
+        // Drag handle
+        var handle = new TextBlock
+        {
+            Text = "⠿", FontSize = 14,
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Foreground = _host.ThemeBrush("TextSecondary"),
+            Cursor = new Cursor(StandardCursorType.Hand),
+            Opacity = 0.6
+        };
+        Grid.SetColumn(handle, 0);
+        row.Children.Add(handle);
+
+        // Initiate drag from handle
+        handle.PointerPressed += async (_, e) =>
+        {
+            if (!e.GetCurrentPoint(handle).Properties.IsLeftButtonPressed) return;
+            var data = new DataObject();
+            data.Set("FilterId", filter.Id);
+            row.Opacity = 0.4;
+            await DragDrop.DoDragDrop(e, data, DragDropEffects.Move);
+            row.Opacity = 1.0;
         };
 
         // Sync enabled state from config (preset may have changed it)
@@ -186,7 +218,7 @@ public sealed class CustomFilterPresenter
             _host.RegenerateScript(showValidationError: false);
             _ = _host.LoadScriptAsync();
         };
-        Grid.SetColumn(toggleBtn, 0);
+        Grid.SetColumn(toggleBtn, 2);
         row.Children.Add(toggleBtn);
 
         var expandBtn = new Button
@@ -196,7 +228,7 @@ public sealed class CustomFilterPresenter
             Tag = $"CustomPanel_{filter.Id}"
         };
         expandBtn.Click += OnExpandClick;
-        Grid.SetColumn(expandBtn, 2);
+        Grid.SetColumn(expandBtn, 4);
         row.Children.Add(expandBtn);
 
         var editBtn = new Button
@@ -211,7 +243,7 @@ public sealed class CustomFilterPresenter
             BorderThickness = new Thickness(0)
         };
         editBtn.Click += async (_, _) => await OpenDialog(filter);
-        Grid.SetColumn(editBtn, 4);
+        Grid.SetColumn(editBtn, 6);
         row.Children.Add(editBtn);
 
         list.Children.Add(row);
@@ -527,5 +559,109 @@ public sealed class CustomFilterPresenter
         var ratio = Math.Clamp((x - thumbHalf) / (w - thumbHalf * 2), 0.0, 1.0);
         var raw = slider.Minimum + ratio * (slider.Maximum - slider.Minimum);
         slider.Value = SnapToStep(raw, slider.Minimum, slider.SmallChange);
+    }
+
+    // ── Drag & drop reordering ───────────────────────────────────────
+
+    private Border? _dropIndicator;
+
+    private void SetupDragDrop(StackPanel list)
+    {
+        DragDrop.SetAllowDrop(list, true);
+
+        list.AddHandler(DragDrop.DragOverEvent, (_, e) =>
+        {
+            if (!e.Data.Contains("FilterId")) { e.DragEffects = DragDropEffects.None; return; }
+            e.DragEffects = DragDropEffects.Move;
+
+            // Show drop indicator
+            var insertIndex = GetInsertIndex(list, e);
+            ShowDropIndicator(list, insertIndex);
+        });
+
+        list.AddHandler(DragDrop.DragLeaveEvent, (_, _) =>
+        {
+            RemoveDropIndicator(list);
+        });
+
+        list.AddHandler(DragDrop.DropEvent, (_, e) =>
+        {
+            RemoveDropIndicator(list);
+            if (!e.Data.Contains("FilterId")) return;
+            var draggedId = e.Data.Get("FilterId") as string;
+            if (string.IsNullOrEmpty(draggedId)) return;
+
+            var insertIndex = GetInsertIndex(list, e);
+            ReorderFilter(draggedId, insertIndex);
+        });
+    }
+
+    private static int GetInsertIndex(StackPanel list, DragEventArgs e)
+    {
+        var pos = e.GetPosition(list);
+        var y = pos.Y;
+        var index = 0;
+
+        foreach (var child in list.Children)
+        {
+            if (child is not Control c) { index++; continue; }
+            var childTop = c.Bounds.Top;
+            var childMid = childTop + c.Bounds.Height / 2;
+            if (y < childMid) return index;
+            index++;
+        }
+        return index;
+    }
+
+    private void ShowDropIndicator(StackPanel list, int insertIndex)
+    {
+        RemoveDropIndicator(list);
+
+        _dropIndicator = new Border
+        {
+            Height = 2,
+            Background = _host.ThemeBrush("AccentGreen"),
+            Margin = new Thickness(18, -1, 0, -1),
+            HorizontalAlignment = HorizontalAlignment.Stretch
+        };
+
+        var clampedIndex = Math.Min(insertIndex, list.Children.Count);
+        list.Children.Insert(clampedIndex, _dropIndicator);
+    }
+
+    private void RemoveDropIndicator(StackPanel list)
+    {
+        if (_dropIndicator is not null && list.Children.Contains(_dropIndicator))
+            list.Children.Remove(_dropIndicator);
+        _dropIndicator = null;
+    }
+
+    private void ReorderFilter(string draggedId, int visualInsertIndex)
+    {
+        // Build the current display order (sorted by position)
+        var sorted = _filterService.Filters
+            .OrderBy(f => ScriptService.InjectionPositionToOrder(f.Position))
+            .ToList();
+
+        var dragged = sorted.FirstOrDefault(f => f.Id == draggedId);
+        if (dragged is null) return;
+
+        var oldIndex = sorted.IndexOf(dragged);
+        sorted.Remove(dragged);
+
+        // Adjust insert index (drop indicator accounts for the dragged item)
+        var newIndex = visualInsertIndex;
+        if (newIndex > oldIndex) newIndex--;
+        newIndex = Math.Clamp(newIndex, 0, sorted.Count);
+        sorted.Insert(newIndex, dragged);
+
+        // Reassign numeric positions (10, 20, 30, ...)
+        for (var i = 0; i < sorted.Count; i++)
+            sorted[i].Position = ((i + 1) * 10).ToString();
+
+        _filterService.Save();
+        RebuildUI();
+        _host.RegenerateScript(showValidationError: false);
+        _ = _host.LoadScriptAsync();
     }
 }

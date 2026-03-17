@@ -77,4 +77,39 @@ public sealed class CustomFilterService
             _filters = [];
         }
     }
+
+    /// <summary>
+    /// Imports built-in filter JSON files from the Filters/ directory next to the executable.
+    /// Only imports filters whose Id is not already present in the user's list.
+    /// Called once at startup.
+    /// </summary>
+    public void ImportBuiltInFilters()
+    {
+        var exeDir = Path.GetDirectoryName(Environment.ProcessPath);
+        if (string.IsNullOrWhiteSpace(exeDir)) return;
+
+        var filtersDir = Path.Combine(exeDir, "Filters");
+        if (!Directory.Exists(filtersDir)) return;
+
+        var existingIds = new HashSet<string>(_filters.ConvertAll(f => f.Id), StringComparer.OrdinalIgnoreCase);
+        var imported = false;
+
+        foreach (var jsonFile in Directory.GetFiles(filtersDir, "*.json"))
+        {
+            try
+            {
+                var json = File.ReadAllText(jsonFile);
+                var filter = JsonSerializer.Deserialize<CustomFilter>(json, JsonOpts);
+                if (filter is null || string.IsNullOrWhiteSpace(filter.Id)) continue;
+                if (existingIds.Contains(filter.Id)) continue;
+
+                _filters.Add(filter);
+                existingIds.Add(filter.Id);
+                imported = true;
+            }
+            catch { /* skip malformed files */ }
+        }
+
+        if (imported) Save();
+    }
 }
