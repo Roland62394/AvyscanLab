@@ -68,12 +68,6 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
     [GeneratedRegex(@"^# __MODULE_FUNCTIONS__[ \t]*\r?$", RegexOptions.Multiline)]
     private static partial Regex ModuleFunctionsMarkerRegex();
 
-    [GeneratedRegex(@"^# __MODULE_PIPELINE_FLIP__[ \t]*\r?$", RegexOptions.Multiline)]
-    private static partial Regex ModulePipelineFlipMarkerRegex();
-
-    [GeneratedRegex(@"^# __MODULE_PIPELINE_PRE__[ \t]*\r?$", RegexOptions.Multiline)]
-    private static partial Regex ModulePipelinePreMarkerRegex();
-
     [GeneratedRegex(@"^# __MODULE_PIPELINE__[ \t]*\r?$", RegexOptions.Multiline)]
     private static partial Regex ModulePipelineMarkerRegex();
 
@@ -730,11 +724,6 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
     /// Maps custom filter injection position strings to numeric pipeline order.
     /// Values sit between built-in module positions to preserve insertion order.
     /// </summary>
-    /// <summary>Pipeline position threshold: modules at or above this go into __MODULE_PIPELINE_PRE__ (geometry).</summary>
-    private const int FlipThreshold = 18;
-    /// <summary>Pipeline position threshold: modules at or above this go into __MODULE_PIPELINE__ (processing).</summary>
-    private const int PrePipelineThreshold = 50;
-
     private static readonly Dictionary<string, int> InjectionPositionOrder = new(StringComparer.OrdinalIgnoreCase)
     {
         ["FlipH"]          = 10,
@@ -851,17 +840,9 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
             return sb.ToString().TrimEnd('\r', '\n');
         });
 
-        // ── 2. Replace __MODULE_PIPELINE_FLIP__ with flip modules (Position < FlipThreshold) ──
-        template = ModulePipelineFlipMarkerRegex().Replace(template, _ =>
-            BuildPipelineBlock(active.Where(m => m.Position < FlipThreshold)));
-
-        // ── 3. Replace __MODULE_PIPELINE_PRE__ with geometry modules (FlipThreshold <= Position < 50) ──
-        template = ModulePipelinePreMarkerRegex().Replace(template, _ =>
-            BuildPipelineBlock(active.Where(m => m.Position >= FlipThreshold && m.Position < PrePipelineThreshold)));
-
-        // ── 4. Replace __MODULE_PIPELINE__ with processing modules (Position >= 50) ──
+        // ── 2. Replace __MODULE_PIPELINE__ with all modules in position order ──
         template = ModulePipelineMarkerRegex().Replace(template, _ =>
-            BuildPipelineBlock(active.Where(m => m.Position >= PrePipelineThreshold)));
+            BuildPipelineBlock(active));
 
         return template;
     }

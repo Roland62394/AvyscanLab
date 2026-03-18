@@ -326,17 +326,22 @@ public sealed class CustomFilterPresenter
         Grid.SetColumn(toggleBtn, 0);
         row.Children.Add(toggleBtn);
 
+        var panelTag = $"CustomPanel_{filter.Id}";
         var expandBtn = new Button
         {
             Content = "▶",
             Classes = { "expand-btn" },
-            Tag = $"CustomPanel_{filter.Id}"
+            Tag = panelTag
         };
         if (filter.Controls.Count == 0)
         {
             // No params to expand — hide button but keep column space for alignment
             expandBtn.Opacity = 0;
             expandBtn.IsHitTestVisible = false;
+        }
+        else if (_host.OpenParamPanels.Contains(panelTag))
+        {
+            expandBtn.Classes.Add("active");
         }
         expandBtn.Click += OnExpandClick;
         Grid.SetColumn(expandBtn, 2);
@@ -778,19 +783,9 @@ public sealed class CustomFilterPresenter
         var newIndex = Math.Clamp(insertIndex, 0, sorted.Count);
         sorted.Insert(newIndex, dragged);
 
-        // Reassign numeric positions preserving zone boundaries.
-        // Filters with a named position that maps below PrePipelineThreshold (50)
-        // keep their original position so they stay in the correct pipeline zone
-        // (FLIP / PRE).  Only processing filters (>= 50) are renumbered.
-        var processingBase = 100;
+        // Reassign numeric positions in display order (free reordering)
         for (var i = 0; i < sorted.Count; i++)
-        {
-            var originalOrder = ScriptService.InjectionPositionToOrder(sorted[i].Position);
-            if (originalOrder < 50)
-                continue; // keep FlipH(10), FlipV(15), Crop(20), BeforePipeline(40) as-is
-            sorted[i].Position = processingBase.ToString();
-            processingBase += 10;
-        }
+            sorted[i].Position = ((i + 1) * 10).ToString();
 
         _filterService.Save();
         SyncPositionsToConfig();

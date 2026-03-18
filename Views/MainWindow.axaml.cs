@@ -2518,7 +2518,8 @@ namespace CleanScan.Views
         };
 
         private bool IsParamPanelEnabled(string panelName) =>
-            ParamPanelToOptionToggle.TryGetValue(panelName, out var optionName) && IsOptionEnabled(optionName);
+            panelName.StartsWith("CustomPanel_", StringComparison.Ordinal)
+            || (ParamPanelToOptionToggle.TryGetValue(panelName, out var optionName) && IsOptionEnabled(optionName));
 
         private void HideAllParamPanelsAndResetExpandButtons()
         {

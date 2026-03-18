@@ -244,14 +244,7 @@ if (use_img) {
 c = src
 pipeline_err = ""
 
-# ── Orientation (flip only — applied to both preview sides) ──
-# __MODULE_PIPELINE_FLIP__
-
-# Capture source AFTER flips but BEFORE crop/stab for preview comparison
-# (left side shows full flipped image, right side shows cropped/processed result)
-src_flipped = c
-
-# Half-resolution preview: resize BEFORE geometry so crop/stab run at half res
+# Half-resolution preview: resize before all filters
 # (filter values marked ScaleWithPreview are divided by 2 in the generated script)
 if (preview_half && preview) {
   _hw = c.Width()  / 2
@@ -259,16 +252,15 @@ if (preview_half && preview) {
   _hw = _hw - _hw % 2
   _hh = _hh - _hh % 2
   c = c.BicubicResize(_hw, _hh)
-  src_flipped = src_flipped.BicubicResize(_hw, _hh)
 }
 
-# ── Geometry: crop, stabilisation (values ÷2 in preview ½ mode) ──
-# __MODULE_PIPELINE_PRE__
+# Capture source before any filter for preview comparison
+src_flipped = c
+
+# ── All filters (user-defined order) ──
+# __MODULE_PIPELINE__
 
 src_matrix = _MatrixAuto(c)
-
-# ── Processing filters ──
-# __MODULE_PIPELINE__
 
 final = c
 
