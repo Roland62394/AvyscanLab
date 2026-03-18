@@ -823,6 +823,33 @@ public partial class CustomFilterDialog : Window
         var defBox = MakeFieldBox(ctrl.Default, 48);
         defBox.LostFocus += (_, _) => ctrl.Default = defBox.Text ?? "";
         row.Children.Add(defBox);
+
+        // "½" toggle — when active, value is halved in preview_half mode
+        var halfBtn = new Button
+        {
+            Content = "\u00BD",
+            FontSize = 11,
+            Width = 26, Height = 22,
+            Padding = new Thickness(0),
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(4, 0, 0, 0),
+            Background = ctrl.ScaleWithPreview ? ThemeBrush("AccentGreen") : ThemeBrush("BgPanel"),
+            Foreground = ctrl.ScaleWithPreview ? Brushes.White : ThemeBrush("TextSecondary"),
+            BorderBrush = ThemeBrush("BorderSubtle"),
+            BorderThickness = new Thickness(1),
+            Tag = ctrl.ScaleWithPreview
+        };
+        ToolTip.SetTip(halfBtn, L("CfDlgScaleHalf"));
+        halfBtn.Click += (_, _) =>
+        {
+            ctrl.ScaleWithPreview = !ctrl.ScaleWithPreview;
+            halfBtn.Tag = ctrl.ScaleWithPreview;
+            halfBtn.Background = ctrl.ScaleWithPreview ? ThemeBrush("AccentGreen") : ThemeBrush("BgPanel");
+            halfBtn.Foreground = ctrl.ScaleWithPreview ? Brushes.White : ThemeBrush("TextSecondary");
+        };
+        row.Children.Add(halfBtn);
     }
 
     private void AddInlineComboFields(StackPanel row, CustomFilterControl ctrl)
@@ -995,6 +1022,7 @@ public partial class CustomFilterDialog : Window
         Step = src.Step,
         Options = [..src.Options],
         OnValue = src.OnValue,
-        OffValue = src.OffValue
+        OffValue = src.OffValue,
+        ScaleWithPreview = src.ScaleWithPreview
     };
 }

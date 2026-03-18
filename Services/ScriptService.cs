@@ -68,11 +68,17 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
     [GeneratedRegex(@"^# __MODULE_FUNCTIONS__[ \t]*\r?$", RegexOptions.Multiline)]
     private static partial Regex ModuleFunctionsMarkerRegex();
 
+    [GeneratedRegex(@"^# __MODULE_PIPELINE_FLIP__[ \t]*\r?$", RegexOptions.Multiline)]
+    private static partial Regex ModulePipelineFlipMarkerRegex();
+
     [GeneratedRegex(@"^# __MODULE_PIPELINE_PRE__[ \t]*\r?$", RegexOptions.Multiline)]
     private static partial Regex ModulePipelinePreMarkerRegex();
 
     [GeneratedRegex(@"^# __MODULE_PIPELINE__[ \t]*\r?$", RegexOptions.Multiline)]
     private static partial Regex ModulePipelineMarkerRegex();
+
+    [GeneratedRegex(@"^(?<prefix>\s*(?:global\s+)?(?<name>\w+)\s*=\s*)(?<value>[^#\r\n]*)(?<suffix>.*)$", RegexOptions.Multiline)]
+    private static partial Regex ConfigLineRegex();
 
     // ── IScriptService ──────────────────────────────────────────────────────
 
@@ -247,13 +253,58 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
 
     internal string BuildContents(string scriptContents, Dictionary<string, string> configValues)
     {
-        var updated = scriptContents;
-
+        // Build a lookup of script config names → formatted values (skip cf_* keys)
+        var scriptValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var pair in configValues)
-            updated = ReplaceConfigValue(updated, GetScriptConfigName(pair.Key), FormatValueForScript(pair.Key, pair.Value));
+        {
+            if (pair.Key.StartsWith(CustomFilterConfigPrefix, StringComparison.OrdinalIgnoreCase))
+                continue;
+            scriptValues[GetScriptConfigName(pair.Key)] = FormatValueForScript(pair.Key, pair.Value);
+        }
+
+        // Replace all config values in one pass over the config section
+        var updated = ReplaceConfigSection(scriptContents, scriptValues);
 
         updated = UpdateSourceClipLine(updated, configValues);
         return RewritePluginPathsToAbsolute(updated);
+    }
+
+    /// <summary>
+    /// Replaces all config values within the START/END CONFIGURATION section in a single pass.
+    /// </summary>
+    private static string ReplaceConfigSection(string scriptContents, Dictionary<string, string> scriptValues)
+    {
+        if (scriptValues.Count == 0) return scriptContents;
+
+        var startMatch = StartConfigRegex().Match(scriptContents);
+        var endMatch = EndConfigRegex().Match(scriptContents);
+
+        if (!startMatch.Success || !endMatch.Success || endMatch.Index <= startMatch.Index)
+            return scriptContents;
+
+        var startLineEnd = scriptContents.IndexOf('\n', startMatch.Index);
+        if (startLineEnd < 0) return scriptContents;
+
+        var sectionStart = startLineEnd + 1;
+        var sectionEnd = endMatch.Index;
+        var section = scriptContents[sectionStart..sectionEnd];
+
+        // Single regex pass: match any "name = value" line in the config section
+        var updated = ConfigLineRegex().Replace(section, m =>
+        {
+            var name = m.Groups["name"].Value.Trim();
+            if (name.StartsWith("global ", StringComparison.OrdinalIgnoreCase))
+                name = name["global ".Length..].Trim();
+
+            if (!scriptValues.TryGetValue(name, out var newValue))
+                return m.Value; // not a known config key — leave unchanged
+
+            return FormatReplacedLine(m, newValue);
+        });
+
+        return string.Equals(section, updated, StringComparison.Ordinal)
+            ? scriptContents
+            : $"{scriptContents[..sectionStart]}{updated}{scriptContents[sectionEnd..]}";
     }
 
     private string UpdateSourceClipLine(string scriptContents, Dictionary<string, string> configValues)
@@ -487,6 +538,21 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
     private static bool PathEquals(string? a, string? b) =>
         string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>Divides a numeric string value by 2 (rounded to nearest even int for crop compatibility).</summary>
+    private static string HalveNumericValue(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return value;
+        var normalized = value.Trim().Replace(',', '.');
+        if (double.TryParse(normalized, NumberStyles.Float, CultureInfo.InvariantCulture, out var d))
+        {
+            var halved = d / 2.0;
+            // Round to nearest even integer for crop/dimension values
+            var rounded = (int)(Math.Round(halved / 2.0) * 2);
+            return Math.Max(0, rounded).ToString(CultureInfo.InvariantCulture);
+        }
+        return value;
+    }
+
     private static string NormalizeChoiceValue(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return string.Empty;
@@ -664,7 +730,9 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
     /// Maps custom filter injection position strings to numeric pipeline order.
     /// Values sit between built-in module positions to preserve insertion order.
     /// </summary>
-    /// <summary>Pipeline position threshold: modules below this go before half-preview resize.</summary>
+    /// <summary>Pipeline position threshold: modules at or above this go into __MODULE_PIPELINE_PRE__ (geometry).</summary>
+    private const int FlipThreshold = 18;
+    /// <summary>Pipeline position threshold: modules at or above this go into __MODULE_PIPELINE__ (processing).</summary>
     private const int PrePipelineThreshold = 50;
 
     private static readonly Dictionary<string, int> InjectionPositionOrder = new(StringComparer.OrdinalIgnoreCase)
@@ -698,6 +766,12 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
     public static List<ScriptModule> ConvertCustomFiltersToModules(
         IReadOnlyList<CustomFilter> filters, Dictionary<string, string>? configValues = null)
     {
+        var isHalfPreview = configValues is not null
+            && configValues.TryGetValue("preview_half", out var halfVal)
+            && bool.TryParse(halfVal, out var halfBool) && halfBool
+            && configValues.TryGetValue("preview", out var prevVal)
+            && bool.TryParse(prevVal, out var prevBool) && prevBool;
+
         var modules = new List<ScriptModule>();
         foreach (var f in filters)
         {
@@ -715,6 +789,11 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
                 {
                     value = cfgVal;
                 }
+
+                // Scale dimension/crop values by ½ when preview_half is active
+                if (isHalfPreview && ctrl.ScaleWithPreview)
+                    value = HalveNumericValue(value);
+
                 code = code.Replace($"{{{ctrl.Placeholder}}}", value, StringComparison.OrdinalIgnoreCase);
             }
 
@@ -772,11 +851,15 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
             return sb.ToString().TrimEnd('\r', '\n');
         });
 
-        // ── 2. Replace __MODULE_PIPELINE_PRE__ with geometry modules (Position < 50) ──
-        template = ModulePipelinePreMarkerRegex().Replace(template, _ =>
-            BuildPipelineBlock(active.Where(m => m.Position < PrePipelineThreshold)));
+        // ── 2. Replace __MODULE_PIPELINE_FLIP__ with flip modules (Position < FlipThreshold) ──
+        template = ModulePipelineFlipMarkerRegex().Replace(template, _ =>
+            BuildPipelineBlock(active.Where(m => m.Position < FlipThreshold)));
 
-        // ── 3. Replace __MODULE_PIPELINE__ with processing modules (Position >= 50) ──
+        // ── 3. Replace __MODULE_PIPELINE_PRE__ with geometry modules (FlipThreshold <= Position < 50) ──
+        template = ModulePipelinePreMarkerRegex().Replace(template, _ =>
+            BuildPipelineBlock(active.Where(m => m.Position >= FlipThreshold && m.Position < PrePipelineThreshold)));
+
+        // ── 4. Replace __MODULE_PIPELINE__ with processing modules (Position >= 50) ──
         template = ModulePipelineMarkerRegex().Replace(template, _ =>
             BuildPipelineBlock(active.Where(m => m.Position >= PrePipelineThreshold)));
 

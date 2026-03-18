@@ -91,8 +91,10 @@ public sealed class CustomFilterService
         var filtersDir = Path.Combine(exeDir, "Filters");
         if (!Directory.Exists(filtersDir)) return;
 
-        var existingIds = new HashSet<string>(_filters.ConvertAll(f => f.Id), StringComparer.OrdinalIgnoreCase);
-        var imported = false;
+        var existingById = new Dictionary<string, CustomFilter>(StringComparer.OrdinalIgnoreCase);
+        foreach (var f in _filters)
+            existingById[f.Id] = f;
+        var changed = false;
 
         foreach (var jsonFile in Directory.GetFiles(filtersDir, "*.json"))
         {
@@ -101,15 +103,29 @@ public sealed class CustomFilterService
                 var json = File.ReadAllText(jsonFile);
                 var filter = JsonSerializer.Deserialize<CustomFilter>(json, JsonOpts);
                 if (filter is null || string.IsNullOrWhiteSpace(filter.Id)) continue;
-                if (existingIds.Contains(filter.Id)) continue;
 
-                _filters.Add(filter);
-                existingIds.Add(filter.Id);
-                imported = true;
+                if (existingById.TryGetValue(filter.Id, out var existing))
+                {
+                    // Update code/scripts/dlls from shipped version (user may have customized controls)
+                    if (!string.Equals(existing.Code, filter.Code, StringComparison.Ordinal))
+                    {
+                        existing.Code = filter.Code;
+                        existing.Dlls = filter.Dlls;
+                        existing.Scripts = filter.Scripts;
+                        existing.Controls = filter.Controls;
+                        changed = true;
+                    }
+                }
+                else
+                {
+                    _filters.Add(filter);
+                    existingById[filter.Id] = filter;
+                    changed = true;
+                }
             }
             catch { /* skip malformed files */ }
         }
 
-        if (imported) Save();
+        if (changed) Save();
     }
 }

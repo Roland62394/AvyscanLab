@@ -244,17 +244,26 @@ if (use_img) {
 c = src
 pipeline_err = ""
 
-# ── Geometry (before half-preview resize) ──
-# __MODULE_PIPELINE_PRE__
+# ── Orientation (flip only — applied to both preview sides) ──
+# __MODULE_PIPELINE_FLIP__
 
-# Half-resolution preview: resize AFTER geometry, BEFORE heavy processing
+# Capture source AFTER flips but BEFORE crop/stab for preview comparison
+# (left side shows full flipped image, right side shows cropped/processed result)
+src_flipped = c
+
+# Half-resolution preview: resize BEFORE geometry so crop/stab run at half res
+# (filter values marked ScaleWithPreview are divided by 2 in the generated script)
 if (preview_half && preview) {
   _hw = c.Width()  / 2
   _hh = c.Height() / 2
   _hw = _hw - _hw % 2
   _hh = _hh - _hh % 2
   c = c.BicubicResize(_hw, _hh)
+  src_flipped = src_flipped.BicubicResize(_hw, _hh)
 }
+
+# ── Geometry: crop, stabilisation (values ÷2 in preview ½ mode) ──
+# __MODULE_PIPELINE_PRE__
 
 src_matrix = _MatrixAuto(c)
 
@@ -274,8 +283,8 @@ if (pipeline_err != "") {
 
 out = preview
     \ ? _BuildPreview(
-    \     EnsureColorspaceSafe(src,   "YV24", matrix=src_matrix),
-    \     EnsureColorspaceSafe(final, "YV24", matrix=src_matrix),
+    \     EnsureColorspaceSafe(src_flipped, "YV24", matrix=src_matrix),
+    \     EnsureColorspaceSafe(final,   "YV24", matrix=src_matrix),
     \     label_size=preview_label_size,
     \     already_half=preview_half)
     \ : final

@@ -34,4 +34,7 @@ public sealed class CustomFilterControl
     // CheckBox
     public string OnValue { get; set; } = "true";
     public string OffValue { get; set; } = "false";
+
+    /// <summary>When true, the value is divided by 2 in preview_half mode (for crop/dimension parameters).</summary>
+    public bool ScaleWithPreview { get; set; }
 }

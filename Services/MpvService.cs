@@ -122,6 +122,8 @@ public sealed class MpvService : IDisposable
     private double                   _pendingSeekPos;
     private bool                     _disposed;
     private bool                     _expectingShutdown;
+    private bool                     _resumeAfterLoad;
+    private volatile bool            _paused = true;
     private double                   _duration;
     private readonly List<string>    _errorLogs = [];
     private readonly object          _errorLogLock = new();
@@ -178,10 +180,18 @@ public sealed class MpvService : IDisposable
     public void LoadFile(string path, double startPos = 0)
     {
         if (_ctx == 0) return;
+
+        // Remember if we were playing so we can auto-resume after the first frame renders.
+        // Without this, mpv tries to decode frames at real-time speed while the temporal
+        // filter cache is cold, causing a ~10s stall after the first frame appears.
+        _resumeAfterLoad = !_paused;
+
         // Stop any in-progress load (AviSynth script parsing) before loading
         // a new file.  Without this, rapid clip switches can overwrite
         // ScriptUser.avs while AviSynth is still reading it → segfault.
         mpv_command(_ctx, ["stop", null]);
+        _paused = true;
+        mpv_set_property_string(_ctx, "pause", "yes");
         lock (_errorLogLock) { _errorLogs.Clear(); }
         _pendingSeekPos = startPos > 0.5 ? startPos : 0;
         mpv_command(_ctx, ["loadfile", path, null]);
@@ -190,18 +200,21 @@ public sealed class MpvService : IDisposable
     public void Play()
     {
         if (_ctx == 0) return;
+        _paused = false;
         mpv_set_property_string(_ctx, "pause", "no");
     }
 
     public void Pause()
     {
         if (_ctx == 0) return;
+        _paused = true;
         mpv_set_property_string(_ctx, "pause", "yes");
     }
 
     public void Stop()
     {
         if (_ctx == 0) return;
+        _paused = true;
         mpv_command(_ctx, ["seek", "0", "absolute", null]);
         mpv_set_property_string(_ctx, "pause", "yes");
     }
@@ -242,6 +255,8 @@ public sealed class MpvService : IDisposable
         if (_ctx == 0) return;
         mpv_set_property_string(_ctx, "speed", speed.ToString("F2", CultureInfo.InvariantCulture));
     }
+
+    public bool IsPaused() => _paused;
 
     public double GetPosition()
     {
@@ -342,6 +357,14 @@ public sealed class MpvService : IDisposable
 
                 case EventPlaybackRestart:
                     PlaybackRestart?.Invoke();
+                    // Auto-resume playback after the first frame is rendered,
+                    // if we were playing before the script reload.
+                    if (_resumeAfterLoad)
+                    {
+                        _resumeAfterLoad = false;
+                        try { mpv_set_property_string(ctx, "pause", "no"); }
+                        catch { }
+                    }
                     break;
 
                 case EventLogMessage:
@@ -421,7 +444,7 @@ public sealed class MpvService : IDisposable
         else if (prop.Format == FormatFlag)
         {
             var val = Marshal.PtrToStructure<int>(prop.Data);
-            if (name == "pause") PauseChanged?.Invoke(val != 0);
+            if (name == "pause") { _paused = val != 0; PauseChanged?.Invoke(val != 0); }
         }
     }
 }
