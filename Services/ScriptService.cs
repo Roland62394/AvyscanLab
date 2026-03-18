@@ -99,6 +99,10 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
         // Assemble active modules only (replaces __MODULE_PIPELINE__, __CUSTOM_PLUGINS__)
         template = AssembleModules(template, allModules, configValues);
 
+        // Expose flip states as AviSynth variables so src_flipped can mirror them
+        configValues["flip_h"] = configValues.TryGetValue("cf_flip_h_enabled", out var fh) && fh == "true" ? "true" : "false";
+        configValues["flip_v"] = configValues.TryGetValue("cf_flip_v_enabled", out var fv) && fv == "true" ? "true" : "false";
+
         var contents = BuildContents(template, configValues);
 
         // Normalize line endings to \r\n (Windows) for AviSynth compatibility

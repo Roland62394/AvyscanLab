@@ -26,6 +26,8 @@ show_source_used = true
 # ------------ OPTIONS ------------
 preview       = true
 preview_half  = false
+flip_h        = false
+flip_v        = false
 threads  = 4
 
 # Preview
@@ -254,8 +256,8 @@ if (preview_half && preview) {
   c = c.BicubicResize(_hw, _hh)
 }
 
-# Capture source before any filter for preview comparison
-src_flipped = c
+# Capture source before filters, with flips applied for preview comparison
+src_flipped = ApplyMirrors(c, flip_h, flip_v)
 
 # ── All filters (user-defined order) ──
 # __MODULE_PIPELINE__
