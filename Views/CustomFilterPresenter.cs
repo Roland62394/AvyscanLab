@@ -157,11 +157,22 @@ public sealed class CustomFilterPresenter
 
     public async void OnImportClick(object? sender, RoutedEventArgs e)
     {
+        // Default to the Filters/ directory next to the executable
+        Avalonia.Platform.Storage.IStorageFolder? startDir = null;
+        var exeDir = System.IO.Path.GetDirectoryName(Environment.ProcessPath);
+        if (!string.IsNullOrWhiteSpace(exeDir))
+        {
+            var filtersDir = System.IO.Path.Combine(exeDir, "Filters");
+            if (System.IO.Directory.Exists(filtersDir))
+                startDir = await _host.Window.StorageProvider.TryGetFolderFromPathAsync(new Uri(filtersDir));
+        }
+
         var picker = await _host.Window.StorageProvider.OpenFilePickerAsync(
             new Avalonia.Platform.Storage.FilePickerOpenOptions
             {
                 Title = _host.GetUiText("CfDlgImportTitle"),
                 AllowMultiple = false,
+                SuggestedStartLocation = startDir,
                 FileTypeFilter = [new Avalonia.Platform.Storage.FilePickerFileType("JSON") { Patterns = ["*.json"] }]
             });
 
@@ -767,10 +778,19 @@ public sealed class CustomFilterPresenter
         var newIndex = Math.Clamp(insertIndex, 0, sorted.Count);
         sorted.Insert(newIndex, dragged);
 
-        // Reassign numeric positions (100, 110, 120, ...) — must be >= 50
-        // so filters land in __MODULE_PIPELINE__ (after src_matrix), not PRE
+        // Reassign numeric positions preserving zone boundaries.
+        // Filters with a named position that maps below PrePipelineThreshold (50)
+        // keep their original position so they stay in the correct pipeline zone
+        // (FLIP / PRE).  Only processing filters (>= 50) are renumbered.
+        var processingBase = 100;
         for (var i = 0; i < sorted.Count; i++)
-            sorted[i].Position = (100 + i * 10).ToString();
+        {
+            var originalOrder = ScriptService.InjectionPositionToOrder(sorted[i].Position);
+            if (originalOrder < 50)
+                continue; // keep FlipH(10), FlipV(15), Crop(20), BeforePipeline(40) as-is
+            sorted[i].Position = processingBase.ToString();
+            processingBase += 10;
+        }
 
         _filterService.Save();
         SyncPositionsToConfig();

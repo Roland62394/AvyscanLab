@@ -273,7 +273,9 @@ public partial class CustomFilterDialog : Window
     private async void OnDelete()
     {
         var filterName = string.IsNullOrWhiteSpace(FilterNameBox.Text) ? "Custom" : FilterNameBox.Text.Trim();
-        var msg = L("CfDlgDeleteConfirm").Replace("$name$", filterName);
+        var isBuiltIn = IsBuiltInFilter(_filter.Id);
+        var msgKey = isBuiltIn ? "CfDlgRemoveConfirm" : "CfDlgDeleteConfirm";
+        var msg = L(msgKey).Replace("$name$", filterName);
 
         var confirmed = false;
         var yesBtn = new Button { Content = L("CfDlgConvertYes"), MinWidth = 80 };
@@ -281,7 +283,7 @@ public partial class CustomFilterDialog : Window
 
         var dialog = new Window
         {
-            Title = L("CfDlgDeleteConfirmTitle"),
+            Title = L(isBuiltIn ? "CfDlgRemoveConfirmTitle" : "CfDlgDeleteConfirmTitle"),
             SizeToContent = SizeToContent.WidthAndHeight,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             MaxWidth = 460,
@@ -1011,6 +1013,26 @@ public partial class CustomFilterDialog : Window
 
     /// <summary>Pre-fill the code box. Call after construction, before ShowDialog.</summary>
     public void SetCode(string code) => CodeBox.Text = code;
+
+    private static bool IsBuiltInFilter(string id)
+    {
+        var exeDir = System.IO.Path.GetDirectoryName(Environment.ProcessPath);
+        if (string.IsNullOrWhiteSpace(exeDir)) return false;
+        var filtersDir = System.IO.Path.Combine(exeDir, "Filters");
+        if (!System.IO.Directory.Exists(filtersDir)) return false;
+        foreach (var jsonFile in System.IO.Directory.GetFiles(filtersDir, "*.json"))
+        {
+            try
+            {
+                var json = System.IO.File.ReadAllText(jsonFile);
+                var f = System.Text.Json.JsonSerializer.Deserialize<CustomFilter>(json);
+                if (f is not null && string.Equals(f.Id, id, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            catch { }
+        }
+        return false;
+    }
 
     private static CustomFilterControl CloneControl(CustomFilterControl src) => new()
     {

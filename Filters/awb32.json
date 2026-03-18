@@ -1,0 +1,33 @@
+{
+  "Id": "awb32",
+  "Name": "Auto White Balance",
+  "Enabled": false,
+  "Dlls": [],
+  "Scripts": [],
+  "Code": "# Auto White Balance — ColorYUV autowhite + optional autogain\nmx = _MatrixAuto(c)\nyuv = EnsureColorspaceSafe(c, \"YV24\", matrix=mx)\ncorrected = ColorYUV(yuv, autowhite=true, autogain={autogain})\n# Blend original/corrected by strength (Expr on all 3 planes)\nc = Expr(yuv, corrected, \"x 1.0 {strength} - * y {strength} * +\", \"x 1.0 {strength} - * y {strength} * +\", \"x 1.0 {strength} - * y {strength} * +\")",
+  "Position": "AfterGamMac",
+  "Controls": [
+    {
+      "Placeholder": "strength",
+      "Type": "slider",
+      "Default": "1.0",
+      "Min": 0.0,
+      "Max": 1.5,
+      "Step": 0.05,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    },
+    {
+      "Placeholder": "autogain",
+      "Type": "checkbox",
+      "Default": "false",
+      "Min": 0,
+      "Max": 100,
+      "Step": 1,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    }
+  ]
+}
