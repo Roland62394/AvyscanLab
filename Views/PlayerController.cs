@@ -60,6 +60,9 @@ public sealed class PlayerController
     private double _pendingSeekPos;
     private readonly SemaphoreSlim _refreshGate = new(1, 1);
 
+    // ── Auto-resume state ──────────────────────────────────────────────
+    private bool _resumeAfterLoad;
+
     // ── Speed / view state ────────────────────────────────────────────
     private static readonly double[] PlaybackSpeeds = [0.25, 0.5, 1.0];
     private int _speedIndex = 2; // default 1x
@@ -229,6 +232,14 @@ public sealed class PlayerController
         {
             btn.Opacity = 1.0;
             btn.Background = _host.ThemeBrush("BgInput");
+        }
+
+        // Auto-resume playback if user was playing before the script reload
+        if (_resumeAfterLoad)
+        {
+            _resumeAfterLoad = false;
+            DebugLog("OnMpvPlaybackRestart: auto-resuming playback");
+            _mpvService?.Play();
         }
     }
 
@@ -572,7 +583,9 @@ public sealed class PlayerController
             _totalFrames = 0;
             _fps         = 0;
             _host.LoadingSourceFallback = false;
-            DebugLog($"LoadFile: {scriptPath}, pos={pos:F2}, IsReady={_mpvService.IsReady}");
+            // Save play state BEFORE LoadFile pauses mpv
+            _resumeAfterLoad = !_mpvService.IsPaused();
+            DebugLog($"LoadFile: {scriptPath}, pos={pos:F2}, IsReady={_mpvService.IsReady}, resumeAfterLoad={_resumeAfterLoad}");
             try
             {
                 var content = File.ReadAllText(scriptPath);

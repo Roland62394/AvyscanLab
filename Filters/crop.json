@@ -14,8 +14,7 @@
       "Step": 2,
       "Options": [],
       "OnValue": "true",
-      "OffValue": "false",
-      "ScaleWithPreview": true
+      "OffValue": "false"
     },
     {
       "Placeholder": "top",
@@ -25,8 +24,7 @@
       "Step": 2,
       "Options": [],
       "OnValue": "true",
-      "OffValue": "false",
-      "ScaleWithPreview": true
+      "OffValue": "false"
     },
     {
       "Placeholder": "right",
@@ -36,8 +34,7 @@
       "Step": 2,
       "Options": [],
       "OnValue": "true",
-      "OffValue": "false",
-      "ScaleWithPreview": true
+      "OffValue": "false"
     },
     {
       "Placeholder": "bottom",
@@ -47,8 +44,7 @@
       "Step": 2,
       "Options": [],
       "OnValue": "true",
-      "OffValue": "false",
-      "ScaleWithPreview": true
+      "OffValue": "false"
     }
   ]
 }

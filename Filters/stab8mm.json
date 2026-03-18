@@ -1,0 +1,180 @@
+{
+  "Id": "stab8mm1",
+  "Name": "8mm Stabilisation",
+  "Enabled": false,
+  "Dlls": [
+    "DePanEstimate.dll",
+    "DePan.dll",
+    "mvtools2.dll"
+  ],
+  "Scripts": [],
+  "Code": "# 8mm Stabilisation (videoFred v256.1.01)\nstab_mx = _MatrixAuto(c)\nstab_yuv = EnsureColorspaceSafe(c, \"YV12\", matrix=stab_mx)\nstab_ref = stab_yuv.Crop({est_left},{est_top},-{est_right},-{est_bottom},align=true)\nvectors = stab_ref.MSuper(pel=1).MAnalyse(isb=false, blksize=32, overlap=16, search=2)\nmdata = MDepan(stab_ref, vectors, rot=false, zoom=false, error={error})\nstab_yuv = DePanStabilize(stab_yuv, data=mdata, cutoff={cutoff}, damping={damping}, dxmax=(Width(stab_yuv)/100)*{maxstabH}, dymax=(Height(stab_yuv)/100)*{maxstabV}, zoommax=0, rotmax=0, method=0, mirror={mirror}, info=false)\nc = stab_yuv.Crop({crop_left},{crop_top},-{crop_right},-{crop_bottom},align=true).Prefetch(threads)",
+  "Position": "BeforePipeline",
+  "Controls": [
+    {
+      "Placeholder": "maxstabH",
+      "Type": "slider",
+      "Default": "14",
+      "Min": 0,
+      "Max": 30,
+      "Step": 1,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    },
+    {
+      "Placeholder": "maxstabV",
+      "Type": "slider",
+      "Default": "14",
+      "Min": 0,
+      "Max": 30,
+      "Step": 1,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    },
+    {
+      "Placeholder": "error",
+      "Type": "slider",
+      "Default": "65",
+      "Min": 1,
+      "Max": 200,
+      "Step": 1,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    },
+    {
+      "Placeholder": "mirror",
+      "Type": "combo",
+      "Default": "0",
+      "Min": 0,
+      "Max": 100,
+      "Step": 1,
+      "Options": [
+        "0",
+        "1"
+      ],
+      "OnValue": "true",
+      "OffValue": "false"
+    },
+    {
+      "Placeholder": "cutoff",
+      "Type": "slider",
+      "Default": "0.5",
+      "Min": 0.0,
+      "Max": 5.0,
+      "Step": 0.1,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    },
+    {
+      "Placeholder": "damping",
+      "Type": "slider",
+      "Default": "1.0",
+      "Min": 0.0,
+      "Max": 5.0,
+      "Step": 0.1,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false"
+    },
+    {
+      "Placeholder": "est_left",
+      "Type": "slider",
+      "Default": "40",
+      "Min": 0,
+      "Max": 200,
+      "Step": 2,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false",
+      "ScaleWithPreview": true
+    },
+    {
+      "Placeholder": "est_top",
+      "Type": "slider",
+      "Default": "40",
+      "Min": 0,
+      "Max": 200,
+      "Step": 2,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false",
+      "ScaleWithPreview": true
+    },
+    {
+      "Placeholder": "est_right",
+      "Type": "slider",
+      "Default": "40",
+      "Min": 0,
+      "Max": 200,
+      "Step": 2,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false",
+      "ScaleWithPreview": true
+    },
+    {
+      "Placeholder": "est_bottom",
+      "Type": "slider",
+      "Default": "40",
+      "Min": 0,
+      "Max": 200,
+      "Step": 2,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false",
+      "ScaleWithPreview": true
+    },
+    {
+      "Placeholder": "crop_left",
+      "Type": "slider",
+      "Default": "56",
+      "Min": 0,
+      "Max": 200,
+      "Step": 2,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false",
+      "ScaleWithPreview": true
+    },
+    {
+      "Placeholder": "crop_top",
+      "Type": "slider",
+      "Default": "40",
+      "Min": 0,
+      "Max": 200,
+      "Step": 2,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false",
+      "ScaleWithPreview": true
+    },
+    {
+      "Placeholder": "crop_right",
+      "Type": "slider",
+      "Default": "56",
+      "Min": 0,
+      "Max": 200,
+      "Step": 2,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false",
+      "ScaleWithPreview": true
+    },
+    {
+      "Placeholder": "crop_bottom",
+      "Type": "slider",
+      "Default": "40",
+      "Min": 0,
+      "Max": 200,
+      "Step": 2,
+      "Options": [],
+      "OnValue": "true",
+      "OffValue": "false",
+      "ScaleWithPreview": true
+    }
+  ]
+}

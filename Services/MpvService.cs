@@ -122,7 +122,6 @@ public sealed class MpvService : IDisposable
     private double                   _pendingSeekPos;
     private bool                     _disposed;
     private bool                     _expectingShutdown;
-    private bool                     _resumeAfterLoad;
     private volatile bool            _paused = true;
     private double                   _duration;
     private readonly List<string>    _errorLogs = [];
@@ -180,11 +179,6 @@ public sealed class MpvService : IDisposable
     public void LoadFile(string path, double startPos = 0)
     {
         if (_ctx == 0) return;
-
-        // Remember if we were playing so we can auto-resume after the first frame renders.
-        // Without this, mpv tries to decode frames at real-time speed while the temporal
-        // filter cache is cold, causing a ~10s stall after the first frame appears.
-        _resumeAfterLoad = !_paused;
 
         // Stop any in-progress load (AviSynth script parsing) before loading
         // a new file.  Without this, rapid clip switches can overwrite
@@ -357,14 +351,6 @@ public sealed class MpvService : IDisposable
 
                 case EventPlaybackRestart:
                     PlaybackRestart?.Invoke();
-                    // Auto-resume playback after the first frame is rendered,
-                    // if we were playing before the script reload.
-                    if (_resumeAfterLoad)
-                    {
-                        _resumeAfterLoad = false;
-                        try { mpv_set_property_string(ctx, "pause", "no"); }
-                        catch { }
-                    }
                     break;
 
                 case EventLogMessage:
