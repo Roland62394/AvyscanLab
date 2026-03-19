@@ -513,8 +513,8 @@ if (enable_crop) {
 
 src = src.KillAudio().AssumeFPS(play_speed)
 
-# Half-resolution preview: resize source BEFORE heavy processing for speed
-if (preview_half && preview) {
+# Half-resolution: resize source BEFORE heavy processing for speed
+if (preview_half) {
   _hw = src.Width()  / 2
   _hh = src.Height() / 2
   _hw = _hw - _hw % 2

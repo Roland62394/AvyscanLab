@@ -782,9 +782,7 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
     {
         var isHalfPreview = configValues is not null
             && configValues.TryGetValue("preview_half", out var halfVal)
-            && bool.TryParse(halfVal, out var halfBool) && halfBool
-            && configValues.TryGetValue("preview", out var prevVal)
-            && bool.TryParse(prevVal, out var prevBool) && prevBool;
+            && bool.TryParse(halfVal, out var halfBool) && halfBool;
 
         var modules = new List<ScriptModule>();
         foreach (var f in filters)

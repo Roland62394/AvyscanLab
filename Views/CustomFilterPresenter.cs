@@ -78,6 +78,8 @@ public sealed class CustomFilterPresenter
 
     private bool _inactiveExpanded;
 
+    public void CollapseInactive() => _inactiveExpanded = false;
+
     public void RebuildUI()
     {
         var list = _host.FindControl<StackPanel>("CustomFiltersList");
@@ -897,21 +899,43 @@ public sealed class CustomFilterPresenter
         _isDragging = false;
         _dragStartPos = null;
 
-        // Build current display order (sorted by position)
-        var sorted = _filterService.Filters
+        // Collect filter IDs visible in THIS list (active or inactive section)
+        var listIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var child in list.Children)
+            if (child is Grid g && g.Tag is string id)
+                listIds.Add(id);
+
+        // Build ordered subset of filters that are in this list
+        var subset = _filterService.Filters
+            .Where(f => listIds.Contains(f.Id))
             .OrderBy(f => ScriptService.InjectionPositionToOrder(f.Position))
             .ToList();
 
-        var dragged = sorted.FirstOrDefault(f => f.Id == draggedId);
+        var dragged = subset.FirstOrDefault(f => f.Id == draggedId);
         if (dragged is null) return;
 
-        sorted.Remove(dragged);
-        var newIndex = Math.Clamp(insertIndex, 0, sorted.Count);
-        sorted.Insert(newIndex, dragged);
+        subset.Remove(dragged);
+        var newIndex = Math.Clamp(insertIndex, 0, subset.Count);
+        subset.Insert(newIndex, dragged);
 
-        // Reassign numeric positions in display order (free reordering)
-        for (var i = 0; i < sorted.Count; i++)
-            sorted[i].Position = ((i + 1) * 10).ToString();
+        // Reassign numeric positions for ALL filters, keeping relative order
+        // of the other section intact
+        var otherSection = _filterService.Filters
+            .Where(f => !listIds.Contains(f.Id))
+            .OrderBy(f => ScriptService.InjectionPositionToOrder(f.Position))
+            .ToList();
+
+        // Merge: active filters first (sorted), then inactive (sorted)
+        // Determine which section we're dragging in
+        var activeList = _host.FindControl<StackPanel>("CustomFiltersList");
+        List<CustomFilter> merged;
+        if (list == activeList)
+            merged = [..subset, ..otherSection];
+        else
+            merged = [..otherSection, ..subset];
+
+        for (var i = 0; i < merged.Count; i++)
+            merged[i].Position = ((i + 1) * 10).ToString();
 
         _filterService.Save();
         SyncPositionsToConfig();

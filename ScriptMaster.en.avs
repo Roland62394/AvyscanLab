@@ -246,9 +246,9 @@ if (use_img) {
 c = src
 pipeline_err = ""
 
-# Half-resolution preview: resize before all filters
+# Half-resolution: resize before all filters
 # (filter values marked ScaleWithPreview are divided by 2 in the generated script)
-if (preview_half && preview) {
+if (preview_half) {
   _hw = c.Width()  / 2
   _hh = c.Height() / 2
   _hw = _hw - _hw % 2

@@ -2908,6 +2908,7 @@ namespace CleanScan.Views
             UpdateSourceSelection(isFilmSelected: !useImage, updateConfig: true);
             SyncAllSliders();
             CustomFilters.ApplyPositionsFromConfig(); // restore filter order from preset
+            CustomFilters.CollapseInactive();
             RebuildCustomFilterUI(); // refresh toggle states & param values from config
             RegenerateScript(showValidationError: false);
             UpdateOptionColumnVisibility();
