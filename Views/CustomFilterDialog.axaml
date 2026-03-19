@@ -91,33 +91,19 @@
                              MaxHeight="320">
                    <StackPanel Margin="20,14,20,8" Spacing="24">
 
-                       <!-- Name + Position on same row -->
-                       <Grid ColumnDefinitions="*,16,*">
-                           <StackPanel Grid.Column="0" Spacing="3">
-                               <TextBlock x:Name="FilterNameLabel"
-                                          Text="Filter name"
-                                          FontSize="13" FontWeight="SemiBold"
-                                          Foreground="{DynamicResource TextLabel}"/>
-                               <TextBox x:Name="FilterNameBox"
-                                        Watermark="My custom filter"
-                                        FontSize="12"
-                                        Background="{DynamicResource BgInput}"
-                                        Foreground="{DynamicResource TextSecondary}"
-                                        BorderBrush="{DynamicResource BorderSubtle}"/>
-                           </StackPanel>
-                           <StackPanel Grid.Column="2" Spacing="3">
-                               <TextBlock x:Name="PositionLabel"
-                                          Text="Position in pipeline"
-                                          FontSize="13" FontWeight="SemiBold"
-                                          Foreground="{DynamicResource TextLabel}"/>
-                               <ComboBox x:Name="PositionCombo"
-                                         HorizontalAlignment="Stretch"
-                                         FontSize="12"
-                                         Background="{DynamicResource BgInput}"
-                                         Foreground="{DynamicResource TextSecondary}"
-                                         BorderBrush="{DynamicResource BorderSubtle}"/>
-                           </StackPanel>
-                       </Grid>
+                       <!-- Name -->
+                       <StackPanel Spacing="3">
+                           <TextBlock x:Name="FilterNameLabel"
+                                      Text="Filter name"
+                                      FontSize="13" FontWeight="SemiBold"
+                                      Foreground="{DynamicResource TextLabel}"/>
+                           <TextBox x:Name="FilterNameBox"
+                                    Watermark="My custom filter"
+                                    FontSize="12"
+                                    Background="{DynamicResource BgInput}"
+                                    Foreground="{DynamicResource TextSecondary}"
+                                    BorderBrush="{DynamicResource BorderSubtle}"/>
+                       </StackPanel>
 
                        <!-- DLLs + Scripts on 2 columns -->
                        <Grid ColumnDefinitions="*,16,*">
@@ -241,7 +227,7 @@
                    BorderBrush="{DynamicResource BorderSubtle}"
                    BorderThickness="0,1,0,0"
                    Padding="14,10">
-               <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto">
+               <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto">
                    <!-- Delete (left) -->
                    <Button x:Name="DeleteBtn"
                            Grid.Column="0"
@@ -269,9 +255,23 @@
                            HorizontalContentAlignment="Center"
                            VerticalContentAlignment="Center"/>
 
+                   <!-- Duplicate -->
+                   <Button x:Name="DuplicateBtn"
+                           Grid.Column="2"
+                           Content="&#x2750; Duplicate"
+                           MinWidth="90" Height="28"
+                           Padding="12,0"
+                           Margin="10,0,0,0"
+                           Classes="dialog-btn"
+                           Foreground="{DynamicResource TextPrimary}"
+                           BorderBrush="{DynamicResource BorderSubtle}"
+                           BorderThickness="1"
+                           HorizontalContentAlignment="Center"
+                           VerticalContentAlignment="Center"/>
+
                    <!-- Help -->
                    <Button x:Name="HelpBtn"
-                           Grid.Column="2"
+                           Grid.Column="3"
                            Content="? Help"
                            MinWidth="80" Height="28"
                            Padding="12,0"
@@ -284,7 +284,7 @@
                            VerticalContentAlignment="Center"/>
 
                    <!-- Cancel + Save (right) -->
-                   <StackPanel Grid.Column="4"
+                   <StackPanel Grid.Column="5"
                                Orientation="Horizontal"
                                Spacing="10">
                        <Button x:Name="CancelBtn"

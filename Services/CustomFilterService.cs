@@ -17,6 +17,14 @@ public sealed class CustomFilterService
         PropertyNameCaseInsensitive = true
     };
 
+    private static bool ListsEqual(List<string> a, List<string> b)
+    {
+        if (a.Count != b.Count) return false;
+        for (var i = 0; i < a.Count; i++)
+            if (!string.Equals(a[i], b[i], StringComparison.OrdinalIgnoreCase)) return false;
+        return true;
+    }
+
     public CustomFilterService(string filePath)
     {
         _filePath = filePath;
@@ -36,6 +44,12 @@ public sealed class CustomFilterService
     public void Add(CustomFilter filter)
     {
         _filters.Add(filter);
+        Save();
+    }
+
+    public void InsertAt(int index, CustomFilter filter)
+    {
+        _filters.Insert(index, filter);
         Save();
     }
 
@@ -113,6 +127,14 @@ public sealed class CustomFilterService
                         existing.Dlls = filter.Dlls;
                         existing.Scripts = filter.Scripts;
                         existing.Controls = filter.Controls;
+                        changed = true;
+                    }
+                    // Always sync Dlls/Scripts even if Code unchanged
+                    else if (!ListsEqual(existing.Dlls, filter.Dlls)
+                          || !ListsEqual(existing.Scripts, filter.Scripts))
+                    {
+                        existing.Dlls = filter.Dlls;
+                        existing.Scripts = filter.Scripts;
                         changed = true;
                     }
                 }

@@ -596,43 +596,64 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
     /// Resolves a DLL name to a full path. If the path is already absolute and exists,
     /// returns it as-is. Otherwise searches the AviSynth+ plugins64+ folder.
     /// </summary>
-    private static string ResolveDllPath(string dll)
+    private static readonly string[] AviSynthPluginDirs =
+    [
+        @"C:\Program Files (x86)\AviSynth+\plugins64+",
+        @"C:\Program Files\AviSynth+\plugins64+",
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"AviSynth+\plugins64+"),
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"AviSynth+\plugins64+"),
+    ];
+
+    internal static string ResolveDllPath(string dll)
     {
-        // Already an absolute path
         if (Path.IsPathRooted(dll))
             return dll.Replace('\\', '/');
 
-        // Search in known AviSynth+ plugin directories
-        string[] searchDirs =
-        [
-            @"C:\Program Files (x86)\AviSynth+\plugins64+",
-            @"C:\Program Files\AviSynth+\plugins64+",
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"AviSynth+\plugins64+"),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"AviSynth+\plugins64+"),
-        ];
-
-        foreach (var dir in searchDirs)
+        foreach (var dir in AviSynthPluginDirs)
         {
             if (!Directory.Exists(dir)) continue;
+            // Direct match
             var candidate = Path.Combine(dir, dll);
             if (File.Exists(candidate))
                 return candidate.Replace('\\', '/');
+            // Search in subdirectories
+            try
+            {
+                foreach (var found in Directory.GetFiles(dir, dll, SearchOption.AllDirectories))
+                    return found.Replace('\\', '/');
+            }
+            catch { /* access denied */ }
         }
 
-        // Fallback: return as-is (TryLoadPlugin will skip if not found)
         return dll.Replace('\\', '/');
     }
 
-    /// <summary>Resolve a .avsi script filename to its full path in Plugins/Scripts/.</summary>
-    private static string ResolveScriptPath(string script)
+    /// <summary>Resolve a .avsi script filename to its full path in Plugins/Scripts/ or AviSynth+ plugins.</summary>
+    internal static string ResolveScriptPath(string script)
     {
         if (Path.IsPathRooted(script))
             return script.Replace('\\', '/');
 
+        // App-local Plugins/Scripts/
         var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? ".";
         var candidate = Path.Combine(exeDir, "Plugins", "Scripts", script);
         if (File.Exists(candidate))
             return candidate.Replace('\\', '/');
+
+        // AviSynth+ plugin directories (includes .avsi files)
+        foreach (var dir in AviSynthPluginDirs)
+        {
+            if (!Directory.Exists(dir)) continue;
+            var c = Path.Combine(dir, script);
+            if (File.Exists(c))
+                return c.Replace('\\', '/');
+            try
+            {
+                foreach (var found in Directory.GetFiles(dir, script, SearchOption.AllDirectories))
+                    return found.Replace('\\', '/');
+            }
+            catch { /* access denied */ }
+        }
 
         return script.Replace('\\', '/');
     }

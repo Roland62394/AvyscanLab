@@ -304,6 +304,9 @@ public sealed class CustomFilterPresenter
             _host.Config.Set(enabledKey, filter.Enabled.ToString().ToLowerInvariant());
         }
 
+        var panelTag = $"CustomPanel_{filter.Id}";
+        Button? expandBtnRef = null;
+
         var toggleBtn = new Button
         {
             Content = filter.Name,
@@ -320,13 +323,25 @@ public sealed class CustomFilterPresenter
             _host.Config.Set(enabledKey, filter.Enabled.ToString().ToLowerInvariant());
             _host.OnCustomFilterValueChanged();
             _filterService.Save();
+
+            // Collapse param panel when filter is disabled
+            if (!filter.Enabled && _host.OpenParamPanels.Remove(panelTag))
+            {
+                RemoveParamPanel(panelTag);
+                if (expandBtnRef is { } eb)
+                {
+                    eb.Content = "▶";
+                    eb.Classes.Remove("active");
+                }
+                _host.UpdateParamsPlaceholderVisibility();
+            }
+
             _host.RegenerateScript(showValidationError: false);
             _ = _host.LoadScriptAsync();
         };
         Grid.SetColumn(toggleBtn, 0);
         row.Children.Add(toggleBtn);
 
-        var panelTag = $"CustomPanel_{filter.Id}";
         var expandBtn = new Button
         {
             Content = "▶",
@@ -344,6 +359,7 @@ public sealed class CustomFilterPresenter
             expandBtn.Classes.Add("active");
         }
         expandBtn.Click += OnExpandClick;
+        expandBtnRef = expandBtn;
         Grid.SetColumn(expandBtn, 2);
         row.Children.Add(expandBtn);
 
@@ -387,6 +403,20 @@ public sealed class CustomFilterPresenter
             _host.RegenerateScript(showValidationError: false);
             await _host.LoadScriptAsync();
         }
+        else if (dialog.Duplicated && dialog.DuplicatedFilter is { } clone)
+        {
+            // Insert clone right after the original filter
+            var idx = -1;
+            for (var i = 0; i < _filterService.Filters.Count; i++)
+                if (ReferenceEquals(_filterService.Filters[i], filter)) { idx = i; break; }
+            if (idx >= 0)
+                _filterService.InsertAt(idx + 1, clone);
+            else
+                _filterService.Add(clone);
+            RebuildUI();
+            _host.RegenerateScript(showValidationError: false);
+            await _host.LoadScriptAsync();
+        }
         else if (dialog.Saved)
         {
             _filterService.Save();
@@ -416,16 +446,18 @@ public sealed class CustomFilterPresenter
             Name = panelName,
             BorderBrush = _host.ThemeBrush("BorderSubtle"),
             BorderThickness = new Thickness(0, 0, 1, 0),
-            Padding = new Thickness(16, 14),
-            MinWidth = 200
+            Padding = new Thickness(10, 10),
+            MinWidth = 140
         };
 
         var stack = new StackPanel { Spacing = 6 };
-        stack.Children.Add(new TextBlock
+        var titleBlock = new TextBlock
         {
             Text = filter.Name.ToUpperInvariant(),
-            Classes = { "section-title" }
-        });
+            Classes = { "section-title" },
+            Cursor = new Cursor(StandardCursorType.Hand)
+        };
+        stack.Children.Add(titleBlock);
 
         foreach (var ctrl in filter.Controls)
         {
@@ -443,6 +475,51 @@ public sealed class CustomFilterPresenter
         }
 
         border.Child = stack;
+
+        // Drag & drop via title to reorder param panels
+        Point? panelDragStart = null;
+        var dragging = false;
+
+        titleBlock.PointerPressed += (_, e) =>
+        {
+            if (!e.GetCurrentPoint(titleBlock).Properties.IsLeftButtonPressed) return;
+            panelDragStart = e.GetPosition(container);
+            dragging = false;
+            e.Pointer.Capture(titleBlock);
+            e.Handled = true;
+        };
+
+        titleBlock.PointerMoved += (_, e) =>
+        {
+            if (panelDragStart is null) return;
+            var pos = e.GetPosition(container);
+            if (!dragging && Math.Abs(pos.X - panelDragStart.Value.X) < 14) return;
+            dragging = true;
+            border.Opacity = 0.5;
+            var insertIdx = GetPanelInsertIndex(container, pos.X, border);
+            ShowPanelDropIndicator(container, insertIdx, border);
+            e.Handled = true;
+        };
+
+        titleBlock.PointerReleased += (_, e) =>
+        {
+            if (panelDragStart is null) return;
+            e.Pointer.Capture(null);
+            var wasDragging = dragging;
+            panelDragStart = null;
+            dragging = false;
+            border.Opacity = 1.0;
+            RemovePanelDropIndicator(container);
+
+            if (wasDragging)
+            {
+                var pos = e.GetPosition(container);
+                var insertIdx = GetPanelInsertIndex(container, pos.X, border);
+                FinishPanelDrag(container, border, insertIdx);
+            }
+            e.Handled = true;
+        };
+
         container.Children.Add(border);
     }
 
@@ -801,5 +878,77 @@ public sealed class CustomFilterPresenter
         _draggedRow = null;
         _isDragging = false;
         _dragStartPos = null;
+    }
+
+    // ── Param panel drag reordering ──────────────────────────────────
+
+    private Border? _panelDropIndicator;
+
+    private int GetPanelInsertIndex(StackPanel container, double x, Border dragged)
+    {
+        var index = 0;
+        foreach (var child in container.Children)
+        {
+            if (child == _panelDropIndicator || child == dragged) continue;
+            if (child is Control c)
+            {
+                var mid = c.Bounds.Left + c.Bounds.Width / 2;
+                if (x < mid) return index;
+            }
+            index++;
+        }
+        return index;
+    }
+
+    private void ShowPanelDropIndicator(StackPanel container, int logicalIndex, Border dragged)
+    {
+        RemovePanelDropIndicator(container);
+
+        _panelDropIndicator = new Border
+        {
+            Width = 3,
+            Background = _host.ThemeBrush("AccentGreen"),
+            Margin = new Thickness(-1, 0, -1, 0),
+            VerticalAlignment = VerticalAlignment.Stretch
+        };
+
+        var visualIndex = 0;
+        var logical = 0;
+        foreach (var child in container.Children)
+        {
+            if (logical >= logicalIndex) break;
+            if (child == dragged) { visualIndex++; continue; }
+            logical++;
+            visualIndex++;
+        }
+
+        container.Children.Insert(Math.Min(visualIndex, container.Children.Count), _panelDropIndicator);
+    }
+
+    private void RemovePanelDropIndicator(StackPanel container)
+    {
+        if (_panelDropIndicator is not null && container.Children.Contains(_panelDropIndicator))
+            container.Children.Remove(_panelDropIndicator);
+        _panelDropIndicator = null;
+    }
+
+    private void FinishPanelDrag(StackPanel container, Border dragged, int insertIndex)
+    {
+        // Get current panel order (excluding indicators)
+        var panels = container.Children.OfType<Border>()
+            .Where(b => b != _panelDropIndicator && b.Name is { Length: > 0 })
+            .ToList();
+
+        var currentIdx = panels.IndexOf(dragged);
+        if (currentIdx < 0) return;
+
+        panels.RemoveAt(currentIdx);
+        var newIdx = Math.Clamp(insertIndex, 0, panels.Count);
+        panels.Insert(newIdx, dragged);
+
+        // Rebuild container in new order
+        container.Children.Clear();
+        foreach (var p in panels)
+            container.Children.Add(p);
     }
 }

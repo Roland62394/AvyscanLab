@@ -752,7 +752,7 @@
                 BorderThickness="0,1,0,0">
             <Grid x:Name="FilterGrid">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="280" MinWidth="120"/>  <!-- Colonne boutons toggle -->
+                    <ColumnDefinition Width="200" MinWidth="120"/>  <!-- Colonne boutons toggle -->
                     <ColumnDefinition Width="5"/>                   <!-- Séparateur -->
                     <ColumnDefinition Width="*"/>                   <!-- Colonne réglages filtre -->
                 </Grid.ColumnDefinitions>

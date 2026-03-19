@@ -75,6 +75,12 @@ public partial class CustomFilterDialog : Window
     /// <summary>True if user clicked Delete.</summary>
     public bool Deleted { get; private set; }
 
+    /// <summary>True if user clicked Duplicate.</summary>
+    public bool Duplicated { get; private set; }
+
+    /// <summary>The cloned filter created by Duplicate.</summary>
+    public CustomFilter? DuplicatedFilter { get; private set; }
+
     /// <summary>Callback to preview the current code live (regenerate script + reload mpv).</summary>
     public Action<CustomFilter>? OnPreview { get; set; }
 
@@ -153,16 +159,14 @@ public partial class CustomFilterDialog : Window
         ExportBtn.Click += async (_, _) => await OnExport();
         ToolTip.SetTip(ExportBtn, L("CfDlgExportTip"));
         HelpBtn.Click += async (_, _) => await ShowHelp();
+        DuplicateBtn.Click += (_, _) => OnDuplicate();
 
-        // Hide delete button for new filters (not yet saved)
+        // Hide delete/duplicate buttons for new filters (not yet saved)
         DeleteBtn.IsVisible = !isNew;
+        DuplicateBtn.IsVisible = !isNew;
 
         // Populate fields
         FilterNameBox.Text = filter.Name;
-
-        foreach (var pos in ScriptService.InjectionPositions)
-            PositionCombo.Items.Add(pos);
-        PositionCombo.SelectedItem = filter.Position;
 
         RebuildDllList();
         RebuildScriptList();
@@ -188,7 +192,6 @@ public partial class CustomFilterDialog : Window
         TitleText.Text = L("CfDlgTitle").ToUpperInvariant();
         FilterNameLabel.Text = L("CfDlgFilterName");
         FilterNameBox.Watermark = L("CfDlgFilterNameWatermark");
-        PositionLabel.Text = L("CfDlgPosition");
         PluginsLabel.Text = L("CfDlgPlugins");
         AddDllBtn.Content = L("CfDlgAddDll");
         ScriptsLabel.Text = L("CfDlgScripts");
@@ -200,6 +203,7 @@ public partial class CustomFilterDialog : Window
         ParamsHint.Text = L("CfDlgParamsHint");
         DeleteBtn.Content = L("CfDlgDelete");
         ExportBtn.Content = "\u2191 " + L("CfDlgExport");
+        DuplicateBtn.Content = "\u2750 " + L("CfDlgDuplicate");
         HelpBtn.Content = "? " + L("CfDlgHelp");
         CancelBtn.Content = L("CfDlgCancel");
         SaveBtn.Content = L("CfDlgSave");
@@ -260,13 +264,30 @@ public partial class CustomFilterDialog : Window
         _filter.Name = string.IsNullOrWhiteSpace(FilterNameBox.Text)
             ? "Custom"
             : FilterNameBox.Text.Trim();
-        _filter.Position = PositionCombo.SelectedItem as string ?? "AfterSharpen";
         _filter.Dlls = [.._dlls];
         _filter.Scripts = [.._scripts];
         _filter.Code = CodeBox.Text ?? "";
         _filter.Controls = _controls.Select(CloneControl).ToList();
 
         Saved = true;
+        Close();
+    }
+
+    private void OnDuplicate()
+    {
+        var name = string.IsNullOrWhiteSpace(FilterNameBox.Text) ? "Custom" : FilterNameBox.Text.Trim();
+        DuplicatedFilter = new CustomFilter
+        {
+            Id = Guid.NewGuid().ToString("N")[..8],
+            Name = name + " (2)",
+            Enabled = true,
+            Position = _filter.Position,
+            Dlls = [.._dlls],
+            Scripts = [.._scripts],
+            Code = CodeBox.Text ?? "",
+            Controls = _controls.Select(CloneControl).ToList()
+        };
+        Duplicated = true;
         Close();
     }
 
@@ -317,7 +338,6 @@ public partial class CustomFilterDialog : Window
         _filter.Code = CodeBox.Text ?? "";
         _filter.Dlls = [.._dlls];
         _filter.Scripts = [.._scripts];
-        _filter.Position = PositionCombo.SelectedItem as string ?? "AfterSharpen";
         _filter.Controls = _controls.Select(CloneControl).ToList();
 
         // Ensure filter is enabled for preview
@@ -343,7 +363,7 @@ public partial class CustomFilterDialog : Window
             Id = _filter.Id,
             Name = string.IsNullOrWhiteSpace(FilterNameBox.Text) ? "Custom" : FilterNameBox.Text.Trim(),
             Enabled = _filter.Enabled,
-            Position = PositionCombo.SelectedItem as string ?? "AfterSharpen",
+            Position = _filter.Position,
             Dlls = [.._dlls],
             Code = CodeBox.Text ?? "",
             Controls = _controls.Select(CloneControl).ToList()
@@ -919,7 +939,7 @@ public partial class CustomFilterDialog : Window
             RebuildDllList();
     }
 
-    private void RebuildDllList() => RebuildFileList(_dlls, DllListPanel, idx =>
+    private void RebuildDllList() => RebuildFileList(_dlls, DllListPanel, ScriptService.ResolveDllPath, idx =>
     {
         _dlls.RemoveAt(idx);
         RebuildDllList();
@@ -960,14 +980,14 @@ public partial class CustomFilterDialog : Window
         RebuildScriptList();
     }
 
-    private void RebuildScriptList() => RebuildFileList(_scripts, ScriptListPanel, idx =>
+    private void RebuildScriptList() => RebuildFileList(_scripts, ScriptListPanel, ScriptService.ResolveScriptPath, idx =>
     {
         _scripts.RemoveAt(idx);
         RebuildScriptList();
     });
 
     /// <summary>Shared implementation for RebuildDllList / RebuildScriptList.</summary>
-    private void RebuildFileList(List<string> items, StackPanel panel, Action<int> onRemove)
+    private void RebuildFileList(List<string> items, StackPanel panel, Func<string, string> resolvePath, Action<int> onRemove)
     {
         panel.Children.Clear();
 
@@ -979,9 +999,10 @@ public partial class CustomFilterDialog : Window
                 ColumnDefinitions = ColumnDefinitions.Parse("*,6,28"),
             };
 
+            var resolved = resolvePath(items[idx]);
             var pathBox = new TextBox
             {
-                Text = items[idx],
+                Text = resolved,
                 FontSize = 11,
                 IsReadOnly = true,
                 Background = ThemeBrush("BgInput"),
