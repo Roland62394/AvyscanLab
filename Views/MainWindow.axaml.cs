@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Resources;
 using System.Text.RegularExpressions;
@@ -187,6 +188,7 @@ namespace CleanScan.Views
             _playerController = new PlayerController(this);
             _playerController.FilesDropped += OnPlayerFilesDropped;
             _playerController.InitPlayerControls();
+            InitPresetCombo();
             RebuildCustomFilterUI();
         }
 
@@ -547,12 +549,16 @@ namespace CleanScan.Views
                 ("AboutMenuItem",         "AboutMenuItem"),
                 ("FeedbackMenuItem",     "FeedbackMenuItem"),
                 ("SettingsMenu",         "SettingsMenu"),
+                ("ExportSettingsMenuItem", "ExportSettingsMenuItem"),
+                ("ImportSettingsMenuItem", "ImportSettingsMenuItem"),
                 ("ResetSettingsMenuItem", "ResetSettingsMenuItem"),
             })
             {
                 if (this.FindControl<MenuItem>(controlName) is { } item)
                     item.Header = GetUiText(textKey);
             }
+
+            RefreshPresetCombo();
 
             if (this.FindControl<Button>("GlobalPresetBtn") is { } globalPresetBtn)
             {
@@ -690,6 +696,176 @@ namespace CleanScan.Views
 
         private string GetUiText(string key) => ViewModel.GetUiText(key);
         private string GetLocalizedText(string fr, string en) => ViewModel.GetLocalizedText(fr, en);
+
+        private static readonly string[] BackupFileNames =
+        [
+            PresetsFileName, CustomFiltersFileName, EncodingPresetsFileName,
+            GammacPresetsFileName, SessionFileName, WindowSettingsFileName
+        ];
+
+        private async void OnExportSettingsClick(object? sender, RoutedEventArgs e)
+        {
+            CloseSettingsMenu();
+
+            var date = DateTime.Now.ToString("yyyy-MM-dd");
+            var picker = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+            {
+                Title = GetUiText("ExportSettingsTitle"),
+                SuggestedFileName = $"CleanScan_backup_{date}.zip",
+                FileTypeChoices = [new FilePickerFileType("ZIP") { Patterns = ["*.zip"] }]
+            });
+            if (picker is null) return;
+
+            var appDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppDataFolder);
+            var zipPath = picker.Path.LocalPath;
+
+            // Save current session before export
+            SaveSession();
+
+            try
+            {
+                if (File.Exists(zipPath)) File.Delete(zipPath);
+                using var zip = ZipFile.Open(zipPath, ZipArchiveMode.Create);
+                foreach (var name in BackupFileNames)
+                {
+                    var src = Path.Combine(appDir, name);
+                    if (File.Exists(src))
+                        zip.CreateEntryFromFile(src, name);
+                }
+            }
+            catch (Exception ex)
+            {
+                await _dialogService.ShowErrorAsync(this, GetUiText("ExportSettingsTitle"), ex.Message);
+            }
+        }
+
+        private async void OnImportSettingsClick(object? sender, RoutedEventArgs e)
+        {
+            CloseSettingsMenu();
+
+            var picker = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = GetUiText("ImportSettingsTitle"),
+                AllowMultiple = false,
+                FileTypeFilter = [new FilePickerFileType("ZIP") { Patterns = ["*.zip"] }]
+            });
+            if (picker.Count == 0) return;
+
+            var zipPath = picker[0].Path.LocalPath;
+            var appDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppDataFolder);
+
+            // Validate each file in the archive and build a report
+            var report = new List<(string Name, string Status)>();
+            Dictionary<string, byte[]> validFiles;
+
+            try
+            {
+                using var zip = ZipFile.OpenRead(zipPath);
+                validFiles = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var name in BackupFileNames)
+                {
+                    var entry = zip.GetEntry(name);
+                    if (entry is null)
+                    {
+                        report.Add((name, GetUiText("ImportReportMissing").Replace("$name$", name)));
+                        continue;
+                    }
+
+                    using var stream = entry.Open();
+                    using var ms = new MemoryStream();
+                    await stream.CopyToAsync(ms);
+                    var bytes = ms.ToArray();
+
+                    // Validate JSON
+                    try
+                    {
+                        System.Text.Json.JsonDocument.Parse(bytes);
+                        validFiles[name] = bytes;
+                        report.Add((name, GetUiText("ImportReportOk").Replace("$name$", name)));
+                    }
+                    catch
+                    {
+                        report.Add((name, GetUiText("ImportReportCorrupt").Replace("$name$", name)));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                await _dialogService.ShowErrorAsync(this, GetUiText("ImportSettingsTitle"), ex.Message);
+                return;
+            }
+
+            if (validFiles.Count == 0)
+            {
+                await _dialogService.ShowErrorAsync(this, GetUiText("ImportSettingsTitle"), "No valid files found.");
+                return;
+            }
+
+            // Show report and ask for confirmation
+            var confirmed = false;
+            var reportText = string.Join("\n", report.Select(r => r.Status));
+            reportText += "\n\n" + GetUiText("ImportReportConfirm");
+
+            var yesBtn = new Button { Content = GetUiText("OkButton"), MinWidth = 80 };
+            var noBtn = new Button { Content = GetUiText("CfDlgConvertNo"), MinWidth = 80 };
+            var dialog = new Window
+            {
+                Title = GetUiText("ImportReportTitle"),
+                SizeToContent = SizeToContent.WidthAndHeight,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                MaxWidth = 520,
+                Content = new StackPanel
+                {
+                    Margin = new Thickness(20),
+                    Spacing = 14,
+                    Children =
+                    {
+                        new TextBlock
+                        {
+                            Text = reportText,
+                            TextWrapping = TextWrapping.Wrap,
+                            MaxWidth = 460,
+                            FontSize = 13,
+                            FontFamily = new FontFamily("Consolas,Cascadia Code,monospace")
+                        },
+                        new StackPanel
+                        {
+                            Orientation = Orientation.Horizontal,
+                            HorizontalAlignment = HorizontalAlignment.Right,
+                            Spacing = 10,
+                            Children = { yesBtn, noBtn }
+                        }
+                    }
+                }
+            };
+
+            yesBtn.Click += (_, _) => { confirmed = true; dialog.Close(); };
+            noBtn.Click += (_, _) => dialog.Close();
+            await dialog.ShowDialog(this);
+
+            if (!confirmed) return;
+
+            // Write valid files to AppData
+            try
+            {
+                Directory.CreateDirectory(appDir);
+                foreach (var (name, bytes) in validFiles)
+                    await File.WriteAllBytesAsync(Path.Combine(appDir, name), bytes);
+
+                // Restart application to apply
+                var exePath = Environment.ProcessPath;
+                if (exePath is not null)
+                {
+                    System.Diagnostics.Process.Start(exePath);
+                    Environment.Exit(0);
+                }
+            }
+            catch (Exception ex)
+            {
+                await _dialogService.ShowErrorAsync(this, GetUiText("ImportSettingsTitle"), ex.Message);
+            }
+        }
 
         private async void OnResetSettingsClick(object? sender, RoutedEventArgs e)
         {
@@ -1481,14 +1657,39 @@ namespace CleanScan.Views
             MarkClipAsPerso();
         }
 
-        /// <summary>Renames the active clip to the next "persoN" if it isn't already one.</summary>
+        /// <summary>Marks the current preset as modified (dirty) when user changes a parameter.</summary>
         private void MarkClipAsPerso()
         {
             if (ActiveClipIndex < 0 || ActiveClipIndex >= Clips.Count) return;
             var currentName = Clips[ActiveClipIndex].PresetName;
-            if (currentName is not null && currentName.StartsWith("perso", StringComparison.OrdinalIgnoreCase)) return;
-            Clips[ActiveClipIndex].PresetName = _clipManager.GetNextPersoName();
-            RestoreClipPresetCombo();
+
+            // Already custom or already dirty — nothing to do
+            if (string.IsNullOrWhiteSpace(currentName)) return;
+            if (currentName.StartsWith("perso", StringComparison.OrdinalIgnoreCase)) return;
+            if (_presetDirty) return;
+
+            _presetDirty = true;
+
+            // Update combo display to show " *"
+            if (this.FindControl<ComboBox>("PresetCombo") is { } combo)
+            {
+                _suppressPresetComboChange = true;
+                try
+                {
+                    var dirtyName = currentName + " *";
+                    var customLabel = GetUiText("PresetCustom");
+                    var presets = _presetService.LoadPresets()
+                        .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+                        .Select(p => p.Name)
+                        .ToList();
+                    var items = new List<string> { customLabel };
+                    foreach (var p in presets)
+                        items.Add(string.Equals(p, currentName, StringComparison.OrdinalIgnoreCase) ? dirtyName : p);
+                    combo.ItemsSource = items;
+                    combo.SelectedItem = dirtyName;
+                }
+                finally { _suppressPresetComboChange = false; }
+            }
             RebuildClipTabs();
         }
 
@@ -2186,6 +2387,9 @@ namespace CleanScan.Views
                 RestoreClipConfig(ActiveClipIndex);
 
                 // Restore per-clip preset selection
+                _presetDirty = false;
+                _customConfigSnapshot = null;
+                RefreshPresetCombo();
                 RestoreClipPresetCombo();
 
                 RegenerateScript(showValidationError: false);
@@ -2219,16 +2423,131 @@ namespace CleanScan.Views
             }
         }
 
+        private bool _suppressPresetComboChange;
+
+        private void InitPresetCombo()
+        {
+            if (this.FindControl<ComboBox>("PresetCombo") is not { } combo) return;
+            combo.SelectionChanged += OnPresetComboChanged;
+        }
+
         private void UpdateActivePresetNameDisplay()
         {
-            if (this.FindControl<TextBlock>("ActivePresetNameBox") is not { } box) return;
-            var name = ActiveClipIndex >= 0 && ActiveClipIndex < Clips.Count
-                ? Clips[ActiveClipIndex].PresetName
-                : null;
+            RefreshPresetCombo();
+        }
 
-            var isPerso = !string.IsNullOrWhiteSpace(name)
-                && name.StartsWith("perso", StringComparison.OrdinalIgnoreCase);
-            box.Text = string.IsNullOrWhiteSpace(name) || isPerso ? "---" : name;
+        private void RefreshPresetCombo()
+        {
+            if (this.FindControl<ComboBox>("PresetCombo") is not { } combo) return;
+            _suppressPresetComboChange = true;
+            try
+            {
+                var customLabel = GetUiText("PresetCustom");
+                var presets = _presetService.LoadPresets()
+                    .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+                    .Select(p => p.Name)
+                    .ToList();
+
+                var clipName = ActiveClipIndex >= 0 && ActiveClipIndex < Clips.Count
+                    ? Clips[ActiveClipIndex].PresetName
+                    : null;
+                var isPerso = clipName?.StartsWith("perso", StringComparison.OrdinalIgnoreCase) == true;
+
+                // Build items list, adding " *" to the active preset if dirty
+                var items = new List<string> { customLabel };
+                foreach (var p in presets)
+                {
+                    if (_presetDirty && string.Equals(p, clipName, StringComparison.OrdinalIgnoreCase))
+                        items.Add(p + " *");
+                    else
+                        items.Add(p);
+                }
+                combo.ItemsSource = items;
+
+                if (string.IsNullOrWhiteSpace(clipName) || isPerso)
+                {
+                    combo.SelectedIndex = 0;
+                }
+                else
+                {
+                    var displayName = _presetDirty ? clipName + " *" : clipName;
+                    combo.SelectedItem = displayName;
+                    // Fallback if not found
+                    if (combo.SelectedIndex < 0)
+                        combo.SelectedIndex = 0;
+                }
+            }
+            finally { _suppressPresetComboChange = false; }
+        }
+
+        private bool _presetDirty;
+        private Dictionary<string, string>? _customConfigSnapshot;
+        private bool _applyingPresetFromCombo;
+
+        private async void OnPresetComboChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            if (_suppressPresetComboChange) return;
+            if (sender is not ComboBox combo) return;
+            var selected = combo.SelectedItem as string;
+            if (string.IsNullOrWhiteSpace(selected)) return;
+
+            // Strip dirty marker " *" if present
+            if (selected.EndsWith(" *"))
+                selected = selected[..^2];
+
+            var customLabel = GetUiText("PresetCustom");
+
+            if (selected == customLabel)
+            {
+                // Switch to Custom — restore saved custom state if available
+                if (ActiveClipIndex >= 0 && ActiveClipIndex < Clips.Count)
+                    Clips[ActiveClipIndex].PresetName = null;
+                _presetDirty = false;
+
+                if (_customConfigSnapshot is not null)
+                {
+                    await ApplyPresetValuesAsync(new Dictionary<string, string>(_customConfigSnapshot, StringComparer.OrdinalIgnoreCase));
+                    _customConfigSnapshot = null;
+                    RebuildCustomFilterUI();
+                }
+
+                RefreshPresetCombo();
+                RestoreClipPresetCombo();
+                RebuildClipTabs();
+                return;
+            }
+
+            // Guard against rapid switching — wait for previous apply to finish
+            if (_applyingPresetFromCombo) return;
+            _applyingPresetFromCombo = true;
+            try
+            {
+                // Save current config as custom snapshot (only if currently on Custom or first switch)
+                var currentPreset = ActiveClipIndex >= 0 && ActiveClipIndex < Clips.Count
+                    ? Clips[ActiveClipIndex].PresetName : null;
+                if (string.IsNullOrWhiteSpace(currentPreset)
+                    || currentPreset.StartsWith("perso", StringComparison.OrdinalIgnoreCase))
+                {
+                    _customConfigSnapshot = _presetService.CaptureCurrentValues(_config);
+                }
+
+                // Apply selected preset
+                var preset = _presetService.LoadPresets()
+                    .FirstOrDefault(p => string.Equals(p.Name, selected, StringComparison.OrdinalIgnoreCase));
+                if (preset?.Values is null) return;
+
+                if (ActiveClipIndex >= 0 && ActiveClipIndex < Clips.Count)
+                    Clips[ActiveClipIndex].PresetName = selected;
+
+                _presetDirty = false;
+                await ApplyPresetValuesAsync(new Dictionary<string, string>(preset.Values, StringComparer.OrdinalIgnoreCase));
+                CustomFilters.CollapseInactive();
+                RebuildCustomFilterUI();
+                RefreshPresetCombo();
+                RestoreClipPresetCombo();
+                RebuildClipTabs();
+            }
+            finally { _applyingPresetFromCombo = false; }
         }
 
         /// <summary>Restores the per-clip preset ComboBox selection without triggering the change handler.</summary>
@@ -2301,6 +2620,8 @@ namespace CleanScan.Views
             if (ActiveClipIndex < 0 || ActiveClipIndex >= Clips.Count) return;
 
             Clips[ActiveClipIndex].PresetName = null;
+            _presetDirty = false;
+            RefreshPresetCombo();
             RestoreClipPresetCombo();
             RebuildClipTabs();
         }
@@ -2406,19 +2727,13 @@ namespace CleanScan.Views
             if (!changed && !string.Equals(key, "source", StringComparison.OrdinalIgnoreCase))
                 return;
 
-            // Rename the active clip's preset to a unique "persoN" when a filter value is manually changed
+            // Mark the active preset as dirty when a filter value is manually changed
             // Skip during clip switching — restored values are not manual changes
             if (changed && !_applyingPreset && !_switchingClip && !IsPathField(key)
                 && !PresetService.ExcludedKeys.Contains(key)
                 && ActiveClipIndex >= 0 && ActiveClipIndex < Clips.Count)
             {
-                var currentName = Clips[ActiveClipIndex].PresetName;
-                if (currentName is null || !currentName.StartsWith("perso", StringComparison.OrdinalIgnoreCase))
-                {
-                    Clips[ActiveClipIndex].PresetName = _clipManager.GetNextPersoName();
-                    RestoreClipPresetCombo();
-                    RebuildClipTabs();
-                }
+                MarkClipAsPerso();
 
                 // Deselect filter preset combo when a field belonging to that filter is manually changed
                 if (FieldToFilterPresetCombo.TryGetValue(key, out var filterPresetCombo)
@@ -2838,6 +3153,7 @@ namespace CleanScan.Views
                     clip.PresetName = null;
             }
 
+            RefreshPresetCombo();
             RestoreClipPresetCombo();
             RebuildClipTabs();
         }
@@ -2845,6 +3161,7 @@ namespace CleanScan.Views
         /// <summary>Applies preset values either to active clip or all clips.</summary>
         private async Task ApplyPresetSelectionAsync(string presetName, Dictionary<string, string> values, bool applyToAllClips)
         {
+            _presetDirty = false;
             await ApplyPresetValuesAsync(values);
 
             if (ActiveClipIndex >= 0 && ActiveClipIndex < Clips.Count)
