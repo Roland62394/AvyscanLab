@@ -810,6 +810,23 @@
                                             Click="OnAddCustomFilterClick"/>
                                 </Grid>
                                 <StackPanel x:Name="CustomFiltersList" Spacing="4"/>
+                                <!-- Inactive filters section (collapsible) -->
+                                <Border x:Name="InactiveFiltersHeader"
+                                        IsVisible="False"
+                                        Margin="0,8,0,0"
+                                        Padding="4,3"
+                                        Background="{DynamicResource BgHeader}"
+                                        BorderBrush="{DynamicResource BorderSubtle}"
+                                        BorderThickness="1"
+                                        CornerRadius="3"
+                                        Cursor="Hand">
+                                    <TextBlock x:Name="InactiveFiltersLabel"
+                                               FontSize="10"
+                                               Foreground="{DynamicResource TextSecondary}"
+                                               LetterSpacing="1"/>
+                                </Border>
+                                <StackPanel x:Name="InactiveFiltersList" Spacing="4"
+                                            Margin="0,4,0,0" IsVisible="False"/>
                             </StackPanel>
 
                         </DockPanel>

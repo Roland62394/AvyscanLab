@@ -76,11 +76,16 @@ public sealed class CustomFilterPresenter
         if (changed) _filterService.Save();
     }
 
+    private bool _inactiveExpanded;
+
     public void RebuildUI()
     {
         var list = _host.FindControl<StackPanel>("CustomFiltersList");
         if (list is null) return;
         list.Children.Clear();
+
+        var inactiveList = _host.FindControl<StackPanel>("InactiveFiltersList");
+        inactiveList?.Children.Clear();
 
         var container = _host.FindControl<StackPanel>("CustomParamPanels");
         container?.Children.Clear();
@@ -90,19 +95,83 @@ public sealed class CustomFilterPresenter
             .OrderBy(f => ScriptService.InjectionPositionToOrder(f.Position))
             .ToList();
 
+        var inactiveCount = 0;
         foreach (var filter in sorted)
         {
-            AddFilterRow(filter, list);
-            var panelName = $"CustomPanel_{filter.Id}";
-            if (_host.OpenParamPanels.Contains(panelName))
-                BuildParamPanel(filter);
+            // Sync enabled state from config before deciding section
+            var enabledKey = ScriptService.GetCustomFilterEnabledKey(filter.Id);
+            var cfgEnabled = _host.Config.Get(enabledKey);
+            if (!string.IsNullOrEmpty(cfgEnabled) && bool.TryParse(cfgEnabled, out var parsedEnabled))
+            {
+                if (filter.Enabled != parsedEnabled)
+                {
+                    filter.Enabled = parsedEnabled;
+                    _filterService.Save();
+                }
+            }
+
+            if (filter.Enabled)
+            {
+                AddFilterRow(filter, list);
+                var panelName = $"CustomPanel_{filter.Id}";
+                if (_host.OpenParamPanels.Contains(panelName))
+                    BuildParamPanel(filter);
+            }
+            else
+            {
+                inactiveCount++;
+                if (inactiveList is not null)
+                    AddFilterRow(filter, inactiveList);
+            }
         }
 
-        // Set up drag & drop on the list
+        // Set up drag & drop on both lists
         SetupDragDrop(list);
+        if (inactiveList is not null)
+            SetupDragDrop(inactiveList);
+
+        // Update inactive section header
+        UpdateInactiveHeader(inactiveCount);
 
         // Ensure positions are in ConfigStore for preset capture
         SyncPositionsToConfig();
+    }
+
+    private void UpdateInactiveHeader(int inactiveCount)
+    {
+        var header = _host.FindControl<Border>("InactiveFiltersHeader");
+        var label = _host.FindControl<TextBlock>("InactiveFiltersLabel");
+        var inactiveList = _host.FindControl<StackPanel>("InactiveFiltersList");
+        if (header is null || label is null || inactiveList is null) return;
+
+        if (inactiveCount == 0)
+        {
+            header.IsVisible = false;
+            inactiveList.IsVisible = false;
+            return;
+        }
+
+        var arrow = _inactiveExpanded ? "▾" : "▸";
+        label.Text = $"{arrow} {_host.GetUiText("InactiveFilters")} ({inactiveCount})";
+        header.IsVisible = true;
+        inactiveList.IsVisible = _inactiveExpanded;
+
+        // Wire click (re-wired each rebuild, but PointerPressed on Border is fine)
+        header.PointerPressed -= OnInactiveHeaderClick;
+        header.PointerPressed += OnInactiveHeaderClick;
+    }
+
+    private void OnInactiveHeaderClick(object? sender, PointerPressedEventArgs e)
+    {
+        _inactiveExpanded = !_inactiveExpanded;
+        var inactiveList = _host.FindControl<StackPanel>("InactiveFiltersList");
+        var label = _host.FindControl<TextBlock>("InactiveFiltersLabel");
+        if (inactiveList is null || label is null) return;
+
+        inactiveList.IsVisible = _inactiveExpanded;
+        var count = inactiveList.Children.Count;
+        var arrow = _inactiveExpanded ? "▾" : "▸";
+        label.Text = $"{arrow} {_host.GetUiText("InactiveFilters")} ({count})";
     }
 
     public void OnExpandClick(object? sender, RoutedEventArgs e)
@@ -287,22 +356,10 @@ public sealed class CustomFilterPresenter
             _isDragging = false;
         }, RoutingStrategies.Tunnel);
 
-        // Sync enabled state from config (preset may have changed it)
         var enabledKey = ScriptService.GetCustomFilterEnabledKey(filter.Id);
-        var cfgEnabled = _host.Config.Get(enabledKey);
-        if (!string.IsNullOrEmpty(cfgEnabled) && bool.TryParse(cfgEnabled, out var parsedEnabled))
-        {
-            if (filter.Enabled != parsedEnabled)
-            {
-                filter.Enabled = parsedEnabled;
-                _filterService.Save();
-            }
-        }
-        else
-        {
-            // First time: write current enabled state to config so presets can capture it
+        // Ensure config has the enabled state (for first time / presets)
+        if (string.IsNullOrEmpty(_host.Config.Get(enabledKey)))
             _host.Config.Set(enabledKey, filter.Enabled.ToString().ToLowerInvariant());
-        }
 
         var panelTag = $"CustomPanel_{filter.Id}";
         Button? expandBtnRef = null;
@@ -318,24 +375,16 @@ public sealed class CustomFilterPresenter
         toggleBtn.Click += (_, _) =>
         {
             filter.Enabled = !filter.Enabled;
-            toggleBtn.Tag = filter.Enabled;
-            _host.UpdateToggleButtonPresentation(toggleBtn, filter.Enabled);
             _host.Config.Set(enabledKey, filter.Enabled.ToString().ToLowerInvariant());
             _host.OnCustomFilterValueChanged();
             _filterService.Save();
 
             // Collapse param panel when filter is disabled
-            if (!filter.Enabled && _host.OpenParamPanels.Remove(panelTag))
-            {
-                RemoveParamPanel(panelTag);
-                if (expandBtnRef is { } eb)
-                {
-                    eb.Content = "▶";
-                    eb.Classes.Remove("active");
-                }
-                _host.UpdateParamsPlaceholderVisibility();
-            }
+            if (!filter.Enabled)
+                _host.OpenParamPanels.Remove(panelTag);
 
+            RebuildUI();
+            _host.UpdateParamsPlaceholderVisibility();
             _host.RegenerateScript(showValidationError: false);
             _ = _host.LoadScriptAsync();
         };
