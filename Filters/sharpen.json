@@ -10,12 +10,10 @@
       "Placeholder": "mode",
       "Type": "combo",
       "Default": "simple",
+      "Description": "simple = uniform sharpening, edge = sharpen only along edges (preserves flat areas)",
       "Max": 100,
       "Step": 1,
-      "Options": [
-        "simple",
-        "edge"
-      ],
+      "Options": ["simple", "edge"],
       "OnValue": "true",
       "OffValue": "false"
     },
@@ -23,6 +21,7 @@
       "Placeholder": "strength",
       "Type": "slider",
       "Default": "8",
+      "Description": "Sharpening intensity. Higher = more detail but risk of halos",
       "Min": 1,
       "Max": 20,
       "Step": 1,
@@ -34,6 +33,7 @@
       "Placeholder": "radius",
       "Type": "slider",
       "Default": "1.5",
+      "Description": "Blur radius for unsharp mask. Larger = coarser sharpening",
       "Min": 0.5,
       "Max": 3,
       "Step": 0.1,
@@ -45,6 +45,7 @@
       "Placeholder": "threshold",
       "Type": "slider",
       "Default": "5",
+      "Description": "Edge detection threshold (edge mode). Below this value, pixels are not sharpened",
       "Max": 255,
       "Step": 1,
       "Options": [],

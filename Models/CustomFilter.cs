@@ -23,6 +23,9 @@ public sealed class CustomFilterControl
     public string Type { get; set; } = "text"; // slider, combo, checkbox, text
     public string Default { get; set; } = "";
 
+    /// <summary>Optional tooltip description shown on the parameter label.</summary>
+    public string? Description { get; set; }
+
     // Slider
     public double Min { get; set; }
     public double Max { get; set; } = 100;

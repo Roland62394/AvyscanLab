@@ -10,12 +10,10 @@
       "Placeholder": "mode",
       "Type": "combo",
       "Default": "removedirtmc",
+      "Description": "removedirtmc = motion-compensated (best quality), removedirt = spatial only (faster)",
       "Max": 100,
       "Step": 1,
-      "Options": [
-        "removedirtmc",
-        "removedirt"
-      ],
+      "Options": ["removedirtmc", "removedirt"],
       "OnValue": "true",
       "OffValue": "false"
     },
@@ -23,6 +21,7 @@
       "Placeholder": "strength",
       "Type": "slider",
       "Default": "10",
+      "Description": "Noise removal limit. Higher = more cleaning but risk of detail loss",
       "Min": 1,
       "Max": 24,
       "Step": 1,
@@ -34,6 +33,7 @@
       "Placeholder": "dist",
       "Type": "slider",
       "Default": "3",
+      "Description": "Spatial search radius for dirt detection. Increase for large dust spots",
       "Min": 1,
       "Max": 10,
       "Step": 1,
@@ -45,6 +45,7 @@
       "Placeholder": "grey",
       "Type": "checkbox",
       "Default": "false",
+      "Description": "Process luma only (ignore chroma). Faster, good for B&W film",
       "Max": 100,
       "Step": 1,
       "Options": [],

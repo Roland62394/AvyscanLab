@@ -4,140 +4,20 @@
   "Enabled": false,
   "Dlls": [],
   "Scripts": [],
-  "Code": "# RGB Levels — 32-bit float precision\nmx = _MatrixAuto(c)\nc32 = EnsureColorspaceSafe(c, \"RGB24\", matrix=mx)\nc32 = ConvertToPlanarRGB(c32)\nc32 = ConvertBits(c32, 32)\nr_ex = \"x {r_gain} * {r_offset} + 0.0 max 1.0 min 1.0 {r_gamma} / pow 0.5 - {contrast} * 0.5 + {brightness} + 0.0 max 1.0 min 1.0 {gamma} / pow\"\ng_ex = \"x {g_gain} * {g_offset} + 0.0 max 1.0 min 1.0 {g_gamma} / pow 0.5 - {contrast} * 0.5 + {brightness} + 0.0 max 1.0 min 1.0 {gamma} / pow\"\nb_ex = \"x {b_gain} * {b_offset} + 0.0 max 1.0 min 1.0 {b_gamma} / pow 0.5 - {contrast} * 0.5 + {brightness} + 0.0 max 1.0 min 1.0 {gamma} / pow\"\nc = Expr(c32, r_ex, g_ex, b_ex)",
+  "Code": "# RGB Levels \u2014 32-bit float precision\nmx = _MatrixAuto(c)\nc32 = EnsureColorspaceSafe(c, \"RGB24\", matrix=mx)\nc32 = ConvertToPlanarRGB(c32)\nc32 = ConvertBits(c32, 32)\nr_ex = \"x {r_gain} * {r_offset} + 0.0 max 1.0 min 1.0 {r_gamma} / pow 0.5 - {contrast} * 0.5 + {brightness} + 0.0 max 1.0 min 1.0 {gamma} / pow\"\ng_ex = \"x {g_gain} * {g_offset} + 0.0 max 1.0 min 1.0 {g_gamma} / pow 0.5 - {contrast} * 0.5 + {brightness} + 0.0 max 1.0 min 1.0 {gamma} / pow\"\nb_ex = \"x {b_gain} * {b_offset} + 0.0 max 1.0 min 1.0 {b_gamma} / pow 0.5 - {contrast} * 0.5 + {brightness} + 0.0 max 1.0 min 1.0 {gamma} / pow\"\nc = Expr(c32, r_ex, g_ex, b_ex)",
   "Position": "Luma",
   "Controls": [
-    {
-      "Placeholder": "brightness",
-      "Type": "slider",
-      "Default": "0.0",
-      "Min": -0.3,
-      "Max": 0.3,
-      "Step": 0.005,
-      "Options": [],
-      "OnValue": "true",
-      "OffValue": "false"
-    },
-    {
-      "Placeholder": "contrast",
-      "Type": "slider",
-      "Default": "1.0",
-      "Min": 0.5,
-      "Max": 2.0,
-      "Step": 0.05,
-      "Options": [],
-      "OnValue": "true",
-      "OffValue": "false"
-    },
-    {
-      "Placeholder": "gamma",
-      "Type": "slider",
-      "Default": "1.0",
-      "Min": 0.2,
-      "Max": 5.0,
-      "Step": 0.05,
-      "Options": [],
-      "OnValue": "true",
-      "OffValue": "false"
-    },
-    {
-      "Placeholder": "r_gain",
-      "Type": "slider",
-      "Default": "1.0",
-      "Min": 0.5,
-      "Max": 2.0,
-      "Step": 0.01,
-      "Options": [],
-      "OnValue": "true",
-      "OffValue": "false"
-    },
-    {
-      "Placeholder": "r_gamma",
-      "Type": "slider",
-      "Default": "1.0",
-      "Min": 0.2,
-      "Max": 5.0,
-      "Step": 0.05,
-      "Options": [],
-      "OnValue": "true",
-      "OffValue": "false"
-    },
-    {
-      "Placeholder": "r_offset",
-      "Type": "slider",
-      "Default": "0.0",
-      "Min": -0.2,
-      "Max": 0.2,
-      "Step": 0.005,
-      "Options": [],
-      "OnValue": "true",
-      "OffValue": "false"
-    },
-    {
-      "Placeholder": "g_gain",
-      "Type": "slider",
-      "Default": "1.0",
-      "Min": 0.5,
-      "Max": 2.0,
-      "Step": 0.01,
-      "Options": [],
-      "OnValue": "true",
-      "OffValue": "false"
-    },
-    {
-      "Placeholder": "g_gamma",
-      "Type": "slider",
-      "Default": "1.0",
-      "Min": 0.2,
-      "Max": 5.0,
-      "Step": 0.05,
-      "Options": [],
-      "OnValue": "true",
-      "OffValue": "false"
-    },
-    {
-      "Placeholder": "g_offset",
-      "Type": "slider",
-      "Default": "0.0",
-      "Min": -0.2,
-      "Max": 0.2,
-      "Step": 0.005,
-      "Options": [],
-      "OnValue": "true",
-      "OffValue": "false"
-    },
-    {
-      "Placeholder": "b_gain",
-      "Type": "slider",
-      "Default": "1.0",
-      "Min": 0.5,
-      "Max": 2.0,
-      "Step": 0.01,
-      "Options": [],
-      "OnValue": "true",
-      "OffValue": "false"
-    },
-    {
-      "Placeholder": "b_gamma",
-      "Type": "slider",
-      "Default": "1.0",
-      "Min": 0.2,
-      "Max": 5.0,
-      "Step": 0.05,
-      "Options": [],
-      "OnValue": "true",
-      "OffValue": "false"
-    },
-    {
-      "Placeholder": "b_offset",
-      "Type": "slider",
-      "Default": "0.0",
-      "Min": -0.2,
-      "Max": 0.2,
-      "Step": 0.005,
-      "Options": [],
-      "OnValue": "true",
-      "OffValue": "false"
-    }
+    { "Placeholder": "brightness", "Type": "slider", "Default": "0.0", "Description": "Global brightness offset (0 = no change)", "Min": -0.3, "Max": 0.3, "Step": 0.005, "Options": [], "OnValue": "true", "OffValue": "false" },
+    { "Placeholder": "contrast", "Type": "slider", "Default": "1.0", "Description": "Global contrast multiplier (1.0 = neutral)", "Min": 0.5, "Max": 2.0, "Step": 0.05, "Options": [], "OnValue": "true", "OffValue": "false" },
+    { "Placeholder": "gamma", "Type": "slider", "Default": "1.0", "Description": "Global gamma. <1 = darker midtones, >1 = brighter", "Min": 0.2, "Max": 5.0, "Step": 0.05, "Options": [], "OnValue": "true", "OffValue": "false" },
+    { "Placeholder": "r_gain", "Type": "slider", "Default": "1.0", "Description": "Red channel gain (multiplier). Increase to warm, decrease to cool", "Min": 0.5, "Max": 2.0, "Step": 0.01, "Options": [], "OnValue": "true", "OffValue": "false" },
+    { "Placeholder": "r_gamma", "Type": "slider", "Default": "1.0", "Description": "Red channel gamma. Adjusts red midtones independently", "Min": 0.2, "Max": 5.0, "Step": 0.05, "Options": [], "OnValue": "true", "OffValue": "false" },
+    { "Placeholder": "r_offset", "Type": "slider", "Default": "0.0", "Description": "Red channel offset (lift). Shifts red black point", "Min": -0.2, "Max": 0.2, "Step": 0.005, "Options": [], "OnValue": "true", "OffValue": "false" },
+    { "Placeholder": "g_gain", "Type": "slider", "Default": "1.0", "Description": "Green channel gain (multiplier)", "Min": 0.5, "Max": 2.0, "Step": 0.01, "Options": [], "OnValue": "true", "OffValue": "false" },
+    { "Placeholder": "g_gamma", "Type": "slider", "Default": "1.0", "Description": "Green channel gamma. Adjusts green midtones independently", "Min": 0.2, "Max": 5.0, "Step": 0.05, "Options": [], "OnValue": "true", "OffValue": "false" },
+    { "Placeholder": "g_offset", "Type": "slider", "Default": "0.0", "Description": "Green channel offset (lift). Shifts green black point", "Min": -0.2, "Max": 0.2, "Step": 0.005, "Options": [], "OnValue": "true", "OffValue": "false" },
+    { "Placeholder": "b_gain", "Type": "slider", "Default": "1.0", "Description": "Blue channel gain (multiplier). Increase for cooler tones", "Min": 0.5, "Max": 2.0, "Step": 0.01, "Options": [], "OnValue": "true", "OffValue": "false" },
+    { "Placeholder": "b_gamma", "Type": "slider", "Default": "1.0", "Description": "Blue channel gamma. Adjusts blue midtones independently", "Min": 0.2, "Max": 5.0, "Step": 0.05, "Options": [], "OnValue": "true", "OffValue": "false" },
+    { "Placeholder": "b_offset", "Type": "slider", "Default": "0.0", "Description": "Blue channel offset (lift). Shifts blue black point", "Min": -0.2, "Max": 0.2, "Step": 0.005, "Options": [], "OnValue": "true", "OffValue": "false" }
   ]
 }

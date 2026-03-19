@@ -788,6 +788,13 @@ public partial class CustomFilterDialog : Window
                 break;
         }
 
+        // Description (tooltip) field
+        row.Children.Add(MakeFieldLabel("💬"));
+        var descBox = MakeFieldBox(ctrl.Description ?? "", 140);
+        descBox.Watermark = "Tooltip...";
+        descBox.LostFocus += (_, _) => ctrl.Description = string.IsNullOrWhiteSpace(descBox.Text) ? null : descBox.Text;
+        row.Children.Add(descBox);
+
         border.Child = row;
         return border;
     }
@@ -1060,6 +1067,7 @@ public partial class CustomFilterDialog : Window
         Placeholder = src.Placeholder,
         Type = src.Type,
         Default = src.Default,
+        Description = src.Description,
         Min = src.Min,
         Max = src.Max,
         Step = src.Step,

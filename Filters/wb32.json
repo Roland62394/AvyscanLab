@@ -4,74 +4,14 @@
   "Enabled": false,
   "Dlls": [],
   "Scripts": [],
-  "Code": "# White Balance — 32-bit float precision\n# Per-channel gain + gamma for precise color cast correction\n# Gain: overall channel multiplier (1.0 = neutral)\n# Gamma: midtone shift (>1 = brighten channel midtones, <1 = darken)\nmx = _MatrixAuto(c)\nc32 = EnsureColorspaceSafe(c, \"RGB24\", matrix=mx)\nc32 = ConvertToPlanarRGB(c32)\nc32 = ConvertBits(c32, 32)\nc = Expr(c32, \"x {r_gain} * 0.0 max 1.0 min 1.0 {r_gamma} / pow\", \"x {g_gain} * 0.0 max 1.0 min 1.0 {g_gamma} / pow\", \"x {b_gain} * 0.0 max 1.0 min 1.0 {b_gamma} / pow\")",
+  "Code": "# White Balance \u2014 32-bit float precision\n# Per-channel gain + gamma for precise color cast correction\n# Gain: overall channel multiplier (1.0 = neutral)\n# Gamma: midtone shift (>1 = brighten channel midtones, <1 = darken)\nmx = _MatrixAuto(c)\nc32 = EnsureColorspaceSafe(c, \"RGB24\", matrix=mx)\nc32 = ConvertToPlanarRGB(c32)\nc32 = ConvertBits(c32, 32)\nc = Expr(c32, \"x {r_gain} * 0.0 max 1.0 min 1.0 {r_gamma} / pow\", \"x {g_gain} * 0.0 max 1.0 min 1.0 {g_gamma} / pow\", \"x {b_gain} * 0.0 max 1.0 min 1.0 {b_gamma} / pow\")",
   "Position": "AfterGamMac",
   "Controls": [
-    {
-      "Placeholder": "r_gain",
-      "Type": "slider",
-      "Default": "1.0",
-      "Min": 0.5,
-      "Max": 2.0,
-      "Step": 0.01,
-      "Options": [],
-      "OnValue": "true",
-      "OffValue": "false"
-    },
-    {
-      "Placeholder": "r_gamma",
-      "Type": "slider",
-      "Default": "1.0",
-      "Min": 0.2,
-      "Max": 3.0,
-      "Step": 0.05,
-      "Options": [],
-      "OnValue": "true",
-      "OffValue": "false"
-    },
-    {
-      "Placeholder": "g_gain",
-      "Type": "slider",
-      "Default": "1.0",
-      "Min": 0.5,
-      "Max": 2.0,
-      "Step": 0.01,
-      "Options": [],
-      "OnValue": "true",
-      "OffValue": "false"
-    },
-    {
-      "Placeholder": "g_gamma",
-      "Type": "slider",
-      "Default": "1.0",
-      "Min": 0.2,
-      "Max": 3.0,
-      "Step": 0.05,
-      "Options": [],
-      "OnValue": "true",
-      "OffValue": "false"
-    },
-    {
-      "Placeholder": "b_gain",
-      "Type": "slider",
-      "Default": "1.0",
-      "Min": 0.5,
-      "Max": 2.0,
-      "Step": 0.01,
-      "Options": [],
-      "OnValue": "true",
-      "OffValue": "false"
-    },
-    {
-      "Placeholder": "b_gamma",
-      "Type": "slider",
-      "Default": "1.0",
-      "Min": 0.2,
-      "Max": 3.0,
-      "Step": 0.05,
-      "Options": [],
-      "OnValue": "true",
-      "OffValue": "false"
-    }
+    { "Placeholder": "r_gain", "Type": "slider", "Default": "1.0", "Description": "Red gain. >1 warms the image, <1 reduces red cast", "Min": 0.5, "Max": 2.0, "Step": 0.01, "Options": [], "OnValue": "true", "OffValue": "false" },
+    { "Placeholder": "r_gamma", "Type": "slider", "Default": "1.0", "Description": "Red gamma. Adjusts red midtones without clipping highlights", "Min": 0.2, "Max": 3.0, "Step": 0.05, "Options": [], "OnValue": "true", "OffValue": "false" },
+    { "Placeholder": "g_gain", "Type": "slider", "Default": "1.0", "Description": "Green gain. Usually close to 1.0 (reference channel)", "Min": 0.5, "Max": 2.0, "Step": 0.01, "Options": [], "OnValue": "true", "OffValue": "false" },
+    { "Placeholder": "g_gamma", "Type": "slider", "Default": "1.0", "Description": "Green gamma. Adjusts green midtones independently", "Min": 0.2, "Max": 3.0, "Step": 0.05, "Options": [], "OnValue": "true", "OffValue": "false" },
+    { "Placeholder": "b_gain", "Type": "slider", "Default": "1.0", "Description": "Blue gain. >1 cools the image, <1 reduces blue cast", "Min": 0.5, "Max": 2.0, "Step": 0.01, "Options": [], "OnValue": "true", "OffValue": "false" },
+    { "Placeholder": "b_gamma", "Type": "slider", "Default": "1.0", "Description": "Blue gamma. Adjusts blue midtones independently", "Min": 0.2, "Max": 3.0, "Step": 0.05, "Options": [], "OnValue": "true", "OffValue": "false" }
   ]
 }

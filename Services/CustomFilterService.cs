@@ -25,6 +25,20 @@ public sealed class CustomFilterService
         return true;
     }
 
+    private static bool SyncDescriptions(List<CustomFilterControl> existing, List<CustomFilterControl> shipped)
+    {
+        var changed = false;
+        foreach (var sc in shipped)
+        {
+            if (string.IsNullOrWhiteSpace(sc.Description)) continue;
+            var ec = existing.Find(c => string.Equals(c.Placeholder, sc.Placeholder, StringComparison.OrdinalIgnoreCase));
+            if (ec is null || string.Equals(ec.Description, sc.Description, StringComparison.Ordinal)) continue;
+            ec.Description = sc.Description;
+            changed = true;
+        }
+        return changed;
+    }
+
     public CustomFilterService(string filePath)
     {
         _filePath = filePath;
@@ -129,13 +143,19 @@ public sealed class CustomFilterService
                         existing.Controls = filter.Controls;
                         changed = true;
                     }
-                    // Always sync Dlls/Scripts even if Code unchanged
-                    else if (!ListsEqual(existing.Dlls, filter.Dlls)
-                          || !ListsEqual(existing.Scripts, filter.Scripts))
+                    // Always sync Dlls/Scripts/Descriptions even if Code unchanged
+                    else
                     {
-                        existing.Dlls = filter.Dlls;
-                        existing.Scripts = filter.Scripts;
-                        changed = true;
+                        if (!ListsEqual(existing.Dlls, filter.Dlls)
+                            || !ListsEqual(existing.Scripts, filter.Scripts))
+                        {
+                            existing.Dlls = filter.Dlls;
+                            existing.Scripts = filter.Scripts;
+                            changed = true;
+                        }
+                        // Sync descriptions from shipped controls
+                        if (SyncDescriptions(existing.Controls, filter.Controls))
+                            changed = true;
                     }
                 }
                 else

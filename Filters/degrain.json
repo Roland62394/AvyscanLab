@@ -10,13 +10,10 @@
       "Placeholder": "mode",
       "Type": "combo",
       "Default": "mdegrain2",
+      "Description": "Temporal radius: degrain1=1 frame, degrain2=2 frames (balanced), degrain3=3 frames (strongest)",
       "Max": 100,
       "Step": 1,
-      "Options": [
-        "mdegrain1",
-        "mdegrain2",
-        "mdegrain3"
-      ],
+      "Options": ["mdegrain1", "mdegrain2", "mdegrain3"],
       "OnValue": "true",
       "OffValue": "false"
     },
@@ -24,6 +21,7 @@
       "Placeholder": "thSAD",
       "Type": "slider",
       "Default": "350",
+      "Description": "Luma denoising threshold. Higher = more denoising, risk of ghosting on motion",
       "Min": 50,
       "Max": 1000,
       "Step": 10,
@@ -35,6 +33,7 @@
       "Placeholder": "thSADC",
       "Type": "slider",
       "Default": "250",
+      "Description": "Chroma denoising threshold. Lower than thSAD to avoid color bleeding",
       "Min": 50,
       "Max": 800,
       "Step": 10,
@@ -46,13 +45,10 @@
       "Placeholder": "blksize",
       "Type": "combo",
       "Default": "16",
+      "Description": "Motion block size. 8=precise (slow), 16=balanced, 32=fast (less accurate)",
       "Max": 100,
       "Step": 1,
-      "Options": [
-        "8",
-        "16",
-        "32"
-      ],
+      "Options": ["8", "16", "32"],
       "OnValue": "true",
       "OffValue": "false"
     },
@@ -60,13 +56,10 @@
       "Placeholder": "overlap",
       "Type": "combo",
       "Default": "8",
+      "Description": "Block overlap (must be < blksize). More overlap = smoother but slower",
       "Max": 100,
       "Step": 1,
-      "Options": [
-        "4",
-        "8",
-        "16"
-      ],
+      "Options": ["4", "8", "16"],
       "OnValue": "true",
       "OffValue": "false"
     },
@@ -74,12 +67,10 @@
       "Placeholder": "pel",
       "Type": "combo",
       "Default": "1",
+      "Description": "Sub-pixel precision. 1=pixel, 2=half-pixel (better quality, 2x slower)",
       "Max": 100,
       "Step": 1,
-      "Options": [
-        "1",
-        "2"
-      ],
+      "Options": ["1", "2"],
       "OnValue": "true",
       "OffValue": "false"
     },
@@ -87,13 +78,10 @@
       "Placeholder": "search",
       "Type": "combo",
       "Default": "2",
+      "Description": "Motion search algorithm. 0=onestep (fast), 2=hex (balanced), 3=exhaustive (slow, best)",
       "Max": 100,
       "Step": 1,
-      "Options": [
-        "0",
-        "2",
-        "3"
-      ],
+      "Options": ["0", "2", "3"],
       "OnValue": "true",
       "OffValue": "false"
     },
@@ -101,13 +89,10 @@
       "Placeholder": "prefilter",
       "Type": "combo",
       "Default": "remgrain",
+      "Description": "Pre-filter for motion estimation. remgrain=light denoise, blur=gaussian, none=raw",
       "Max": 100,
       "Step": 1,
-      "Options": [
-        "remgrain",
-        "blur",
-        "none"
-      ],
+      "Options": ["remgrain", "blur", "none"],
       "OnValue": "true",
       "OffValue": "false"
     }

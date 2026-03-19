@@ -585,16 +585,29 @@ public sealed class CustomFilterPresenter
 
     // ── Control builders ─────────────────────────────────────────────
 
+    private static TextBlock MakeParamLabel(CustomFilterControl ctrl, Thickness? margin = null)
+    {
+        var label = new TextBlock
+        {
+            Text = ctrl.Placeholder,
+            Classes = { "param-label" },
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        if (margin is { } m) label.Margin = m;
+        if (!string.IsNullOrWhiteSpace(ctrl.Description))
+        {
+            ToolTip.SetTip(label, ctrl.Description);
+            label.Cursor = new Cursor(StandardCursorType.Help);
+            label.TextDecorations = TextDecorations.Underline;
+        }
+        return label;
+    }
+
     private Control BuildSlider(CustomFilterControl ctrl, string configKey)
     {
         var grid = new Grid { ColumnDefinitions = ColumnDefinitions.Parse("Auto,Auto,70") };
 
-        var label = new TextBlock
-        {
-            Text = ctrl.Placeholder, Classes = { "param-label" },
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(0, 0, 8, 0)
-        };
+        var label = MakeParamLabel(ctrl, new Thickness(0, 0, 8, 0));
         Grid.SetColumn(label, 0);
         grid.Children.Add(label);
 
@@ -680,11 +693,7 @@ public sealed class CustomFilterPresenter
     private Control BuildCombo(CustomFilterControl ctrl, string configKey)
     {
         var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        row.Children.Add(new TextBlock
-        {
-            Text = ctrl.Placeholder, Classes = { "param-label" },
-            VerticalAlignment = VerticalAlignment.Center
-        });
+        row.Children.Add(MakeParamLabel(ctrl));
 
         var combo = new ComboBox();
         foreach (var opt in ctrl.Options) combo.Items.Add(opt);
@@ -703,11 +712,7 @@ public sealed class CustomFilterPresenter
     private Control BuildCheckbox(CustomFilterControl ctrl, string configKey)
     {
         var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        row.Children.Add(new TextBlock
-        {
-            Text = ctrl.Placeholder, Classes = { "param-label" },
-            VerticalAlignment = VerticalAlignment.Center
-        });
+        row.Children.Add(MakeParamLabel(ctrl));
 
         var current = _host.Config.Get(configKey) ?? ctrl.Default;
         var isOn = string.Equals(current, ctrl.OnValue, StringComparison.OrdinalIgnoreCase);
@@ -737,11 +742,7 @@ public sealed class CustomFilterPresenter
     private Control BuildTextBox(CustomFilterControl ctrl, string configKey)
     {
         var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        row.Children.Add(new TextBlock
-        {
-            Text = ctrl.Placeholder, Classes = { "param-label" },
-            VerticalAlignment = VerticalAlignment.Center
-        });
+        row.Children.Add(MakeParamLabel(ctrl));
 
         var textBox = new TextBox
         {
