@@ -495,8 +495,8 @@ public sealed class CustomFilterPresenter
         var border = new Border
         {
             Name = panelName,
-            BorderBrush = _host.ThemeBrush("BorderSubtle"),
-            BorderThickness = new Thickness(0, 0, 1, 0),
+            BorderBrush = _host.ThemeBrush("SepLight"),
+            BorderThickness = new Thickness(0, 0, 2, 0),
             Padding = new Thickness(10, 10),
             MinWidth = 140
         };

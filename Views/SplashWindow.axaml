@@ -1,8 +1,8 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="CleanScan.Views.SplashWindow"
-        Width="450"
-        Height="350"
+        Width="500"
+        Height="440"
         CanResize="False"
         WindowStartupLocation="CenterScreen"
         SystemDecorations="None"
@@ -16,22 +16,23 @@
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"
                    Source="avares://CleanScan/Assets/Logo.png"
-                   Stretch="None"/>
+                   Stretch="Fill"/>
             <TextBlock Text="Trial version"
-                       FontSize="16" FontWeight="SemiBold"
-                       Foreground="#FFD54F"
+                       FontSize="16" FontWeight="Light"
+                       Foreground="#CEB35C"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Bottom"
-                       Margin="0,0,0,36"/>
+                       Margin="-10,-50,0,10"/>
             <TextBlock Text="RC 1.0.0"
-                       FontSize="14"
-                       Foreground="White"
+                       FontSize="16"
+                       FontFamily="Consolas"
+                       Foreground="#A89898"
                        HorizontalAlignment="Left"
                        VerticalAlignment="Bottom"
                        Margin="12,0,0,10"/>
             <TextBlock Text="© ScanFilm 2026"
-                       FontSize="14"
-                       Foreground="White"
+                       FontSize="16"
+                       Foreground="#A89898"
                        HorizontalAlignment="Right"
                        VerticalAlignment="Bottom"
                        Margin="0,0,12,10"/>

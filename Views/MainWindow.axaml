@@ -7,7 +7,7 @@
         mc:Ignorable="d" d:DesignWidth="480" d:DesignHeight="400"
         x:Class="CleanScan.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/Ico.ico"
+        Icon="/Assets/Logo.png"
         Title="CleanScan"
         Background="{DynamicResource BgDeep}"
         Width="960"
@@ -22,6 +22,7 @@
         <SolidColorBrush x:Key="BgHeader"      Color="#1C2333"/>
         <SolidColorBrush x:Key="BgInput"       Color="#1A2030"/>
         <SolidColorBrush x:Key="BorderSubtle"  Color="#252E42"/>
+        <SolidColorBrush x:Key="SepLight"     Color="#3A4560"/>
         <SolidColorBrush x:Key="BorderAccent"  Color="#2E3D5A"/>
         <SolidColorBrush x:Key="TextPrimary"   Color="#7984A5"/>
         <SolidColorBrush x:Key="TextSecondary" Color="#DBDBDB"/>
@@ -766,9 +767,7 @@
 
                 <!-- ════ COL 0 — OPTIONS + FILTERS (boutons toggle) ════ -->
                 <Border Grid.Column="0"
-                        Background="{DynamicResource BgPanel}"
-                        BorderBrush="{DynamicResource BorderSubtle}"
-                        BorderThickness="0,0,1,0">
+                        Background="{DynamicResource BgPanel}">
                     <ScrollViewer VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled">
                         <DockPanel Margin="10,10,20,10">
@@ -844,7 +843,7 @@
                 <GridSplitter Grid.Column="1"
                               ResizeDirection="Columns"
                               VerticalAlignment="Stretch"
-                              Background="{DynamicResource BorderSubtle}"
+                              Background="{DynamicResource SepLight}"
                               Cursor="SizeWestEast"/>
 
                 <!-- ════ COL 2 — RÉGLAGES des filtres (multi-colonnes) ════ -->
