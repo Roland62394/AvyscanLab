@@ -127,8 +127,11 @@ public sealed class MpvService : IDisposable
     private readonly List<string>    _errorLogs = [];
     private readonly object          _errorLogLock = new();
 
+    private bool _histogramEnabled;
+
     public bool IsReady => _ctx != 0;
     public double Duration => _duration;
+    public bool HistogramEnabled => _histogramEnabled;
 
     /// <summary>Returns a snapshot of recent error/warning log messages from mpv.</summary>
     public string GetLastErrorLogs()
@@ -248,6 +251,16 @@ public sealed class MpvService : IDisposable
     {
         if (_ctx == 0) return;
         mpv_set_property_string(_ctx, "speed", speed.ToString("F2", CultureInfo.InvariantCulture));
+    }
+
+    public void ToggleHistogram()
+    {
+        if (_ctx == 0) return;
+        _histogramEnabled = !_histogramEnabled;
+        if (_histogramEnabled)
+            mpv_command(_ctx, ["vf", "add", "@histogram:lavfi=[split[a][b];[b]histogram,format=yuva444p[hh];[a][hh]overlay=x=0:y=0]", null]);
+        else
+            mpv_command(_ctx, ["vf", "remove", "@histogram", null]);
     }
 
     public bool IsPaused() => _paused;

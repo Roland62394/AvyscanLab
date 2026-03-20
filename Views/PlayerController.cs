@@ -395,6 +395,17 @@ public sealed class PlayerController
     public bool HalfRes => _halfRes;
     public bool ViewerMaximized => _viewerMaximized;
 
+    public void OnHistogramClick(object? sender, RoutedEventArgs e)
+    {
+        _mpvService?.ToggleHistogram();
+        var on = _mpvService?.HistogramEnabled ?? false;
+        if (_host.FindControl<Button>("HistogramBtn") is { } btn)
+        {
+            btn.Background = on ? _host.ThemeBrush("AccentGreen") : _host.ThemeBrush("BgInput");
+            btn.Foreground = on ? Brushes.White : _host.ThemeBrush("TextLabel");
+        }
+    }
+
     public void OnHalfResClick(object? sender, RoutedEventArgs e)
     {
         _halfRes = !_halfRes;
@@ -641,6 +652,7 @@ public sealed class PlayerController
             ("VdbEnd",       "VdbEnd"),
             ("SpeedBtn",     "SpeedBtn"),
             ("HalfResBtn",   "HalfResBtn"),
+            ("HistogramBtn", "HistogramBtn"),
             ("RecordBtn",    "RecordBtn"),
         })
         {

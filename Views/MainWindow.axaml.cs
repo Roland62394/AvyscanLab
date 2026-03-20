@@ -3024,6 +3024,7 @@ namespace CleanScan.Views
         private void OnVdbEndClick(object? sender, RoutedEventArgs e) => _playerController.OnVdbEndClick(sender, e);
         private void OnSpeedClick(object? sender, RoutedEventArgs e) => _playerController.OnSpeedClick(sender, e);
         private void OnHalfResClick(object? sender, RoutedEventArgs e) => _playerController.OnHalfResClick(sender, e);
+        private void OnHistogramClick(object? sender, RoutedEventArgs e) => _playerController.OnHistogramClick(sender, e);
         private void OnMaxViewerClick(object? sender, RoutedEventArgs e) => _playerController.OnMaxViewerClick(sender, e);
         private void ToggleViewerMaximized() => _playerController.ToggleViewerMaximized();
         private void OnWindowKeyDown(object? sender, KeyEventArgs e) => _playerController.OnWindowKeyDown(sender, e);
