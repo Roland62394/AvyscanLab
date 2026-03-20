@@ -31,15 +31,14 @@ public sealed class GuidedTourService
 {
     private static readonly (string? TargetName, string TitleKey, string BodyKey, string Emoji, string? BeforeAction)[] Steps =
     [
-        (null,               "TourWelcomeTitle",       "TourWelcomeBody",       "\ud83c\udfac", null),
-        ("AddClipBtn",       "TourAddClipTitle",       "TourAddClipBody",       "\u2795",       null),
-        ("CropExpandBtn",    "TourParamsTitle",        "TourParamsBody",        "\ud83d\udd27", null),
-        ("Slide_Crop_L",     "TourSliderTitle",        "TourSliderBody",        "\ud83c\udf9a", "OpenCrop"),
-        ("Label_Crop_L",     "TourTooltipTitle",       "TourTooltipBody",       "\ud83d\udcac", "OpenCrop"),
-        ("VdbPlay",          "TourPreviewTitle",       "TourPreviewBody",       "\u25b6\ufe0f", null),
-        ("RecordBtn",        "TourRecordTitle",        "TourRecordBody",        "\ud83d\udcbe", null),
-        ("RecordDirPickBtn", "TourOutputDirTitle",     "TourOutputDirBody",     "\ud83d\udcc1", "OpenRecord"),
-        ("RecordStartBtn",   "TourStartEncodingTitle", "TourStartEncodingBody", "\ud83d\ude80", "OpenRecord"),
+        (null,                "TourWelcomeTitle",       "TourWelcomeBody",       "\ud83c\udfac", null),
+        ("AddClipBtn",        "TourAddClipTitle",       "TourAddClipBody",       "\u2795",       null),
+        ("CustomFiltersList", "TourFiltersTitle",       "TourFiltersBody",       "\ud83d\udd27", null),
+        ("CustomParamPanels", "TourParamsTitle",        "TourParamsBody",        "\ud83c\udf9a", null),
+        ("VdbPlay",           "TourPreviewTitle",       "TourPreviewBody",       "\u25b6\ufe0f", null),
+        ("RecordBtn",         "TourRecordTitle",        "TourRecordBody",        "\ud83d\udcbe", null),
+        ("RecordDirPickBtn",  "TourOutputDirTitle",     "TourOutputDirBody",     "\ud83d\udcc1", "OpenRecord"),
+        ("RecordStartBtn",    "TourStartEncodingTitle", "TourStartEncodingBody", "\ud83d\ude80", "OpenRecord"),
     ];
 
     private bool _active;
@@ -256,11 +255,11 @@ public sealed class GuidedTourService
 
             static int VerticalNudge(int s) => s switch
             {
-                1 => 70, 2 => 70, 3 => 50, 4 => -60, 7 => -100, _ => 0,
+                1 => 70, 2 => 70, 3 => 50, 6 => -100, _ => 0,
             };
             static int HorizontalNudge(int s) => s switch
             {
-                0 => 120, 1 => 80, 3 => 120, 7 => -120, _ => 0,
+                0 => 120, 1 => 80, 6 => -120, _ => 0,
             };
 
             // ── UpdateStep ───────────────────────────────────────────
@@ -273,16 +272,7 @@ public sealed class GuidedTourService
 
                 // Pre-action: open/close panels
                 bool needsLayout = false;
-                if (beforeAction == "OpenCrop")
-                {
-                    if (host.IsRecordPanelOpen) host.ToggleRecordPanel();
-                    if (host.FindControl<Control>("CropParams") is { IsVisible: false })
-                    {
-                        host.ExpandPanel("CropExpandBtn");
-                        needsLayout = true;
-                    }
-                }
-                else if (beforeAction == "OpenRecord")
+                if (beforeAction == "OpenRecord")
                 {
                     if (!host.IsRecordPanelOpen) { host.ToggleRecordPanel(); needsLayout = true; }
                 }
@@ -344,7 +334,7 @@ public sealed class GuidedTourService
                     highlightedTarget = target;
 
                     // Tunnel click handler for steps that need it
-                    if (step >= 2 && step is not (2 or 3 or 4 or 5 or 6 or 7 or 8))
+                    if (step >= 2 && step is not (2 or 3 or 4 or 5 or 6 or 7))
                     {
                         highlightClickHandler = (_, e) =>
                         {
@@ -400,8 +390,8 @@ public sealed class GuidedTourService
                     }
                     : null;
 
-                // Auto-advance interactions (steps 2–8)
-                if (step is >= 2 and <= 8 && targetName is not null
+                // Auto-advance interactions (steps 2–7)
+                if (step is >= 2 and <= 7 && targetName is not null
                     && host.FindControl<Control>(targetName) is { } ttTarget)
                 {
                     var capturedStep = step;
@@ -423,18 +413,15 @@ public sealed class GuidedTourService
                         }, TaskContinuationOptions.OnlyOnRanToCompletion);
                     }
 
-                    if (step == 3 && ttTarget is Slider sl)
+                    if (step == 4 && ttTarget is Button bt)
                     {
-                        sliderHandler = (_, _) => AdvanceAfterDelay();
-                        sl.ValueChanged += sliderHandler;
-                    }
-                    else if (step == 5 && ttTarget is Button bt)
-                    {
+                        // VdbPlay: click → auto-advance after 8s
                         clickHandler = (_, _) => AdvanceAfterDelay();
                         bt.Click += clickHandler;
                     }
-                    else if (step is 2 or 6 or 7 && ttTarget is Button clickBtn)
+                    else if (step is 5 or 6 && ttTarget is Button clickBtn)
                     {
+                        // RecordBtn, OutputDir: click → advance
                         clickHandler = (_, _) =>
                         {
                             if (!_active) return;
@@ -443,13 +430,15 @@ public sealed class GuidedTourService
                         };
                         clickBtn.Click += clickHandler;
                     }
-                    else if (step == 8 && ttTarget is Button lastBtn)
+                    else if (step == 7 && ttTarget is Button lastBtn)
                     {
+                        // StartEncoding: click → close tour
                         clickHandler = (_, _) => { if (_active) CloseTour(); };
                         lastBtn.Click += clickHandler;
                     }
                     else
                     {
+                        // Steps 2-3 (FiltersList, ParamPanels): hover → auto-advance after 8s
                         enterHandler = (_, _) => AdvanceAfterDelay();
                         leaveHandler = (_, _) => { hoverCts?.Cancel(); hoverCts = null; };
                         ttTarget.PointerEntered += enterHandler;

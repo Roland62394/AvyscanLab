@@ -1,7 +1,7 @@
 {
   "Id": "degrain",
   "Name": "Degrain (MVTools2)",
-  "Dlls": ["mvtools2.dll", "RgTools.dll"],
+  "Dlls": [],
   "Scripts": [],
   "Code": "function DegrainFilm(clip c, string \"mode\", int \"thSAD\", int \"thSADC\",\n\\                    int \"blksize\", int \"overlap\", int \"pel\", int \"search\",\n\\                    string \"prefilter\", string \"matrix\")\n{\n  mode      = Default(mode,      \"mdegrain2\")\n  thSAD     = Default(thSAD,     350)\n  thSADC    = Default(thSADC,    250)\n  blksize   = Default(blksize,   16)\n  overlap   = Default(overlap,   8)\n  pel       = Default(pel,       1)\n  search    = Default(search,    2)\n  prefilter = Default(prefilter, \"remgrain\")\n  matrix    = Default(matrix,    _MatrixAuto(c))\n\n  base_pix = PixelType(c)\n  bd = BitsPerComponent(c)\n\n  c8  = (bd == 8) ? c : ConvertBits(c, 8, dither=1)\n  c8  = MakeEvenY(c8)\n  yuv = EnsureColorspaceSafe(c8, \"YV12\", matrix=matrix)\n\n  if (!FunctionExists(\"MSuper\")) {\n    result = TemporalSoften(yuv, 2, 6, 5, 15, 2)\n    result = (bd == 8) ? result : ConvertBits(result, bd)\n    return (PixelType(result) == base_pix) ? result\n         \\                                  : EnsureColorspaceSafe(result, base_pix, matrix=matrix)\n  }\n\n  prefilt = (prefilter == \"remgrain\") ? RemoveGrain(yuv, 2)\n          \\ : (prefilter == \"blur\")   ? Blur(yuv, 1.0)\n          \\                           : yuv\n\n  sup_orig = MSuper(yuv,    pel=pel, sharp=2)\n  sup_pre  = MSuper(prefilt, pel=pel, sharp=2)\n\n  bv1 = MAnalyse(sup_pre, isb=true,  delta=1, blksize=blksize, overlap=overlap, search=search)\n  fv1 = MAnalyse(sup_pre, isb=false, delta=1, blksize=blksize, overlap=overlap, search=search)\n\n  if (mode == \"mdegrain1\") {\n    result = MDegrain1(yuv, sup_orig, bv1, fv1, thSAD=thSAD, thSADC=thSADC)\n  } else if (mode == \"mdegrain2\") {\n    bv2 = MAnalyse(sup_pre, isb=true,  delta=2, blksize=blksize, overlap=overlap, search=search)\n    fv2 = MAnalyse(sup_pre, isb=false, delta=2, blksize=blksize, overlap=overlap, search=search)\n    result = MDegrain2(yuv, sup_orig, bv1, fv1, bv2, fv2, thSAD=thSAD, thSADC=thSADC)\n  } else {\n    bv2 = MAnalyse(sup_pre, isb=true,  delta=2, blksize=blksize, overlap=overlap, search=search)\n    fv2 = MAnalyse(sup_pre, isb=false, delta=2, blksize=blksize, overlap=overlap, search=search)\n    bv3 = MAnalyse(sup_pre, isb=true,  delta=3, blksize=blksize, overlap=overlap, search=search)\n    fv3 = MAnalyse(sup_pre, isb=false, delta=3, blksize=blksize, overlap=overlap, search=search)\n    result = MDegrain3(yuv, sup_orig, bv1, fv1, bv2, fv2, bv3, fv3, thSAD=thSAD, thSADC=thSADC)\n  }\n\n  result = (bd == 8) ? result : ConvertBits(result, bd)\n  return (PixelType(result) == base_pix) ? result\n       \\                                  : EnsureColorspaceSafe(result, base_pix, matrix=matrix)\n}\n\nc = DegrainFilm(c, mode=\"{mode}\", thSAD={thSAD}, thSADC={thSADC}, blksize={blksize}, overlap={overlap}, pel={pel}, search={search}, prefilter=\"{prefilter}\")",
   "Position": "Degrain",
@@ -10,10 +10,13 @@
       "Placeholder": "mode",
       "Type": "combo",
       "Default": "mdegrain2",
-      "Description": "Temporal radius: degrain1=1 frame, degrain2=2 frames (balanced), degrain3=3 frames (strongest)",
       "Max": 100,
       "Step": 1,
-      "Options": ["mdegrain1", "mdegrain2", "mdegrain3"],
+      "Options": [
+        "mdegrain1",
+        "mdegrain2",
+        "mdegrain3"
+      ],
       "OnValue": "true",
       "OffValue": "false"
     },
@@ -21,7 +24,6 @@
       "Placeholder": "thSAD",
       "Type": "slider",
       "Default": "350",
-      "Description": "Luma denoising threshold. Higher = more denoising, risk of ghosting on motion",
       "Min": 50,
       "Max": 1000,
       "Step": 10,
@@ -33,7 +35,6 @@
       "Placeholder": "thSADC",
       "Type": "slider",
       "Default": "250",
-      "Description": "Chroma denoising threshold. Lower than thSAD to avoid color bleeding",
       "Min": 50,
       "Max": 800,
       "Step": 10,
@@ -45,10 +46,13 @@
       "Placeholder": "blksize",
       "Type": "combo",
       "Default": "16",
-      "Description": "Motion block size. 8=precise (slow), 16=balanced, 32=fast (less accurate)",
       "Max": 100,
       "Step": 1,
-      "Options": ["8", "16", "32"],
+      "Options": [
+        "8",
+        "16",
+        "32"
+      ],
       "OnValue": "true",
       "OffValue": "false"
     },
@@ -56,10 +60,13 @@
       "Placeholder": "overlap",
       "Type": "combo",
       "Default": "8",
-      "Description": "Block overlap (must be < blksize). More overlap = smoother but slower",
       "Max": 100,
       "Step": 1,
-      "Options": ["4", "8", "16"],
+      "Options": [
+        "4",
+        "8",
+        "16"
+      ],
       "OnValue": "true",
       "OffValue": "false"
     },
@@ -67,10 +74,12 @@
       "Placeholder": "pel",
       "Type": "combo",
       "Default": "1",
-      "Description": "Sub-pixel precision. 1=pixel, 2=half-pixel (better quality, 2x slower)",
       "Max": 100,
       "Step": 1,
-      "Options": ["1", "2"],
+      "Options": [
+        "1",
+        "2"
+      ],
       "OnValue": "true",
       "OffValue": "false"
     },
@@ -78,10 +87,13 @@
       "Placeholder": "search",
       "Type": "combo",
       "Default": "2",
-      "Description": "Motion search algorithm. 0=onestep (fast), 2=hex (balanced), 3=exhaustive (slow, best)",
       "Max": 100,
       "Step": 1,
-      "Options": ["0", "2", "3"],
+      "Options": [
+        "0",
+        "2",
+        "3"
+      ],
       "OnValue": "true",
       "OffValue": "false"
     },
@@ -89,10 +101,13 @@
       "Placeholder": "prefilter",
       "Type": "combo",
       "Default": "remgrain",
-      "Description": "Pre-filter for motion estimation. remgrain=light denoise, blur=gaussian, none=raw",
       "Max": 100,
       "Step": 1,
-      "Options": ["remgrain", "blur", "none"],
+      "Options": [
+        "remgrain",
+        "blur",
+        "none"
+      ],
       "OnValue": "true",
       "OffValue": "false"
     }
