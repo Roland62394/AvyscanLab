@@ -583,6 +583,7 @@ namespace CleanScan.Views
                 ("UserGuideMenuItem",     "UserGuideMenuItem"),
                 ("ScriptPreviewMenuItem", "ScriptPreviewMenuItem"),
                 ("GuidedTourMenuItem",   "GuidedTourMenuItem"),
+                ("CheckUpdateMenuItem",  "CheckUpdateMenuItem"),
                 ("AboutMenuItem",         "AboutMenuItem"),
                 ("FeedbackMenuItem",     "FeedbackMenuItem"),
                 ("SettingsMenu",         "SettingsMenu"),
@@ -3406,6 +3407,21 @@ namespace CleanScan.Views
         private void OnGuidedTourClick(object? sender, RoutedEventArgs e)
         {
             _ = ShowGuidedTourAsync();
+        }
+
+        private async void OnCheckUpdateClick(object? sender, RoutedEventArgs e)
+        {
+            var update = await UpdateService.CheckForUpdateAsync();
+            if (update is var (version, url))
+            {
+                await _dialogService.ShowUpdateAvailableDialogAsync(this, ViewModel, version, url);
+            }
+            else
+            {
+                await _dialogService.ShowErrorAsync(this,
+                    GetUiText("CheckUpdateMenuItem"),
+                    GetUiText("UpToDate"));
+            }
         }
 
         #endregion

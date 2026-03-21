@@ -469,6 +469,7 @@
                             <MenuItem x:Name="UserGuideMenuItem"     Header="User guide"     Click="OnUserGuideClick"/>
                             <MenuItem x:Name="ScriptPreviewMenuItem" Header="Script preview" Click="OnScriptPreviewClick"/>
                             <MenuItem x:Name="GuidedTourMenuItem"    Header="Guided tour"    Click="OnGuidedTourClick"/>
+                            <MenuItem x:Name="CheckUpdateMenuItem"   Header="Check for updates" Click="OnCheckUpdateClick"/>
                         </MenuItem>
                                                 <MenuItem x:Name="SettingsMenu" Header="Settings">
                             <MenuItem StaysOpenOnClick="True" Focusable="False">
