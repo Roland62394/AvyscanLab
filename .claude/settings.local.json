@@ -69,7 +69,25 @@
       "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); print\\(f''''{len\\(data\\)} filters:''''\\); [print\\(f''''  {f[\"\"Id\"\"]}: {f[\"\"Name\"\"]}''''\\) for f in data]\")",
       "Bash(python3 -c \":*)",
       "Bash(python -c \":*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "WebFetch(domain:kdrive.infomaniak.com)",
+      "Bash(curl -sI \"https://kdrive.infomaniak.com/app/share/2305306/109d54ae-e014-420e-a75a-b087a14c6a8f\")",
+      "Bash(curl -sI -L \"https://kdrive.infomaniak.com/app/share/2305306/109d54ae-e014-420e-a75a-b087a14c6a8f/download\")",
+      "Bash(curl -s \"https://api.infomaniak.com/3/drive/2305306/share/109d54ae-e014-420e-a75a-b087a14c6a8f\")",
+      "Bash(curl -s \"https://api.infomaniak.com/3/drive/2305306/files/public/share/109d54ae-e014-420e-a75a-b087a14c6a8f\")",
+      "Bash(curl -s \"https://api.infomaniak.com/2/drive/2305306/share-link/109d54ae-e014-420e-a75a-b087a14c6a8f/init\")",
+      "Bash(curl -s \"https://kdrive.infomaniak.com/2/drive/2305306/share/109d54ae-e014-420e-a75a-b087a14c6a8f/files\")",
+      "Bash(curl -s \"https://kdrive.infomaniak.com/app/share/2305306/109d54ae-e014-420e-a75a-b087a14c6a8f\" -H \"Accept: application/json\")",
+      "Bash(curl -s \"https://kdrive.infomaniak.com/app/share/2305306/109d54ae-e014-420e-a75a-b087a14c6a8f/preview/archive/41\" -H \"Accept: application/json\")",
+      "Bash(curl -sI -L \"https://kdrive.infomaniak.com/app/share/2305306/109d54ae-e014-420e-a75a-b087a14c6a8f/download/41\")",
+      "Bash(curl -sI \"https://kdrive.infomaniak.com/2/app/share-link/2305306/109d54ae-e014-420e-a75a-b087a14c6a8f/init\")",
+      "Bash(curl -sI \"https://scanfilm.ch\")",
+      "Bash(curl -sI \"http://scanfilm.ch\")",
+      "Bash(nslookup scanfilm.ch)",
+      "Bash(curl -svL --max-time 10 \"http://scanfilm.ch\")",
+      "Bash(nslookup:*)",
+      "Bash(curl -sI --max-time 10 \"https://www.scanfilm.ch\")",
+      "Bash(curl:*)"
     ]
   }
 }

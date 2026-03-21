@@ -1022,4 +1022,60 @@ public sealed class DialogService : IDialogService
         await dlg.ShowDialog(owner);
         return (openContact, dontShow);
     }
+
+    public async Task ShowUpdateAvailableDialogAsync(Window owner, MainWindowViewModel vm, string latestVersion, string downloadUrl)
+    {
+        var lang = vm.CurrentLanguageCode;
+        string L(string en, string fr, string de, string es) => lang switch
+        {
+            "fr" => fr, "de" => de, "es" => es, _ => en
+        };
+
+        var messageText = new TextBlock
+        {
+            Text = L(
+                $"A new version of CleanScan is available: v{latestVersion}\nYou are currently using v{UpdateService.CurrentVersion}.",
+                $"Une nouvelle version de CleanScan est disponible : v{latestVersion}\nVous utilisez actuellement la v{UpdateService.CurrentVersion}.",
+                $"Eine neue Version von CleanScan ist verf\u00fcgbar: v{latestVersion}\nSie verwenden derzeit v{UpdateService.CurrentVersion}.",
+                $"Una nueva versi\u00f3n de CleanScan est\u00e1 disponible: v{latestVersion}\nActualmente usa la v{UpdateService.CurrentVersion}."),
+            FontSize = 13,
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = TB("TextPrimary"),
+            Margin = new Thickness(0, 0, 0, 16)
+        };
+
+        var closeBtn = MakeButton(L("Later", "Plus tard", "Sp\u00e4ter", "M\u00e1s tarde"));
+        var downloadBtn = MakeButton(L("Download", "T\u00e9l\u00e9charger", "Herunterladen", "Descargar"), 140);
+        downloadBtn.Background = TB("AccentGreen");
+        downloadBtn.Foreground = Brushes.White;
+
+        var buttonPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Spacing = 8,
+            Children = { closeBtn, downloadBtn }
+        };
+
+        var panel = new StackPanel
+        {
+            Width = 420,
+            Margin = new Thickness(20),
+            Children = { messageText, buttonPanel }
+        };
+
+        var dlg = BuildSimpleDialog(
+            L("Update available", "Mise \u00e0 jour disponible", "Update verf\u00fcgbar", "Actualizaci\u00f3n disponible"),
+            panel);
+
+        closeBtn.Click += (_, _) => dlg.Close();
+        downloadBtn.Click += (_, _) =>
+        {
+            try { Process.Start(new ProcessStartInfo(downloadUrl) { UseShellExecute = true }); }
+            catch { /* ignore */ }
+            dlg.Close();
+        };
+
+        await dlg.ShowDialog(owner);
+    }
 }

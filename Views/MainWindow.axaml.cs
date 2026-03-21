@@ -506,6 +506,16 @@ namespace CleanScan.Views
                 await LoadScriptAsync();
 
             Dispatcher.UIThread.Post(() => ApplyStartupLayout(settings), DispatcherPriority.Loaded);
+
+            // Check for updates in the background (non-blocking)
+            _ = CheckForUpdateAsync();
+        }
+
+        private async Task CheckForUpdateAsync()
+        {
+            var update = await UpdateService.CheckForUpdateAsync();
+            if (update is var (version, url))
+                await _dialogService.ShowUpdateAvailableDialogAsync(this, ViewModel, version, url);
         }
 
         private async void OnClosing(object? sender, WindowClosingEventArgs e)
@@ -526,7 +536,11 @@ namespace CleanScan.Views
                             _windowStateService.Save(prev with { SuppressExitFeedback = true });
                     }
                     if (openContact)
+                    {
+                        // Stay open after contact form — user closes manually
                         await _dialogService.ShowFeedbackDialogAsync(this, ViewModel);
+                        return;
+                    }
                     Close();
                     return;
                 }

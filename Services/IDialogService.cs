@@ -16,4 +16,5 @@ public interface IDialogService
     Task<bool> ShowAviSynthMissingDialogAsync(Window owner, MainWindowViewModel vm);
     Task ShowFeedbackDialogAsync(Window owner, MainWindowViewModel vm);
     Task<(bool OpenContact, bool DontShowAgain)> ShowExitFeedbackDialogAsync(Window owner, MainWindowViewModel vm);
+    Task ShowUpdateAvailableDialogAsync(Window owner, MainWindowViewModel vm, string latestVersion, string downloadUrl);
 }
