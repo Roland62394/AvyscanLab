@@ -154,6 +154,11 @@ public sealed class PlayerController
                 },
                 RoutingStrategies.Bubble, handledEventsToo: true);
         }
+
+        if (_host.FindControl<Button>("HistogramBtn") is { } histBtn)
+            histBtn.AddHandler(InputElement.PointerReleasedEvent,
+                new EventHandler<PointerReleasedEventArgs>(OnHistogramRightClick),
+                RoutingStrategies.Tunnel, handledEventsToo: true);
     }
 
     /// <summary>Event forwarded by the host when files are dropped on the player area.
@@ -402,6 +407,36 @@ public sealed class PlayerController
     {
         _mpvService?.ToggleHistogram(IsPreviewMode());
         UpdateHistogramButtonVisual();
+    }
+
+    public void OnHistogramRightClick(object? sender, PointerReleasedEventArgs e)
+    {
+        if (e.InitialPressMouseButton != MouseButton.Right) return;
+        if (sender is not Button btn) return;
+
+        var menu = new ContextMenu();
+        foreach (var (type, label) in new[]
+        {
+            (ScopeType.Histogram,      "Histogram"),
+            (ScopeType.HistogramParade, "Histogram Parade"),
+            (ScopeType.Waveform,       "Waveform"),
+            (ScopeType.Vectorscope,    "Vectorscope"),
+        })
+        {
+            var item = new MenuItem { Header = label };
+            var current = _mpvService?.CurrentScopeType;
+            if (current == type)
+                item.Icon = new TextBlock { Text = "\u2713" };
+            var t = type;
+            item.Click += (_, _) =>
+            {
+                _mpvService?.SetScopeType(t, IsPreviewMode());
+                UpdateHistogramButtonVisual();
+            };
+            menu.Items.Add(item);
+        }
+        menu.Open(btn);
+        e.Handled = true;
     }
 
     /// <summary>Called when the preview toggle changes so the histogram crop adapts.</summary>

@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 
 namespace CleanScan.Services;
 
+public enum ScopeType { Histogram, HistogramParade, Waveform, Vectorscope }
+
 public sealed class MpvService : IDisposable
 {
     #region P/Invoke
@@ -128,10 +130,12 @@ public sealed class MpvService : IDisposable
     private readonly object          _errorLogLock = new();
 
     private bool _histogramEnabled;
+    private ScopeType _scopeType = ScopeType.Histogram;
 
     public bool IsReady => _ctx != 0;
     public double Duration => _duration;
     public bool HistogramEnabled => _histogramEnabled;
+    public ScopeType CurrentScopeType => _scopeType;
 
     /// <summary>Returns a snapshot of recent error/warning log messages from mpv.</summary>
     public string GetLastErrorLogs()
@@ -260,6 +264,13 @@ public sealed class MpvService : IDisposable
         ApplyHistogramFilter(previewMode);
     }
 
+    public void SetScopeType(ScopeType type, bool previewMode)
+    {
+        if (_ctx == 0) return;
+        _scopeType = type;
+        if (_histogramEnabled) ApplyHistogramFilter(previewMode);
+    }
+
     public void UpdateHistogramFilter(bool previewMode)
     {
         if (_ctx == 0 || !_histogramEnabled) return;
@@ -281,10 +292,72 @@ public sealed class MpvService : IDisposable
         mpv_command(_ctx, ["vf", "remove", "@histogram", null]);
         if (!_histogramEnabled) return;
 
-        var filter = previewMode
-            ? "split[a][b];[b]crop=iw/2:ih:iw/2:0,histogram,format=yuva444p[hh];[a]pad=iw+260:ih:0:0:black[pp];[pp][hh]overlay=main_w-258:2"
-            : "split[a][b];[b]histogram,format=yuva444p[hh];[a]pad=iw+260:ih:0:0:black[pp];[pp][hh]overlay=main_w-258:2";
-        mpv_command(_ctx, ["vf", "add", $"@histogram:lavfi=[{filter}]", null]);
+        var scope = _scopeType switch
+        {
+            ScopeType.Histogram      => "histogram",
+            ScopeType.HistogramParade => "histogram=display_mode=parade",
+            ScopeType.Waveform       => "waveform",
+            ScopeType.Vectorscope    => "vectorscope=mode=color",
+            _ => "histogram"
+        };
+        // 1px gray border for waveform
+        var box = _scopeType == ScopeType.Waveform
+            ? ",drawbox=x=0:y=0:w=iw:h=ih:t=1:color=gray" : "";
+        // Normalize input format before splitting to avoid crashes with exotic AviSynth outputs
+        const string safeIn = "format=yuv420p,scale=ceil(iw/2)*2:ceil(ih/2)*2";
+        const string cropL  = "crop=trunc(iw/2):ih:0:0";
+        const string cropR  = "crop=trunc(iw/2):ih:trunc(iw/2):0";
+
+        string filter;
+        if (!previewMode)
+        {
+            // No preview: single scope for the full image
+            var singleScale = _scopeType switch
+            {
+                ScopeType.HistogramParade => "scale=512:-2,scale=iw:ih*5",
+                ScopeType.Waveform       => "scale=512:-2,scale=iw:ih*5",
+                ScopeType.Vectorscope    => "scale=512:512",
+                _                        => "scale=256:-2",
+            };
+            var panelW = _scopeType == ScopeType.Histogram ? 260 : 516;
+            filter =
+                $"{safeIn},split[a][b];" +
+                $"[b]{scope},format=yuva444p,{singleScale}{box}[hh];" +
+                $"[a]pad=iw+{panelW}:ih:0:0:black[pp];" +
+                $"[pp][hh]overlay=main_w-{panelW - 2}:2";
+        }
+        else if (_scopeType == ScopeType.Histogram || _scopeType == ScopeType.Vectorscope)
+        {
+            // Preview: side by side, separator = 2px black gap
+            filter =
+                $"{safeIn},split=3[a][b1][b2];" +
+                $"[b1]{cropL},{scope},format=yuva444p,scale=256:-2{box},pad=iw+2:ih:0:0:black[h1];" +
+                $"[b2]{cropR},{scope},format=yuva444p,scale=256:-2{box}[h2];" +
+                "[h1][h2]hstack[hh];" +
+                "[a]pad=iw+516:ih:0:0:black[pp];" +
+                "[pp][hh]overlay=main_w-514:2";
+        }
+        else
+        {
+            // Preview: stacked vertically, proportional 5x height, separator = 2px black gap
+            filter =
+                $"{safeIn},split=3[a][b1][b2];" +
+                $"[b1]{cropL},{scope},format=yuva444p,scale=256:-2,scale=iw:ih*5{box},pad=iw:ih+2:0:0:black[h1];" +
+                $"[b2]{cropR},{scope},format=yuva444p,scale=256:-2,scale=iw:ih*5{box}[h2];" +
+                "[h1][h2]vstack[hh];" +
+                "[a]pad=iw+260:ih:0:0:black[pp];" +
+                "[pp][hh]overlay=main_w-258:2";
+        }
+        var err = mpv_command(_ctx, ["vf", "add", $"@histogram:lavfi=[{filter}]", null]);
+        if (err < 0)
+        {
+            _histogramEnabled = false;
+            return;
+        }
+
+        // Force re-render when paused/stopped so the scope updates immediately
+        if (_paused)
+            mpv_command(_ctx, ["seek", "0", "relative", null]);
     }
 
     public bool IsPaused() => _paused;
