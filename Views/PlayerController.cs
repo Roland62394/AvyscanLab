@@ -222,6 +222,9 @@ public sealed class PlayerController
                 bar.Maximum   = (_totalFrames - 1.0) / _fps;
                 bar.IsEnabled = true;
             }
+
+            // Reapply histogram filter after file load (mpv may clear vf on stop/loadfile)
+            _mpvService.ReapplyHistogramFilter(IsPreviewMode());
         }
     }
 
@@ -397,7 +400,23 @@ public sealed class PlayerController
 
     public void OnHistogramClick(object? sender, RoutedEventArgs e)
     {
-        _mpvService?.ToggleHistogram();
+        _mpvService?.ToggleHistogram(IsPreviewMode());
+        UpdateHistogramButtonVisual();
+    }
+
+    /// <summary>Called when the preview toggle changes so the histogram crop adapts.</summary>
+    public void OnPreviewModeChanged()
+    {
+        _mpvService?.UpdateHistogramFilter(IsPreviewMode());
+    }
+
+    private bool IsPreviewMode()
+    {
+        return _host.FindControl<Button>("preview") is { Tag: true };
+    }
+
+    private void UpdateHistogramButtonVisual()
+    {
         var on = _mpvService?.HistogramEnabled ?? false;
         if (_host.FindControl<Button>("HistogramBtn") is { } btn)
         {

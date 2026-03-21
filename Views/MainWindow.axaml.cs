@@ -2927,6 +2927,9 @@ namespace CleanScan.Views
             UpdateToggleButtonPresentation(btn, updated);
             UpdateConfigurationValue(name, updated.ToString().ToLowerInvariant(), showValidationError: true);
 
+            if (name == "preview")
+                _playerController.OnPreviewModeChanged();
+
             if (IsOptionToggle(name))
             {
                 UpdateOptionColumnVisibility();

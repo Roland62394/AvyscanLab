@@ -253,14 +253,38 @@ public sealed class MpvService : IDisposable
         mpv_set_property_string(_ctx, "speed", speed.ToString("F2", CultureInfo.InvariantCulture));
     }
 
-    public void ToggleHistogram()
+    public void ToggleHistogram(bool previewMode)
     {
         if (_ctx == 0) return;
         _histogramEnabled = !_histogramEnabled;
-        if (_histogramEnabled)
-            mpv_command(_ctx, ["vf", "add", "@histogram:lavfi=[split[a][b];[b]histogram,format=yuva444p[hh];[a][hh]overlay=x=0:y=0]", null]);
-        else
-            mpv_command(_ctx, ["vf", "remove", "@histogram", null]);
+        ApplyHistogramFilter(previewMode);
+    }
+
+    public void UpdateHistogramFilter(bool previewMode)
+    {
+        if (_ctx == 0 || !_histogramEnabled) return;
+        ApplyHistogramFilter(previewMode);
+    }
+
+    /// <summary>Reapply the histogram filter if enabled (call after file load).</summary>
+    public void ReapplyHistogramFilter(bool previewMode)
+    {
+        if (_ctx == 0 || !_histogramEnabled) return;
+        // Remove then re-add to ensure it's active on the new stream
+        mpv_command(_ctx, ["vf", "remove", "@histogram", null]);
+        ApplyHistogramFilter(previewMode);
+    }
+
+    private void ApplyHistogramFilter(bool previewMode)
+    {
+        // Always remove first, then re-add with correct crop
+        mpv_command(_ctx, ["vf", "remove", "@histogram", null]);
+        if (!_histogramEnabled) return;
+
+        var filter = previewMode
+            ? "split[a][b];[b]crop=iw/2:ih:iw/2:0,histogram,format=yuva444p[hh];[a]pad=iw+260:ih:0:0:black[pp];[pp][hh]overlay=main_w-258:2"
+            : "split[a][b];[b]histogram,format=yuva444p[hh];[a]pad=iw+260:ih:0:0:black[pp];[pp][hh]overlay=main_w-258:2";
+        mpv_command(_ctx, ["vf", "add", $"@histogram:lavfi=[{filter}]", null]);
     }
 
     public bool IsPaused() => _paused;
