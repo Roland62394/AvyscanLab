@@ -474,7 +474,9 @@ public sealed class PlayerController
     public void RestoreHalfResVisual()
     {
         var halfResValue = _host.Config.Get("preview_half");
-        if (bool.TryParse(halfResValue, out var halfRes) && halfRes)
+        // Default to true (half-res on) for new users who have no saved preference
+        var shouldEnable = string.IsNullOrEmpty(halfResValue) || (bool.TryParse(halfResValue, out var parsed) && parsed);
+        if (shouldEnable)
         {
             _halfRes = true;
             if (_host.FindControl<Button>("HalfResBtn") is { } btn)

@@ -45,7 +45,7 @@ namespace CleanScan.Views
         private const string DefaultEncodingPresetName = "Default";
 
         /// <summary>Trial: max recording duration per clip in seconds. 0 = unlimited (full version).</summary>
-        private const int TrialMaxSeconds = 30;
+        private const int TrialMaxSeconds = 60;
         private const string UseImageConfigName     = ScriptService.UseImageConfigName;
 
         #endregion
@@ -98,6 +98,7 @@ namespace CleanScan.Views
 
         private readonly Dictionary<string, (Slider Slider, SliderSpec Spec)> _sliderMap = [];
         private bool  _isClosing;
+        private bool  _exitFeedbackShown;
         private bool  _isInitializing;
         private bool  _layoutInitialized;
         private bool  _sourceValidationErrorVisible;
@@ -507,8 +508,30 @@ namespace CleanScan.Views
             Dispatcher.UIThread.Post(() => ApplyStartupLayout(settings), DispatcherPriority.Loaded);
         }
 
-        private void OnClosing(object? sender, WindowClosingEventArgs e)
+        private async void OnClosing(object? sender, WindowClosingEventArgs e)
         {
+            // Show exit feedback dialog once (unless suppressed)
+            if (!_exitFeedbackShown)
+            {
+                var suppress = _windowStateService.Load()?.SuppressExitFeedback == true;
+                if (!suppress)
+                {
+                    e.Cancel = true;
+                    _exitFeedbackShown = true;
+                    var (openContact, dontShow) = await _dialogService.ShowExitFeedbackDialogAsync(this, ViewModel);
+                    if (dontShow)
+                    {
+                        var prev = _windowStateService.Load();
+                        if (prev is not null)
+                            _windowStateService.Save(prev with { SuppressExitFeedback = true });
+                    }
+                    if (openContact)
+                        await _dialogService.ShowFeedbackDialogAsync(this, ViewModel);
+                    Close();
+                    return;
+                }
+            }
+
             _isClosing = true;
             _refreshDebouncer.Cancel();
             _config.Changed -= OnConfigChangedForSlider;

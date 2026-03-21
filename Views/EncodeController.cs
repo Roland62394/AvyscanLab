@@ -65,7 +65,7 @@ public sealed class EncodeController
     private readonly IEncodeHost _host;
 
     private const string DefaultEncodingPresetName = "Default";
-    private const int TrialMaxSeconds = 30;
+    private const int TrialMaxSeconds = 60;
 
     // Encoding preset auto-save state
     private bool _autoSaveEncodingPreset;

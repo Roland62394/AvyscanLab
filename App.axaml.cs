@@ -76,7 +76,7 @@ namespace CleanScan
 
             try
             {
-                await Task.Delay(3000);
+                await Task.Delay(6000);
 
                 // Instantiate services
                 var config             = new ConfigStore();

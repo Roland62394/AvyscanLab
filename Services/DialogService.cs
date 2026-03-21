@@ -746,10 +746,10 @@ public sealed class DialogService : IDialogService
         var bugHelpText = new TextBlock
         {
             Text = L(
-                "To help fix a bug, your description must be as precise as possible.\nWhat action were you performing, on which window, what result did you expect, what did you get instead.\nAlso describe what type of video files you were processing, which filters were active if relevant, etc.",
-                "Pour permettre la correction d\u2019un bug, votre description doit \u00eatre aussi pr\u00e9cise que possible.\nQuelle action \u00e9tiez-vous en train d\u2019entreprendre, sur quelle fen\u00eatre, \u00e0 quel r\u00e9sultat vous vous attendiez, qu\u2019avez-vous obtenu \u00e0 la place.\nD\u00e9crivez aussi quel type de fichiers vid\u00e9o \u00e9tiez-vous en train de traiter, si besoin quel filtre \u00e9tait actif, etc.",
-                "Um einen Fehler beheben zu k\u00f6nnen, muss Ihre Beschreibung so genau wie m\u00f6glich sein.\nWelche Aktion haben Sie ausgef\u00fchrt, in welchem Fenster, welches Ergebnis haben Sie erwartet, was haben Sie stattdessen erhalten.\nBeschreiben Sie auch, welche Art von Videodateien Sie verarbeitet haben, welche Filter aktiv waren, usw.",
-                "Para poder corregir un error, su descripci\u00f3n debe ser lo m\u00e1s precisa posible.\nQu\u00e9 acci\u00f3n estaba realizando, en qu\u00e9 ventana, qu\u00e9 resultado esperaba, qu\u00e9 obtuvo en su lugar.\nDescriba tambi\u00e9n qu\u00e9 tipo de archivos de v\u00eddeo estaba procesando, qu\u00e9 filtros estaban activos si es relevante, etc."),
+                "A few details help us fix things faster:\nWhat were you doing? What happened vs. what you expected?\nAny info about your video files or active filters is a bonus!",
+                "Quelques d\u00e9tails nous aident \u00e0 corriger plus vite :\nQue faisiez-vous\u00a0? Que s\u2019est-il pass\u00e9 par rapport \u00e0 ce que vous attendiez\u00a0?\nToute info sur vos fichiers vid\u00e9o ou filtres actifs est un plus\u00a0!",
+                "Ein paar Details helfen uns, schneller zu helfen:\nWas haben Sie gemacht? Was ist passiert vs. was Sie erwartet haben?\nInfos zu Ihren Videodateien oder aktiven Filtern sind ein Bonus!",
+                "Unos detalles nos ayudan a resolver m\u00e1s r\u00e1pido:\n\u00bfQu\u00e9 estabas haciendo? \u00bfQu\u00e9 pas\u00f3 vs. lo que esperabas?\n\u00a1Cualquier info sobre tus archivos de v\u00eddeo o filtros activos es un plus!"),
             FontSize = 11, FontFamily = monoFont,
             Foreground = new SolidColorBrush(Color.Parse("#D4A846")),
             TextWrapping = TextWrapping.Wrap,
@@ -955,4 +955,71 @@ public sealed class DialogService : IDialogService
 
     private static Button MakeButton(string label, int minWidth = 96) =>
         new() { Content = label, MinWidth = minWidth };
+
+    public async Task<(bool OpenContact, bool DontShowAgain)> ShowExitFeedbackDialogAsync(Window owner, MainWindowViewModel vm)
+    {
+        var lang = vm.CurrentLanguageCode;
+        string L(string en, string fr, string de, string es) => lang switch
+        {
+            "fr" => fr, "de" => de, "es" => es, _ => en
+        };
+
+        var openContact = false;
+        var dontShow = false;
+
+        var messageText = new TextBlock
+        {
+            Text = L(
+                "Thank you for using CleanScan!\nYour feedback helps us improve this software.\nFeel free to share any issues, suggestions or ideas via the Contact form.",
+                "Merci d\u2019utiliser CleanScan\u00a0!\nVos retours nous aident \u00e0 am\u00e9liorer ce logiciel.\nN\u2019h\u00e9sitez pas \u00e0 partager vos remarques, probl\u00e8mes ou id\u00e9es via le formulaire Contact.",
+                "Vielen Dank f\u00fcr die Nutzung von CleanScan!\nIhr Feedback hilft uns, diese Software zu verbessern.\nTeilen Sie uns gerne Probleme, Vorschl\u00e4ge oder Ideen \u00fcber das Kontaktformular mit.",
+                "\u00a1Gracias por usar CleanScan!\nTus comentarios nos ayudan a mejorar este software.\nNo dudes en compartir problemas, sugerencias o ideas a trav\u00e9s del formulario de Contacto."),
+            FontSize = 13,
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = TB("TextPrimary"),
+            Margin = new Thickness(0, 0, 0, 12)
+        };
+
+        var checkBox = new CheckBox
+        {
+            Content = L(
+                "Don\u2019t show this message again",
+                "Ne plus afficher ce message",
+                "Diese Meldung nicht mehr anzeigen",
+                "No mostrar este mensaje de nuevo"),
+            FontSize = 12,
+            Foreground = TB("TextLabel"),
+            Margin = new Thickness(0, 0, 0, 12)
+        };
+
+        var closeBtn = MakeButton(L("Close", "Fermer", "Schlie\u00dfen", "Cerrar"));
+        var contactBtn = MakeButton(L("Open Contact form", "Ouvrir le formulaire Contact", "Kontaktformular \u00f6ffnen", "Abrir formulario de Contacto"), 180);
+        contactBtn.Background = TB("AccentGreen");
+        contactBtn.Foreground = Brushes.White;
+
+        var buttonPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Spacing = 8,
+            Children = { closeBtn, contactBtn }
+        };
+
+        var panel = new StackPanel
+        {
+            Width = 420,
+            Margin = new Thickness(20),
+            Children = { messageText, checkBox, buttonPanel }
+        };
+
+        var dlg = BuildSimpleDialog(
+            L("Before you go\u2026", "Avant de partir\u2026", "Bevor Sie gehen\u2026", "Antes de irte\u2026"),
+            panel);
+
+        closeBtn.Click += (_, _) => { dontShow = checkBox.IsChecked == true; dlg.Close(); };
+        contactBtn.Click += (_, _) => { openContact = true; dontShow = checkBox.IsChecked == true; dlg.Close(); };
+
+        await dlg.ShowDialog(owner);
+        return (openContact, dontShow);
+    }
 }

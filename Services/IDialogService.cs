@@ -15,4 +15,5 @@ public interface IDialogService
     Task<PresetDialogResult> ShowPresetDialogAsync(Window owner, IPresetService presets, ConfigStore config, MainWindowViewModel vm, string? activePresetName = null);
     Task<bool> ShowAviSynthMissingDialogAsync(Window owner, MainWindowViewModel vm);
     Task ShowFeedbackDialogAsync(Window owner, MainWindowViewModel vm);
+    Task<(bool OpenContact, bool DontShowAgain)> ShowExitFeedbackDialogAsync(Window owner, MainWindowViewModel vm);
 }
