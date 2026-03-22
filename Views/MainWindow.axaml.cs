@@ -91,6 +91,7 @@ namespace CleanScan.Views
         private readonly Debouncer            _refreshDebouncer = new(TimeSpan.FromMilliseconds(400));
         private readonly Debouncer            _windowStateDebouncer = new(TimeSpan.FromMilliseconds(120));
         private PlayerController _playerController = null!; // initialized in constructor
+        private RegionDrawController? _regionDrawController;
 
         private bool  _suppressTextEvents;
         private bool  _sliderSync;
@@ -189,6 +190,16 @@ namespace CleanScan.Views
             _playerController = new PlayerController(this);
             _playerController.FilesDropped += OnPlayerFilesDropped;
             _playerController.InitPlayerControls();
+            if (this.FindControl<Canvas>("RegionOverlayCanvas") is { } regionCanvas
+                && this.FindControl<MpvHost>("VideoHost") is { } mpvHost)
+            {
+                _regionDrawController = new RegionDrawController(
+                    regionCanvas,
+                    mpvHost,
+                    () => _playerController.MpvService,
+                    () => this.FindControl<Button>("preview") is { Tag: true },
+                    CommitRegion);
+            }
             InitPresetCombo();
             RebuildCustomFilterUI();
         }
@@ -3418,7 +3429,7 @@ namespace CleanScan.Views
             }
             else
             {
-                await _dialogService.ShowErrorAsync(this,
+                await _dialogService.ShowInfoAsync(this,
                     GetUiText("CheckUpdateMenuItem"),
                     GetUiText("UpToDate"));
             }
@@ -3479,6 +3490,138 @@ namespace CleanScan.Views
         {
             if (!_applyingPreset && !_switchingClip)
                 MarkClipAsPerso();
+        }
+
+        /// <summary>
+        /// Shows a drawbox overlay on the mpv player for the given region.
+        /// x/y/w/h are always in source 1:1 coordinates.
+        /// Converts to mpv video coordinates based on current preview mode.
+        /// </summary>
+        void IFilterPresenterHost.ShowRegionOverlay(string filterId, double x, double y, double w, double h)
+        {
+            var mpv = _playerController.MpvService;
+            if (mpv == null) return;
+
+            var size = mpv.GetVideoSize();
+            if (size.Width <= 0 || size.Height <= 0) return;
+
+            // If w and h are both 0, filter uses full frame — nothing to show
+            if (w <= 0 && h <= 0) { mpv.ClearRegionOverlay(); return; }
+
+            bool isPreview = this.FindControl<Button>("preview") is { Tag: true };
+            bool isHalfRes = _config.Get("preview_half") is { } hv
+                             && bool.TryParse(hv, out var hb) && hb;
+
+            if (isPreview)
+            {
+                // Preview = StackHorizontal(original_half, final_half)
+                // The mpv video is [left_half | right_half], each half = source * scale
+                // preview_half=true:  source is already halved before filters,
+                //                     then _BuildPreview does NOT halve again (already_half=true)
+                //                     → each half = source/2. Scale from 1:1 = 0.5
+                // preview_half=false: source is full-res, filters run at 1:1,
+                //                     then _BuildPreview halves both → each half = source/2. Scale = 0.5
+                // In both cases, each half of the mpv video = source * 0.5
+                int halfW = size.Width / 2;
+                int halfH = size.Height;
+                const double scale = 0.5;
+
+                int ix = Math.Clamp((int)(x * scale), 0, halfW - 1);
+                int iy = Math.Clamp((int)(y * scale), 0, halfH - 1);
+                int iw = (int)w > 0 ? Math.Min((int)(w * scale), halfW - ix) : halfW - ix;
+                int ih = (int)h > 0 ? Math.Min((int)(h * scale), halfH - iy) : halfH - iy;
+
+                // Offset to right half (final clip)
+                mpv.ShowRegionOverlay(halfW + ix, iy, iw, ih);
+            }
+            else
+            {
+                // No preview: mpv video = final clip at 1:1 source resolution
+                int ix = Math.Clamp((int)x, 0, size.Width - 1);
+                int iy = Math.Clamp((int)y, 0, size.Height - 1);
+                int iw = (int)w > 0 ? Math.Min((int)w, size.Width - ix) : size.Width - ix;
+                int ih = (int)h > 0 ? Math.Min((int)h, size.Height - iy) : size.Height - iy;
+
+                mpv.ShowRegionOverlay(ix, iy, iw, ih);
+            }
+        }
+
+        /// <summary>The filter ID currently in region draw mode.</summary>
+        private string? _regionDrawFilterId;
+        private bool _wasPlayingBeforeRegionDraw;
+
+        void IFilterPresenterHost.SetRegionDrawMode(string filterId, bool active)
+        {
+            var mpv = _playerController.MpvService;
+
+            if (active)
+            {
+                _regionDrawFilterId = filterId;
+
+                // Pause playback so the frame stays still during drawing
+                _wasPlayingBeforeRegionDraw = mpv is not null && !mpv.IsPaused();
+                if (_wasPlayingBeforeRegionDraw)
+                    mpv!.Pause();
+
+                // Show the existing region overlay so user sees current selection
+                ShowCurrentRegionOverlay(filterId);
+
+                _regionDrawController?.UpdateDrawMode(true);
+            }
+            else
+            {
+                // Clear the region overlay (the committed values are shown via script reload)
+                mpv?.ClearRegionOverlay();
+
+                _regionDrawFilterId = null;
+                _regionDrawController?.UpdateDrawMode(false);
+
+                // Resume playback if it was playing before draw mode
+                if (_wasPlayingBeforeRegionDraw)
+                {
+                    _wasPlayingBeforeRegionDraw = false;
+                    mpv?.Play();
+                }
+            }
+        }
+
+        /// <summary>Shows the current region overlay for the given filter (reads X/Y/W/H from config).</summary>
+        private void ShowCurrentRegionOverlay(string filterId)
+        {
+            double Read(string key) =>
+                double.TryParse(_config.Get($"cf_{filterId}_{key}"),
+                    System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : 0;
+
+            ((IFilterPresenterHost)this).ShowRegionOverlay(filterId, Read("X"), Read("Y"), Read("W"), Read("H"));
+        }
+
+        private void CommitRegion(int x, int y, int w, int h)
+        {
+            var filterId = _regionDrawFilterId;
+            if (filterId is null) return;
+
+            _config.Set($"cf_{filterId}_X", x.ToString());
+            _config.Set($"cf_{filterId}_Y", y.ToString());
+            _config.Set($"cf_{filterId}_W", w.ToString());
+            _config.Set($"cf_{filterId}_H", h.ToString());
+
+            if (!_applyingPreset && !_switchingClip)
+                MarkClipAsPerso();
+
+            RegenerateScript(showValidationError: false);
+
+            // Update the mpv drawbox overlay
+            ((IFilterPresenterHost)this).ShowRegionOverlay(filterId, x, y, w, h);
+
+            // Refresh sliders if panel is open
+            if (_openParamPanels.Contains($"CustomPanel_{filterId}"))
+                RebuildCustomFilterUI();
+
+            // Auto-deactivate draw mode after drawing
+            CustomFilters.OnRegionDrawCompleted();
+
+            _ = LoadScriptAsync();
         }
 
         // ── IEncodeHost ────────────────────────────────────────────────

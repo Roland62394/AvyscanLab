@@ -30,11 +30,21 @@ public sealed class CustomFilterService
         var changed = false;
         foreach (var sc in shipped)
         {
-            if (string.IsNullOrWhiteSpace(sc.Description)) continue;
             var ec = existing.Find(c => string.Equals(c.Placeholder, sc.Placeholder, StringComparison.OrdinalIgnoreCase));
-            if (ec is null || string.Equals(ec.Description, sc.Description, StringComparison.Ordinal)) continue;
-            ec.Description = sc.Description;
-            changed = true;
+            if (ec is null) continue;
+
+            if (!string.IsNullOrWhiteSpace(sc.Description)
+                && !string.Equals(ec.Description, sc.Description, StringComparison.Ordinal))
+            {
+                ec.Description = sc.Description;
+                changed = true;
+            }
+
+            if (ec.ScaleWithPreview != sc.ScaleWithPreview)
+            {
+                ec.ScaleWithPreview = sc.ScaleWithPreview;
+                changed = true;
+            }
         }
         return changed;
     }
@@ -156,6 +166,12 @@ public sealed class CustomFilterService
                         // Sync descriptions from shipped controls
                         if (SyncDescriptions(existing.Controls, filter.Controls))
                             changed = true;
+                    }
+                    // Sync RegionDraw flag from shipped version
+                    if (existing.RegionDraw != filter.RegionDraw)
+                    {
+                        existing.RegionDraw = filter.RegionDraw;
+                        changed = true;
                     }
                 }
                 else

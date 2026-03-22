@@ -80,7 +80,6 @@ public static class FilterPresets
     /// <summary>Maps toggle-button config names to their UI labels.</summary>
     public static readonly Dictionary<string, string> OptionButtonLabels = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["preview"]           = "Preview",
         ["denoise_grey"]      = "grey",
         ["ShowPreview"]       = "Show"
     };

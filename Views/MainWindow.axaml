@@ -654,7 +654,7 @@
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 Spacing="5">
-                        <Button x:Name="preview" Classes="transport" Content="Src ▮ Out"
+                        <Button x:Name="preview" Classes="transport" Content="Orig ▮ Result"
                                 FontSize="12" MinWidth="120" Padding="16,4"
                                 ToolTip.Tip="Compare: original / result" Click="OnOptionToggleButtonClick"/>
                         <Rectangle Width="1" Height="22" Fill="{DynamicResource BorderSubtle}" Margin="4,0"/>
@@ -736,6 +736,10 @@
             <Border Background="Black" MinHeight="100">
                 <Grid>
                     <local:MpvHost x:Name="VideoHost"/>
+
+                    <Canvas x:Name="RegionOverlayCanvas"
+                            Background="Transparent"
+                            IsHitTestVisible="False"/>
 
                     <Border x:Name="PlayerErrorBanner" IsVisible="False"
                             Background="#DD111111" VerticalAlignment="Center"

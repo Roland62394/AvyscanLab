@@ -16,6 +16,7 @@
 !include "MUI2.nsh"
 !include "FileFunc.nsh"
 !include "x64.nsh"
+!include "WinMessages.nsh"
 
 ; ── App metadata ──
 !define APP_NAME      "CleanScan"
@@ -209,6 +210,32 @@ Function .onInit
     ${IfNot} ${RunningX64}
         MessageBox MB_OK|MB_ICONSTOP "${APP_NAME} requires a 64-bit version of Windows."
         Abort
+    ${EndIf}
+
+    ; ── Close running instance of CleanScan ──
+    FindWindow $0 "" "${APP_NAME}"
+    ${If} $0 != 0
+        MessageBox MB_OKCANCEL|MB_ICONINFORMATION \
+            "${APP_NAME} is currently running and will be closed to proceed with the installation.$\n$\n\
+            Click OK to close it and continue, or Cancel to exit." \
+            IDOK close_app
+        Abort
+
+    close_app:
+        ; Send WM_CLOSE to allow graceful shutdown
+        SendMessage $0 ${WM_CLOSE} 0 0
+        ; Wait up to 5 seconds for the process to exit
+        Sleep 2000
+        FindWindow $0 "" "${APP_NAME}"
+        ${If} $0 != 0
+            Sleep 3000
+            FindWindow $0 "" "${APP_NAME}"
+            ${If} $0 != 0
+                ; Force kill if still running
+                ExecWait 'taskkill /F /IM ${APP_EXE}'
+                Sleep 1000
+            ${EndIf}
+        ${EndIf}
     ${EndIf}
 
     ; ── Check if AviSynth+ is already installed (64-bit registry) ──

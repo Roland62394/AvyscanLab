@@ -149,6 +149,38 @@ public sealed class DialogService : IDialogService
         await dialog.ShowDialog(owner);
     }
 
+    public async Task ShowInfoAsync(Window owner, string title, string message)
+    {
+        var messageBlock = new TextBlock
+        {
+            Text = message,
+            FontSize = 13,
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = TB("TextPrimary"),
+            Margin = new Thickness(0, 0, 0, 16)
+        };
+
+        var closeBtn = MakeButton("OK");
+
+        var buttonPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Children = { closeBtn }
+        };
+
+        var panel = new StackPanel
+        {
+            Width = 400,
+            Margin = new Thickness(20),
+            Children = { messageBlock, buttonPanel }
+        };
+
+        var dlg = BuildSimpleDialog(title, panel);
+        closeBtn.Click += (_, _) => dlg.Close();
+        await dlg.ShowDialog(owner);
+    }
+
     public async Task ShowTextDialogAsync(Window owner, string title, string text)
     {
         var closeButton = new Button { Content = "Close", HorizontalAlignment = HorizontalAlignment.Center };
@@ -967,16 +999,36 @@ public sealed class DialogService : IDialogService
         var openContact = false;
         var dontShow = false;
 
+        var titleText = new TextBlock
+        {
+            Text = L("Thank you for using CleanScan!",
+                "Merci d\u2019utiliser CleanScan\u00a0!",
+                "Vielen Dank f\u00fcr die Nutzung von CleanScan!",
+                "\u00a1Gracias por usar CleanScan!"),
+            FontSize = 16,
+            FontWeight = FontWeight.SemiBold,
+            Foreground = TB("TextLabel"),
+            Margin = new Thickness(0, 0, 0, 8)
+        };
+
         var messageText = new TextBlock
         {
             Text = L(
-                "Thank you for using CleanScan!\nYour feedback helps us improve this software.\nFeel free to share any issues, suggestions or ideas via the Contact form.",
-                "Merci d\u2019utiliser CleanScan\u00a0!\nVos retours nous aident \u00e0 am\u00e9liorer ce logiciel.\nN\u2019h\u00e9sitez pas \u00e0 partager vos remarques, probl\u00e8mes ou id\u00e9es via le formulaire Contact.",
-                "Vielen Dank f\u00fcr die Nutzung von CleanScan!\nIhr Feedback hilft uns, diese Software zu verbessern.\nTeilen Sie uns gerne Probleme, Vorschl\u00e4ge oder Ideen \u00fcber das Kontaktformular mit.",
-                "\u00a1Gracias por usar CleanScan!\nTus comentarios nos ayudan a mejorar este software.\nNo dudes en compartir problemas, sugerencias o ideas a trav\u00e9s del formulario de Contacto."),
-            FontSize = 13,
+                "Your feedback helps us improve this software.\nFeel free to share any issues, suggestions or ideas via the Contact form.",
+                "Vos retours nous aident \u00e0 am\u00e9liorer ce logiciel.\nN\u2019h\u00e9sitez pas \u00e0 partager vos remarques, probl\u00e8mes ou id\u00e9es via le formulaire Contact.",
+                "Ihr Feedback hilft uns, diese Software zu verbessern.\nTeilen Sie uns gerne Probleme, Vorschl\u00e4ge oder Ideen \u00fcber das Kontaktformular mit.",
+                "Tus comentarios nos ayudan a mejorar este software.\nNo dudes en compartir problemas, sugerencias o ideas a trav\u00e9s del formulario de Contacto."),
+            FontSize = 14,
             TextWrapping = TextWrapping.Wrap,
             Foreground = TB("TextPrimary"),
+            LineHeight = 20,
+            Margin = new Thickness(0, 0, 0, 16)
+        };
+
+        var separator = new Border
+        {
+            Height = 1,
+            Background = TB("BorderSubtle"),
             Margin = new Thickness(0, 0, 0, 12)
         };
 
@@ -988,28 +1040,59 @@ public sealed class DialogService : IDialogService
                 "Diese Meldung nicht mehr anzeigen",
                 "No mostrar este mensaje de nuevo"),
             FontSize = 12,
-            Foreground = TB("TextLabel"),
-            Margin = new Thickness(0, 0, 0, 12)
+            Foreground = TB("TextSecondary"),
+            Margin = new Thickness(0, 0, 0, 0)
         };
 
-        var closeBtn = MakeButton(L("Close", "Fermer", "Schlie\u00dfen", "Cerrar"));
-        var contactBtn = MakeButton(L("Open Contact form", "Ouvrir le formulaire Contact", "Kontaktformular \u00f6ffnen", "Abrir formulario de Contacto"), 180);
-        contactBtn.Background = TB("AccentGreen");
-        contactBtn.Foreground = Brushes.White;
+        var closeBtn = new Button
+        {
+            Content = L("Close", "Fermer", "Schlie\u00dfen", "Cerrar"),
+            MinWidth = 80,
+            Height = 28,
+            FontSize = 12,
+            Padding = new Thickness(12, 4),
+            Background = Brushes.Transparent,
+            Foreground = TB("TextSecondary"),
+            BorderBrush = TB("BorderSubtle"),
+            BorderThickness = new Thickness(1),
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+        };
 
-        var buttonPanel = new StackPanel
+        var contactBtn = new Button
+        {
+            Content = L("Contact", "Contact", "Kontakt", "Contacto"),
+            MinWidth = 80,
+            Height = 28,
+            FontSize = 12,
+            Padding = new Thickness(12, 4),
+            Background = TB("AccentGreen"),
+            Foreground = Brushes.White,
+            BorderThickness = new Thickness(0),
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+        };
+
+        var buttonGroup = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            HorizontalAlignment = HorizontalAlignment.Right,
             Spacing = 8,
             Children = { closeBtn, contactBtn }
         };
 
+        var bottomRow = new DockPanel
+        {
+            Margin = new Thickness(0, 16, 0, 0)
+        };
+        DockPanel.SetDock(buttonGroup, Dock.Right);
+        bottomRow.Children.Add(buttonGroup);
+        bottomRow.Children.Add(checkBox);
+
         var panel = new StackPanel
         {
-            Width = 420,
-            Margin = new Thickness(20),
-            Children = { messageText, checkBox, buttonPanel }
+            Width = 460,
+            Margin = new Thickness(24, 24, 24, 20),
+            Children = { titleText, messageText, separator, bottomRow }
         };
 
         var dlg = BuildSimpleDialog(

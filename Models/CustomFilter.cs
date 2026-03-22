@@ -13,6 +13,9 @@ public sealed class CustomFilter
     public string Code { get; set; } = "";
     public string Position { get; set; } = "AfterSharpen";
 
+    /// <summary>When true, the filter supports region drawing (X/Y/W/H set via mouse on video).</summary>
+    public bool RegionDraw { get; set; }
+
     /// <summary>Per-placeholder control definitions (Phase 3).</summary>
     public List<CustomFilterControl> Controls { get; set; } = [];
 }

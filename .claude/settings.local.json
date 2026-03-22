@@ -87,7 +87,8 @@
       "Bash(curl -svL --max-time 10 \"http://scanfilm.ch\")",
       "Bash(nslookup:*)",
       "Bash(curl -sI --max-time 10 \"https://www.scanfilm.ch\")",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(echo \"EXIT: $?\")"
     ]
   }
 }

@@ -228,8 +228,9 @@ public sealed class PlayerController
                 bar.IsEnabled = true;
             }
 
-            // Reapply histogram filter after file load (mpv may clear vf on stop/loadfile)
+            // Reapply vf filters after file load (mpv clears vf on stop/loadfile)
             _mpvService.ReapplyHistogramFilter(IsPreviewMode());
+            _mpvService.ReapplyRegionOverlay();
         }
     }
 

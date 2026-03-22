@@ -32,12 +32,18 @@ public interface IFilterPresenterHost
     void RegenerateScript(bool showValidationError = true);
     Task LoadScriptAsync(bool resetPosition = false);
     void OnCustomFilterValueChanged();
+    void ShowRegionOverlay(string filterId, double x, double y, double w, double h);
+    void SetRegionDrawMode(string filterId, bool active);
 }
 
 public sealed class CustomFilterPresenter
 {
     private readonly IFilterPresenterHost _host;
     private readonly CustomFilterService _filterService;
+
+    /// <summary>The filter ID currently in region draw mode (null if none).</summary>
+    private string? _regionDrawFilterId;
+    private Button? _regionDrawButton;
 
     public CustomFilterPresenter(IFilterPresenterHost host, CustomFilterService filterService)
     {
@@ -197,6 +203,10 @@ public sealed class CustomFilterPresenter
             btn.Classes.Add("active");
         }
         _host.UpdateParamsPlaceholderVisibility();
+
+        // Deactivate region draw if its panel was just collapsed
+        if (filter.RegionDraw && !_host.OpenParamPanels.Contains(panelName))
+            DeactivateRegionDraw();
     }
 
     public async void OnAddClick(object? sender, RoutedEventArgs e)
@@ -389,6 +399,10 @@ public sealed class CustomFilterPresenter
             _host.UpdateParamsPlaceholderVisibility();
             _host.RegenerateScript(showValidationError: false);
             _ = _host.LoadScriptAsync();
+
+            // Deactivate region draw if its filter was just disabled
+            if (filter.RegionDraw && !filter.Enabled)
+                DeactivateRegionDraw();
         };
         Grid.SetColumn(toggleBtn, 0);
         row.Children.Add(toggleBtn);
@@ -509,6 +523,40 @@ public sealed class CustomFilterPresenter
             Cursor = new Cursor(StandardCursorType.Hand)
         };
         stack.Children.Add(titleBlock);
+
+        // Add "Draw" toggle button for RegionDraw filters
+        if (filter.RegionDraw)
+        {
+            var drawBtn = new Button
+            {
+                Content = _host.GetUiText("DrawRegion"),
+                Classes = { "toggle" },
+                Tag = false,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Margin = new Thickness(0, 0, 0, 4)
+            };
+            _host.UpdateToggleButtonPresentation(drawBtn, false);
+
+            var filterId = filter.Id;
+            drawBtn.Click += (_, _) =>
+            {
+                var isActive = _regionDrawFilterId == filterId;
+                if (isActive)
+                    DeactivateRegionDraw();
+                else
+                    ActivateRegionDraw(filterId, drawBtn);
+            };
+
+            // Restore active state if this filter was already in draw mode
+            if (_regionDrawFilterId == filterId)
+            {
+                _regionDrawButton = drawBtn;
+                drawBtn.Tag = true;
+                _host.UpdateToggleButtonPresentation(drawBtn, true);
+            }
+
+            stack.Children.Add(drawBtn);
+        }
 
         foreach (var ctrl in filter.Controls)
         {
@@ -754,6 +802,41 @@ public sealed class CustomFilterPresenter
         return row;
     }
 
+    // ── Region draw mode ────────────────────────────────────────────
+
+    private void ActivateRegionDraw(string filterId, Button drawBtn)
+    {
+        // Deactivate any previous draw mode
+        DeactivateRegionDraw();
+
+        _regionDrawFilterId = filterId;
+        _regionDrawButton = drawBtn;
+        drawBtn.Tag = true;
+        _host.UpdateToggleButtonPresentation(drawBtn, true);
+        _host.SetRegionDrawMode(filterId, true);
+    }
+
+    private void DeactivateRegionDraw()
+    {
+        if (_regionDrawFilterId is null) return;
+
+        _host.SetRegionDrawMode(_regionDrawFilterId, false);
+
+        if (_regionDrawButton is not null)
+        {
+            _regionDrawButton.Tag = false;
+            _host.UpdateToggleButtonPresentation(_regionDrawButton, false);
+            _regionDrawButton = null;
+        }
+        _regionDrawFilterId = null;
+    }
+
+    /// <summary>Called by the host after a region has been drawn and committed.</summary>
+    public void OnRegionDrawCompleted()
+    {
+        DeactivateRegionDraw();
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────
 
     private void RemoveFilterConfigKeys(CustomFilter filter)
@@ -769,12 +852,33 @@ public sealed class CustomFilterPresenter
         }
     }
 
+    private static readonly HashSet<string> RegionPlaceholders = new(StringComparer.OrdinalIgnoreCase)
+        { "X", "Y", "W", "H" };
+
     private void CommitValue(string configKey, string value)
     {
         _host.Config.Set(configKey, value);
         _host.OnCustomFilterValueChanged();
         _host.RegenerateScript(showValidationError: false);
+
+        // If this config key belongs to a RegionDraw filter's X/Y/W/H, update the overlay
+        var regionFilter = _filterService.Filters.FirstOrDefault(f =>
+            f.RegionDraw && f.Controls.Any(c =>
+                RegionPlaceholders.Contains(c.Placeholder)
+                && ScriptService.GetCustomFilterConfigKey(f.Id, c.Placeholder)
+                    .Equals(configKey, StringComparison.OrdinalIgnoreCase)));
+        if (regionFilter is not null)
+            ShowRegionOverlay(regionFilter.Id);
+
         _ = _host.LoadScriptAsync();
+    }
+
+    private void ShowRegionOverlay(string filterId)
+    {
+        double Read(string key) =>
+            double.TryParse(_host.Config.Get($"cf_{filterId}_{key}"), NumberStyles.Any, CultureInfo.InvariantCulture, out var v) ? v : 0;
+
+        _host.ShowRegionOverlay(filterId, Read("X"), Read("Y"), Read("W"), Read("H"));
     }
 
     private static string FormatValue(double value, bool isFloat) =>

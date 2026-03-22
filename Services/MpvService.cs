@@ -132,6 +132,9 @@ public sealed class MpvService : IDisposable
     private bool _histogramEnabled;
     private ScopeType _scopeType = ScopeType.Histogram;
 
+    // Pending region overlay — reapplied after file load (mpv clears vf on loadfile)
+    private (int X, int Y, int W, int H)? _pendingRegion;
+
     public bool IsReady => _ctx != 0;
     public double Duration => _duration;
     public bool HistogramEnabled => _histogramEnabled;
@@ -376,12 +379,52 @@ public sealed class MpvService : IDisposable
         return (int)Math.Round(val);
     }
 
+    public (int Width, int Height) GetVideoSize()
+    {
+        if (_ctx == 0) return (0, 0);
+        if (mpv_get_property(_ctx, "width", FormatDouble, out var w) != 0) return (0, 0);
+        if (mpv_get_property(_ctx, "height", FormatDouble, out var h) != 0) return (0, 0);
+        return ((int)w, (int)h);
+    }
+
     public double GetFps()
     {
         if (_ctx == 0) return 0;
         if (mpv_get_property(_ctx, "container-fps", FormatDouble, out var fps) == 0 && fps > 0) return fps;
         if (mpv_get_property(_ctx, "fps",           FormatDouble, out var fps2) == 0 && fps2 > 0) return fps2;
         return 0;
+    }
+
+    public void ShowRegionOverlay(int x, int y, int w, int h)
+    {
+        _pendingRegion = (w > 0 && h > 0) ? (x, y, w, h) : null;
+        ApplyRegionOverlay();
+    }
+
+    /// <summary>Reapply the region overlay if pending (call after file load).</summary>
+    public void ReapplyRegionOverlay()
+    {
+        if (_pendingRegion == null) return;
+        ApplyRegionOverlay();
+    }
+
+    public void ClearRegionOverlay()
+    {
+        _pendingRegion = null;
+        if (_ctx == 0 || !IsReady) return;
+        mpv_command(_ctx, ["vf", "remove", "@regionbox", null]);
+    }
+
+    private void ApplyRegionOverlay()
+    {
+        if (_ctx == 0 || !IsReady || _pendingRegion is not var (x, y, w, h)) return;
+        mpv_command(_ctx, ["vf", "remove", "@regionbox", null]);
+        var err = mpv_command(_ctx, ["vf", "add",
+            $"@regionbox:lavfi=[drawbox=x={x}:y={y}:w={w}:h={h}:color=red@0.85:t=4]", null]);
+
+        // Force re-render when paused so the overlay appears immediately
+        if (err >= 0 && _paused)
+            mpv_command(_ctx, ["seek", "0", "relative", null]);
     }
 
     /// <summary>
