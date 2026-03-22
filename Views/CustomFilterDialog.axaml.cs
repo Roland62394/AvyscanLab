@@ -167,6 +167,22 @@ public partial class CustomFilterDialog : Window
 
         // Populate fields
         FilterNameBox.Text = filter.Name;
+        RegionDrawCheck.IsChecked = filter.RegionDraw;
+        RegionDrawModeCombo.Items.Add("X / Y / W / H");
+        RegionDrawModeCombo.Items.Add("Crop (L / T / R / B)");
+        RegionDrawModeCombo.SelectedIndex = filter.RegionDrawMode == "crop" ? 1 : 0;
+        RegionDrawModeCombo.IsVisible = filter.RegionDraw;
+        RegionDrawCheck.IsCheckedChanged += (_, _) =>
+        {
+            _filter.RegionDraw = RegionDrawCheck.IsChecked == true;
+            RegionDrawModeCombo.IsVisible = _filter.RegionDraw;
+        };
+        RegionDrawModeCombo.SelectionChanged += (_, _) =>
+        {
+            _filter.RegionDrawMode = RegionDrawModeCombo.SelectedIndex == 1 ? "crop" : "xywh";
+            // Auto-detect matching placeholders from existing controls
+            AutoDetectRegionPlaceholders();
+        };
 
         RebuildDllList();
         RebuildScriptList();
@@ -192,6 +208,7 @@ public partial class CustomFilterDialog : Window
         TitleText.Text = L("CfDlgTitle").ToUpperInvariant();
         FilterNameLabel.Text = L("CfDlgFilterName");
         FilterNameBox.Watermark = L("CfDlgFilterNameWatermark");
+        RegionDrawCheck.Content = L("CfDlgRegionDraw");
         PluginsLabel.Text = L("CfDlgPlugins");
         AddDllBtn.Content = L("CfDlgAddDll");
         ScriptsLabel.Text = L("CfDlgScripts");
@@ -282,6 +299,9 @@ public partial class CustomFilterDialog : Window
             Name = name + " (2)",
             Enabled = true,
             Position = _filter.Position,
+            RegionDraw = _filter.RegionDraw,
+            RegionDrawMode = _filter.RegionDrawMode,
+            RegionDrawPlaceholders = [.._filter.RegionDrawPlaceholders],
             Dlls = [.._dlls],
             Scripts = [.._scripts],
             Code = CodeBox.Text ?? "",
@@ -790,7 +810,7 @@ public partial class CustomFilterDialog : Window
 
         // Description (tooltip) field
         row.Children.Add(MakeFieldLabel("💬"));
-        var descBox = MakeFieldBox(ctrl.Description ?? "", 140);
+        var descBox = MakeFieldBox(ctrl.Description ?? "", 280);
         descBox.Watermark = "Tooltip...";
         descBox.LostFocus += (_, _) => ctrl.Description = string.IsNullOrWhiteSpace(descBox.Text) ? null : descBox.Text;
         row.Children.Add(descBox);
@@ -928,6 +948,44 @@ public partial class CustomFilterDialog : Window
         row.Children.Add(defBox);
     }
 
+    // ── Region draw placeholder auto-detection ──────────────────────────
+
+    private void AutoDetectRegionPlaceholders()
+    {
+        var names = _controls.Select(c => c.Placeholder).ToList();
+
+        if (_filter.RegionDrawMode == "crop")
+        {
+            // Look for crop-like placeholders: left/top/right/bottom or crop_left/crop_top/...
+            var left = names.FirstOrDefault(n => n.Equals("left", StringComparison.OrdinalIgnoreCase)
+                                              || n.Equals("crop_left", StringComparison.OrdinalIgnoreCase));
+            var top = names.FirstOrDefault(n => n.Equals("top", StringComparison.OrdinalIgnoreCase)
+                                             || n.Equals("crop_top", StringComparison.OrdinalIgnoreCase));
+            var right = names.FirstOrDefault(n => n.Equals("right", StringComparison.OrdinalIgnoreCase)
+                                              || n.Equals("crop_right", StringComparison.OrdinalIgnoreCase));
+            var bottom = names.FirstOrDefault(n => n.Equals("bottom", StringComparison.OrdinalIgnoreCase)
+                                               || n.Equals("crop_bottom", StringComparison.OrdinalIgnoreCase));
+
+            if (left is not null && top is not null && right is not null && bottom is not null)
+                _filter.RegionDrawPlaceholders = [left, top, right, bottom];
+            else
+                _filter.RegionDrawPlaceholders = [];
+        }
+        else
+        {
+            // Look for XYWH-like placeholders
+            var x = names.FirstOrDefault(n => n.Equals("X", StringComparison.OrdinalIgnoreCase));
+            var y = names.FirstOrDefault(n => n.Equals("Y", StringComparison.OrdinalIgnoreCase));
+            var w = names.FirstOrDefault(n => n.Equals("W", StringComparison.OrdinalIgnoreCase));
+            var h = names.FirstOrDefault(n => n.Equals("H", StringComparison.OrdinalIgnoreCase));
+
+            if (x is not null && y is not null && w is not null && h is not null)
+                _filter.RegionDrawPlaceholders = [x, y, w, h];
+            else
+                _filter.RegionDrawPlaceholders = [];
+        }
+    }
+
     // ── DLL list ────────────────────────────────────────────────────────
 
     private async System.Threading.Tasks.Task OnAddDll()
@@ -1013,9 +1071,12 @@ public partial class CustomFilterDialog : Window
                 FontSize = 11,
                 IsReadOnly = true,
                 Background = ThemeBrush("BgInput"),
-                Foreground = ThemeBrush("TextSecondary"),
+                Foreground = Path.IsPathRooted(resolved) && File.Exists(resolved)
+                    ? ThemeBrush("TextSecondary")
+                    : new SolidColorBrush(Color.Parse("#C05050")),
                 BorderBrush = ThemeBrush("BorderSubtle")
             };
+            ToolTip.SetTip(pathBox, resolved);
             Grid.SetColumn(pathBox, 0);
             row.Children.Add(pathBox);
 

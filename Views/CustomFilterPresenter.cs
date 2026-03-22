@@ -33,6 +33,7 @@ public interface IFilterPresenterHost
     Task LoadScriptAsync(bool resetPosition = false);
     void OnCustomFilterValueChanged();
     void ShowRegionOverlay(string filterId, double x, double y, double w, double h);
+    void RefreshRegionOverlay(string filterId);
     void SetRegionDrawMode(string filterId, bool active);
 }
 
@@ -852,33 +853,27 @@ public sealed class CustomFilterPresenter
         }
     }
 
-    private static readonly HashSet<string> RegionPlaceholders = new(StringComparer.OrdinalIgnoreCase)
-        { "X", "Y", "W", "H" };
-
     private void CommitValue(string configKey, string value)
     {
         _host.Config.Set(configKey, value);
         _host.OnCustomFilterValueChanged();
         _host.RegenerateScript(showValidationError: false);
 
-        // If this config key belongs to a RegionDraw filter's X/Y/W/H, update the overlay
+        // If this config key belongs to a RegionDraw filter's region placeholders, update the overlay
         var regionFilter = _filterService.Filters.FirstOrDefault(f =>
-            f.RegionDraw && f.Controls.Any(c =>
-                RegionPlaceholders.Contains(c.Placeholder)
+        {
+            if (!f.RegionDraw) return false;
+            var (p0, p1, p2, p3) = f.GetRegionPlaceholders();
+            var regionKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { p0, p1, p2, p3 };
+            return f.Controls.Any(c =>
+                regionKeys.Contains(c.Placeholder)
                 && ScriptService.GetCustomFilterConfigKey(f.Id, c.Placeholder)
-                    .Equals(configKey, StringComparison.OrdinalIgnoreCase)));
+                    .Equals(configKey, StringComparison.OrdinalIgnoreCase));
+        });
         if (regionFilter is not null)
-            ShowRegionOverlay(regionFilter.Id);
+            _host.RefreshRegionOverlay(regionFilter.Id);
 
         _ = _host.LoadScriptAsync();
-    }
-
-    private void ShowRegionOverlay(string filterId)
-    {
-        double Read(string key) =>
-            double.TryParse(_host.Config.Get($"cf_{filterId}_{key}"), NumberStyles.Any, CultureInfo.InvariantCulture, out var v) ? v : 0;
-
-        _host.ShowRegionOverlay(filterId, Read("X"), Read("Y"), Read("W"), Read("H"));
     }
 
     private static string FormatValue(double value, bool isFloat) =>

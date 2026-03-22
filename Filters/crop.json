@@ -5,6 +5,9 @@
   "Scripts": [],
   "Code": "c = CropSafe(c, {left}, {top}, {right}, {bottom})",
   "Position": "Crop",
+  "RegionDraw": true,
+  "RegionDrawMode": "crop",
+  "RegionDrawPlaceholders": ["left", "top", "right", "bottom"],
   "Controls": [
     {
       "Placeholder": "left",

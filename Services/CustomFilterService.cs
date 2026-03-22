@@ -167,10 +167,20 @@ public sealed class CustomFilterService
                         if (SyncDescriptions(existing.Controls, filter.Controls))
                             changed = true;
                     }
-                    // Sync RegionDraw flag from shipped version
+                    // Sync RegionDraw flag and mode from shipped version
                     if (existing.RegionDraw != filter.RegionDraw)
                     {
                         existing.RegionDraw = filter.RegionDraw;
+                        changed = true;
+                    }
+                    if (!string.Equals(existing.RegionDrawMode, filter.RegionDrawMode, StringComparison.OrdinalIgnoreCase))
+                    {
+                        existing.RegionDrawMode = filter.RegionDrawMode;
+                        changed = true;
+                    }
+                    if (!ListsEqual(existing.RegionDrawPlaceholders, filter.RegionDrawPlaceholders))
+                    {
+                        existing.RegionDrawPlaceholders = filter.RegionDrawPlaceholders;
                         changed = true;
                     }
                 }

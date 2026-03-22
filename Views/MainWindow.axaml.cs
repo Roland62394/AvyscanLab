@@ -198,6 +198,7 @@ namespace CleanScan.Views
                     mpvHost,
                     () => _playerController.MpvService,
                     () => this.FindControl<Button>("preview") is { Tag: true },
+                    () => _config.Get("preview_half") is { } hv && bool.TryParse(hv, out var hb) && hb,
                     CommitRegion);
             }
             InitPresetCombo();
@@ -3536,11 +3537,15 @@ namespace CleanScan.Views
             }
             else
             {
-                // No preview: mpv video = final clip at 1:1 source resolution
-                int ix = Math.Clamp((int)x, 0, size.Width - 1);
-                int iy = Math.Clamp((int)y, 0, size.Height - 1);
-                int iw = (int)w > 0 ? Math.Min((int)w, size.Width - ix) : size.Width - ix;
-                int ih = (int)h > 0 ? Math.Min((int)h, size.Height - iy) : size.Height - iy;
+                // No preview: mpv video = final clip
+                // preview_half=true  → video is at half resolution, scale 1:1→video = 0.5
+                // preview_half=false → video is at full resolution, scale = 1.0
+                double scale = isHalfRes ? 0.5 : 1.0;
+
+                int ix = Math.Clamp((int)(x * scale), 0, size.Width - 1);
+                int iy = Math.Clamp((int)(y * scale), 0, size.Height - 1);
+                int iw = (int)w > 0 ? Math.Min((int)(w * scale), size.Width - ix) : size.Width - ix;
+                int ih = (int)h > 0 ? Math.Min((int)(h * scale), size.Height - iy) : size.Height - iy;
 
                 mpv.ShowRegionOverlay(ix, iy, iw, ih);
             }
@@ -3585,7 +3590,10 @@ namespace CleanScan.Views
             }
         }
 
-        /// <summary>Shows the current region overlay for the given filter (reads X/Y/W/H from config).</summary>
+        /// <summary>Reads region values from config and shows the overlay for the given filter.</summary>
+        void IFilterPresenterHost.RefreshRegionOverlay(string filterId)
+            => ShowCurrentRegionOverlay(filterId);
+
         private void ShowCurrentRegionOverlay(string filterId)
         {
             double Read(string key) =>
@@ -3593,7 +3601,52 @@ namespace CleanScan.Views
                     System.Globalization.NumberStyles.Any,
                     System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : 0;
 
-            ((IFilterPresenterHost)this).ShowRegionOverlay(filterId, Read("X"), Read("Y"), Read("W"), Read("H"));
+            var filter = _customFilterService.GetById(filterId);
+            if (filter is null) return;
+
+            var (p0, p1, p2, p3) = filter.GetRegionPlaceholders();
+
+            if (filter.RegionDrawMode == "crop")
+            {
+                // Crop margins → XYWH for overlay
+                var (sw, sh) = GetSourceSize();
+                double cl = Read(p0), ct = Read(p1), cr = Read(p2), cb = Read(p3);
+                ((IFilterPresenterHost)this).ShowRegionOverlay(filterId, cl, ct,
+                    Math.Max(0, sw - cl - cr), Math.Max(0, sh - ct - cb));
+            }
+            else
+            {
+                ((IFilterPresenterHost)this).ShowRegionOverlay(filterId, Read(p0), Read(p1), Read(p2), Read(p3));
+            }
+        }
+
+        /// <summary>
+        /// Returns the source clip size in 1:1 coordinates.
+        /// Derives it from the mpv video size and current preview/half-res mode.
+        /// </summary>
+        private (int W, int H) GetSourceSize()
+        {
+            var mpv = _playerController.MpvService;
+            if (mpv is null) return (0, 0);
+            var size = mpv.GetVideoSize();
+            if (size.Width <= 0 || size.Height <= 0) return (0, 0);
+
+            bool isPreview = this.FindControl<Button>("preview") is { Tag: true };
+            bool isHalfRes = _config.Get("preview_half") is { } hv
+                             && bool.TryParse(hv, out var hb) && hb;
+
+            if (isPreview)
+            {
+                // StackHorizontal(half, half) → video = (sourceW, sourceH/2)
+                return (size.Width, size.Height * 2);
+            }
+            if (isHalfRes)
+            {
+                // Video is at half resolution
+                return (size.Width * 2, size.Height * 2);
+            }
+            // 1:1
+            return (size.Width, size.Height);
         }
 
         private void CommitRegion(int x, int y, int w, int h)
@@ -3601,10 +3654,41 @@ namespace CleanScan.Views
             var filterId = _regionDrawFilterId;
             if (filterId is null) return;
 
-            _config.Set($"cf_{filterId}_X", x.ToString());
-            _config.Set($"cf_{filterId}_Y", y.ToString());
-            _config.Set($"cf_{filterId}_W", w.ToString());
-            _config.Set($"cf_{filterId}_H", h.ToString());
+            var filter = _customFilterService.GetById(filterId);
+            if (filter is null) return;
+
+            var (p0, p1, p2, p3) = filter.GetRegionPlaceholders();
+
+            // Snap each value to the Step of its corresponding control
+            int Snap(string placeholder, int value)
+            {
+                var ctrl = filter.Controls.FirstOrDefault(c =>
+                    string.Equals(c.Placeholder, placeholder, StringComparison.OrdinalIgnoreCase));
+                if (ctrl is null || ctrl.Step <= 1) return value;
+                int step = (int)ctrl.Step;
+                return (value / step) * step;
+            }
+
+            if (filter.RegionDrawMode == "crop")
+            {
+                // Convert drawn XYWH → crop margins using placeholder names
+                var (sw, sh) = GetSourceSize();
+                int cl = Snap(p0, x);
+                int ct = Snap(p1, y);
+                int cr = Snap(p2, Math.Max(0, sw - x - w));
+                int cb = Snap(p3, Math.Max(0, sh - y - h));
+                _config.Set($"cf_{filterId}_{p0}", cl.ToString());
+                _config.Set($"cf_{filterId}_{p1}", ct.ToString());
+                _config.Set($"cf_{filterId}_{p2}", cr.ToString());
+                _config.Set($"cf_{filterId}_{p3}", cb.ToString());
+            }
+            else
+            {
+                _config.Set($"cf_{filterId}_{p0}", Snap(p0, x).ToString());
+                _config.Set($"cf_{filterId}_{p1}", Snap(p1, y).ToString());
+                _config.Set($"cf_{filterId}_{p2}", Snap(p2, w).ToString());
+                _config.Set($"cf_{filterId}_{p3}", Snap(p3, h).ToString());
+            }
 
             if (!_applyingPreset && !_switchingClip)
                 MarkClipAsPerso();

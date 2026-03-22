@@ -91,18 +91,36 @@
                              MaxHeight="320">
                    <StackPanel Margin="20,14,20,8" Spacing="24">
 
-                       <!-- Name -->
+                       <!-- Name + RegionDraw -->
                        <StackPanel Spacing="3">
                            <TextBlock x:Name="FilterNameLabel"
                                       Text="Filter name"
                                       FontSize="13" FontWeight="SemiBold"
                                       Foreground="{DynamicResource TextLabel}"/>
-                           <TextBox x:Name="FilterNameBox"
-                                    Watermark="My custom filter"
-                                    FontSize="12"
-                                    Background="{DynamicResource BgInput}"
-                                    Foreground="{DynamicResource TextSecondary}"
-                                    BorderBrush="{DynamicResource BorderSubtle}"/>
+                           <Grid ColumnDefinitions="*,Auto">
+                               <TextBox x:Name="FilterNameBox"
+                                        Grid.Column="0"
+                                        Watermark="My custom filter"
+                                        FontSize="12"
+                                        Background="{DynamicResource BgInput}"
+                                        Foreground="{DynamicResource TextSecondary}"
+                                        BorderBrush="{DynamicResource BorderSubtle}"/>
+                               <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8"
+                                          VerticalAlignment="Center" Margin="12,0,0,0">
+                                   <CheckBox x:Name="RegionDrawCheck"
+                                             FontSize="12"
+                                             Foreground="{DynamicResource TextSecondary}"
+                                             VerticalAlignment="Center"
+                                             Content="Region draw"/>
+                                   <ComboBox x:Name="RegionDrawModeCombo"
+                                             FontSize="11" Width="120"
+                                             IsVisible="False"
+                                             VerticalAlignment="Center"
+                                             Background="{DynamicResource BgInput}"
+                                             Foreground="{DynamicResource TextSecondary}"
+                                             BorderBrush="{DynamicResource BorderSubtle}"/>
+                               </StackPanel>
+                           </Grid>
                        </StackPanel>
 
                        <!-- DLLs + Scripts on 2 columns -->

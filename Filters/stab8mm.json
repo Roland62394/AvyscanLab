@@ -6,6 +6,8 @@
   "Scripts": [],
   "Code": "# 8mm Stabilisation (videoFred v256.1.01)\nstab_mx = _MatrixAuto(c)\nstab_yuv = EnsureColorspaceSafe(c, \"YV12\", matrix=stab_mx)\nstab_ref = stab_yuv.Crop({est_left},{est_top},-{est_right},-{est_bottom},align=true)\nvectors = stab_ref.MSuper(pel=1).MAnalyse(isb=false, blksize=32, overlap=16, search=2)\nmdata = MDepan(stab_ref, vectors, rot=false, zoom=false, error={error})\nstab_yuv = DePanStabilize(stab_yuv, data=mdata, cutoff={cutoff}, damping={damping}, dxmax=(Width(stab_yuv)/100)*{maxstabH}, dymax=(Height(stab_yuv)/100)*{maxstabV}, zoommax=0, rotmax=0, method=0, mirror={mirror}, info=false)\nc = stab_yuv.Crop({crop_left},{crop_top},-{crop_right},-{crop_bottom},align=true).Prefetch(threads)",
   "Position": "BeforePipeline",
+  "RegionDraw": true,
+  "RegionDrawMode": "crop",
   "Controls": [
     {
       "Placeholder": "maxstabH",

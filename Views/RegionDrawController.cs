@@ -19,6 +19,7 @@ public sealed class RegionDrawController
     private readonly MpvHost _mpvHost;
     private readonly Func<MpvService?> _getMpv;
     private readonly Func<bool> _isPreview;
+    private readonly Func<bool> _isHalfRes;
     private readonly Action<int, int, int, int> _commitRegion;
 
     private bool _drawModeActive;
@@ -31,12 +32,14 @@ public sealed class RegionDrawController
         MpvHost mpvHost,
         Func<MpvService?> getMpv,
         Func<bool> isPreview,
+        Func<bool> isHalfRes,
         Action<int, int, int, int> commitRegion)
     {
         _canvas = canvas;
         _mpvHost = mpvHost;
         _getMpv = getMpv;
         _isPreview = isPreview;
+        _isHalfRes = isHalfRes;
         _commitRegion = commitRegion;
 
         // Subscribe to native mouse events from MpvHost (bypasses airspace issue)
@@ -262,12 +265,16 @@ public sealed class RegionDrawController
         }
         else
         {
-            // No preview: mpv video = final clip at 1:1 source resolution
+            // No preview: mpv video = final clip
+            // preview_half=true → video is at half res, multiply by 2 for source 1:1
+            // preview_half=false → video is at full res, coordinates are already 1:1
+            double upscale = _isHalfRes() ? 2.0 : 1.0;
+
             return (
-                Math.Max(0, (int)Math.Round(vx)),
-                Math.Max(0, (int)Math.Round(vy)),
-                Math.Max(1, (int)Math.Round(vw)),
-                Math.Max(1, (int)Math.Round(vh))
+                Math.Max(0, (int)Math.Round(vx * upscale)),
+                Math.Max(0, (int)Math.Round(vy * upscale)),
+                Math.Max(1, (int)Math.Round(vw * upscale)),
+                Math.Max(1, (int)Math.Round(vh * upscale))
             );
         }
     }

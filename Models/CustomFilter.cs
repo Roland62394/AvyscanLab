@@ -13,11 +13,35 @@ public sealed class CustomFilter
     public string Code { get; set; } = "";
     public string Position { get; set; } = "AfterSharpen";
 
-    /// <summary>When true, the filter supports region drawing (X/Y/W/H set via mouse on video).</summary>
+    /// <summary>When true, the filter supports region drawing via mouse on video.</summary>
     public bool RegionDraw { get; set; }
+
+    /// <summary>
+    /// Region draw mode: "xywh" or "crop".
+    /// </summary>
+    public string RegionDrawMode { get; set; } = "xywh";
+
+    /// <summary>
+    /// Placeholder names for region draw.
+    /// XYWH mode: [X, Y, W, H]. Crop mode: [left, top, right, bottom].
+    /// When empty, defaults are used: X/Y/W/H or crop_left/crop_top/crop_right/crop_bottom.
+    /// </summary>
+    public List<string> RegionDrawPlaceholders { get; set; } = [];
 
     /// <summary>Per-placeholder control definitions (Phase 3).</summary>
     public List<CustomFilterControl> Controls { get; set; } = [];
+
+    /// <summary>Returns the effective placeholder names for region draw (4 elements).</summary>
+    public (string P0, string P1, string P2, string P3) GetRegionPlaceholders()
+    {
+        if (RegionDrawPlaceholders is { Count: >= 4 })
+            return (RegionDrawPlaceholders[0], RegionDrawPlaceholders[1],
+                    RegionDrawPlaceholders[2], RegionDrawPlaceholders[3]);
+
+        return RegionDrawMode == "crop"
+            ? ("crop_left", "crop_top", "crop_right", "crop_bottom")
+            : ("X", "Y", "W", "H");
+    }
 }
 
 public sealed class CustomFilterControl
