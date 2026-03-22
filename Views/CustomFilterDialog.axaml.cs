@@ -11,11 +11,11 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
-using CleanScan.Models;
-using CleanScan.Services;
-using CleanScan.ViewModels;
+using AvyscanLab.Models;
+using AvyscanLab.Services;
+using AvyscanLab.ViewModels;
 
-namespace CleanScan.Views;
+namespace AvyscanLab.Views;
 
 public partial class CustomFilterDialog : Window
 {
@@ -40,7 +40,7 @@ public partial class CustomFilterDialog : Window
 
     private static string LayoutFilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "CleanScan", "cfdlg-layout.json");
+        "AvyscanLab", "cfdlg-layout.json");
 
     private static CfDlgLayout? LoadLayout()
     {

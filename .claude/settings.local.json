@@ -88,7 +88,8 @@
       "Bash(nslookup:*)",
       "Bash(curl -sI --max-time 10 \"https://www.scanfilm.ch\")",
       "Bash(curl:*)",
-      "Bash(echo \"EXIT: $?\")"
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(find 'C:\\\\Users\\\\larde\\\\Documents\\\\Documents administratifs\\\\Scanfilm\\\\Technique\\\\ScriptRestore\\\\AvyscanLab' -type f \\\\\\(-name *.cs -o -name *.csproj -o -name *.sln -o -name *.axaml -o -name *.txt -o -name *.py -o -name *.nsi -o -name *.manifest \\\\\\))"
     ]
   }
 }

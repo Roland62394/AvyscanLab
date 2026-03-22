@@ -1,6 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-       x:Class="CleanScan.Views.CustomFilterDialog"
+       x:Class="AvyscanLab.Views.CustomFilterDialog"
        Width="850"
        Height="800"
        MinWidth="650"

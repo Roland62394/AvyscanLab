@@ -12,10 +12,10 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
-using CleanScan.ViewModels;
-using CleanScan.Views;
+using AvyscanLab.ViewModels;
+using AvyscanLab.Views;
 
-namespace CleanScan.Services;
+namespace AvyscanLab.Services;
 
 public sealed class DialogService : IDialogService
 {
@@ -928,7 +928,7 @@ public sealed class DialogService : IDialogService
                 using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
                 var payload = new Dictionary<string, string>
                 {
-                    ["_subject"] = $"CleanScan Feedback: {category}",
+                    ["_subject"] = $"Avyscan Lab Feedback: {category}",
                     ["name"] = string.IsNullOrWhiteSpace(name) ? "Anonymous" : name,
                     ["email"] = string.IsNullOrWhiteSpace(email) ? "noreply@cleanscan.app" : email,
                     ["category"] = category,
@@ -1001,10 +1001,10 @@ public sealed class DialogService : IDialogService
 
         var titleText = new TextBlock
         {
-            Text = L("Thank you for using CleanScan!",
-                "Merci d\u2019utiliser CleanScan\u00a0!",
-                "Vielen Dank f\u00fcr die Nutzung von CleanScan!",
-                "\u00a1Gracias por usar CleanScan!"),
+            Text = L("Thank you for using Avyscan Lab!",
+                "Merci d\u2019utiliser Avyscan Lab\u00a0!",
+                "Vielen Dank f\u00fcr die Nutzung von Avyscan Lab!",
+                "\u00a1Gracias por usar Avyscan Lab!"),
             FontSize = 16,
             FontWeight = FontWeight.SemiBold,
             Foreground = TB("TextLabel"),
@@ -1117,10 +1117,10 @@ public sealed class DialogService : IDialogService
         var messageText = new TextBlock
         {
             Text = L(
-                $"A new version of CleanScan is available: v{latestVersion}\nYou are currently using v{UpdateService.CurrentVersion}.",
-                $"Une nouvelle version de CleanScan est disponible : v{latestVersion}\nVous utilisez actuellement la v{UpdateService.CurrentVersion}.",
-                $"Eine neue Version von CleanScan ist verf\u00fcgbar: v{latestVersion}\nSie verwenden derzeit v{UpdateService.CurrentVersion}.",
-                $"Una nueva versi\u00f3n de CleanScan est\u00e1 disponible: v{latestVersion}\nActualmente usa la v{UpdateService.CurrentVersion}."),
+                $"A new version of Avyscan Lab is available: v{latestVersion}\nYou are currently using v{UpdateService.CurrentVersion}.",
+                $"Une nouvelle version de Avyscan Lab est disponible : v{latestVersion}\nVous utilisez actuellement la v{UpdateService.CurrentVersion}.",
+                $"Eine neue Version von Avyscan Lab ist verf\u00fcgbar: v{latestVersion}\nSie verwenden derzeit v{UpdateService.CurrentVersion}.",
+                $"Una nueva versi\u00f3n de Avyscan Lab est\u00e1 disponible: v{latestVersion}\nActualmente usa la v{UpdateService.CurrentVersion}."),
             FontSize = 13,
             TextWrapping = TextWrapping.Wrap,
             Foreground = TB("TextPrimary"),

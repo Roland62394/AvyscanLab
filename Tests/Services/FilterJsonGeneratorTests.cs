@@ -3,10 +3,10 @@ using System.IO;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using CleanScan.Models;
+using AvyscanLab.Models;
 using Xunit;
 
-namespace CleanScan.Tests.Services;
+namespace AvyscanLab.Tests.Services;
 
 /// <summary>
 /// Generates the 5 built-in filter JSON files in the Filters/ directory.

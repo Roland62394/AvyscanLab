@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace CleanScan.Models;
+namespace AvyscanLab.Models;
 
 /// <summary>Per-clip state (replaces 6 parallel lists in MainWindow).</summary>
 public sealed class ClipState

@@ -1,6 +1,6 @@
 using Avalonia.Media;
 
-namespace CleanScan.Services;
+namespace AvyscanLab.Services;
 
 /// <summary>
 /// Shared UI constants (fonts, etc.) to avoid duplicating magic strings across files.

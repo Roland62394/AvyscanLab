@@ -10,10 +10,10 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Threading;
-using CleanScan.Services;
-using CleanScan.ViewModels;
+using AvyscanLab.Services;
+using AvyscanLab.ViewModels;
 
-namespace CleanScan.Views;
+namespace AvyscanLab.Views;
 
 /// <summary>Contract the player controller needs from the host window.</summary>
 public interface IPlayerHost
@@ -199,7 +199,7 @@ public sealed class PlayerController
     private void OnMpvFileLoaded()
     {
         DebugLog("OnMpvFileLoaded — file loaded successfully");
-        _host.Window.Title = "CleanScan";
+        _host.Window.Title = "Avyscan Lab";
 
         if (_host.LoadingSourceFallback)
         {
@@ -354,7 +354,7 @@ public sealed class PlayerController
     public void ShowPlayerStatus(string message)
     {
         DebugLog("ShowPlayerStatus: " + message.Replace('\n', ' '));
-        _host.Window.Title = "CleanScan";
+        _host.Window.Title = "Avyscan Lab";
 
         if (_host.FindControl<Border>("PlayerErrorBanner") is { } banner
          && _host.FindControl<TextBlock>("PlayerErrorText")  is { } text)

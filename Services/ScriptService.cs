@@ -5,9 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using CleanScan.Models;
+using AvyscanLab.Models;
 
-namespace CleanScan.Services;
+namespace AvyscanLab.Services;
 
 public sealed partial class ScriptService(SourceService source) : IScriptService
 {
@@ -561,7 +561,7 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
     }
 
     private static string GetAppDataPath(string fileName) =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CleanScan", fileName);
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AvyscanLab", fileName);
 
     private static void EnsureDirectory(string filePath)
     {

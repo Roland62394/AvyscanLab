@@ -1,4 +1,4 @@
-"""Generate the 4 CleanScan User Guide PDFs (en, fr, de, es) using fpdf2."""
+"""Generate the 4 Avyscan Lab User Guide PDFs (en, fr, de, es) using fpdf2."""
 
 import os
 from fpdf import FPDF
@@ -19,7 +19,7 @@ GUIDES = {
         "toc_title": "TABLE DES MATIERES",
         "sections": [
             ("1. Presentation", [
-                "CleanScan est un logiciel de restauration de films argentiques numerises (8 mm, Super 8,",
+                "Avyscan Lab est un logiciel de restauration de films argentiques numerises (8 mm, Super 8,",
                 "9,5 mm, 16 mm). Il permet de :",
                 "",
                 "  - Reduire le grain de pellicule",
@@ -38,13 +38,13 @@ GUIDES = {
                 "  - Espace disque suffisant pour les fichiers source et les rendus",
                 "",
                 "Composants :",
-                "  - AviSynth+ 64 bits doit etre installe. Si absent, CleanScan le detecte au demarrage",
+                "  - AviSynth+ 64 bits doit etre installe. Si absent, Avyscan Lab le detecte au demarrage",
                 "    et propose un lien de telechargement. Une version embarquee est utilisee en secours.",
                 "  - FFmpeg est fourni avec l'application (dossier Plugins/ffmpeg/).",
                 "  - Le lecteur mpv est fourni avec l'application (dossier mpv/).",
                 "",
                 "Aucune installation supplementaire n'est requise. Il suffit de decompresser l'archive",
-                "et de lancer l'executable CleanScan.exe.",
+                "et de lancer l'executable Avyscan Lab.exe.",
             ]),
             ("3. Interface generale", [
                 "L'interface est organisee en trois zones :",
@@ -113,10 +113,10 @@ GUIDES = {
                 "  Supprimer : efface un preset",
                 "",
                 "Les champs source, film, img, start, end et crop ne sont PAS inclus dans les presets.",
-                "Emplacement : %AppData%\\CleanScan\\presets.json",
+                "Emplacement : %AppData%\\AvyscanLab\\presets.json",
             ]),
             ("8. Filtres personnalises (Custom)", [
-                "CleanScan permet de creer vos propres filtres AviSynth et de les integrer dans le",
+                "Avyscan Lab permet de creer vos propres filtres AviSynth et de les integrer dans le",
                 "pipeline de restauration. Les filtres personnalises sont affiches dans la section",
                 "CUSTOM du panneau de filtres (colonne gauche).",
                 "",
@@ -174,7 +174,7 @@ GUIDES = {
                 "",
                 "  Ouvrez le formulaire d'edition (bouton crayon) et cliquez sur \"Supprimer\".",
                 "",
-                "Emplacement : %AppData%\\CleanScan\\custom_filters.json",
+                "Emplacement : %AppData%\\AvyscanLab\\custom_filters.json",
             ]),
             ("9. Encodage et rendu", [
                 "Cliquez sur le bouton REC dans la barre de transport pour ouvrir le panneau d'encodage.",
@@ -186,7 +186,7 @@ GUIDES = {
                 "  Etape 5 : Ajustez les parametres (CRF/Bitrate, Chroma, Resolution).",
                 "",
                 "Presets d'encodage : sauvegardez vos combinaisons frequentes.",
-                "Emplacement : %AppData%\\CleanScan\\encoding_presets.json",
+                "Emplacement : %AppData%\\AvyscanLab\\encoding_presets.json",
                 "",
                 "Option \"Eteindre apres encodage\" disponible pour les encodages longs.",
             ]),
@@ -200,7 +200,7 @@ GUIDES = {
             ]),
             ("11. Apercu du script", [
                 "Menu Infos > Apercu du script ouvre une fenetre affichant le contenu complet du",
-                "fichier ScriptUser.avs genere par CleanScan.",
+                "fichier ScriptUser.avs genere par Avyscan Lab.",
                 "Le bouton \"Recharger\" relit le fichier depuis le disque.",
             ]),
             ("12. Retour d'experience (Feedback)", [
@@ -236,18 +236,18 @@ GUIDES = {
                 "  ScriptUser.avs              Dossier de l'exe",
                 "  ScriptMaster.xx.avs         Dossier de l'exe",
                 "  ScriptRender.avs            Dossier de l'exe",
-                "  presets.json                %AppData%\\CleanScan",
-                "  encoding_presets.json       %AppData%\\CleanScan",
-                "  custom_filters.json         %AppData%\\CleanScan",
-                "  window_settings.json        %AppData%\\CleanScan",
-                "  session.json                %AppData%\\CleanScan",
+                "  presets.json                %AppData%\\AvyscanLab",
+                "  encoding_presets.json       %AppData%\\AvyscanLab",
+                "  custom_filters.json         %AppData%\\AvyscanLab",
+                "  window_settings.json        %AppData%\\AvyscanLab",
+                "  session.json                %AppData%\\AvyscanLab",
                 "  Plugins/                    Dossier de l'exe",
                 "  mpv/                        Dossier de l'exe",
             ]),
             ("16. Contenu de l'application", [
-                "Arborescence des fichiers distribues avec CleanScan :",
+                "Arborescence des fichiers distribues avec Avyscan Lab :",
                 "",
-                "  CleanScan.exe                         Executable principal",
+                "  AvyscanLab.exe                         Executable principal",
                 "  ScriptMaster.en.avs                   Modele de script AviSynth",
                 "  UserGuide.txt                         Guide texte (source)",
                 "",
@@ -259,10 +259,10 @@ GUIDES = {
                 "    libmpv-2.dll                        Lecteur video (libmpv)",
                 "",
                 "  Users Guide/",
-                "    CleanScan_Guide_en.pdf              Guide utilisateur (anglais)",
-                "    CleanScan_Guide_fr.pdf              Guide utilisateur (francais)",
-                "    CleanScan_Guide_de.pdf              Guide utilisateur (allemand)",
-                "    CleanScan_Guide_es.pdf              Guide utilisateur (espagnol)",
+                "    AvyscanLab_Guide_en.pdf              Guide utilisateur (anglais)",
+                "    AvyscanLab_Guide_fr.pdf              Guide utilisateur (francais)",
+                "    AvyscanLab_Guide_de.pdf              Guide utilisateur (allemand)",
+                "    AvyscanLab_Guide_es.pdf              Guide utilisateur (espagnol)",
                 "",
                 "  Plugins/",
                 "    Avisynth/",
@@ -323,7 +323,7 @@ GUIDES = {
         "toc_title": "TABLE OF CONTENTS",
         "sections": [
             ("1. Introduction", [
-                "CleanScan is a restoration tool for digitized film (8 mm, Super 8, 9.5 mm, 16 mm).",
+                "Avyscan Lab is a restoration tool for digitized film (8 mm, Super 8, 9.5 mm, 16 mm).",
                 "It allows you to:",
                 "",
                 "  - Reduce film grain",
@@ -342,12 +342,12 @@ GUIDES = {
                 "  - Sufficient disk space for source files and renders",
                 "",
                 "Components:",
-                "  - AviSynth+ 64-bit must be installed. If missing, CleanScan detects it at startup",
+                "  - AviSynth+ 64-bit must be installed. If missing, Avyscan Lab detects it at startup",
                 "    and offers a download link. A bundled version is used as fallback.",
                 "  - FFmpeg is included (Plugins/ffmpeg/ folder).",
                 "  - The mpv player is included (mpv/ folder).",
                 "",
-                "No additional installation required. Extract the archive and run CleanScan.exe.",
+                "No additional installation required. Extract the archive and run Avyscan Lab.exe.",
             ]),
             ("3. General interface", [
                 "The interface is organized in three areas:",
@@ -416,10 +416,10 @@ GUIDES = {
                 "  Delete: removes a preset",
                 "",
                 "Source, film, img, start, end and crop fields are NOT included in presets.",
-                "Location: %AppData%\\CleanScan\\presets.json",
+                "Location: %AppData%\\AvyscanLab\\presets.json",
             ]),
             ("8. Custom Filters", [
-                "CleanScan lets you create your own AviSynth filters and integrate them into the",
+                "Avyscan Lab lets you create your own AviSynth filters and integrate them into the",
                 "restoration pipeline. Custom filters appear in the CUSTOM section of the filter",
                 "panel (left column).",
                 "",
@@ -477,7 +477,7 @@ GUIDES = {
                 "",
                 "  Open the edit form (pencil button) and click \"Delete\".",
                 "",
-                "Location: %AppData%\\CleanScan\\custom_filters.json",
+                "Location: %AppData%\\AvyscanLab\\custom_filters.json",
             ]),
             ("9. Encoding and rendering", [
                 "Click the REC button in the transport bar to open the encoding panel.",
@@ -489,7 +489,7 @@ GUIDES = {
                 "  Step 5: Adjust parameters (CRF/Bitrate, Chroma, Resolution).",
                 "",
                 "Encoding presets: save your frequent combinations.",
-                "Location: %AppData%\\CleanScan\\encoding_presets.json",
+                "Location: %AppData%\\AvyscanLab\\encoding_presets.json",
                 "",
                 "\"Shutdown after completion\" option available for long encodes.",
             ]),
@@ -503,7 +503,7 @@ GUIDES = {
             ]),
             ("11. Script preview", [
                 "Menu Infos > Script preview opens a window showing the full content of the",
-                "ScriptUser.avs file generated by CleanScan.",
+                "ScriptUser.avs file generated by Avyscan Lab.",
                 "The \"Reload\" button re-reads the file from disk.",
             ]),
             ("12. Feedback", [
@@ -539,18 +539,18 @@ GUIDES = {
                 "  ScriptUser.avs              Application folder",
                 "  ScriptMaster.xx.avs         Application folder",
                 "  ScriptRender.avs            Application folder",
-                "  presets.json                %AppData%\\CleanScan",
-                "  encoding_presets.json       %AppData%\\CleanScan",
-                "  custom_filters.json         %AppData%\\CleanScan",
-                "  window_settings.json        %AppData%\\CleanScan",
-                "  session.json                %AppData%\\CleanScan",
+                "  presets.json                %AppData%\\AvyscanLab",
+                "  encoding_presets.json       %AppData%\\AvyscanLab",
+                "  custom_filters.json         %AppData%\\AvyscanLab",
+                "  window_settings.json        %AppData%\\AvyscanLab",
+                "  session.json                %AppData%\\AvyscanLab",
                 "  Plugins/                    Application folder",
                 "  mpv/                        Application folder",
             ]),
             ("16. Application contents", [
-                "File tree distributed with CleanScan:",
+                "File tree distributed with Avyscan Lab:",
                 "",
-                "  CleanScan.exe                         Main executable",
+                "  AvyscanLab.exe                         Main executable",
                 "  ScriptMaster.en.avs                   AviSynth script template",
                 "  UserGuide.txt                         Text guide (source)",
                 "",
@@ -562,10 +562,10 @@ GUIDES = {
                 "    libmpv-2.dll                        Video player (libmpv)",
                 "",
                 "  Users Guide/",
-                "    CleanScan_Guide_en.pdf              User guide (English)",
-                "    CleanScan_Guide_fr.pdf              User guide (French)",
-                "    CleanScan_Guide_de.pdf              User guide (German)",
-                "    CleanScan_Guide_es.pdf              User guide (Spanish)",
+                "    AvyscanLab_Guide_en.pdf              User guide (English)",
+                "    AvyscanLab_Guide_fr.pdf              User guide (French)",
+                "    AvyscanLab_Guide_de.pdf              User guide (German)",
+                "    AvyscanLab_Guide_es.pdf              User guide (Spanish)",
                 "",
                 "  Plugins/",
                 "    Avisynth/",
@@ -626,7 +626,7 @@ GUIDES = {
         "toc_title": "INHALTSVERZEICHNIS",
         "sections": [
             ("1. Vorstellung", [
-                "CleanScan ist ein Restaurierungstool fuer digitalisierte Filme (8 mm, Super 8,",
+                "Avyscan Lab ist ein Restaurierungstool fuer digitalisierte Filme (8 mm, Super 8,",
                 "9,5 mm, 16 mm). Es ermoeglicht:",
                 "",
                 "  - Filmkorn reduzieren",
@@ -645,12 +645,12 @@ GUIDES = {
                 "  - Ausreichend Speicherplatz fuer Quell- und Ausgabedateien",
                 "",
                 "Komponenten:",
-                "  - AviSynth+ 64-Bit muss installiert sein. Falls nicht, erkennt CleanScan dies",
+                "  - AviSynth+ 64-Bit muss installiert sein. Falls nicht, erkennt Avyscan Lab dies",
                 "    beim Start und bietet einen Download-Link an.",
                 "  - FFmpeg ist enthalten (Plugins/ffmpeg/).",
                 "  - Der mpv-Player ist enthalten (mpv/).",
                 "",
-                "Keine zusaetzliche Installation erforderlich. Archiv entpacken und CleanScan.exe starten.",
+                "Keine zusaetzliche Installation erforderlich. Archiv entpacken und Avyscan Lab.exe starten.",
             ]),
             ("3. Allgemeine Oberflaeche", [
                 "Die Oberflaeche ist in drei Bereiche unterteilt:",
@@ -712,10 +712,10 @@ GUIDES = {
                 "  Laden: ein vorhandenes Preset anwenden",
                 "  Loeschen: ein Preset entfernen",
                 "",
-                "Speicherort: %AppData%\\CleanScan\\presets.json",
+                "Speicherort: %AppData%\\AvyscanLab\\presets.json",
             ]),
             ("8. Benutzerdefinierte Filter (Custom)", [
-                "CleanScan ermoeglicht es, eigene AviSynth-Filter zu erstellen und in die",
+                "Avyscan Lab ermoeglicht es, eigene AviSynth-Filter zu erstellen und in die",
                 "Restaurierungspipeline zu integrieren. Benutzerdefinierte Filter erscheinen im",
                 "Abschnitt CUSTOM des Filterpanels (linke Spalte).",
                 "",
@@ -771,7 +771,7 @@ GUIDES = {
                 "",
                 "  Bearbeitungsformular oeffnen (Stift-Button) und \"Loeschen\" klicken.",
                 "",
-                "Speicherort: %AppData%\\CleanScan\\custom_filters.json",
+                "Speicherort: %AppData%\\AvyscanLab\\custom_filters.json",
             ]),
             ("9. Kodierung und Rendering", [
                 "Klicken Sie auf REC in der Transportleiste, um das Kodierungspanel zu oeffnen.",
@@ -783,7 +783,7 @@ GUIDES = {
                 "  Schritt 5: Parameter anpassen (CRF/Bitrate, Chroma, Aufloesung).",
                 "",
                 "Kodierungspresets: Haeufige Kombinationen speichern.",
-                "Speicherort: %AppData%\\CleanScan\\encoding_presets.json",
+                "Speicherort: %AppData%\\AvyscanLab\\encoding_presets.json",
             ]),
             ("10. Anwendungseinstellungen", [
                 "Einstellungsmenue:",
@@ -795,7 +795,7 @@ GUIDES = {
             ]),
             ("11. Skript-Vorschau", [
                 "Menue Infos > Skript-Vorschau oeffnet ein Fenster mit dem vollstaendigen Inhalt",
-                "der von CleanScan generierten ScriptUser.avs-Datei.",
+                "der von Avyscan Lab generierten ScriptUser.avs-Datei.",
             ]),
             ("12. Feedback", [
                 "Das Feedback-Menue oeffnet ein integriertes Kontaktformular:",
@@ -829,18 +829,18 @@ GUIDES = {
                 "  ScriptUser.avs              Anwendungsordner",
                 "  ScriptMaster.xx.avs         Anwendungsordner",
                 "  ScriptRender.avs            Anwendungsordner",
-                "  presets.json                %AppData%\\CleanScan",
-                "  encoding_presets.json       %AppData%\\CleanScan",
-                "  custom_filters.json         %AppData%\\CleanScan",
-                "  window_settings.json        %AppData%\\CleanScan",
-                "  session.json                %AppData%\\CleanScan",
+                "  presets.json                %AppData%\\AvyscanLab",
+                "  encoding_presets.json       %AppData%\\AvyscanLab",
+                "  custom_filters.json         %AppData%\\AvyscanLab",
+                "  window_settings.json        %AppData%\\AvyscanLab",
+                "  session.json                %AppData%\\AvyscanLab",
                 "  Plugins/                    Anwendungsordner",
                 "  mpv/                        Anwendungsordner",
             ]),
             ("16. Anwendungsinhalt", [
-                "Dateibaum, der mit CleanScan ausgeliefert wird:",
+                "Dateibaum, der mit Avyscan Lab ausgeliefert wird:",
                 "",
-                "  CleanScan.exe                         Hauptprogramm",
+                "  AvyscanLab.exe                         Hauptprogramm",
                 "  ScriptMaster.en.avs                   AviSynth-Skriptvorlage",
                 "  UserGuide.txt                         Textanleitung (Quelle)",
                 "",
@@ -852,10 +852,10 @@ GUIDES = {
                 "    libmpv-2.dll                        Videoplayer (libmpv)",
                 "",
                 "  Users Guide/",
-                "    CleanScan_Guide_en.pdf              Benutzerhandbuch (Englisch)",
-                "    CleanScan_Guide_fr.pdf              Benutzerhandbuch (Franzoesisch)",
-                "    CleanScan_Guide_de.pdf              Benutzerhandbuch (Deutsch)",
-                "    CleanScan_Guide_es.pdf              Benutzerhandbuch (Spanisch)",
+                "    AvyscanLab_Guide_en.pdf              Benutzerhandbuch (Englisch)",
+                "    AvyscanLab_Guide_fr.pdf              Benutzerhandbuch (Franzoesisch)",
+                "    AvyscanLab_Guide_de.pdf              Benutzerhandbuch (Deutsch)",
+                "    AvyscanLab_Guide_es.pdf              Benutzerhandbuch (Spanisch)",
                 "",
                 "  Plugins/",
                 "    Avisynth/",
@@ -916,7 +916,7 @@ GUIDES = {
         "toc_title": "INDICE",
         "sections": [
             ("1. Presentacion", [
-                "CleanScan es una herramienta de restauracion para peliculas digitalizadas (8 mm,",
+                "Avyscan Lab es una herramienta de restauracion para peliculas digitalizadas (8 mm,",
                 "Super 8, 9,5 mm, 16 mm). Permite:",
                 "",
                 "  - Reducir el grano de pelicula",
@@ -935,12 +935,12 @@ GUIDES = {
                 "  - Espacio en disco suficiente para archivos fuente y renders",
                 "",
                 "Componentes:",
-                "  - AviSynth+ 64 bits debe estar instalado. Si falta, CleanScan lo detecta al",
+                "  - AviSynth+ 64 bits debe estar instalado. Si falta, Avyscan Lab lo detecta al",
                 "    inicio y ofrece un enlace de descarga.",
                 "  - FFmpeg esta incluido (carpeta Plugins/ffmpeg/).",
                 "  - El reproductor mpv esta incluido (carpeta mpv/).",
                 "",
-                "No se requiere instalacion adicional. Extraiga el archivo y ejecute CleanScan.exe.",
+                "No se requiere instalacion adicional. Extraiga el archivo y ejecute Avyscan Lab.exe.",
             ]),
             ("3. Interfaz general", [
                 "La interfaz esta organizada en tres areas:",
@@ -1002,10 +1002,10 @@ GUIDES = {
                 "  Cargar: aplica un preset existente",
                 "  Eliminar: borra un preset",
                 "",
-                "Ubicacion: %AppData%\\CleanScan\\presets.json",
+                "Ubicacion: %AppData%\\AvyscanLab\\presets.json",
             ]),
             ("8. Filtros personalizados (Custom)", [
-                "CleanScan permite crear sus propios filtros AviSynth e integrarlos en el pipeline",
+                "Avyscan Lab permite crear sus propios filtros AviSynth e integrarlos en el pipeline",
                 "de restauracion. Los filtros personalizados aparecen en la seccion CUSTOM del",
                 "panel de filtros (columna izquierda).",
                 "",
@@ -1061,7 +1061,7 @@ GUIDES = {
                 "",
                 "  Abra el formulario de edicion (boton lapiz) y haga clic en \"Eliminar\".",
                 "",
-                "Ubicacion: %AppData%\\CleanScan\\custom_filters.json",
+                "Ubicacion: %AppData%\\AvyscanLab\\custom_filters.json",
             ]),
             ("9. Codificacion y renderizado", [
                 "Haga clic en REC en la barra de transporte para abrir el panel de codificacion.",
@@ -1073,7 +1073,7 @@ GUIDES = {
                 "  Paso 5: Ajuste los parametros (CRF/Bitrate, Chroma, Resolucion).",
                 "",
                 "Presets de codificacion: guarde sus combinaciones frecuentes.",
-                "Ubicacion: %AppData%\\CleanScan\\encoding_presets.json",
+                "Ubicacion: %AppData%\\AvyscanLab\\encoding_presets.json",
             ]),
             ("10. Ajustes de la aplicacion", [
                 "Menu Ajustes:",
@@ -1085,7 +1085,7 @@ GUIDES = {
             ]),
             ("11. Vista previa del script", [
                 "Menu Infos > Vista previa del script abre una ventana con el contenido completo",
-                "del archivo ScriptUser.avs generado por CleanScan.",
+                "del archivo ScriptUser.avs generado por Avyscan Lab.",
             ]),
             ("12. Comentarios (Feedback)", [
                 "El menu Comentarios abre un formulario de contacto integrado:",
@@ -1119,18 +1119,18 @@ GUIDES = {
                 "  ScriptUser.avs              Carpeta de la aplicacion",
                 "  ScriptMaster.xx.avs         Carpeta de la aplicacion",
                 "  ScriptRender.avs            Carpeta de la aplicacion",
-                "  presets.json                %AppData%\\CleanScan",
-                "  encoding_presets.json       %AppData%\\CleanScan",
-                "  custom_filters.json         %AppData%\\CleanScan",
-                "  window_settings.json        %AppData%\\CleanScan",
-                "  session.json                %AppData%\\CleanScan",
+                "  presets.json                %AppData%\\AvyscanLab",
+                "  encoding_presets.json       %AppData%\\AvyscanLab",
+                "  custom_filters.json         %AppData%\\AvyscanLab",
+                "  window_settings.json        %AppData%\\AvyscanLab",
+                "  session.json                %AppData%\\AvyscanLab",
                 "  Plugins/                    Carpeta de la aplicacion",
                 "  mpv/                        Carpeta de la aplicacion",
             ]),
             ("16. Contenido de la aplicacion", [
-                "Arbol de archivos distribuidos con CleanScan:",
+                "Arbol de archivos distribuidos con Avyscan Lab:",
                 "",
-                "  CleanScan.exe                         Ejecutable principal",
+                "  AvyscanLab.exe                         Ejecutable principal",
                 "  ScriptMaster.en.avs                   Plantilla de script AviSynth",
                 "  UserGuide.txt                         Guia de texto (fuente)",
                 "",
@@ -1142,10 +1142,10 @@ GUIDES = {
                 "    libmpv-2.dll                        Reproductor de video (libmpv)",
                 "",
                 "  Users Guide/",
-                "    CleanScan_Guide_en.pdf              Guia del usuario (ingles)",
-                "    CleanScan_Guide_fr.pdf              Guia del usuario (frances)",
-                "    CleanScan_Guide_de.pdf              Guia del usuario (aleman)",
-                "    CleanScan_Guide_es.pdf              Guia del usuario (espanol)",
+                "    AvyscanLab_Guide_en.pdf              Guia del usuario (ingles)",
+                "    AvyscanLab_Guide_fr.pdf              Guia del usuario (frances)",
+                "    AvyscanLab_Guide_de.pdf              Guia del usuario (aleman)",
+                "    AvyscanLab_Guide_es.pdf              Guia del usuario (espanol)",
                 "",
                 "  Plugins/",
                 "    Avisynth/",
@@ -1209,7 +1209,7 @@ class GuidePDF(FPDF):
         if self.page_no() > 1:
             self.set_font("Helvetica", "I", 8)
             self.set_text_color(120, 120, 120)
-            self.cell(0, 6, f"CleanScan - {self.guide['subtitle']}", align="L")
+            self.cell(0, 6, f"Avyscan Lab - {self.guide['subtitle']}", align="L")
             self.cell(0, 6, f"Beta 5.0", align="R", new_x="LMARGIN", new_y="NEXT")
             self.line(10, 14, 200, 14)
             self.ln(4)
@@ -1297,13 +1297,13 @@ def generate_pdf(lang, guide_data):
     pdf.set_font("Helvetica", "I", 10)
     pdf.cell(0, 8, guide_data["footer"], align="C", new_x="LMARGIN", new_y="NEXT")
 
-    out_path = os.path.join(OUT_DIR, f"CleanScan_Guide_{lang}.pdf")
+    out_path = os.path.join(OUT_DIR, f"AvyscanLab_Guide_{lang}.pdf")
     pdf.output(out_path)
     print(f"  Generated: {out_path}")
 
 
 if __name__ == "__main__":
-    print("Generating CleanScan User Guides...")
+    print("Generating Avyscan Lab User Guides...")
     for lang, data in GUIDES.items():
         generate_pdf(lang, data)
     print("Done!")

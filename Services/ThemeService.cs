@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
-namespace CleanScan.Services;
+namespace AvyscanLab.Services;
 
 public sealed class ThemeService
 {
@@ -18,7 +18,7 @@ public sealed class ThemeService
     public ThemeService()
     {
         var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        _filePath = Path.Combine(appData, "CleanScan", FileName);
+        _filePath = Path.Combine(appData, "AvyscanLab", FileName);
         Load();
     }
 

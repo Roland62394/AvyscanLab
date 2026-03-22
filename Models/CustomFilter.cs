@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace CleanScan.Models;
+namespace AvyscanLab.Models;
 
 public sealed class CustomFilter
 {

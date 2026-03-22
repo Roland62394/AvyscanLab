@@ -1,7 +1,7 @@
 ﻿using System;
 using Avalonia;
 
-namespace CleanScan
+namespace AvyscanLab
 {
     internal sealed class Program
     {

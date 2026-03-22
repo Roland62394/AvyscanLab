@@ -5,7 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Platform;
 using Avalonia.Threading;
 
-namespace CleanScan.Views;
+namespace AvyscanLab.Views;
 
 /// <summary>
 /// NativeControlHost wrapping the mpv render window.

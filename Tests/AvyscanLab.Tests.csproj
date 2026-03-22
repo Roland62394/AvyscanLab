@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CleanScan.csproj" />
+    <ProjectReference Include="..\AvyscanLab.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using CleanScan.Models;
+using AvyscanLab.Models;
 
-namespace CleanScan.Services;
+namespace AvyscanLab.Services;
 
 /// <summary>Manages the collection of clips and their per-clip state.</summary>
 public sealed class ClipManager

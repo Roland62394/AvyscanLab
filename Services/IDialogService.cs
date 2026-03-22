@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Avalonia.Controls;
-using CleanScan.ViewModels;
+using AvyscanLab.ViewModels;
 
-namespace CleanScan.Services;
+namespace AvyscanLab.Services;
 
 public interface IDialogService
 {

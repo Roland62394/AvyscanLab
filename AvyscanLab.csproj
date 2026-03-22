@@ -97,16 +97,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Update="Users Guide\CleanScan_Guide_de.pdf">
+    <Content Update="Users Guide\AvyscanLab_Guide_de.pdf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="Users Guide\CleanScan_Guide_en.pdf">
+    <Content Update="Users Guide\AvyscanLab_Guide_en.pdf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="Users Guide\CleanScan_Guide_es.pdf">
+    <Content Update="Users Guide\AvyscanLab_Guide_es.pdf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="Users Guide\CleanScan_Guide_fr.pdf">
+    <Content Update="Users Guide\AvyscanLab_Guide_fr.pdf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

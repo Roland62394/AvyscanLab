@@ -1,4 +1,4 @@
-namespace CleanScan.Services;
+namespace AvyscanLab.Services;
 
 public interface IAviService
 {

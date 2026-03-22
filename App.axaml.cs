@@ -8,14 +8,14 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
-using CleanScan.Services;
-using CleanScan.Views;
+using AvyscanLab.Services;
+using AvyscanLab.Views;
 
-namespace CleanScan
+namespace AvyscanLab
 {
     public partial class App : Application
     {
-        private const string AppDataFolder = "CleanScan";
+        private const string AppDataFolder = "AvyscanLab";
 
         public override void Initialize()
         {

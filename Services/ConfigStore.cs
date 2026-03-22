@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace CleanScan.Services;
+namespace AvyscanLab.Services;
 
 public sealed class ConfigStore
 {

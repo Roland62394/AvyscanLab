@@ -1,8 +1,8 @@
 using System.IO;
-using CleanScan.Services;
+using AvyscanLab.Services;
 using Xunit;
 
-namespace CleanScan.Tests.Services;
+namespace AvyscanLab.Tests.Services;
 
 public class SourceServiceTests
 {

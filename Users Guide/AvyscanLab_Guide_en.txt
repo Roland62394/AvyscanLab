@@ -27,7 +27,7 @@
                                   1.  OVERVIEW
 =============================================================================================
 
-CleanScan is a restoration software for digitized film (8 mm, Super 8,
+AvyscanLab is a restoration software for digitized film (8 mm, Super 8,
 9.5 mm, 16 mm). It allows you to:
 
     - Reduce film grain (MVTools2 MDegrain)
@@ -47,13 +47,13 @@ The application is available in 4 languages: French, English, German and Spanish
                                 ACKNOWLEDGMENTS / CREDITS
 =============================================================================================
 
-CleanScan relies on the quality of AviSynth+ plugins developed
+AvyscanLab relies on the quality of AviSynth+ plugins developed
 and maintained by the open-source community. We extend our warmest thanks,
 as exhaustively as possible, to their authors:
 
      MVTools2 — Manao, Fizick, Tsp, TSchniede, SEt
           Motion estimation and temporal grain reduction (MDegrain).
-          The core of CleanScan's restoration pipeline.
+          The core of AvyscanLab's restoration pipeline.
 
       RemoveDirt — Kassandro
           Temporal dust and scratch detection and removal.
@@ -75,7 +75,7 @@ as exhaustively as possible, to their authors:
 
       LimitedSharpenFaster — Didée
           Sharpness enhancement technique using Sobel mask and gamma
-          curve (^0.86), which inspired CleanScan's "edge" mode.
+          curve (^0.86), which inspired AvyscanLab's "edge" mode.
 
 =============================================================================================
                            2.  REQUIREMENTS AND INSTALLATION
@@ -87,13 +87,13 @@ System requirements:
     - Sufficient disk space for source files and renders
 
 Components:
-    - AviSynth+ 64-bit must be installed. If it is missing, CleanScan detects it at startup
+    - AviSynth+ 64-bit must be installed. If it is missing, AvyscanLab detects it at startup
       and offers to install it.
     - FFmpeg is included with the application (Plugins/ffmpeg/ folder).
     - The mpv player is included with the application (mpv/ folder).
 
 No additional installation is required. Simply extract the archive
-and run the CleanScan.exe executable.
+and run the AvyscanLab.exe executable.
 
 
 =============================================================================================
@@ -153,7 +153,7 @@ Video file
 
 Image sequence
     Select a directory containing image files (for example: 00001.tif, 00002.tif, etc.).
-    CleanScan automatically detects the first and last image of the sequence.
+    AvyscanLab automatically detects the first and last image of the sequence.
     Supported formats: .tif  .tiff  .jpg  .jpeg  .png  .bmp
 
 Frame rate (FPS)
@@ -396,7 +396,7 @@ to even numbers (YUV chroma subsampling requirement).
                         10.  CUSTOM FILTERS
 =============================================================================================
 
-CleanScan allows you to create your own AviSynth filters and integrate them into the
+AvyscanLab allows you to create your own AviSynth filters and integrate them into the
 restoration pipeline with a full control interface.
 
     CREATING A CUSTOM FILTER
@@ -464,7 +464,7 @@ restoration pipeline with a full control interface.
 
     Open the edit form (pencil button) and click "Delete".
 
-Storage location: %AppData%\CleanScan\custom_filters.json
+Storage location: %AppData%\AvyscanLab\custom_filters.json
 
 
   IMPORTING AN AVSI SCRIPT
@@ -489,7 +489,7 @@ Storage location: %AppData%\CleanScan\custom_filters.json
       4. The added scripts appear in the list. Use the (x) button to
          remove a script from the list.
 
-      5. When generating the AviSynth script, CleanScan automatically inserts
+      5. When generating the AviSynth script, AvyscanLab automatically inserts
          an Import() instruction for each referenced script, right after
          loading the plugins:
 
@@ -524,7 +524,7 @@ Storage location: %AppData%\CleanScan\custom_filters.json
     Delete              Removes a preset
 
     The source, film, img, start, end and crop fields are NOT included in presets.
-    Location: %AppData%\CleanScan\presets.json
+    Location: %AppData%\AvyscanLab\presets.json
 
     PER-CLIP PRESETS
     -----------------------------------------------------------------------------------------
@@ -538,7 +538,7 @@ Storage location: %AppData%\CleanScan\custom_filters.json
     Encoding combinations (encoder + container + quality + chroma + resolution)
     can be saved and reloaded from the Record panel.
     The "Default" preset is always present and appears first.
-    Location: %AppData%\CleanScan\encoding_presets.json
+    Location: %AppData%\AvyscanLab\encoding_presets.json
 
 
 =============================================================================================
@@ -643,7 +643,7 @@ Languages menu:
 =============================================================================================
 
 The Info > Script preview menu opens a window displaying the full contents of the
-ScriptUser.avs file generated by CleanScan.
+ScriptUser.avs file generated by AvyscanLab.
 
 The "Reload" button re-reads the file from disk and refreshes the preview.
 This allows you to check the AviSynth script produced and optionally copy it
@@ -742,11 +742,11 @@ if you would like a response.
     ScriptUser.avs                 Exe folder
     ScriptMaster.xx.avs            Exe folder (xx = language)
     ScriptRender.avs               Exe folder (generated for encoding)
-    presets.json                   %AppData%\CleanScan
-    encoding_presets.json          %AppData%\CleanScan
-    custom_filters.json            %AppData%\CleanScan
-    window_settings.json           %AppData%\CleanScan
-    session.json                   %AppData%\CleanScan
+    presets.json                   %AppData%\AvyscanLab
+    encoding_presets.json          %AppData%\AvyscanLab
+    custom_filters.json            %AppData%\AvyscanLab
+    window_settings.json           %AppData%\AvyscanLab
+    session.json                   %AppData%\AvyscanLab
     Plugins/                       Exe folder
     mpv/                           Exe folder
 
@@ -755,9 +755,9 @@ if you would like a response.
                           19.  APPLICATION CONTENTS
 =============================================================================================
 
-File tree distributed with CleanScan:
+File tree distributed with AvyscanLab:
 
-    CleanScan.exe                           Main executable
+    AvyscanLab.exe                           Main executable
     ScriptMaster.en.avs                     AviSynth script template
     UserGuide.txt                           Text guide (French, source)
 
@@ -769,10 +769,10 @@ File tree distributed with CleanScan:
       libmpv-2.dll                          Video player (libmpv)
 
     Users Guide/
-      CleanScan_Guide_en.txt                User guide (English)
-      CleanScan_Guide_fr.txt                User guide (French)
-      CleanScan_Guide_de.txt                User guide (German)
-      CleanScan_Guide_es.txt                User guide (Spanish)
+      AvyscanLab_Guide_en.txt                User guide (English)
+      AvyscanLab_Guide_fr.txt                User guide (French)
+      AvyscanLab_Guide_de.txt                User guide (German)
+      AvyscanLab_Guide_es.txt                User guide (Spanish)
 
     Plugins/
       Avisynth/

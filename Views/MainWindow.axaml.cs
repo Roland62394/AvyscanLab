@@ -23,19 +23,19 @@ using Avalonia.Animation;
 using Avalonia.Animation.Easings;
 using Avalonia.Styling;
 using System.Runtime.InteropServices;
-using CleanScan.Models;
-using CleanScan.Services;
-using CleanScan.ViewModels;
-using static CleanScan.Services.FilterPresets;
-using static CleanScan.Services.UiFieldDefinitions;
+using AvyscanLab.Models;
+using AvyscanLab.Services;
+using AvyscanLab.ViewModels;
+using static AvyscanLab.Services.FilterPresets;
+using static AvyscanLab.Services.UiFieldDefinitions;
 
-namespace CleanScan.Views
+namespace AvyscanLab.Views
 {
     public partial class MainWindow : Window, ITourHost, IFilterPresenterHost, IEncodeHost, IPlayerHost
     {
         #region Constants
 
-        private const string AppDataFolder         = "CleanScan";
+        private const string AppDataFolder         = "AvyscanLab";
         private const string WindowSettingsFileName = "window-settings.json";
         private const string PresetsFileName        = "presets.json";
         private const string EncodingPresetsFileName = "encoding_presets.json";
@@ -761,7 +761,7 @@ namespace CleanScan.Views
             var picker = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
             {
                 Title = GetUiText("ExportSettingsTitle"),
-                SuggestedFileName = $"CleanScan_backup_{date}.zip",
+                SuggestedFileName = $"AvyscanLab_backup_{date}.zip",
                 FileTypeChoices = [new FilePickerFileType("ZIP") { Patterns = ["*.zip"] }]
             });
             if (picker is null) return;
@@ -955,7 +955,7 @@ namespace CleanScan.Views
 
             if (!result) return;
 
-            // Delete entire AppData\CleanScan folder so the app leaves no trace
+            // Delete entire AppData\AvyscanLab folder so the app leaves no trace
             var appDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppDataFolder);
             try { if (Directory.Exists(appDataDir)) Directory.Delete(appDataDir, recursive: true); } catch { }
 
@@ -1274,7 +1274,7 @@ namespace CleanScan.Views
         private void ApplyConfigurationValues()
         {
             var scriptValues    = _scriptService.LoadScriptValues();
-            var resourceManager = new ResourceManager("CleanScan.Resources.ConfigValues", typeof(MainWindow).Assembly);
+            var resourceManager = new ResourceManager("AvyscanLab.Resources.ConfigValues", typeof(MainWindow).Assembly);
             var newValues       = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var name in ScriptService.TextFieldNames)
@@ -3341,9 +3341,9 @@ namespace CleanScan.Views
         {
             var lang = ViewModel.CurrentLanguageCode;
             var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? string.Empty;
-            var guidePath = System.IO.Path.Combine(exeDir, "Users Guide", $"CleanScan_Guide_{lang}.pdf");
+            var guidePath = System.IO.Path.Combine(exeDir, "Users Guide", $"AvyscanLab_Guide_{lang}.pdf");
             if (!System.IO.File.Exists(guidePath))
-                guidePath = System.IO.Path.Combine(exeDir, "Users Guide", "CleanScan_Guide_en.pdf");
+                guidePath = System.IO.Path.Combine(exeDir, "Users Guide", "AvyscanLab_Guide_en.pdf");
             if (System.IO.File.Exists(guidePath))
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                     { FileName = guidePath, UseShellExecute = true });
@@ -3365,7 +3365,7 @@ namespace CleanScan.Views
                 GetUiText("AboutWebsite"),
                 GetUiText("AboutVersion"),
                 GetUiText("GamMacCloseButton"),
-                "avares://CleanScan/Assets/Logo.png");
+                "avares://AvyscanLab/Assets/Logo.png");
 
         #endregion
 

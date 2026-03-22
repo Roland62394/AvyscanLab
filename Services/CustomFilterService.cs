@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
-using CleanScan.Models;
+using AvyscanLab.Models;
 
-namespace CleanScan.Services;
+namespace AvyscanLab.Services;
 
 public sealed class CustomFilterService
 {

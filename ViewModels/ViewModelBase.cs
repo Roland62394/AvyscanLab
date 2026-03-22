@@ -1,6 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace CleanScan.ViewModels
+namespace AvyscanLab.ViewModels
 {
     public class ViewModelBase : ObservableObject
     {

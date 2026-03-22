@@ -3,7 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Threading;
 
-namespace CleanScan.Views
+namespace AvyscanLab.Views
 {
     public partial class SplashWindow : Window
     {

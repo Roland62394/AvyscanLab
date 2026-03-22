@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace CleanScan.Services;
+namespace AvyscanLab.Services;
 
 public interface IPresetService
 {

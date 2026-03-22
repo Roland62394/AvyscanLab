@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using CleanScan.Models;
+using AvyscanLab.Models;
 
-namespace CleanScan.Services;
+namespace AvyscanLab.Services;
 
 /// <summary>
 /// Registry of built-in AviSynth filter modules.

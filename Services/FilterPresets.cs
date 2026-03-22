@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace CleanScan.Services;
+namespace AvyscanLab.Services;
 
 /// <summary>
 /// Static filter preset dictionaries, extracted from MainWindow to reduce file size.

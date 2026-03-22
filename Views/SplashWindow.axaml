@@ -1,6 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        x:Class="CleanScan.Views.SplashWindow"
+        x:Class="AvyscanLab.Views.SplashWindow"
         Width="500"
         Height="480"
         CanResize="False"
@@ -20,7 +20,7 @@
                   VerticalAlignment="Center">
                 <Image Width="450"
                        Height="350"
-                       Source="avares://CleanScan/Assets/Logo.png"
+                       Source="avares://AvyscanLab/Assets/Logo.png"
                        Stretch="Fill"/>
             </Grid>
             <TextBlock Grid.Row="1"

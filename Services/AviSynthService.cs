@@ -4,7 +4,7 @@ using System.IO;
 using System.Runtime.Versioning;
 using Microsoft.Win32;
 
-namespace CleanScan.Services;
+namespace AvyscanLab.Services;
 
 public sealed class AviSynthService : IAviSynthService
 {

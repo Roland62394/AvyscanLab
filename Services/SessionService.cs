@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Text.Json;
 
-namespace CleanScan.Services;
+namespace AvyscanLab.Services;
 
 public sealed class SessionService(string filePath)
 {

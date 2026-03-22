@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
-namespace CleanScan.Services;
+namespace AvyscanLab.Services;
 
 public sealed class PresetService(string filePath) : IPresetService
 {

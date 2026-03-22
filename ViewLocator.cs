@@ -1,9 +1,9 @@
 using System;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
-using CleanScan.ViewModels;
+using AvyscanLab.ViewModels;
 
-namespace CleanScan
+namespace AvyscanLab
 {
     public class ViewLocator : IDataTemplate
     {

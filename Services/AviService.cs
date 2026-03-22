@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace CleanScan.Services;
+namespace AvyscanLab.Services;
 
 public sealed class AviService : IAviService
 {
