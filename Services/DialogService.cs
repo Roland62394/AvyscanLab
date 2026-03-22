@@ -930,7 +930,7 @@ public sealed class DialogService : IDialogService
                 {
                     ["_subject"] = $"Avyscan Lab Feedback: {category}",
                     ["name"] = string.IsNullOrWhiteSpace(name) ? "Anonymous" : name,
-                    ["email"] = string.IsNullOrWhiteSpace(email) ? "noreply@cleanscan.app" : email,
+                    ["email"] = string.IsNullOrWhiteSpace(email) ? "noreply@avyscanlab.app" : email,
                     ["category"] = category,
                     ["rating"] = stars,
                     ["message"] = message

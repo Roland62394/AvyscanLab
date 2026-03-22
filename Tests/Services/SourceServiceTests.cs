@@ -179,7 +179,7 @@ public class SourceServiceTests
     [Fact]
     public void ImageSequenceExists_ReturnsTrue_WhenExactFileExists()
     {
-        var dir  = Directory.CreateTempSubdirectory("cleanscan_tests_");
+        var dir  = Directory.CreateTempSubdirectory("avyscanlab_tests_");
         var file = Path.Combine(dir.FullName, "00001.tif");
         File.WriteAllText(file, "");
         try
@@ -195,7 +195,7 @@ public class SourceServiceTests
     [Fact]
     public void ImageSequenceExists_ReturnsTrue_WhenDirectoryContainsNumericTiff()
     {
-        var dir = Directory.CreateTempSubdirectory("cleanscan_tests_");
+        var dir = Directory.CreateTempSubdirectory("avyscanlab_tests_");
         File.WriteAllText(Path.Combine(dir.FullName, "00001.tif"), "");
         try
         {
@@ -211,7 +211,7 @@ public class SourceServiceTests
     [Fact]
     public void ImageSequenceExists_ReturnsTrue_ForTiffExtension()
     {
-        var dir = Directory.CreateTempSubdirectory("cleanscan_tests_");
+        var dir = Directory.CreateTempSubdirectory("avyscanlab_tests_");
         File.WriteAllText(Path.Combine(dir.FullName, "0001.tiff"), "");
         try
         {
@@ -226,7 +226,7 @@ public class SourceServiceTests
     [Fact]
     public void ImageSequenceExists_ReturnsFalse_WhenDirectoryHasOnlyNonTiffFiles()
     {
-        var dir = Directory.CreateTempSubdirectory("cleanscan_tests_");
+        var dir = Directory.CreateTempSubdirectory("avyscanlab_tests_");
         File.WriteAllText(Path.Combine(dir.FullName, "00001.jpg"), "");
         try
         {
@@ -241,7 +241,7 @@ public class SourceServiceTests
     [Fact]
     public void ImageSequenceExists_ReturnsFalse_WhenTiffNameIsNotNumeric()
     {
-        var dir = Directory.CreateTempSubdirectory("cleanscan_tests_");
+        var dir = Directory.CreateTempSubdirectory("avyscanlab_tests_");
         File.WriteAllText(Path.Combine(dir.FullName, "scan001.tif"), "");
         try
         {

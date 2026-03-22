@@ -79,7 +79,7 @@ public sealed class PlayerController
 
     // ── Debug log ─────────────────────────────────────────────────────
     private static readonly string _logPath =
-        Path.Combine(Path.GetTempPath(), "cleanscan_debug.txt");
+        Path.Combine(Path.GetTempPath(), "avyscanlab_debug.txt");
 
     public PlayerController(IPlayerHost host)
     {

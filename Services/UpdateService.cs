@@ -9,8 +9,8 @@ public sealed class UpdateService
     /// <summary>Current application version. Must match the version shown in the splash/about screens.</summary>
     public const string CurrentVersion = "1.0.0";
 
-    private const string LatestUrl = "https://www.scanfilm.ch/cleanscan/latest.txt";
-    private const string DownloadBaseUrl = "https://www.scanfilm.ch/cleanscan/";
+    private const string LatestUrl = "https://www.scanfilm.ch/avyscanlab/latest.txt";
+    private const string DownloadBaseUrl = "https://www.scanfilm.ch/avyscanlab/";
 
     /// <summary>
     /// Checks for a newer version by reading latest.txt from the server.
