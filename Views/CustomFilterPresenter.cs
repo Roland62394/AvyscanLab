@@ -872,10 +872,32 @@ public sealed class CustomFilterPresenter
             _host.Config.Set(configKey, ctrl.Default);
         }
 
-        // Rebuild the panel to reflect the new values
+        // Rebuild the panel in place (preserve position in container)
         var panelName = $"CustomPanel_{filter.Id}";
-        RemoveParamPanel(panelName);
+        var container = _host.FindControl<StackPanel>("CustomParamPanels");
+        var index = -1;
+        if (container is not null)
+        {
+            for (var i = 0; i < container.Children.Count; i++)
+            {
+                if (container.Children[i] is Border b && b.Name == panelName)
+                {
+                    index = i;
+                    container.Children.RemoveAt(i);
+                    break;
+                }
+            }
+        }
+
         BuildParamPanel(filter);
+
+        // Move the newly appended panel back to its original position
+        if (container is not null && index >= 0 && index < container.Children.Count)
+        {
+            var newPanel = container.Children[^1];
+            container.Children.RemoveAt(container.Children.Count - 1);
+            container.Children.Insert(index, newPanel);
+        }
 
         _host.OnCustomFilterValueChanged();
         _host.RegenerateScript(showValidationError: false);
