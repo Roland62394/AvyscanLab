@@ -3020,7 +3020,7 @@ namespace AvyscanLab.Views
 
             btn.Background  = isEnabled ? ThemeBrush("AccentGreen") : ThemeBrush("BorderAccent");
             btn.BorderBrush = ThemeBrush("BorderAccent");
-            btn.Foreground  = isEnabled ? Brushes.White : ThemeBrush("TextLabel");
+            btn.Foreground  = Brushes.White;
         }
 
         private void SetColumnEnabled(bool isEnabled, params string[] names)

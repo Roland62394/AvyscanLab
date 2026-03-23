@@ -1,4 +1,4 @@
-                              C L E A N S C A N
+                              A V Y S C A N   L A B
                             User's Guide
 
                                 ScanFilm SNC
@@ -11,23 +11,24 @@
                                  TABLE OF CONTENTS
 =============================================================================================
 
-    1.  Overview                                10.  Custom Filters
+    1.  Overview                                10.  Custom filters
     2.  Requirements and installation           11.  Presets
     3.  General interface                       12.  Encoding and rendering
     4.  Source selection                        13.  Application settings
     5.  Video player and navigation             14.  Script preview
     6.  Filter panel                            15.  Feedback
-    7.  CROP filter                             16.  Recommended workflow
-    8.  Restoration filters                     17.  Tips and shortcuts
-    9.  Enhancement filters                     18.  Files and locations
-                                                19.  Application contents
+    7.  CROP filter                             16.  Guided tour
+    8.  Restoration filters                     17.  Recommended workflow
+    9.  Enhancement filters                     18.  Tips and shortcuts
+                                                19.  Files and locations
+                                                20.  Application contents
 
 
 =============================================================================================
                                   1.  OVERVIEW
 =============================================================================================
 
-AvyscanLab is a restoration software for digitized film (8 mm, Super 8,
+Avyscan Lab is a restoration software for digitized film (8 mm, Super 8,
 9.5 mm, 16 mm). It allows you to:
 
     - Reduce film grain (MVTools2 MDegrain)
@@ -35,7 +36,11 @@ AvyscanLab is a restoration software for digitized film (8 mm, Super 8,
     - Correct brightness, contrast, saturation and colors
     - Correct color drift (GamMac)
     - Crop the image
-    - Enhance sharpness (Sharpen / Edge-aware)
+    - Enhance sharpness (edge-aware unsharp mask)
+    - Stabilize 8 mm film (DePan / DePanEstimate)
+    - Auto white balance (ColorYUV autowhite)
+    - RGB levels correction in 32-bit float precision
+    - White balance in 32-bit float precision (per-channel gain/gamma)
     - Add custom AviSynth filters with a full control interface
 
 The software generates an optimized AviSynth+ script and provides real-time preview
@@ -47,13 +52,13 @@ The application is available in 4 languages: French, English, German and Spanish
                                 ACKNOWLEDGMENTS / CREDITS
 =============================================================================================
 
-AvyscanLab relies on the quality of AviSynth+ plugins developed
+Avyscan Lab relies on the quality of AviSynth+ plugins developed
 and maintained by the open-source community. We extend our warmest thanks,
 as exhaustively as possible, to their authors:
 
      MVTools2 — Manao, Fizick, Tsp, TSchniede, SEt
           Motion estimation and temporal grain reduction (MDegrain).
-          The core of AvyscanLab's restoration pipeline.
+          The core of Avyscan Lab's restoration pipeline.
 
       RemoveDirt — Kassandro
           Temporal dust and scratch detection and removal.
@@ -75,7 +80,12 @@ as exhaustively as possible, to their authors:
 
       LimitedSharpenFaster — Didée
           Sharpness enhancement technique using Sobel mask and gamma
-          curve (^0.86), which inspired AvyscanLab's "edge" mode.
+          curve (^0.86), which inspired Avyscan Lab's "edge" mode.
+
+      DePan / DePanEstimate — Fizick
+          Global motion estimation and stabilization filters.
+          Used for 8 mm film stabilization, correcting gate weave
+          and frame jitter typical of amateur film projectors.
 
 =============================================================================================
                            2.  REQUIREMENTS AND INSTALLATION
@@ -87,7 +97,7 @@ System requirements:
     - Sufficient disk space for source files and renders
 
 Components:
-    - AviSynth+ 64-bit must be installed. If it is missing, AvyscanLab detects it at startup
+    - AviSynth+ 64-bit must be installed. If it is missing, Avyscan Lab detects it at startup
       and offers to install it.
     - FFmpeg is included with the application (Plugins/ffmpeg/ folder).
     - The mpv player is included with the application (mpv/ folder).
@@ -104,29 +114,36 @@ The interface is organized into three main areas:
 
     UPPER AREA
     -----------------------------------------------------------------------------------------
-    Menu bar: Info (guide, script preview, presets, about, contact, settings),
-    Languages (FR/EN/DE/ES), guided tour.
+    Menu bar:
+        Infos       User guide, Script preview, Guided tour, Check for updates
+        Settings    Threads, Source loader, Theme, Accent color,
+                    Export/Import settings, Reset settings
+        Languages   FR / EN / DE / ES
+        Contact     About, Feedback form
 
-    Source bar: source file selection fields, image/video mode, threads,
-    source loader (Auto/FFMS2/L-SMASH/LWLibav).
+    Source bar: source file selection fields, image/video mode, FPS,
+    threads, source loader (Auto / FFMS2 / L-SMASH / LWLibav).
 
     Clip tabs: each loaded clip appears as a tab with the file name
     and the applied preset (e.g.: "[perso2]"). Click a tab to switch between
     clips. The + button adds a clip, the x closes a tab.
-
-    CENTRAL AREA
-    -----------------------------------------------------------------------------------------
-    mpv video player: displays the AviSynth script preview in real time.
 
     Transport bar (below the player):
         |<      Beginning of clip
         <<      Previous frame
         >       Play / Pause
         >>      Next frame
+        >|      End of clip
         1x      Speed (cycle: 0.25x -> 0.5x -> 1x)
         1/2     Half resolution (faster preview)
-        []      Maximize/Restore player (F11)
+        F11     Maximize/Restore player
+        Hist    Histogram (right-click to change type)
+        Preset  Preset dropdown for the active clip
         REC     Open encoding panel
+
+    CENTRAL AREA
+    -----------------------------------------------------------------------------------------
+    mpv video player: displays the AviSynth script preview in real time.
 
     Progress bar: current position / total duration.
     Click or drag to navigate.
@@ -134,8 +151,13 @@ The interface is organized into three main areas:
     LOWER AREA
     -----------------------------------------------------------------------------------------
     Filter panel divided into two columns separated by a resizable splitter:
-        - Left column: filter activation buttons (ON/OFF) and custom filters
-        - Right column: detailed parameters of the selected filter
+        - Left column: filter activation buttons (ON/OFF, green = active),
+          expand button (>) to show parameters, edit button (pencil) for
+          custom filters. Active and inactive filter sections. Drag-and-drop
+          to reorder filters.
+        - Right column: detailed parameters of the selected filter, with
+          a reset button (circular arrow) to restore defaults per filter.
+          Drag-and-drop to reorder parameter panels.
 
     The height between the player and the filter panel is adjustable via the
     horizontal splitter.
@@ -148,12 +170,11 @@ The interface is organized into three main areas:
 Video file
     Drag and drop a video file onto the playback area, or click the button
     next to the "source" field to open a file browser.
-    Supported formats: .avi  .mp4  .mov  .mkv  .wmv  .webm  .m4v  .flv  .ts  .mts
-                        .m2ts  .mxf  .mpeg  .mpg  .ogv  .3gp
+    Supported formats: .avi  .mp4  .mov  .mkv  .wmv  .webm  .m4v  .mpeg  .mpg
 
 Image sequence
     Select a directory containing image files (for example: 00001.tif, 00002.tif, etc.).
-    AvyscanLab automatically detects the first and last image of the sequence.
+    Avyscan Lab automatically detects the first and last image of the sequence.
     Supported formats: .tif  .tiff  .jpg  .jpeg  .png  .bmp
 
 Frame rate (FPS)
@@ -161,6 +182,7 @@ Frame rate (FPS)
     Common values for standard formats:
                     8 mm: 16 or 18 fps
                     Super 8: 18 or 24 fps
+                    9.5 mm: 16 fps
                     16 mm: 18 or 24 fps
 
 Source loader
@@ -220,13 +242,17 @@ Error display:
     In case of an AviSynth script error, a banner appears in the player and an error
     window opens with:
         - The error message (without ffmpeg technical prefixes)
-        - The script excerpt around the faulty line (with marker ►)
+        - The script excerpt around the faulty line (with marker >)
         - The full ffmpeg output in a collapsible "Details" section
         - A "Copy" button to copy the complete message
 
 Per-clip preset:
     The drop-down menu next to the transport bar allows you to apply a filter preset
     to the active clip only.
+
+Histogram:
+    The histogram button displays a real-time luminance/color histogram overlay
+    on the video player. Right-click the button to cycle through histogram types.
 
 
 =============================================================================================
@@ -240,6 +266,8 @@ The lower panel is divided into two columns:
 Each filter has:
     - An ON/OFF button to enable/disable the filter
     - An expand button (>) that displays its panel with detailed parameters
+    - An edit button (pencil) for custom/built-in filters to open the editor
+    - A reset button (circular arrow) to restore default values
     - Quick presets (for some filters)
 
 General options (outside filters) are:
@@ -248,14 +276,26 @@ General options (outside filters) are:
     enable_flip_v      Vertical flip
 
 Processing pipeline order:
-    1. Flip
-    2. Crop
-    3. Dust removal (denoise / RemoveDirt)
-    4. Grain reduction (degrain / MVTools2)
-    5. Brightness levels (luma levels)
-    6. Color correction (GamMac)
-    7. Custom filters (6 possible injection points)
-    8. Sharpness (sharpen) — always last
+    1. Stabilisation (8 mm — DePan, before all other processing)
+    2. Flip (horizontal / vertical)
+    3. Crop
+    4. Dust removal (denoise / RemoveDirt)
+    5. Grain reduction (degrain / MVTools2)
+    6. Brightness levels (luma levels)
+    7. RGB levels (32-bit)
+    8. Color correction (GamMac / Auto white balance / White balance 32-bit)
+    9. Custom filters (6 possible injection points)
+    10. Sharpness (sharpen) — always last
+
+Active and inactive sections:
+    Filters that are toggled ON appear in the ACTIVE section at the top of
+    the left column. Disabled filters move to the INACTIVE section below.
+    This separation provides a clear overview of which processing is applied.
+
+Drag-and-drop reordering:
+    Filters in the left column can be reordered by dragging them.
+    Parameter panels in the right column can also be reordered by dragging.
+    Use the reset order button to restore the default filter arrangement.
 
 Slider values are automatically snapped to the step defined
 for each parameter, which prevents invalid values.
@@ -275,6 +315,11 @@ to even numbers (YUV chroma subsampling requirement).
     Crop_R          0-500 px       0           Pixels removed on the right
     Crop_B          0-500 px       0           Pixels removed at the bottom
 
+Region draw:
+    Click the "Draw region" button to define the crop area directly on the
+    video player by drawing a rectangle. The crop values are automatically
+    calculated from the drawn region.
+
 
 =============================================================================================
                          8.  RESTORATION FILTERS
@@ -291,7 +336,7 @@ to even numbers (YUV chroma subsampling requirement).
     degrain_thSADC         0-1000                       250         Chroma threshold
     degrain_blksize        4/8/16/32/64                 16          Block size
     degrain_overlap        0 to blksize/2               blksize/2   Overlap
-    degrain_pel            1 or 2                       2           Sub-pixel precision
+    degrain_pel            1 or 2                       1           Sub-pixel precision
     degrain_search         0-5                          2           Search mode
     degrain_prefilter      remgrain/blur/none           remgrain    Prefilter
 
@@ -303,15 +348,21 @@ to even numbers (YUV chroma subsampling requirement).
         - overlap only accepts even values (step = 2).
 
     Quick presets:
-        Fine grain       thSAD=200, thSADC=150
-        Medium grain     thSAD=350, thSADC=250 (default)
-        Heavy grain      thSAD=500, thSADC=400
+        Light            mdegrain1, thSAD=150,  thSADC=100
+        Standard         mdegrain2, thSAD=350,  thSADC=250  (default)
+        Medium           mdegrain2, thSAD=550,  thSADC=380
+        Strong           mdegrain3, thSAD=750,  thSADC=520
+        Very strong      mdegrain3, thSAD=1000, thSADC=700
 
     Notes:
         - mdegrain2: 2 temporal references (recommended, good quality/speed ratio)
         - mdegrain3: 3 references (better result, slower)
         - mdegrain1: 1 reference (fast, less effective)
         - temporal : TemporalSoften (without MVTools2, basic)
+        - prefilter: smoothing applied to a temporary copy of the clip to help
+          MVTools estimate motion vectors. Does NOT filter the output image.
+          remgrain = RemoveGrain(2) fast (recommended). blur = Blur(1.0).
+          none = no prefiltering.
 
     DENOISE — Dust removal (RemoveDirt)
     -----------------------------------------------------------------------------------------
@@ -323,8 +374,56 @@ to even numbers (YUV chroma subsampling requirement).
     denoise_dist           1-20                         3              Spatial radius
     denoise_grey           true/false                   false          Luma only
 
+    Quick presets:
+        Light            strength=4,  dist=2
+        Standard         strength=10, dist=3   (default)
+        Medium           strength=14, dist=4
+        Strong           strength=18, dist=6
+        Very strong      strength=24, dist=10
+
     Note: removedirtmc (with motion compensation) is recommended for better
     results. The removedirt mode is faster but less accurate.
+
+    8MM STABILISATION — DePan
+    -----------------------------------------------------------------------------------------
+    Image stabilization for 8 mm film using DePan and DePanEstimate plugins.
+    Corrects gate weave and frame jitter typical of amateur film projectors
+    and telecine machines. Placed at the very beginning of the pipeline
+    (BeforePipeline), before all other filters.
+
+    Parameter              Range          Default     Description
+    maxstabH               0-30 %         14          Max horizontal range (% of width)
+    maxstabV               0-30 %         14          Max vertical range (% of height)
+    error                  1-200          65          Motion estimation error threshold
+    mirror                 0/1            0           Border fill (0=black, 1=mirror edges)
+    cutoff                 0.0-5.0        0.5         High-pass cutoff frequency
+    damping                0.0-5.0        1.0         Damping of stabilization response
+    est_left               0-200 px       40          Estimation zone: ignore left pixels
+    est_top                0-200 px       40          Estimation zone: ignore top pixels
+    est_right              0-200 px       40          Estimation zone: ignore right pixels
+    est_bottom             0-200 px       40          Estimation zone: ignore bottom pixels
+    crop_left              0-200 px       56          Final crop left after stabilization
+    crop_top               0-200 px       40          Final crop top after stabilization
+    crop_right             0-200 px       56          Final crop right after stabilization
+    crop_bottom            0-200 px       40          Final crop bottom after stabilization
+
+    Notes:
+        - The estimation zone (est_*) defines the area used for motion analysis.
+          Exclude film sprocket holes and borders by increasing these values.
+        - The final crop (crop_*) removes the black borders introduced by
+          the stabilization shift. Set these values larger than maxstabH/V
+          percentages to avoid visible black edges.
+        - mirror=1 fills borders with mirrored edges instead of black, hiding
+          the stabilization crop effect.
+        - cutoff controls the frequency separation: lower values remove slow
+          drift (panning), higher values only correct fast jitter.
+        - damping controls how smoothly the stabilization responds; higher
+          values give smoother but slower correction.
+
+    Region draw:
+        Click "Draw region" to define the estimation zone directly on the
+        video player. The est_left/top/right/bottom values are automatically
+        set from the drawn rectangle.
 
 
 =============================================================================================
@@ -345,6 +444,35 @@ to even numbers (YUV chroma subsampling requirement).
     Note: GammaY > 1 brightens midtones, < 1 darkens them.
     This is often the most useful parameter for underexposed old films.
 
+    RGB LEVELS (32-BIT) — Precision color grading
+    -----------------------------------------------------------------------------------------
+    Per-channel RGB correction in 32-bit floating-point precision.
+    Provides fine-grained control over brightness, contrast, gamma,
+    and individual channel gain/gamma/offset for professional color grading.
+
+    Parameter       Range              Default     Description
+    brightness      -0.3 to 0.3        0.0         Global brightness offset
+    contrast        0.5 to 2.0         1.0         Global contrast multiplier
+    gamma           0.2 to 5.0         1.0         Global gamma (<1 darker, >1 brighter)
+    r_gain          0.5 to 2.0         1.0         Red channel gain (multiplier)
+    r_gamma         0.2 to 5.0         1.0         Red channel gamma
+    r_offset        -0.2 to 0.2        0.0         Red channel offset (lift)
+    g_gain          0.5 to 2.0         1.0         Green channel gain
+    g_gamma         0.2 to 5.0         1.0         Green channel gamma
+    g_offset        -0.2 to 0.2        0.0         Green channel offset (lift)
+    b_gain          0.5 to 2.0         1.0         Blue channel gain
+    b_gamma         0.2 to 5.0         1.0         Blue channel gamma
+    b_offset        -0.2 to 0.2        0.0         Blue channel offset (lift)
+
+    Notes:
+        - Processing is done in 32-bit float for maximum precision, avoiding
+          banding artifacts that can occur with 8-bit corrections.
+        - Use per-channel gain to correct color casts: increase r_gain
+          to warm the image, increase b_gain to cool it.
+        - Per-channel offset (lift) shifts the black point of each channel
+          independently.
+        - Per-channel gamma adjusts midtones without clipping highlights.
+
     GAMMAC — Advanced color correction
     -----------------------------------------------------------------------------------------
     Automatic color drift correction between RGB channels. Particularly
@@ -354,8 +482,8 @@ to even numbers (YUV chroma subsampling requirement).
     LockChan        -3 to 2            1           Reference channel
     LockVal         1-255              250         Lock threshold
     Scale           0-2                2           Scale mode
-    Th              0.0-1.0            0           Low threshold
-    HiTh            0.0-1.0            1           High threshold
+    Th              0.0-1.0            0.12        Low threshold
+    HiTh            0.0-1.0            0.25        High threshold
     X               0-2000             0           Analysis area X offset
     Y               0-2000             0           Analysis area Y offset
     W               0-4000             0           Area width (0 = all)
@@ -363,10 +491,53 @@ to even numbers (YUV chroma subsampling requirement).
     Omin            0-255              0           Minimum output
     Omax            0-255              255         Maximum output
     Show            true/false         false       Display visualization
-    Verbosity       0-6                0           Log detail level
+    Verbosity       0-6                4           Log detail level
 
     LockChan: 0=Red, 1=Green, 2=Blue, -1=target value, -2=average, -3=median.
     Click the (i) button to open the detailed GamMac documentation.
+
+    Region draw:
+        Click "Draw region" to define the GamMac analysis area (X/Y/W/H)
+        directly on the video player. The values are automatically set
+        from the drawn rectangle.
+
+    AUTO WHITE BALANCE — ColorYUV autowhite
+    -----------------------------------------------------------------------------------------
+    Automatic white balance correction using AviSynth's built-in ColorYUV
+    autowhite function. Adjusts color channels to achieve neutral whites.
+
+    Parameter       Range              Default     Description
+    strength        0.0 to 1.5         1.0         Blend strength (0=none, 1=full)
+    autogain        true/false         false       Also auto-adjust brightness levels
+
+    Notes:
+        - Strength controls the blend between the original and the corrected
+          image. Use values below 1.0 for a subtle correction, above 1.0
+          for an exaggerated effect.
+        - The autogain checkbox enables automatic brightness level adjustment
+          in addition to white balance.
+        - Placed after GamMac in the pipeline; can be combined with GamMac
+          or used as an alternative.
+
+    WHITE BALANCE (32-BIT) — Per-channel correction
+    -----------------------------------------------------------------------------------------
+    Manual white balance correction in 32-bit floating-point precision.
+    Provides per-channel gain and gamma for precise color cast removal.
+
+    Parameter       Range              Default     Description
+    r_gain          0.5 to 2.0         1.0         Red gain (>1 warms, <1 cools)
+    r_gamma         0.2 to 3.0         1.0         Red gamma (midtone adjustment)
+    g_gain          0.5 to 2.0         1.0         Green gain (reference channel)
+    g_gamma         0.2 to 3.0         1.0         Green gamma
+    b_gain          0.5 to 2.0         1.0         Blue gain (>1 cools, <1 warms)
+    b_gamma         0.2 to 3.0         1.0         Blue gamma
+
+    Notes:
+        - Processing is done in 32-bit float for maximum precision.
+        - Gain is an overall channel multiplier (1.0 = neutral).
+        - Gamma adjusts midtones without clipping highlights: >1 brightens
+          the channel midtones, <1 darkens them.
+        - Placed after GamMac in the pipeline.
 
     SHARPEN — Sharpness enhancement
     -----------------------------------------------------------------------------------------
@@ -377,26 +548,32 @@ to even numbers (YUV chroma subsampling requirement).
     Sharp_Mode             simple/edge        simple      Algorithm
     Sharp_Strength         1-20               8           Enhancement strength
     Sharp_Radius           0.5-5.0            1.5         Blur radius (mask)
-    Sharp_Threshold        0-100              0           Anti-noise threshold
+    Sharp_Threshold        0-100              5           Anti-noise threshold
 
     Quick presets:
-        Light            Strength=5
-        Standard         Strength=8 (default)
-        Medium           Strength=12
-        Strong           Strength=16
-        Very strong      Strength=20
+        Light            simple, Strength=5,  Radius=1.0
+        Standard         simple, Strength=8,  Radius=1.2  (default)
+        Medium           edge,   Strength=12, Radius=1.5
+        Strong           edge,   Strength=16, Radius=1.8, Threshold=20
+        Very strong      edge,   Strength=20, Radius=2.5, Threshold=35
 
     Notes:
-        - simple: global Sharpen(), effective but may amplify residual grain.
-        - edge: edges only via Sobel mask + gamma (LimitedSharpenFaster
-          technique). Preserves smooth areas. Recommended after Degrain.
+        - simple: global unsharp mask, effective but may amplify residual grain.
+        - edge: edges only via dual Sobel mask (horizontal + vertical) with
+          gamma compression (^0.86, LimitedSharpenFaster / Didée technique).
+          Preserves smooth areas. Recommended after Degrain.
+        - Radius controls the extent of the sharpening halo:
+          1.0 = tight, precise; 3.0 = broad, pronounced.
+        - Threshold excludes weak responses from the edge mask. Recommended:
+          20-40 for noisy footage. Set to 0 to disable (gamma compression
+          alone is usually sufficient).
 
 
 =============================================================================================
                         10.  CUSTOM FILTERS
 =============================================================================================
 
-AvyscanLab allows you to create your own AviSynth filters and integrate them into the
+Avyscan Lab allows you to create your own AviSynth filters and integrate them into the
 restoration pipeline with a full control interface.
 
     CREATING A CUSTOM FILTER
@@ -407,10 +584,10 @@ restoration pipeline with a full control interface.
 
     2. Enter the filter name and its position in the pipeline:
        - BeforePipeline : before all filters
-       - AfterGamMac    : after color correction
        - AfterDenoise   : after dust removal
        - AfterDegrain   : after grain reduction
-       - AfterLuma      : after brightness levels
+       - AfterLuma      : after brightness levels (Luma / RGB Levels)
+       - AfterGamMac    : after color correction (GamMac / AWB / WB)
        - AfterSharpen   : after sharpness (end of pipeline)
 
     3. If your filter requires an external AviSynth plugin (.dll), click
@@ -421,6 +598,9 @@ restoration pipeline with a full control interface.
            c = MyFilter(c, strength={sigma})
        Words enclosed in braces {name} are automatically detected as parameters.
 
+       Tip: select a line like "var = value" with the mouse — a prompt offers
+       to convert it into a {placeholder} control automatically.
+
     5. For each detected parameter, configure the control type:
        - slider   : slider with Min, Max, Step and Default.
                     Values are automatically snapped to the step.
@@ -429,10 +609,27 @@ restoration pipeline with a full control interface.
        - checkbox : check box with customizable On/Off values
        - text     : free text field
 
-    6. Use the "Preview" button to test the filter in real time without leaving
+    6. Per-parameter buttons:
+       - Eye icon: highlights the {placeholder} in the code editor and scrolls to it
+       - Red X: removes the control and replaces {placeholder} with its default
+         value in the code
+
+    7. Use the "Preview" button to test the filter in real time without leaving
        the form.
 
-    7. Click "Save" to save.
+    8. Click "Save" to save. Other footer buttons:
+       - Delete: permanently deletes this custom filter
+       - Duplicate: creates an independent copy with a new name
+       - Export: saves the filter as a JSON file
+       - Cancel: closes without saving
+
+    REGION DRAW SUPPORT
+    -----------------------------------------------------------------------------------------
+
+    Custom filters that use X/Y/W/H parameters can enable the "Region draw"
+    checkbox. When enabled, a "Draw region" button appears in the filter panel,
+    allowing the user to define the analysis or effect area directly on the
+    video player.
 
     USING A CUSTOM FILTER
     -----------------------------------------------------------------------------------------
@@ -459,55 +656,62 @@ restoration pipeline with a full control interface.
     the DLL is present at the same location on the target machine, or edit the filter
     after import to correct the path.
 
+    DUPLICATING A FILTER
+    -----------------------------------------------------------------------------------------
+
+    Open the edit form (pencil button) and click "Duplicate". An independent
+    copy is created with a new name and a new identifier. Useful for creating
+    variations of the same filter with different default values.
+
     DELETING A FILTER
     -----------------------------------------------------------------------------------------
 
     Open the edit form (pencil button) and click "Delete".
+    Built-in filters that are removed will be restored on next launch.
 
 Storage location: %AppData%\AvyscanLab\custom_filters.json
 
 
-  IMPORTING AN AVSI SCRIPT
-      -----------------------------------------------------------------------------------------
+    IMPORTING AN AVSI SCRIPT
+    -----------------------------------------------------------------------------------------
 
-      Some AviSynth filters rely on functions defined in script files
-      (.avsi). These files contain reusable functions that extend
-      AviSynth's capabilities without being compiled plugins (.dll).
+    Some AviSynth filters rely on functions defined in script files
+    (.avsi). These files contain reusable functions that extend
+    AviSynth's capabilities without being compiled plugins (.dll).
 
-      To add an .avsi script to a custom filter:
+    To add an .avsi script to a custom filter:
 
-      1. Open the filter edit form (pencil button or create a new
-         filter via the "+" button).
+    1. Open the filter edit form (pencil button or create a new
+       filter via the "+" button).
 
-      2. In the "Scripts (Import .avsi)" section, click "+ Add AVSI...".
+    2. In the "Scripts (Import .avsi)" section, click "+ Add AVSI...".
 
-      3. Select one or more .avsi or .avs files from your disk.
-         The selected files are automatically copied to the application's
-         Plugins/Scripts/ folder, which ensures their availability
-         regardless of their original location.
+    3. Select one or more .avsi or .avs files from your disk.
+       The selected files are automatically copied to the application's
+       Plugins/Scripts/ folder, which ensures their availability
+       regardless of their original location.
 
-      4. The added scripts appear in the list. Use the (x) button to
-         remove a script from the list.
+    4. The added scripts appear in the list. Use the (x) button to
+       remove a script from the list.
 
-      5. When generating the AviSynth script, AvyscanLab automatically inserts
-         an Import() instruction for each referenced script, right after
-         loading the plugins:
+    5. When generating the AviSynth script, Avyscan Lab automatically inserts
+       an Import() instruction for each referenced script, right after
+       loading the plugins:
 
-             TryLoadPlugin("C:/.../MyPlugin.dll")
-             Import("C:/.../Plugins/Scripts/MyFunctions.avsi")
+           TryLoadPlugin("C:/.../MyPlugin.dll")
+           Import("C:/.../Plugins/Scripts/MyFunctions.avsi")
 
-      The functions defined in the .avsi file are then available in the code
-      of your custom filter.
+    The functions defined in the .avsi file are then available in the code
+    of your custom filter.
 
-      Example: if your file MyFunctions.avsi defines a function MyDenoise(),
-      you can use it directly in the filter code:
-          c = MyDenoise(c, strength={sigma})
+    Example: if your file MyFunctions.avsi defines a function MyDenoise(),
+    you can use it directly in the filter code:
+        c = MyDenoise(c, strength={sigma})
 
-      Note: when exporting a filter, only the .avsi file name is
-      saved (not its contents). If you share a filter with another user,
-      also provide the necessary .avsi files. The user will need to
-      import them via the same mechanism.
-
+    Note: when exporting a filter, only the .avsi file name is
+    saved (not its contents). If you share a filter with another user,
+    also provide the necessary .avsi files. The user will need to
+    import them via the same mechanism.
 
 
 =============================================================================================
@@ -516,12 +720,16 @@ Storage location: %AppData%\AvyscanLab\custom_filters.json
 
     GLOBAL PRESETS (filters)
     -----------------------------------------------------------------------------------------
-    The Info > Presets menu allows you to save and restore your filter configurations.
+    The Infos > Preset menu allows you to save and restore your filter configurations.
 
     Action              Description
     Save                Saves the current settings under a name
-    Load                Applies an existing preset (applies to all loaded clips)
+    Load                Applies an existing preset
+    Update              Overwrites an existing preset with the current settings
     Delete              Removes a preset
+
+    When applying a preset, you can choose to apply it to the active clip only
+    or to all loaded clips.
 
     The source, film, img, start, end and crop fields are NOT included in presets.
     Location: %AppData%\AvyscanLab\presets.json
@@ -533,12 +741,23 @@ Storage location: %AppData%\AvyscanLab\custom_filters.json
     The drop-down menu in the transport bar allows you to load a global preset for
     the active clip only.
 
+    When a preset parameter is modified, a dialog asks whether to save the change
+    to the preset. This can be disabled with "Don't ask me again" to always
+    save automatically.
+
     ENCODING PRESETS
     -----------------------------------------------------------------------------------------
     Encoding combinations (encoder + container + quality + chroma + resolution)
     can be saved and reloaded from the Record panel.
     The "Default" preset is always present and appears first.
     Location: %AppData%\AvyscanLab\encoding_presets.json
+
+    GAMMAC PRESETS
+    -----------------------------------------------------------------------------------------
+    GamMac color correction settings can be saved and loaded as separate presets.
+    This allows you to store frequently used color correction profiles
+    (e.g., for specific film stocks or aging patterns) and quickly apply them.
+    Location: %AppData%\AvyscanLab\gammac_presets.json
 
 
 =============================================================================================
@@ -608,42 +827,60 @@ Click the REC button (red) in the transport bar to open the encoding panel.
     - Video playback is automatically stopped
     - The interface is locked (filters, transport, menus, clip tabs)
     - Only the "Stop" button remains active
-    - A progress bar shows the completion percentage
+    - A progress bar shows the completion percentage (Clip X/Y for batch)
     - Closing the application automatically stops the current encoding
 
     "Shut down after encoding" option: check this box to shut down the computer
-    automatically after a successful batch encoding.
+    automatically after a successful batch encoding. A 60-second warning is
+    displayed before shutdown.
+
+    File overwrite: if the output file already exists, a confirmation dialog
+    asks whether to overwrite or skip.
+
+    Safety check: if the output would overwrite the source file, the operation
+    is blocked with a warning message.
 
     Technical note: encoding uses a dedicated render script (ScriptRender.avs) where
     preview mode is disabled, ensuring maximum final quality.
+
+    Trial version: limited to 3 files, 1 minute of encoding each.
 
 
 =============================================================================================
                          13.  APPLICATION SETTINGS
 =============================================================================================
 
-Info > Settings menu:
+Settings menu:
 
     Parameter              Description
     -----------------------------------------------------------------------------------------
-    Theme                  Dark (default) or Light
-    Language               French, English, German, Spanish
+    Theme                  Dark (default), Grey, or Light
+    Accent                 Blue (default), Green, Red, Violet, Orange
+    Threads                Number of AviSynth processing threads
+    Source loader           Decoding plugin (Auto/FFMS2/L-SMASH/LWLibav)
+    Export settings        Exports all settings (presets, custom filters,
+                           encoding presets, window settings, theme) to
+                           a ZIP archive for backup or transfer
+    Import settings        Imports settings from a previously exported
+                           ZIP archive. An import report shows the status
+                           of each file before applying
     Reset settings         Resets all settings to default and restarts.
-                           Warning, this is a complete reset that
+                           Warning: this is a complete reset that
                            erases all presets, custom filters and other
-                           saved configurations.
+                           saved configurations
 
 Languages menu:
     Immediate language change. The interface, AviSynth scripts and guide are
     regenerated in the chosen language.
+    Available: French (FR), English (EN), German (DE), Spanish (ES).
 
 
 =============================================================================================
                               14.  SCRIPT PREVIEW
 =============================================================================================
 
-The Info > Script preview menu opens a window displaying the full contents of the
-ScriptUser.avs file generated by AvyscanLab.
+The Infos > Script preview menu opens a window displaying the full contents of the
+ScriptUser.avs file generated by Avyscan Lab.
 
 The "Reload" button re-reads the file from disk and refreshes the preview.
 This allows you to check the AviSynth script produced and optionally copy it
@@ -651,10 +888,10 @@ for external use (AvsPmod, VirtualDub, etc.).
 
 
 =============================================================================================
-                       15.  FEEDBACK
+                              15.  FEEDBACK
 =============================================================================================
 
-The Info > Your feedback menu opens a built-in contact form allowing you
+The Contact menu opens a built-in contact form allowing you
 to send directly to the developer:
     - A bug report (with writing tips)
     - A feature request
@@ -665,7 +902,30 @@ if you would like a response.
 
 
 =============================================================================================
-                             16.  RECOMMENDED WORKFLOW
+                              16.  GUIDED TOUR
+=============================================================================================
+
+The Infos > Guided tour menu launches an interactive step-by-step tour
+of the application interface. The tour covers 7 steps:
+
+    1. Welcome           Introduction to Avyscan Lab
+    2. Add a clip        How to load a video or image sequence
+    3. Enable filters    Toggling filters and expanding parameters
+    4. Adjust parameters Using sliders and real-time preview
+    5. Preview           Transport controls and playback
+    6. Record            Opening the encoding panel
+    7. Choose output     Selecting the output directory
+       and start         Launching the encoding
+
+Each step highlights the relevant area of the interface. Navigation buttons
+(Next, Back, Skip) allow you to move through the tour at your own pace.
+The tour ends with a "Get started!" button.
+
+A language selector is available during the tour to switch languages.
+
+
+=============================================================================================
+                             17.  RECOMMENDED WORKFLOW
 =============================================================================================
 
     1. Open your source (drag and drop or source field).
@@ -674,31 +934,42 @@ if you would like a response.
 
     3. Enable the filters one by one in pipeline order:
 
-       a) Crop       — Remove black borders or adjust framing.
+       a) Stabilisation — For 8 mm film: enable the 8mm Stabilisation filter
+                          to correct gate weave. Adjust the estimation zone
+                          to exclude sprocket holes and borders.
 
-       b) Denoise    — Remove dust and scratches. The "standard" preset
-                       works in most cases. Increase strength if
-                       defects persist.
+       b) Crop           — Remove black borders or adjust framing.
 
-       c) Degrain    — Start with the "Medium grain" preset, then increase thSAD
-                       if grain persists. Warning: values that are too high
-                       produce a "plastic" effect.
+       c) Denoise        — Remove dust and scratches. The "standard" preset
+                           works in most cases. Increase strength if
+                           defects persist.
 
-       d) Luma       — Adjust brightness and contrast. GammaY is often the
-                       most useful parameter for brightening old films.
+       d) Degrain        — Start with the "Standard" preset, then increase thSAD
+                           if grain persists. Warning: values that are too high
+                           produce a "plastic" effect.
 
-       e) GamMac     — Correct color drift (yellowing, blue
-                       cast, red cast, etc.).
+       e) Luma           — Adjust brightness and contrast. GammaY is often the
+                           most useful parameter for brightening old films.
 
-       f) Sharpen    — Enhance sharpness as the last step. The "edge" mode
-                       better preserves smooth areas and avoids amplifying
-                       residual grain.
+       f) RGB Levels     — For precise color grading in 32-bit: adjust
+                           per-channel gain, gamma and offset.
+
+       g) GamMac         — Correct color drift (yellowing, blue
+                           cast, red cast, etc.).
+
+       h) AWB / WB       — Use Auto White Balance for automatic correction,
+                           or White Balance 32-bit for manual per-channel
+                           gain/gamma control.
+
+       i) Sharpen        — Enhance sharpness as the last step. The "edge" mode
+                           better preserves smooth areas and avoids amplifying
+                           residual grain.
 
     4. Use the quick presets available on some filters for fast adjustment, then fine-tune.
 
     5. Verify the result by browsing through several passages of the film.
 
-    6. Save your configuration as a preset in the Settings menu so you can
+    6. Save your configuration as a preset in the Infos menu so you can
        easily reuse it on other clips from the same film or similar films.
 
     7. If you have multiple clips: load them all, then apply the appropriate presets.
@@ -715,7 +986,7 @@ if you would like a response.
 
 
 =============================================================================================
-                           17.  TIPS AND SHORTCUTS
+                           18.  TIPS AND SHORTCUTS
 =============================================================================================
 
     - The mouse scroll wheel on numeric fields adjusts the value by step.
@@ -728,13 +999,20 @@ if you would like a response.
     - Tooltips (on hover) on each parameter display ranges and tips.
     - Dragging and dropping multiple files automatically creates one clip per file.
     - Sliders position directly on click (no need to drag).
-    - The guided tour (menu) lets you discover the interface basics step by step.
+    - The guided tour (Infos menu) lets you discover the interface basics step by step.
     - AviSynth errors automatically display the faulty script line.
     - The "Copy" button in the error window copies the message and details.
+    - Drag-and-drop filters in the left column to reorder them.
+    - Drag-and-drop parameter panels in the right column to reorder them.
+    - Use the reset order button to restore the default filter arrangement.
+    - The histogram button shows a real-time overlay; right-click to change type.
+    - Custom filters can be duplicated to create variations with different defaults.
+    - Export/Import settings via the Settings menu for backup or transfer to
+      another machine.
 
 
 =============================================================================================
-                          18.  FILES AND LOCATIONS
+                          19.  FILES AND LOCATIONS
 =============================================================================================
 
     File / Folder                  Location
@@ -744,22 +1022,26 @@ if you would like a response.
     ScriptRender.avs               Exe folder (generated for encoding)
     presets.json                   %AppData%\AvyscanLab
     encoding_presets.json          %AppData%\AvyscanLab
+    gammac_presets.json            %AppData%\AvyscanLab
     custom_filters.json            %AppData%\AvyscanLab
-    window_settings.json           %AppData%\AvyscanLab
+    window-settings.json           %AppData%\AvyscanLab
     session.json                   %AppData%\AvyscanLab
+    theme-settings.json            %AppData%\AvyscanLab
+    cfdlg-layout.json              %AppData%\AvyscanLab
     Plugins/                       Exe folder
     mpv/                           Exe folder
+    Filters/                       Exe folder (built-in filter JSON definitions)
+    Users Guide/                   Exe folder
 
 
 =============================================================================================
-                          19.  APPLICATION CONTENTS
+                          20.  APPLICATION CONTENTS
 =============================================================================================
 
-File tree distributed with AvyscanLab:
+File tree distributed with Avyscan Lab:
 
     AvyscanLab.exe                           Main executable
     ScriptMaster.en.avs                     AviSynth script template
-    UserGuide.txt                           Text guide (French, source)
 
     Assets/
       Ico.ico                               Application icon
@@ -773,6 +1055,20 @@ File tree distributed with AvyscanLab:
       AvyscanLab_Guide_fr.txt                User guide (French)
       AvyscanLab_Guide_de.txt                User guide (German)
       AvyscanLab_Guide_es.txt                User guide (Spanish)
+
+    Filters/
+      stab8mm.json                          8mm Stabilisation (built-in)
+      rgb_levels32.json                     RGB Levels 32-bit (built-in)
+      awb32.json                            Auto White Balance (built-in)
+      wb32.json                             White Balance 32-bit (built-in)
+      degrain.json                          Degrain (built-in)
+      denoise.json                          Denoise (built-in)
+      luma.json                             Luma Levels (built-in)
+      sharpen.json                          Sharpen (built-in)
+      gammac.json                           GamMac (built-in)
+      crop.json                             Crop (built-in)
+      flip_h.json                           Horizontal flip (built-in)
+      flip_v.json                           Vertical flip (built-in)
 
     Plugins/
       Avisynth/
@@ -822,7 +1118,7 @@ File tree distributed with AvyscanLab:
 
 =============================================================================================
 
-                              C L E A N S C A N
+                              A V Y S C A N   L A B
                                 ScanFilm SNC
                                www.scanfilm.ch
 

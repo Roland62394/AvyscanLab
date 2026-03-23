@@ -15,10 +15,10 @@ FONT_BOLD    = os.path.join(FONTS_DIR, "consolab.ttf")
 FONT_ITALIC  = os.path.join(FONTS_DIR, "consolai.ttf")
 
 GUIDES = {
-    "fr": os.path.join(GUIDE_DIR, "Avyscan Lab_Guide_fr.txt"),
-    "en": os.path.join(GUIDE_DIR, "Avyscan Lab_Guide_en.txt"),
-    "de": os.path.join(GUIDE_DIR, "Avyscan Lab_Guide_de.txt"),
-    "es": os.path.join(GUIDE_DIR, "Avyscan Lab_Guide_es.txt"),
+    "fr": os.path.join(GUIDE_DIR, "AvyscanLab_Guide_fr.txt"),
+    "en": os.path.join(GUIDE_DIR, "AvyscanLab_Guide_en.txt"),
+    "de": os.path.join(GUIDE_DIR, "AvyscanLab_Guide_de.txt"),
+    "es": os.path.join(GUIDE_DIR, "AvyscanLab_Guide_es.txt"),
 }
 
 
@@ -75,7 +75,7 @@ def generate_pdf(txt_path: str, pdf_path: str):
             continue
 
         # Main title
-        if "C L E A N S C A N" in line:
+        if "A V Y S C A N" in line or "C L E A N S C A N" in line:
             pdf.set_font("Consolas", "B", 14)
             pdf.set_text_color(30, 50, 100)
             pdf.cell(0, 7, line, new_x="LMARGIN", new_y="NEXT")

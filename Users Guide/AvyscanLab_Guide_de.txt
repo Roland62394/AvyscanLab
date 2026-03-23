@@ -1,81 +1,90 @@
-                              C L E A N S C A N
+                              A V Y S C A N   L A B
                             Benutzerhandbuch
 
                                 ScanFilm SNC
                                www.scanfilm.ch
 
-                 Testversion — Release 1.00 - Maerz 2026
+                 Testversion — Release 1.00 - März 2026
 
 
 =============================================================================================
                                  INHALTSVERZEICHNIS
 =============================================================================================
 
-    1.  Uebersicht                              10.  Benutzerdefinierte Filter (Custom)
-    2.  Voraussetzungen und Installation       11.  Voreinstellungen (Presets)
-    3.  Allgemeine Oberflaeche                 12.  Encodierung und Rendering
-    4.  Quellauswahl                           13.  Anwendungseinstellungen
-    5.  Videoplayer und Navigation             14.  Skriptvorschau
-    6.  Filterpanel                            15.  Rueckmeldung (Feedback)
-    7.  CROP-Filter (Zuschnitt)                16.  Empfohlener Workflow
-    8.  Restaurierungsfilter                   17.  Tipps und Tastenkuerzel
-    9.  Verbesserungsfilter                    18.  Dateien und Speicherorte
-                                               19.  Inhalt der Anwendung
+    1.  Übersicht                              11.  Voreinstellungen (Presets)
+    2.  Voraussetzungen und Installation       12.  Kodierung und Rendern
+    3.  Allgemeine Benutzeroberfläche          13.  Anwendungseinstellungen
+    4.  Quellenauswahl                         14.  Skriptvorschau
+    5.  Videoplayer und Navigation             15.  Rückmeldung (Feedback)
+    6.  Filterpanel                            16.  Geführte Tour
+    7.  CROP-Filter (Zuschnitt)                17.  Empfohlener Workflow
+    8.  Restaurierungsfilter                   18.  Tipps und Tastenkürzel
+    9.  Verbesserungsfilter                    19.  Dateien und Speicherorte
+    10. Benutzerdefinierte Filter (Custom)     20.  Anwendungsinhalt
 
 
 =============================================================================================
-                                  1.  UEBERSICHT
+                                  1.  ÜBERSICHT
 =============================================================================================
 
-AvyscanLab ist eine Software zur Restaurierung digitalisierter Analogfilme (8 mm, Super 8,
-9,5 mm, 16 mm). Sie ermoeglicht:
+AvyscanLab ist eine Restaurierungssoftware für digitalisierte Analogfilme (8 mm, Super 8,
+9,5 mm, 16 mm). Sie ermöglicht:
 
     - Reduktion des Filmkorns (MVTools2 MDegrain)
     - Entfernung von Staub und Kratzern (RemoveDirt / RemoveDirtMC)
-    - Korrektur von Helligkeit, Kontrast, Saettigung und Farben
-    - Korrektur von Farbverschiebungen (GamMac)
-    - Zuschnitt des Bildes
-    - Schaerfeverstaerkung (Sharpen / Edge-aware)
-    - Hinzufuegen benutzerdefinierter AviSynth-Filter mit Steuerungsoberflaeche
+    - Korrektur von Helligkeit, Kontrast, Sättigung und Farben
+    - Korrektur von Farbdrift (GamMac)
+    - Beschnitt des Bildes
+    - Schärfeverbesserung (kantenbasiert / Edge-aware)
+    - 8mm-Stabilisierung (DePan)
+    - Auto-Weißabgleich
+    - RGB-Pegel (32-Bit-Gleitkomma)
+    - Weißabgleich (32-Bit-Gleitkomma)
+    - Hinzufügen benutzerdefinierter AviSynth-Filter mit vollständiger Steuerungsoberfläche
 
 Die Software erzeugt ein optimiertes AviSynth+-Skript und bietet eine Echtzeitvorschau
-ueber einen integrierten Videoplayer (libmpv). Die endgueltige Encodierung erfolgt mit FFmpeg.
+über einen integrierten Videoplayer (libmpv). Die endgültige Kodierung erfolgt mit FFmpeg.
 
-Die Anwendung ist in 4 Sprachen verfuegbar: Franzoesisch, Englisch, Deutsch und Spanisch.
+Die Anwendung ist in 4 Sprachen verfügbar: Französisch, Englisch, Deutsch und Spanisch.
 
 =============================================================================================
-                                DANKSAGUNG / CREDITS
+                                DANKSAGUNGEN / CREDITS
 =============================================================================================
 
-AvyscanLab stuetzt sich auf die Qualitaet der AviSynth+-Plugins, die von der
+AvyscanLab stützt sich auf die Qualität der AviSynth+-Plugins, die von der
 Open-Source-Gemeinschaft entwickelt und gepflegt werden. Wir richten unseren herzlichsten
-Dank, so vollstaendig wie moeglich, an ihre Autoren:
+Dank, so vollständig wie möglich, an ihre Autoren:
 
      MVTools2 — Manao, Fizick, Tsp, TSchniede, SEt
-          Bewegungsschaetzung und temporale Kornreduktion (MDegrain).
-          Das Herzstueck der Restaurierungspipeline von AvyscanLab.
+          Bewegungsschätzung und temporale Kornreduktion (MDegrain).
+          Das Herzstück der Restaurierungspipeline von AvyscanLab.
 
       RemoveDirt — Kassandro
           Temporale Erkennung und Entfernung von Staub und Kratzern.
-          RemoveDirtMC (mit Bewegungskompensation) bleibt unerreicht fuer
+          RemoveDirtMC (mit Bewegungskompensation) bleibt unerreicht für
           die Reinigung von Analogfilmen.
 
       GamMac — StainlessS
-          Erweiterte Farbkorrektur durch Analyse der RGB-Kanaele.
+          Erweiterte Farbkorrektur durch Analyse der RGB-Kanäle.
           Ein wertvolles Werkzeug zur Korrektur von Farbverschiebungen
           alternder Filmstreifen.
 
       MaskTools2 — Manao, tp7
-          Maskenoperationen, unverzichtbar fuer die selektive
-          Schaerfeverstaerkung (Edge-aware-Modus).
+          Maskenoperationen, unverzichtbar für die selektive
+          Schärfeverbesserung (Edge-aware-Modus).
 
       RgTools — tp7, pinterf
           Werkzeuge zur Kornentfernung und Matrixoperationen,
           als Vorfilter in der Bewegungsanalyse verwendet.
 
       LimitedSharpenFaster — Didée
-          Technik zur Schaerfeverstaerkung mittels Sobel-Maske und Gamma-Kurve
-          (^0.86), die den "edge"-Modus von AvyscanLab inspiriert hat.
+          Technik zur Schärfeverbesserung mittels Sobel-Maske und Gamma-Kurve
+          (^0.86), die den „edge"-Modus von AvyscanLab inspiriert hat.
+
+      DePan — Fizick
+          Bewegungsschätzung und Bildstabilisierung.
+          Wird für die 8mm-Stabilisierung verwendet, um filmtypisches
+          Zittern und Bildschwanken zu kompensieren.
 
 =============================================================================================
                            2.  VORAUSSETZUNGEN UND INSTALLATION
@@ -83,8 +92,8 @@ Dank, so vollstaendig wie moeglich, an ihre Autoren:
 
 Systemanforderungen:
     - Windows 10 oder 11 (64 Bit)
-    - Mindestens 4 GB RAM (8 GB empfohlen)
-    - Ausreichend Festplattenspeicher fuer Quelldateien und Renderings
+    - 4 GB RAM minimum (8 GB empfohlen)
+    - Ausreichend Festplattenspeicher für Quelldateien und Renderings
 
 Komponenten:
     - AviSynth+ 64 Bit muss installiert sein. Falls nicht vorhanden, erkennt AvyscanLab
@@ -93,26 +102,26 @@ Komponenten:
     - Der mpv-Player wird mit der Anwendung geliefert (Ordner mpv/).
 
 Keine weitere Installation erforderlich. Entpacken Sie einfach das Archiv
-und starten Sie die ausfuehrbare Datei AvyscanLab.exe.
+und starten Sie die ausführbare Datei AvyscanLab.exe.
 
 
 =============================================================================================
-                              3.  ALLGEMEINE OBERFLAECHE
+                              3.  ALLGEMEINE BENUTZEROBERFLÄCHE
 =============================================================================================
 
-Die Oberflaeche ist in drei Hauptbereiche unterteilt:
+Die Benutzeroberfläche ist in drei Hauptbereiche unterteilt:
 
     OBERER BEREICH
     -----------------------------------------------------------------------------------------
-    Menueleiste: Infos (Handbuch, Skriptvorschau, Presets, Ueber, Kontakt, Einstellungen),
-    Sprachen (FR/EN/DE/ES), gefuehrte Tour.
+    Menüleiste: Infos (Handbuch, Skriptvorschau, Presets, Über, Kontakt, Einstellungen),
+    Sprachen (FR/EN/DE/ES), geführte Tour.
 
     Quellleiste: Felder zur Auswahl der Quelldatei, Bild/Video-Modus, Threads,
     Quelllader (Auto/FFMS2/L-SMASH/LWLibav).
 
     Clip-Tabs: Jeder geladene Clip erscheint als Tab mit dem Dateinamen
-    und dem angewendeten Preset (z.B.: "[perso2]"). Klicken Sie auf einen Tab, um zwischen
-    den Clips zu wechseln. Die Schaltflaeche + fuegt einen Clip hinzu, das x schliesst einen Tab.
+    und dem angewendeten Preset (z.B.: „[perso2]"). Klicken Sie auf einen Tab, um zwischen
+    den Clips zu wechseln. Die Schaltfläche + fügt einen Clip hinzu, das x schließt einen Tab.
 
     MITTLERER BEREICH
     -----------------------------------------------------------------------------------------
@@ -122,65 +131,69 @@ Die Oberflaeche ist in drei Hauptbereiche unterteilt:
         |<      Clipanfang
         <<      Vorheriges Bild
         >       Wiedergabe / Pause
-        >>      Naechstes Bild
+        >>      Nächstes Bild
         1x      Geschwindigkeit (Zyklus: 0.25x -> 0.5x -> 1x)
-        1/2     Halbe Aufloesung (schnellere Vorschau)
+        1/2     Halbe Auflösung (schnellere Vorschau)
         []      Player maximieren/wiederherstellen (F11)
-        REC     Encodierungspanel oeffnen
+        REC     Kodierungspanel öffnen
 
     Fortschrittsleiste: Aktuelle Position / Gesamtdauer.
     Klicken oder ziehen Sie, um zu navigieren.
 
     UNTERER BEREICH
     -----------------------------------------------------------------------------------------
-    Filterpanel, unterteilt in zwei Spalten mit einem veraenderbaren Trennbalken:
-        - Linke Spalte: Aktivierungsschaltflaechen der Filter (ON/OFF) und benutzerdefinierte Filter
-        - Rechte Spalte: Detaillierte Parameter des ausgewaehlten Filters
+    Filterpanel, unterteilt in zwei Spalten mit einem veränderbaren Trennbalken:
+        - Linke Spalte: Filteraktivierungsschaltflächen (ON/OFF) und benutzerdefinierte Filter
+        - Rechte Spalte: Detaillierte Parameter des ausgewählten Filters
 
-    Die Hoehe zwischen Player und Filterpanel ist ueber den horizontalen Trennbalken
+    Jeder Filter verfügt über eine Reset-Schaltfläche ((Reset)), die alle Parameter
+    dieses Filters auf ihre Standardwerte zurücksetzt.
+
+    Die Höhe zwischen Player und Filterpanel ist über den horizontalen Trennbalken
     anpassbar.
 
 
 =============================================================================================
-                            4.  QUELLAUSWAHL
+                            4.  QUELLENAUSWAHL
 =============================================================================================
 
 Videodatei
     Ziehen Sie eine Videodatei per Drag & Drop auf den Wiedergabebereich, oder klicken Sie
-    auf die Schaltflaeche neben dem Feld "source", um einen Datei-Explorer zu oeffnen.
-    Unterstuetzte Formate: .avi  .mp4  .mov  .mkv  .wmv  .webm  .m4v  .flv  .ts  .mts
+    auf die Schaltfläche neben dem Feld „source", um einen Datei-Explorer zu öffnen.
+    Unterstützte Formate: .avi  .mp4  .mov  .mkv  .wmv  .webm  .m4v  .flv  .ts  .mts
                            .m2ts  .mxf  .mpeg  .mpg  .ogv  .3gp
 
 Bildsequenz
-    Waehlen Sie ein Verzeichnis mit Bilddateien (zum Beispiel: 00001.tif, 00002.tif, usw.).
+    Wählen Sie ein Verzeichnis mit Bilddateien (zum Beispiel: 00001.tif, 00002.tif, usw.).
     AvyscanLab erkennt automatisch das erste und letzte Bild der Sequenz.
-    Unterstuetzte Formate: .tif  .tiff  .jpg  .jpeg  .png  .bmp
+    Unterstützte Formate: .tif  .tiff  .jpg  .jpeg  .png  .bmp
 
 Bildrate (FPS)
-    Das Feld "fps" legt die Wiedergabegeschwindigkeit fest.
-    Uebliche Werte fuer gaengige Formate:
+    Das Feld „fps" legt die Wiedergabegeschwindigkeit fest.
+    Übliche Werte für gängige Formate:
                     8 mm: 16 oder 18 B/s
                     Super 8: 18 oder 24 B/s
+                    9,5 mm: 16 B/s
                     16 mm: 18 oder 24 B/s
 
 Quelllader
-    Das Dropdown-Menue ermoeglicht die erzwungene Auswahl des Dekodierungs-Plugins:
+    Das Dropdown-Menü ermöglicht die erzwungene Auswahl des Dekodierungs-Plugins:
         Auto      Automatische Erkennung (empfohlen)
-        FFMS2     FFmpegSource2 — maximale Kompatibilitaet
-        L-SMASH   LSmashSource — optimiert fuer MP4/MOV
+        FFMS2     FFmpegSource2 — maximale Kompatibilität
+        L-SMASH   LSmashSource — optimiert für MP4/MOV
         LWLibav   LWLibavVideoSource — alternatives Format
-    Bei Lesefehlern beim Oeffnen einer Datei versuchen Sie, den Quelllader zu wechseln.
+    Bei Lesefehlern beim Öffnen einer Datei versuchen Sie, den Quelllader zu wechseln.
 
 Threads
-    Anzahl der AviSynth-Verarbeitungsthreads (Standard: 4). Erhoehen Sie diesen Wert,
+    Anzahl der AviSynth-Verarbeitungsthreads (Standard: 4). Erhöhen Sie diesen Wert,
     um alle Prozessorkerne auszunutzen.
     Ein zu hoher Wert kann auf leistungsschwachen Rechnern Verlangsamungen oder Fehler
     verursachen. Passen Sie den Wert an Ihre Hardware an.
 
 Multi-Clips
-    Sie koennen mehrere Dateien laden. Jeder Clip verfuegt ueber eigene Filtereinstellungen
+    Sie können mehrere Dateien laden. Jeder Clip verfügt über eigene Filtereinstellungen
     und sein eigenes Preset. Ziehen Sie mehrere Dateien gleichzeitig per Drag & Drop
-    oder verwenden Sie die Schaltflaeche +, um weitere hinzuzufuegen.
+    oder verwenden Sie die Schaltfläche +, um weitere hinzuzufügen.
 
 
 =============================================================================================
@@ -188,18 +201,18 @@ Multi-Clips
 =============================================================================================
 
 Der integrierte Player zeigt das Ergebnis des AviSynth-Skripts in Echtzeit an. Jede
-Parameteraenderung regeneriert automatisch das Skript und aktualisiert die Vorschau.
+Parameteränderung regeneriert automatisch das Skript und aktualisiert die Vorschau.
 
-Tastenkuerzel:
+Tastenkürzel:
 
     Taste                     Aktion
     -----------------------------------------------------------------------------------------
     Leertaste                 Wiedergabe / Pause
     Pfeiltaste links          Vorheriges Bild
-    Pfeiltaste rechts         Naechstes Bild
+    Pfeiltaste rechts         Nächstes Bild
     Strg + Links              Zum Anfang springen
     Strg + Rechts             Zum Ende springen
-    F11                       Playergroesse maximieren/wiederherstellen
+    F11                       Playergröße maximieren/wiederherstellen
 
 Interaktionen mit den Parametern:
 
@@ -208,25 +221,29 @@ Interaktionen mit den Parametern:
     Klick auf Slider          Positioniert den Regler direkt
     Slider ziehen             Echtzeitanpassung
     Mausrad auf Textfeld      Passt den Wert schrittweise (Step) an
-    Direkteingabe             Geben Sie einen Wert ein, bestaetigen Sie mit Enter oder Klick
-    Ueberfahren eines Labels  Zeigt den Tooltip mit Bereich und Hinweisen zum Parameter
+    Direkteingabe             Geben Sie einen Wert ein, bestätigen Sie mit Enter oder Klick
+    Überfahren eines Labels   Zeigt den Tooltip mit Bereich und Hinweisen zum Parameter
 
-Modus halbe Aufloesung:
-    Die Schaltflaeche "1/2" aktiviert den Modus halbe Aufloesung: Das AviSynth-Skript
-    verarbeitet das Bild auf der Haelfte seiner Groesse VOR den rechenintensiven Filtern
+Modus halbe Auflösung:
+    Die Schaltfläche „1/2" aktiviert den Modus halbe Auflösung: Das AviSynth-Skript
+    verarbeitet das Bild auf der Hälfte seiner Größe VOR den rechenintensiven Filtern
     und zeigt es dann an. Dies beschleunigt die Vorschau auf leistungsschwachen Rechnern
     erheblich.
 
 Fehleranzeige:
     Bei einem AviSynth-Skriptfehler erscheint ein Banner im Player und ein Fehlerfenster
-    oeffnet sich mit:
-        - Der Fehlermeldung (ohne technische ffmpeg-Praefixe)
+    öffnet sich mit:
+        - Der Fehlermeldung (ohne technische ffmpeg-Präfixe)
         - Dem Skriptauszug um die fehlerhafte Zeile (mit Markierung ►)
-        - Der vollstaendigen ffmpeg-Ausgabe in einem einklappbaren Abschnitt "Details"
-        - Einer Schaltflaeche "Kopieren" zum Kopieren der gesamten Nachricht
+        - Der vollständigen ffmpeg-Ausgabe in einem einklappbaren Abschnitt „Details"
+        - Einer Schaltfläche „Kopieren" zum Kopieren der gesamten Nachricht
+
+Histogramm:
+    Die Schaltfläche „Histogramm" zeigt das Farb-Histogramm des aktuellen Bildes an.
+    Ein Rechtsklick auf die Schaltfläche ermöglicht den Wechsel des Histogramm-Typs.
 
 Preset pro Clip:
-    Das Dropdown-Menue neben der Transportleiste ermoeglicht es, ein Filterpreset
+    Das Dropdown-Menü neben der Transportleiste ermöglicht es, ein Filterpreset
     nur auf den aktiven Clip anzuwenden.
 
 
@@ -235,38 +252,48 @@ Preset pro Clip:
 =============================================================================================
 
 Das untere Panel ist in zwei Spalten unterteilt:
-    Linke Spalte: Aktivierungsschaltflaechen (ON/OFF, gruen = aktiv)
-    Rechte Spalte: Detaillierte Parameter des ausgewaehlten Filters
+    Linke Spalte: Aktivierungsschaltflächen (ON/OFF, grün = aktiv)
+    Rechte Spalte: Detaillierte Parameter des ausgewählten Filters
 
-Jeder Filter verfuegt ueber:
-    - Eine ON/OFF-Schaltflaeche zum Aktivieren/Deaktivieren des Filters
-    - Eine Erweiterungsschaltflaeche (>), die sein Panel mit detaillierten Parametern anzeigt
-    - Schnellpresets (fuer bestimmte Filter)
+Jeder Filter verfügt über:
+    - Eine ON/OFF-Schaltfläche zum Aktivieren/Deaktivieren des Filters
+    - Eine Erweiterungsschaltfläche (>), die sein Panel mit detaillierten Parametern anzeigt
+    - Eine Reset-Schaltfläche ((Reset)) zum Zurücksetzen aller Parameter auf Standardwerte
+    - Schnellpresets (für bestimmte Filter)
 
-Die allgemeinen Optionen (ausserhalb der Filter) sind:
+Die allgemeinen Optionen (außerhalb der Filter) sind:
     preview            AviSynth-Vorschau (Vorher/Nachher-Vergleich)
     enable_flip_h      Horizontale Spiegelung
     enable_flip_v      Vertikale Spiegelung
 
 Reihenfolge der Verarbeitungspipeline:
     1. Spiegelung (Flip)
-    2. Zuschnitt (Crop)
-    3. Staubentfernung (Denoise / RemoveDirt)
-    4. Kornreduktion (Degrain / MVTools2)
-    5. Helligkeitsstufen (Luma Levels)
-    6. Farbkorrektur (GamMac)
-    7. Benutzerdefinierte Filter (6 moegliche Einfuegepunkte)
-    8. Schaerfe (Sharpen) — immer zuletzt
+    2. Stabilisierung (8mm Stabilisation / DePan)
+    3. Zuschnitt (Crop)
+    4. Staubentfernung (Denoise / RemoveDirt)
+    5. Kornreduktion (Degrain / MVTools2)
+    6. Helligkeitsstufen (Luma Levels)
+    7. RGB-Pegel (32-Bit)
+    8. Farbkorrektur (GamMac)
+    9. Auto-Weißabgleich
+    10. Weißabgleich (32-Bit)
+    11. Benutzerdefinierte Filter (6 mögliche Einfügepunkte)
+    12. Schärfe (Sharpen) — immer zuletzt
+
+Aktive und inaktive Bereiche:
+    Aktive Filter (ON) werden grün hervorgehoben. Inaktive Filter (OFF) sind ausgegraut.
+    Die Reihenfolge der Filter in der Pipeline ist fest vorgegeben, kann aber für
+    benutzerdefinierte Filter über Drag & Drop in der linken Spalte angepasst werden.
 
 Die Sliderwerte werden automatisch auf den definierten Schritt (Step) jedes
-Parameters ausgerichtet, was ungueltige Werte verhindert.
+Parameters ausgerichtet, was ungültige Werte verhindert.
 
 
 =============================================================================================
                            7.  CROP-FILTER (ZUSCHNITT)
 =============================================================================================
 
-Entfernt Pixel an den Bildraendern. Die Werte werden automatisch auf gerade Zahlen
+Entfernt Pixel an den Bildrändern. Die Werte werden automatisch auf gerade Zahlen
 gerundet (Anforderung des Chroma-Subsamplings YUV).
 
     Parameter        Bereich        Standard    Beschreibung
@@ -291,13 +318,13 @@ gerundet (Anforderung des Chroma-Subsamplings YUV).
     degrain_mode           mdegrain1/2/3/temporal       mdegrain2   Algorithmus
     degrain_thSAD          0-1000                       350         Luma-Schwelle
     degrain_thSADC         0-1000                       250         Chroma-Schwelle
-    degrain_blksize        4/8/16/32/64                 16          Blockgroesse
-    degrain_overlap        0 bis blksize/2              blksize/2   Ueberlappung
+    degrain_blksize        4/8/16/32/64                 16          Blockgröße
+    degrain_overlap        0 bis blksize/2              blksize/2   Überlappung
     degrain_pel            1 oder 2                     2           Sub-Pixel-Genauigkeit
     degrain_search         0-5                          2           Suchmodus
     degrain_prefilter      remgrain/blur/none           remgrain    Vorfilter
 
-    Automatische Einschraenkungen:
+    Automatische Einschränkungen:
         - blksize kann nur die Werte 4, 8, 16, 32 oder 64 annehmen (Zweierpotenzen,
           Anforderung von MVTools2 MAnalyse). Der Slider passt sich automatisch an.
         - overlap wird automatisch auf blksize/2 begrenzt. Wenn Sie blksize verringern,
@@ -310,7 +337,7 @@ gerundet (Anforderung des Chroma-Subsamplings YUV).
         Starkes Korn     thSAD=500, thSADC=400
 
     Hinweise:
-        - mdegrain2: 2 temporale Referenzen (empfohlen, gutes Verhaeltnis Qualitaet/Geschwindigkeit)
+        - mdegrain2: 2 temporale Referenzen (empfohlen, gutes Verhältnis Qualität/Geschwindigkeit)
         - mdegrain3: 3 Referenzen (besseres Ergebnis, langsamer)
         - mdegrain1: 1 Referenz (schnell, weniger effektiv)
         - temporal : TemporalSoften (ohne MVTools2, einfach)
@@ -322,11 +349,48 @@ gerundet (Anforderung des Chroma-Subsamplings YUV).
     Parameter              Bereich                      Standard       Beschreibung
     denoise_mode           removedirtmc/removedirt      removedirtmc   Algorithmus
     denoise_strength       1-24                         10             Erkennungsschwelle
-    denoise_dist           1-20                         3              Raeumlicher Radius
+    denoise_dist           1-20                         3              Räumlicher Radius
     denoise_grey           true/false                   false          Nur Luma
 
-    Hinweis: removedirtmc (mit Bewegungskompensation) wird fuer bessere Ergebnisse empfohlen.
-    Der Modus removedirt ist schneller, aber weniger praezise.
+    Hinweis: removedirtmc (mit Bewegungskompensation) wird für bessere Ergebnisse empfohlen.
+    Der Modus removedirt ist schneller, aber weniger präzise.
+
+    8MM STABILISATION — Bildstabilisierung (DePan)
+    -----------------------------------------------------------------------------------------
+    Stabilisierung von 8mm-Filmen, die typisches Bildzittern und -schwanken aufweisen.
+    Verwendet DePan zur Bewegungsschätzung und Kompensation. Wird als erstes in der
+    Pipeline angewendet (BeforePipeline), bevor alle anderen Filter verarbeitet werden.
+
+    Parameter              Bereich                      Standard    Beschreibung
+    maxstabH               0-30                         14          Max. horizontale Stabilisierung (% der Breite)
+    maxstabV               0-30                         14          Max. vertikale Stabilisierung (% der Höhe)
+    error                  1-200                        65          Bewegungsschätzungs-Fehlerschwelle
+    mirror                 0 / 1                        0           Randfüllung (0=schwarz, 1=Spiegelung)
+    cutoff                 0.0-5.0                      0.5         Hochpass-Grenzfrequenz
+    damping                0.0-5.0                      1.0         Stabilisierungsdämpfung
+
+    Schätzzone (Bereich für Bewegungsanalyse):
+    est_left               0-200                        40          Links ignorierte Pixel
+    est_top                0-200                        40          Oben ignorierte Pixel
+    est_right              0-200                        40          Rechts ignorierte Pixel
+    est_bottom             0-200                        40          Unten ignorierte Pixel
+
+    Endbeschnitt (nach Stabilisierung):
+    crop_left              0-200                        56          Links beschnittene Pixel
+    crop_top               0-200                        40          Oben beschnittene Pixel
+    crop_right             0-200                        56          Rechts beschnittene Pixel
+    crop_bottom            0-200                        40          Unten beschnittene Pixel
+
+    Hinweise:
+        - Die Schätzzone dient dazu, Filmränder und Perforationslöcher von der
+          Bewegungsanalyse auszuschließen, um falsche Korrekturen zu vermeiden.
+        - Der Endbeschnitt entfernt die schwarzen Ränder, die durch die
+          Stabilisierungsverschiebung entstehen.
+        - mirror=1 spiegelt die Ränder und verbirgt den Stabilisierungsbeschnitt.
+        - cutoff: niedrige Werte entfernen langsames Driften, höhere Werte
+          korrigieren nur schnelles Zittern.
+        - damping: höhere Werte erzeugen eine sanftere, aber langsamere Reaktion
+          auf echte Kamerabewegungen.
 
 
 =============================================================================================
@@ -335,22 +399,48 @@ gerundet (Anforderung des Chroma-Subsamplings YUV).
 
     LUMA LEVELS — Helligkeitsstufen
     -----------------------------------------------------------------------------------------
-    Globale Anpassung von Helligkeit, Kontrast, Saettigung und Farbton.
+    Globale Anpassung von Helligkeit, Kontrast, Sättigung und Farbton.
 
     Parameter       Bereich            Standard    Beschreibung
     Lum_Bright      -255 bis 255       0           Helligkeitsverschiebung
     Lum_Contrast    0.1 bis 3.0        1.05        Kontrastmultiplikator
-    Lum_Sat         0.1 bis 3.0        1.10        Farbsaettigung
+    Lum_Sat         0.1 bis 3.0        1.10        Farbsättigung
     Lum_Hue         -180 bis 180       0           Farbtonrotation (Grad)
     Lum_GammaY      0.1 bis 3.0        1.30        Gammakurve
 
-    Hinweis: GammaY > 1 hellt die Mitteltoene auf, < 1 dunkelt sie ab.
-    Dies ist oft der nuetzlichste Parameter fuer unterbelichtete alte Filme.
+    Hinweis: GammaY > 1 hellt die Mitteltöne auf, < 1 dunkelt sie ab.
+    Dies ist oft der nützlichste Parameter für unterbelichtete alte Filme.
+
+    RGB LEVELS (32-BIT) — RGB-Pegel in 32-Bit-Gleitkomma
+    -----------------------------------------------------------------------------------------
+    Präzise Farb- und Helligkeitssteuerung auf Kanalebene in 32-Bit-Gleitkomma-
+    Präzision. Ermöglicht unabhängige Anpassung von Verstärkung (Gain),
+    Gamma und Versatz (Offset) für jeden RGB-Kanal sowie globale Helligkeit,
+    Kontrast und Gamma.
+
+    Parameter       Bereich            Standard    Beschreibung
+    brightness      -0.3 bis 0.3       0.0         Globale Helligkeitsverschiebung
+    contrast        0.5 bis 2.0        1.0         Globaler Kontrastmultiplikator
+    gamma           0.2 bis 5.0        1.0         Globales Gamma
+    r_gain          0.5 bis 2.0        1.0         Rot-Kanal Verstärkung
+    r_gamma         0.2 bis 5.0        1.0         Rot-Kanal Gamma
+    r_offset        -0.2 bis 0.2       0.0         Rot-Kanal Versatz (Lift)
+    g_gain          0.5 bis 2.0        1.0         Grün-Kanal Verstärkung
+    g_gamma         0.2 bis 5.0        1.0         Grün-Kanal Gamma
+    g_offset        -0.2 bis 0.2       0.0         Grün-Kanal Versatz (Lift)
+    b_gain          0.5 bis 2.0        1.0         Blau-Kanal Verstärkung
+    b_gamma         0.2 bis 5.0        1.0         Blau-Kanal Gamma
+    b_offset        -0.2 bis 0.2       0.0         Blau-Kanal Versatz (Lift)
+
+    Hinweise:
+        - Die 32-Bit-Verarbeitung vermeidet Rundungsfehler und Banding-Artefakte.
+        - r_gain erhöhen wärmt das Bild, b_gain erhöhen kühlt es ab.
+        - Offset verschiebt den Schwarzpunkt des jeweiligen Kanals.
 
     GAMMAC — Erweiterte Farbkorrektur
     -----------------------------------------------------------------------------------------
-    Automatische Korrektur von Farbverschiebungen zwischen RGB-Kanaelen. Besonders
-    nuetzlich fuer Filme mit Vergilbung, Blau- oder Rotstich.
+    Automatische Korrektur von Farbverschiebungen zwischen RGB-Kanälen. Besonders
+    nützlich für Filme mit Vergilbung, Blau- oder Rotstich.
 
     Parameter       Bereich            Standard    Beschreibung
     LockChan        -3 bis 2           1           Referenzkanal
@@ -361,25 +451,60 @@ gerundet (Anforderung des Chroma-Subsamplings YUV).
     X               0-2000             0           X-Versatz des Analysebereichs
     Y               0-2000             0           Y-Versatz des Analysebereichs
     W               0-4000             0           Breite des Bereichs (0 = alles)
-    H               0-4000             0           Hoehe des Bereichs (0 = alles)
+    H               0-4000             0           Höhe des Bereichs (0 = alles)
     Omin            0-255              0           Minimale Ausgabe
     Omax            0-255              255         Maximale Ausgabe
     Show            true/false         false       Visualisierung anzeigen
     Verbosity       0-6                0           Detailgrad des Logs
 
-    LockChan: 0=Rot, 1=Gruen, 2=Blau, -1=Zielwert, -2=Durchschnitt, -3=Median.
-    Klicken Sie auf die Schaltflaeche (i), um die ausfuehrliche GamMac-Dokumentation zu oeffnen.
+    LockChan: 0=Rot, 1=Grün, 2=Blau, -1=Zielwert, -2=Durchschnitt, -3=Median.
+    Klicken Sie auf die Schaltfläche (i), um die ausführliche GamMac-Dokumentation zu öffnen.
 
-    SHARPEN — Schaerfeverstaerkung
+    AUTO WHITE BALANCE — Automatischer Weißabgleich
     -----------------------------------------------------------------------------------------
-    Verstaerkung der Bildschaerfe. Wird immer zuletzt in der Pipeline angewendet,
-    um die Verstaerkung von Artefakten anderer Filter zu vermeiden.
+    Automatische Korrektur von Farbstichen mittels ColorYUV autowhite.
+    Wird nach GamMac in der Pipeline angewendet.
+
+    Parameter       Bereich            Standard    Beschreibung
+    strength        0.0 bis 1.5        1.0         Korrekturstärke (0=keine, 1=vollständig)
+    autogain        true/false         false       Zusätzliche automatische Helligkeitsanpassung
+
+    Hinweise:
+        - strength=1.0 wendet die volle automatische Korrektur an.
+        - Werte zwischen 0 und 1 mischen Original- und korrigiertes Bild.
+        - Werte über 1.0 verstärken die Korrektur über den automatisch
+          berechneten Wert hinaus.
+        - autogain aktiviert zusätzlich eine automatische Helligkeitsanpassung.
+
+    WHITE BALANCE (32-BIT) — Weißabgleich in 32-Bit-Gleitkomma
+    -----------------------------------------------------------------------------------------
+    Manuelle Weißabgleichkorrektur pro Kanal in 32-Bit-Gleitkomma-Präzision.
+    Ermöglicht präzise Steuerung von Verstärkung (Gain) und Gamma für jeden
+    RGB-Kanal. Wird nach GamMac in der Pipeline angewendet.
+
+    Parameter       Bereich            Standard    Beschreibung
+    r_gain          0.5 bis 2.0        1.0         Rot-Verstärkung (>1 wärmt, <1 kühlt)
+    r_gamma         0.2 bis 3.0        1.0         Rot-Gamma (Mitteltöne)
+    g_gain          0.5 bis 2.0        1.0         Grün-Verstärkung (Referenzkanal)
+    g_gamma         0.2 bis 3.0        1.0         Grün-Gamma (Mitteltöne)
+    b_gain          0.5 bis 2.0        1.0         Blau-Verstärkung (>1 kühlt, <1 wärmt)
+    b_gamma         0.2 bis 3.0        1.0         Blau-Gamma (Mitteltöne)
+
+    Hinweise:
+        - Gain steuert die gesamte Kanalverstärkung (Multiplikator).
+        - Gamma passt die Mitteltöne an, ohne Lichter zu beschneiden.
+        - Die 32-Bit-Verarbeitung gewährleistet höchste Präzision ohne Banding.
+
+    SHARPEN — Schärfeverbesserung
+    -----------------------------------------------------------------------------------------
+    Verbesserung der Bildschärfe. Wird immer zuletzt in der Pipeline angewendet,
+    um die Verstärkung von Artefakten anderer Filter zu vermeiden.
 
     Parameter              Bereich            Standard    Beschreibung
     Sharp_Mode             simple/edge        simple      Algorithmus
-    Sharp_Strength         1-20               8           Staerke der Verstaerkung
-    Sharp_Radius           0.5-5.0            1.5         Unschaerferadius (Maske)
-    Sharp_Threshold        0-100              0           Rauschunterdrueckungsschwelle
+    Sharp_Strength         1-20               8           Stärke der Verbesserung
+    Sharp_Radius           0.5-5.0            1.5         Unschärferadius (Maske)
+    Sharp_Threshold        0-100              0           Rauschunterdrückungsschwelle
 
     Schnellpresets:
         Leicht           Strength=5
@@ -389,8 +514,8 @@ gerundet (Anforderung des Chroma-Subsamplings YUV).
         Sehr stark       Strength=20
 
     Hinweise:
-        - simple: Globales Sharpen(), effektiv, kann aber Restkorn verstaerken.
-        - edge: Nur Konturen ueber Sobel-Maske + Gamma (Technik
+        - simple: Globales Sharpen(), effektiv, kann aber Restkorn verstärken.
+        - edge: Nur Konturen über Sobel-Maske + Gamma (Technik
           LimitedSharpenFaster). Bewahrt glatte Bereiche. Empfohlen nach Degrain.
 
 
@@ -398,14 +523,14 @@ gerundet (Anforderung des Chroma-Subsamplings YUV).
                         10.  BENUTZERDEFINIERTE FILTER (CUSTOM)
 =============================================================================================
 
-AvyscanLab ermoeglicht es, eigene AviSynth-Filter zu erstellen und in die
-Restaurierungspipeline mit vollstaendiger Steuerungsoberflaeche zu integrieren.
+AvyscanLab ermöglicht es, eigene AviSynth-Filter zu erstellen und in die
+Restaurierungspipeline mit vollständiger Steuerungsoberfläche zu integrieren.
 
     EINEN BENUTZERDEFINIERTEN FILTER ERSTELLEN
     -----------------------------------------------------------------------------------------
 
-    1. Klicken Sie auf die Schaltflaeche "+" rechts neben dem Titel "CUSTOM" im Filterpanel.
-       Das Formular fuer benutzerdefinierte Filter oeffnet sich.
+    1. Klicken Sie auf die Schaltfläche „+" rechts neben dem Titel „CUSTOM" im Filterpanel.
+       Das Formular für benutzerdefinierte Filter öffnet sich.
 
     2. Geben Sie den Filternamen und die Position in der Pipeline ein:
        - BeforePipeline : vor allen Filtern
@@ -413,58 +538,58 @@ Restaurierungspipeline mit vollstaendiger Steuerungsoberflaeche zu integrieren.
        - AfterDenoise   : nach der Staubentfernung
        - AfterDegrain   : nach der Kornreduktion
        - AfterLuma      : nach den Helligkeitsstufen
-       - AfterSharpen   : nach der Schaerfe (Ende der Pipeline)
+       - AfterSharpen   : nach der Schärfe (Ende der Pipeline)
 
-    3. Wenn Ihr Filter ein externes AviSynth-Plugin (.dll) benoetigt, klicken Sie auf
-       "+ DLL hinzufuegen...", um es hinzuzufuegen. Die DLLs werden ueber TryLoadPlugin()
+    3. Wenn Ihr Filter ein externes AviSynth-Plugin (.dll) benötigt, klicken Sie auf
+       „+ DLL hinzufügen...", um es hinzuzufügen. Die DLLs werden über TryLoadPlugin()
        geladen und Duplikate werden automatisch entfernt.
 
-    4. Schreiben Sie den AviSynth-Code im Editor. Verwenden Sie "c" als Clip-Variable:
+    4. Schreiben Sie den AviSynth-Code im Editor. Verwenden Sie „c" als Clip-Variable:
            c = MeinFilter(c, staerke={sigma})
-       Woerter in geschweiften Klammern {name} werden automatisch als Parameter erkannt.
+       Wörter in geschweiften Klammern {name} werden automatisch als Parameter erkannt.
 
-    5. Konfigurieren Sie fuer jeden erkannten Parameter den Steuerungstyp:
+    5. Konfigurieren Sie für jeden erkannten Parameter den Steuerungstyp:
        - slider   : Schieberegler mit Min, Max, Step und Standard.
                     Die Werte werden automatisch auf den Schritt (Step) ausgerichtet.
                     Bei einem Step von 2 sind nur gerade Werte erlaubt.
        - combo    : Dropdown-Liste mit kommaseparierten Werten
-       - checkbox : Kontrollkaestchen mit anpassbaren Ein/Aus-Werten
+       - checkbox : Kontrollkästchen mit anpassbaren Ein/Aus-Werten
        - text     : Freitextfeld
 
-    6. Verwenden Sie die Schaltflaeche "Vorschau", um den Filter in Echtzeit zu testen,
+    6. Verwenden Sie die Schaltfläche „Vorschau", um den Filter in Echtzeit zu testen,
        ohne das Formular zu verlassen.
 
-    7. Klicken Sie auf "Speichern", um zu sichern.
+    7. Klicken Sie auf „Speichern", um zu sichern.
 
     EINEN BENUTZERDEFINIERTEN FILTER VERWENDEN
     -----------------------------------------------------------------------------------------
 
     Der Filter erscheint im Bereich CUSTOM mit:
-        - Einer ON/OFF-Schaltflaeche zum Aktivieren/Deaktivieren des Filters
-        - Einer Pfeilschaltflaeche (>) zum Oeffnen des Parameterpanels
-        - Einer Stiftschaltflaeche zum Oeffnen des Bearbeitungsformulars
+        - Einer ON/OFF-Schaltfläche zum Aktivieren/Deaktivieren des Filters
+        - Einer Pfeilschaltfläche (>) zum Öffnen des Parameterpanels
+        - Einer Stiftschaltfläche zum Öffnen des Bearbeitungsformulars
 
     Die Parameter werden in der rechten Spalte des Filterpanels mit den definierten
-    Steuerelementen (Schieberegler, Listen, Kontrollkaestchen, Textfelder) angezeigt.
+    Steuerelementen (Schieberegler, Listen, Kontrollkästchen, Textfelder) angezeigt.
 
     EINEN FILTER EXPORTIEREN / IMPORTIEREN
     -----------------------------------------------------------------------------------------
 
-    Exportieren: Klicken Sie im Bearbeitungsformular auf "Exportieren". Der Filter wird
-    in einer .json-Datei gespeichert, die Sie mit anderen Benutzern teilen koennen.
+    Exportieren: Klicken Sie im Bearbeitungsformular auf „Exportieren". Der Filter wird
+    in einer .json-Datei gespeichert, die Sie mit anderen Benutzern teilen können.
 
-    Importieren: Klicken Sie im Filterpanel auf die Pfeil-nach-unten-Schaltflaeche neben
-    dem "+" im Bereich CUSTOM. Waehlen Sie eine exportierte .json-Datei. Importierte Filter
+    Importieren: Klicken Sie im Filterpanel auf die Pfeil-nach-unten-Schaltfläche neben
+    dem „+" im Bereich CUSTOM. Wählen Sie eine exportierte .json-Datei. Importierte Filter
     erhalten eine neue Kennung, um Duplikate zu vermeiden.
 
     Hinweis: DLL-Pfade sind absolut. Wenn der Filter ein externes Plugin verwendet, stellen Sie
     sicher, dass die DLL am gleichen Ort auf dem Zielrechner vorhanden ist, oder bearbeiten
     Sie den Filter nach dem Import, um den Pfad zu korrigieren.
 
-    EINEN FILTER LOESCHEN
+    EINEN FILTER LÖSCHEN
     -----------------------------------------------------------------------------------------
 
-    Oeffnen Sie das Bearbeitungsformular (Stiftschaltflaeche) und klicken Sie auf "Loeschen".
+    Öffnen Sie das Bearbeitungsformular (Stiftschaltfläche) und klicken Sie auf „Löschen".
 
 Speicherort: %AppData%\AvyscanLab\custom_filters.json
 
@@ -473,42 +598,42 @@ Speicherort: %AppData%\AvyscanLab\custom_filters.json
       -----------------------------------------------------------------------------------------
 
       Einige AviSynth-Filter basieren auf Funktionen, die in Skriptdateien (.avsi) definiert
-      sind. Diese Dateien enthalten wiederverwendbare Funktionen, die die Moeglichkeiten
+      sind. Diese Dateien enthalten wiederverwendbare Funktionen, die die Möglichkeiten
       von AviSynth erweitern, ohne kompilierte Plugins (.dll) zu sein.
 
-      So fuegen Sie einem benutzerdefinierten Filter ein .avsi-Skript hinzu:
+      So fügen Sie einem benutzerdefinierten Filter ein .avsi-Skript hinzu:
 
-      1. Oeffnen Sie das Bearbeitungsformular des Filters (Stiftschaltflaeche oder Erstellung
-         eines neuen Filters ueber die Schaltflaeche "+").
+      1. Öffnen Sie das Bearbeitungsformular des Filters (Stiftschaltfläche oder Erstellung
+         eines neuen Filters über die Schaltfläche „+").
 
-      2. Klicken Sie im Abschnitt "Scripts (Import .avsi)" auf "+ AVSI hinzufuegen...".
+      2. Klicken Sie im Abschnitt „Scripts (Import .avsi)" auf „+ AVSI hinzufügen...".
 
-      3. Waehlen Sie eine oder mehrere .avsi- oder .avs-Dateien von Ihrer Festplatte.
-         Die ausgewaehlten Dateien werden automatisch in den Ordner
-         Plugins/Scripts/ der Anwendung kopiert, was ihre Verfuegbarkeit
-         unabhaengig von ihrem urspruenglichen Speicherort gewaehrleistet.
+      3. Wählen Sie eine oder mehrere .avsi- oder .avs-Dateien von Ihrer Festplatte.
+         Die ausgewählten Dateien werden automatisch in den Ordner
+         Plugins/Scripts/ der Anwendung kopiert, was ihre Verfügbarkeit
+         unabhängig von ihrem ursprünglichen Speicherort gewährleistet.
 
-      4. Die hinzugefuegten Skripte erscheinen in der Liste. Verwenden Sie die Schaltflaeche (x),
+      4. Die hinzugefügten Skripte erscheinen in der Liste. Verwenden Sie die Schaltfläche (x),
          um ein Skript aus der Liste zu entfernen.
 
-      5. Bei der Erzeugung des AviSynth-Skripts fuegt AvyscanLab automatisch
-         eine Import()-Anweisung fuer jedes referenzierte Skript ein, direkt nach dem
+      5. Bei der Erzeugung des AviSynth-Skripts fügt AvyscanLab automatisch
+         eine Import()-Anweisung für jedes referenzierte Skript ein, direkt nach dem
          Laden der Plugins:
 
-             TryLoadPlugin("C:/.../MonPlugin.dll")
-             Import("C:/.../Plugins/Scripts/MesFonctions.avsi")
+             TryLoadPlugin("C:/.../MeinPlugin.dll")
+             Import("C:/.../Plugins/Scripts/MeineFunktionen.avsi")
 
       Die im .avsi-Skript definierten Funktionen sind dann im Code
-      Ihres benutzerdefinierten Filters verfuegbar.
+      Ihres benutzerdefinierten Filters verfügbar.
 
-      Beispiel: Wenn Ihre Datei MesFonctions.avsi eine Funktion MonDebruitage() definiert,
-      koennen Sie sie direkt im Filtercode verwenden:
-          c = MonDebruitage(c, force={sigma})
+      Beispiel: Wenn Ihre Datei MeineFunktionen.avsi eine Funktion MeineEntrauschung()
+      definiert, können Sie sie direkt im Filtercode verwenden:
+          c = MeineEntrauschung(c, staerke={sigma})
 
       Hinweis: Beim Exportieren eines Filters wird nur der Name der .avsi-Datei
       gespeichert (nicht ihr Inhalt). Wenn Sie einen Filter mit einem anderen Benutzer teilen,
-      uebermitteln Sie auch die erforderlichen .avsi-Dateien. Der Benutzer muss sie
-      ueber denselben Mechanismus importieren.
+      übermitteln Sie auch die erforderlichen .avsi-Dateien. Der Benutzer muss sie
+      über denselben Mechanismus importieren.
 
 
 
@@ -518,13 +643,13 @@ Speicherort: %AppData%\AvyscanLab\custom_filters.json
 
     GLOBALE PRESETS (Filter)
     -----------------------------------------------------------------------------------------
-    Das Menue Infos > Presets ermoeglicht das Speichern und Wiederherstellen Ihrer
+    Das Menü Infos > Presets ermöglicht das Speichern und Wiederherstellen Ihrer
     Filterkonfigurationen.
 
     Aktion              Beschreibung
     Speichern           Speichert die aktuellen Einstellungen unter einem Namen
-    Laden               Wendet ein vorhandenes Preset an (gilt fuer alle geladenen Clips)
-    Loeschen            Entfernt ein Preset
+    Laden               Wendet ein vorhandenes Preset an (gilt für alle geladenen Clips)
+    Löschen             Entfernt ein Preset
 
     Die Felder source, film, img, start, end und crop sind NICHT in den Presets enthalten.
     Speicherort: %AppData%\AvyscanLab\presets.json
@@ -532,36 +657,36 @@ Speicherort: %AppData%\AvyscanLab\custom_filters.json
     PRESETS PRO CLIP
     -----------------------------------------------------------------------------------------
     Jeder Clip kann eigene Filtereinstellungen haben. Wenn Sie einen Parameter manuell
-    aendern, wird der Clip automatisch "perso1", "perso2" usw. benannt.
-    Das Dropdown-Menue in der Transportleiste ermoeglicht es, ein globales Preset
-    nur fuer den aktiven Clip zu laden.
+    ändern, wird der Clip automatisch „perso1", „perso2" usw. benannt.
+    Das Dropdown-Menü in der Transportleiste ermöglicht es, ein globales Preset
+    nur für den aktiven Clip zu laden.
 
-    ENCODIERUNGS-PRESETS
+    KODIERUNGS-PRESETS
     -----------------------------------------------------------------------------------------
-    Die Encodierungskombinationen (Encoder + Container + Qualitaet + Chroma + Aufloesung)
-    koennen im Record-Panel gespeichert und wiedergeladen werden.
-    Das Preset "Default" ist immer vorhanden und erscheint an erster Stelle.
+    Die Kodierungskombinationen (Encoder + Container + Qualität + Chroma + Auflösung)
+    können im Record-Panel gespeichert und wiedergeladen werden.
+    Das Preset „Default" ist immer vorhanden und erscheint an erster Stelle.
     Speicherort: %AppData%\AvyscanLab\encoding_presets.json
 
 
 =============================================================================================
-                              12.  ENCODIERUNG UND RENDERING
+                              12.  KODIERUNG UND RENDERN
 =============================================================================================
 
-Klicken Sie auf die REC-Schaltflaeche (rot) in der Transportleiste, um das
-Encodierungspanel zu oeffnen.
+Klicken Sie auf die REC-Schaltfläche (rot) in der Transportleiste, um das
+Kodierungspanel zu öffnen.
 
     SCHRITT 1 — Clip-Auswahl
     -----------------------------------------------------------------------------------------
-    Markieren Sie die zu encodierenden Clips in der Liste. Verwenden Sie "Alle auswaehlen",
-    um alle auf einmal zu encodieren (Batch). Jeder Clip kann einen eigenen Ausgabenamen
-    und ein eigenes Encodierungs-Preset haben.
+    Markieren Sie die zu kodierenden Clips in der Liste. Verwenden Sie „Alle auswählen",
+    um alle auf einmal zu kodieren (Batch). Jeder Clip kann einen eigenen Ausgabenamen
+    und ein eigenes Kodierungs-Preset haben.
     Jedes Preset kann ein anderes Zielverzeichnis enthalten, was die Organisation
     der Renderings mehrerer Clips erleichtert.
 
     SCHRITT 2 — Zielverzeichnis
     -----------------------------------------------------------------------------------------
-    Klicken Sie auf die Schaltflaeche Durchsuchen oder geben Sie den Pfad ein. Der verfuegbare
+    Klicken Sie auf die Schaltfläche Durchsuchen oder geben Sie den Pfad ein. Der verfügbare
     Speicherplatz wird in Echtzeit angezeigt.
 
     SCHRITT 3 — Encoder-Auswahl
@@ -578,27 +703,27 @@ Encodierungspanel zu oeffnen.
 
     SCHRITT 4 — Container
     -----------------------------------------------------------------------------------------
-    MKV, MP4, AVI oder MOV (fuer Videocodecs). Wird fuer Bildsequenzen ignoriert.
+    MKV, MP4, AVI oder MOV (für Videocodecs). Wird für Bildsequenzen ignoriert.
 
     SCHRITT 5 — Erweiterte Parameter (nur Lossy-Codecs)
     -----------------------------------------------------------------------------------------
-    Qualitaetsmodus:
-        CRF      Konstante Qualitaet (Standard). Je niedriger der Wert, desto besser die
-                 Qualitaet. Typische Werte: 18-23. Der Slider reicht von 0 bis 51.
+    Qualitätsmodus:
+        CRF      Konstante Qualität (Standard). Je niedriger der Wert, desto besser die
+                 Qualität. Typische Werte: 18-23. Der Slider reicht von 0 bis 51.
         Bitrate  Feste Bitrate in Mb/s. Das empfohlene Minimum wird automatisch berechnet
-                 basierend auf der gewaehlten Aufloesung und dem Chroma.
+                 basierend auf der gewählten Auflösung und dem Chroma.
 
     Chroma-Subsampling:
         4:2:0    Standard (kleinere Datei)
-        4:2:2    Bessere Farbqualitaet
-        4:4:4    Maximale Qualitaet (grosse Datei)
+        4:2:2    Bessere Farbqualität
+        4:4:4    Maximale Qualität (große Datei)
 
-        Hinweis: Bitrate und Chroma sind gekoppelt. Eine Aenderung des Chroma passt die
+        Hinweis: Bitrate und Chroma sind gekoppelt. Eine Änderung des Chroma passt die
         empfohlene Mindestbitrate an. Eine hohe Bitrate kann das Chroma automatisch
-        auf das maximal unterstuetzte Niveau anheben.
+        auf das maximal unterstützte Niveau anheben.
 
-    Ausgabeaufloesung:
-        Original   Quellaufloesung beibehalten
+    Ausgabeauflösung:
+        Original   Quellauflösung beibehalten
         1080p      1920x1080
         720p       1280x720
         576p       720x576 (PAL)
@@ -607,183 +732,261 @@ Encodierungspanel zu oeffnen.
         Hinweis: Ungerade Abmessungen werden automatisch auf gerade Zahlen angepasst
         (Anforderung von x264/x265) mittels eines Padding-Filters.
 
-    WAEHREND DER ENCODIERUNG
+    WÄHREND DER KODIERUNG
     -----------------------------------------------------------------------------------------
     - Die Videowiedergabe wird automatisch gestoppt
-    - Die Oberflaeche ist gesperrt (Filter, Transport, Menues, Clip-Tabs)
-    - Nur die Schaltflaeche "Stoppen" bleibt aktiv
+    - Die Oberfläche ist gesperrt (Filter, Transport, Menüs, Clip-Tabs)
+    - Nur die Schaltfläche „Stoppen" bleibt aktiv
     - Ein Fortschrittsbalken zeigt den Prozentsatz des Fortschritts an
-    - Das Schliessen der Anwendung stoppt automatisch die laufende Encodierung
+    - Das Schließen der Anwendung stoppt automatisch die laufende Kodierung
 
-    Option "Nach Encodierung herunterfahren": Aktivieren Sie dieses Kontrollkaestchen,
-    um den Computer nach erfolgreicher Batch-Encodierung automatisch herunterzufahren.
+    Option „Nach Kodierung herunterfahren": Aktivieren Sie dieses Kontrollkästchen,
+    um den Computer nach erfolgreicher Batch-Kodierung automatisch herunterzufahren.
 
-    Technischer Hinweis: Die Encodierung verwendet ein dediziertes Rendering-Skript
+    Technischer Hinweis: Die Kodierung verwendet ein dediziertes Rendering-Skript
     (ScriptRender.avs), in dem der Vorschaumodus deaktiviert ist, was die maximale
-    Endqualitaet gewaehrleistet.
+    Endqualität gewährleistet.
 
 
 =============================================================================================
                          13.  ANWENDUNGSEINSTELLUNGEN
 =============================================================================================
 
-Menue Infos > Einstellungen:
+Menü Infos > Einstellungen:
 
     Parameter              Beschreibung
     -----------------------------------------------------------------------------------------
-    Design                 Dunkel (Standard) oder Hell
-    Sprache                Franzoesisch, Englisch, Deutsch, Spanisch
-    Reset settings         Setzt alle Einstellungen auf Standard zurueck und startet neu.
-                           Achtung, es handelt sich um eine vollstaendige Zuruecksetzung,
-                           die alle Presets, benutzerdefinierten Filter und andere
-                           gespeicherte Konfigurationen loescht.
+    Design (Theme)         Dunkel (Standard), Grau oder Hell
+    Akzentfarbe            Blau (Standard), Grün, Rot, Violett, Orange
+    Sprache                Französisch, Englisch, Deutsch, Spanisch
 
-Menue Sprachen:
-    Sofortiger Sprachwechsel. Die Oberflaeche, die AviSynth-Skripte und das Handbuch werden
-    in der gewaehlten Sprache neu generiert.
+    Einstellungen exportieren
+                           Exportiert alle Anwendungseinstellungen (Presets, benutzerdefinierte
+                           Filter, Kodierungs-Presets, Fenstereinstellungen, Sitzungsdaten)
+                           in eine einzelne Datei zum Sichern oder Übertragen auf einen
+                           anderen Rechner.
+
+    Einstellungen importieren
+                           Importiert eine zuvor exportierte Einstellungsdatei. Die aktuellen
+                           Einstellungen werden überschrieben. Ein Neustart wird empfohlen,
+                           damit alle Änderungen wirksam werden.
+
+    Einstellungen zurücksetzen
+                           Setzt alle Einstellungen auf Standard zurück und startet neu.
+                           Achtung: Es handelt sich um eine vollständige Zurücksetzung,
+                           die alle Presets, benutzerdefinierten Filter und andere
+                           gespeicherten Konfigurationen löscht.
+
+Menü Sprachen:
+    Sofortiger Sprachwechsel. Die Oberfläche, die AviSynth-Skripte und das Handbuch werden
+    in der gewählten Sprache neu generiert.
 
 
 =============================================================================================
                               14.  SKRIPTVORSCHAU
 =============================================================================================
 
-Das Menue Infos > Skriptvorschau oeffnet ein Fenster, das den vollstaendigen Inhalt der
+Das Menü Infos > Skriptvorschau öffnet ein Fenster, das den vollständigen Inhalt der
 von AvyscanLab generierten Datei ScriptUser.avs anzeigt.
 
-Die Schaltflaeche "Neu laden" liest die Datei erneut von der Festplatte und aktualisiert
-die Vorschau. Dies ermoeglicht die Ueberpruefung des erzeugten AviSynth-Skripts und
-das eventuelle Kopieren fuer eine externe Verwendung (AvsPmod, VirtualDub usw.).
+Die Schaltfläche „Neu laden" liest die Datei erneut von der Festplatte und aktualisiert
+die Vorschau. Dies ermöglicht die Überprüfung des erzeugten AviSynth-Skripts und
+das eventuelle Kopieren für eine externe Verwendung (AvsPmod, VirtualDub usw.).
 
 
 =============================================================================================
-                       15.  RUECKMELDUNG (FEEDBACK)
+                       15.  RÜCKMELDUNG (FEEDBACK)
 =============================================================================================
 
-Das Menue Infos > Ihre Rueckmeldung oeffnet ein integriertes Kontaktformular,
+Das Menü Infos > Ihre Rückmeldung öffnet ein integriertes Kontaktformular,
 um dem Entwickler direkt zu senden:
     - Einen Fehlerbericht (mit Tipps zur Formulierung)
     - Einen Funktionswunsch
     - Eine allgemeine Bewertung mit Sternebewertung (1 bis 5 Sterne)
 
-Das Formular wird ueber das Internet uebermittelt. Name und E-Mail sind optional,
-werden aber empfohlen, wenn Sie eine Antwort wuenschen.
+Das Formular wird über das Internet übermittelt. Name und E-Mail sind optional,
+werden aber empfohlen, wenn Sie eine Antwort wünschen.
 
 
 =============================================================================================
-                             16.  EMPFOHLENER WORKFLOW
+                             16.  GEFÜHRTE TOUR
 =============================================================================================
 
-    1. Oeffnen Sie Ihre Quelle (Drag & Drop oder Quellfeld).
+Die geführte Tour ist über das Menü oder die Schaltfläche in der oberen Leiste zugänglich.
+Sie bietet eine interaktive Schritt-für-Schritt-Einführung in die Benutzeroberfläche
+von AvyscanLab.
 
-    2. Navigieren Sie zu einem repraesentativen Bild (weder zu dunkel noch zu hell).
+    Funktionsweise:
+    - Jeder Schritt hebt einen bestimmten Bereich der Oberfläche hervor und erklärt
+      seine Funktion.
+    - Navigieren Sie mit den Schaltflächen „Weiter" und „Zurück" durch die Schritte.
+    - Sie können die Tour jederzeit beenden.
+
+    Die geführte Tour ist besonders nützlich für neue Benutzer, um die verschiedenen
+    Bereiche der Anwendung kennenzulernen: Quellleiste, Videoplayer, Transportleiste,
+    Filterpanel und Kodierungspanel.
+
+    Beim ersten Start der Anwendung wird die geführte Tour automatisch angeboten.
+
+
+=============================================================================================
+                             17.  EMPFOHLENER WORKFLOW
+=============================================================================================
+
+    1. Öffnen Sie Ihre Quelle (Drag & Drop oder Quellfeld).
+
+    2. Navigieren Sie zu einem repräsentativen Bild (weder zu dunkel noch zu hell).
 
     3. Aktivieren Sie die Filter nacheinander in der Reihenfolge der Pipeline:
 
-       a) Crop       — Entfernen Sie schwarze Raender oder passen Sie den Bildausschnitt an.
+       a) Stabilisierung — Aktivieren Sie die 8mm-Stabilisierung, wenn der Film
+                       typisches Bildzittern aufweist. Passen Sie die Schätzzone an,
+                       um Perforationslöcher auszuschließen.
 
-       b) Denoise    — Entfernen Sie Staub und Kratzer. Das Preset "Standard"
-                       eignet sich in den meisten Faellen. Erhoehen Sie strength, wenn
+       b) Crop       — Entfernen Sie schwarze Ränder oder passen Sie den Bildausschnitt an.
+
+       c) Denoise    — Entfernen Sie Staub und Kratzer. Das Preset „Standard"
+                       eignet sich in den meisten Fällen. Erhöhen Sie strength, wenn
                        Defekte bestehen bleiben.
 
-       c) Degrain    — Beginnen Sie mit dem Preset "Mittleres Korn", dann erhoehen Sie thSAD,
+       d) Degrain    — Beginnen Sie mit dem Preset „Mittleres Korn", dann erhöhen Sie thSAD,
                        wenn das Korn bestehen bleibt. Achtung: Zu hohe Werte
-                       erzeugen einen "Plastik"-Effekt.
+                       erzeugen einen „Plastik"-Effekt.
 
-       d) Luma       — Passen Sie Helligkeit und Kontrast an. GammaY ist oft der
-                       nuetzlichste Parameter zum Aufhellen alter Filme.
+       e) Luma       — Passen Sie Helligkeit und Kontrast an. GammaY ist oft der
+                       nützlichste Parameter zum Aufhellen alter Filme.
 
-       e) GamMac     — Korrigieren Sie Farbverschiebungen (Vergilbung, Blau-,
+       f) RGB Levels — Verwenden Sie die 32-Bit-RGB-Pegel für präzise kanalweise
+                       Farb- und Helligkeitssteuerung.
+
+       g) GamMac     — Korrigieren Sie Farbverschiebungen (Vergilbung, Blau-,
                        Rotstich usw.).
 
-       f) Sharpen    — Verstaerken Sie die Schaerfe als letzten Schritt. Der Modus "edge"
-                       bewahrt glatte Bereiche besser und vermeidet die Verstaerkung
+       h) AWB        — Aktivieren Sie den Auto-Weißabgleich für eine schnelle
+                       automatische Farbkorrektur.
+
+       i) WB 32-Bit  — Für manuelle Feinabstimmung des Weißabgleichs pro Kanal.
+
+       j) Sharpen    — Verbessern Sie die Schärfe als letzten Schritt. Der Modus „edge"
+                       bewahrt glatte Bereiche besser und vermeidet die Verstärkung
                        von Restkorn.
 
-    4. Nutzen Sie die verfuegbaren Presets bei bestimmten Filtern fuer eine schnelle Einstellung,
+    4. Nutzen Sie die verfügbaren Presets bei bestimmten Filtern für eine schnelle Einstellung,
        dann verfeinern Sie.
 
-    5. Ueberpruefen Sie das Ergebnis, indem Sie mehrere Passagen des Films durchsehen.
+    5. Überprüfen Sie das Ergebnis, indem Sie mehrere Passagen des Films durchsehen.
 
-    6. Speichern Sie Ihre Konfiguration als Preset im Menue Einstellungen, um sie
-       einfach auf andere Clips desselben Films oder aehnliche Filme wiederverwenden zu koennen.
+    6. Speichern Sie Ihre Konfiguration als Preset im Menü Einstellungen, um sie
+       einfach auf andere Clips desselben Films oder ähnliche Filme wiederverwenden zu können.
 
     7. Wenn Sie mehrere Clips haben: Laden Sie alle, dann wenden Sie die passenden Presets an.
 
-    8. Oeffnen Sie das Record-Panel, waehlen Sie die Encodierungsparameter.
-       Jeder Film kann ein anderes Encodierungs-Preset haben, was die Organisation
+    8. Öffnen Sie das Record-Panel, wählen Sie die Kodierungsparameter.
+       Jeder Film kann ein anderes Kodierungs-Preset haben, was die Organisation
        der Renderings erleichtert.
-       Jeder Film kann in ein Batch-Encoding einbezogen werden oder nicht.
+       Jeder Film kann in ein Batch-Rendering einbezogen werden oder nicht.
        Starten Sie das Rendering!
 
-    Tipp: Aktivieren Sie den Modus halbe Aufloesung (1/2) waehrend der Parametereinstellung,
+    Tipp: Aktivieren Sie den Modus halbe Auflösung (1/2) während der Parametereinstellung,
     um die Vorschau zu beschleunigen, und deaktivieren Sie ihn dann, um das Ergebnis
-    in voller Aufloesung vor der Encodierung zu ueberpruefen.
+    in voller Auflösung vor der Kodierung zu überprüfen.
 
 
 =============================================================================================
-                           17.  TIPPS UND TASTENKUERZEL
+                           18.  TIPPS UND TASTENKÜRZEL
 =============================================================================================
 
     - Das Mausrad auf numerischen Feldern passt den Wert schrittweise an.
-    - Der Modus halbe Aufloesung (Schaltflaeche 1/2) beschleunigt die Vorschau erheblich.
-    - Alle Parameter werden bei jeder Aenderung automatisch in ScriptUser.avs gespeichert.
-    - Position, Fenstergroesse und Panelzustand werden zwischen den Sitzungen gespeichert.
-    - Das Record-Panel wird beim Oeffnen wiederhergestellt, wenn es beim Schliessen geoeffnet war.
-    - Tooltips (beim Ueberfahren) auf jedem Parameter zeigen Bereiche und Hinweise an.
+    - Der Modus halbe Auflösung (Schaltfläche 1/2) beschleunigt die Vorschau erheblich.
+    - Alle Parameter werden bei jeder Änderung automatisch in ScriptUser.avs gespeichert.
+    - Position, Fenstergröße und Panelzustand werden zwischen den Sitzungen gespeichert.
+    - Das Record-Panel wird beim Start wiederhergestellt, wenn es beim Schließen geöffnet war.
+    - Tooltips (beim Überfahren) auf jedem Parameter zeigen Bereiche und Hinweise an.
     - Drag & Drop mehrerer Dateien erstellt automatisch einen Clip pro Datei.
     - Slider positionieren sich direkt beim Klick (kein Ziehen erforderlich).
-    - Die gefuehrte Tour (Menue) ermoeglicht es, die Grundlagen der Oberflaeche Schritt fuer
+    - Die geführte Tour (Menü) ermöglicht es, die Grundlagen der Oberfläche Schritt für
       Schritt zu entdecken.
     - AviSynth-Fehler zeigen automatisch die fehlerhafte Skriptzeile an.
-    - Die Schaltflaeche "Kopieren" im Fehlerfenster kopiert die Nachricht und die Details.
+    - Die Schaltfläche „Kopieren" im Fehlerfenster kopiert die Nachricht und die Details.
+    - Die Reset-Schaltfläche ((Reset)) setzt alle Parameter eines Filters auf Standardwerte zurück.
+    - Das Histogramm zeigt die Farbverteilung des aktuellen Bildes an (Rechtsklick für
+      den Histogramm-Typ).
+    - Verwenden Sie Einstellungen exportieren/importieren, um Ihre Konfiguration
+      zu sichern oder auf einen anderen Rechner zu übertragen.
+
+    Tastenkürzel:
+
+    Taste                     Aktion
+    -----------------------------------------------------------------------------------------
+    Leertaste                 Wiedergabe / Pause
+    Pfeiltaste links          Vorheriges Bild
+    Pfeiltaste rechts         Nächstes Bild
+    Strg + Links              Zum Anfang springen
+    Strg + Rechts             Zum Ende springen
+    F11                       Playergröße maximieren/wiederherstellen
 
 
 =============================================================================================
-                          18.  DATEIEN UND SPEICHERORTE
+                          19.  DATEIEN UND SPEICHERORTE
 =============================================================================================
 
     Datei / Ordner                 Speicherort
     -----------------------------------------------------------------------------------------
     ScriptUser.avs                 Ordner der Exe
     ScriptMaster.xx.avs            Ordner der Exe (xx = Sprache)
-    ScriptRender.avs               Ordner der Exe (fuer Encodierung erzeugt)
+    ScriptRender.avs               Ordner der Exe (für Kodierung erzeugt)
     presets.json                   %AppData%\AvyscanLab
     encoding_presets.json          %AppData%\AvyscanLab
     custom_filters.json            %AppData%\AvyscanLab
     window_settings.json           %AppData%\AvyscanLab
     session.json                   %AppData%\AvyscanLab
+    theme_settings.json            %AppData%\AvyscanLab
     Plugins/                       Ordner der Exe
     mpv/                           Ordner der Exe
 
 
 =============================================================================================
-                          19.  INHALT DER ANWENDUNG
+                          20.  ANWENDUNGSINHALT
 =============================================================================================
 
 Verzeichnisstruktur der mit AvyscanLab verteilten Dateien:
 
     AvyscanLab.exe                           Hauptprogramm
     ScriptMaster.en.avs                     AviSynth-Skriptvorlage
-    UserGuide.txt                           Texthandbuch (Franzoesisch, Quelle)
+    UserGuide.txt                           Texthandbuch (Französisch, Quelle)
 
     Assets/
       Ico.ico                               Anwendungssymbol
       Logo.png                              Logo
+
+    Filters/
+      stab8mm.json                          8mm-Stabilisierung (vordefiniert)
+      rgb_levels32.json                     RGB-Pegel 32-Bit (vordefiniert)
+      awb32.json                            Auto-Weißabgleich (vordefiniert)
+      wb32.json                             Weißabgleich 32-Bit (vordefiniert)
+      degrain.json                          Kornreduktion (vordefiniert)
+      denoise.json                          Staubentfernung (vordefiniert)
+      luma.json                             Helligkeitsstufen (vordefiniert)
+      sharpen.json                          Schärfe (vordefiniert)
+      gammac.json                           Farbkorrektur (vordefiniert)
+      crop.json                             Zuschnitt (vordefiniert)
+      flip_h.json                           Horizontale Spiegelung (vordefiniert)
+      flip_v.json                           Vertikale Spiegelung (vordefiniert)
 
     mpv/
       libmpv-2.dll                          Videoplayer (libmpv)
 
     Users Guide/
       AvyscanLab_Guide_en.txt                Benutzerhandbuch (Englisch)
-      AvyscanLab_Guide_fr.txt                Benutzerhandbuch (Franzoesisch)
+      AvyscanLab_Guide_fr.txt                Benutzerhandbuch (Französisch)
       AvyscanLab_Guide_de.txt                Benutzerhandbuch (Deutsch)
       AvyscanLab_Guide_es.txt                Benutzerhandbuch (Spanisch)
 
     Plugins/
       Avisynth/
         AviSynth.dll                        Eingebettete AviSynth+-Engine
-        DevIL.dll                           Bildladung (Abhaengigkeit)
-        ImageSeq.dll                        Unterstuetzung von Bildsequenzen
+        DevIL.dll                           Bildladung (Abhängigkeit)
+        ImageSeq.dll                        Unterstützung von Bildsequenzen
 
       Dual/L-Smash-Works/
         LSMASHSource.dll                    L-SMASH-Decoder (MP4/MOV)
@@ -793,7 +996,7 @@ Verzeichnisstruktur der mit AvyscanLab verteilten Dateien:
         ffmpeg.exe                          Videoencoder
         ffprobe.exe                         Videodateianalyse
         avcodec-62.dll                      FFmpeg-Codec
-        avdevice-62.dll                     FFmpeg-Geraete
+        avdevice-62.dll                     FFmpeg-Geräte
         avfilter-11.dll                     FFmpeg-Filter
         avformat-62.dll                     FFmpeg-Formate
         avutil-60.dll                       FFmpeg-Hilfsprogramme
@@ -810,9 +1013,9 @@ Verzeichnisstruktur der mit AvyscanLab verteilten Dateien:
         masktools2.dll                      Maskenoperationen
 
       MVTools2/
-        mvtools2.dll                        Bewegungsschaetzung und -kompensation
+        mvtools2.dll                        Bewegungsschätzung und -kompensation
         DePan.dll                           DePan-Stabilisierung
-        DePanEstimate.dll                   DePan-Schaetzung
+        DePanEstimate.dll                   DePan-Schätzung
 
       RemoveDirt/
         RemoveDirt.dll                      Staubentfernung
@@ -827,7 +1030,7 @@ Verzeichnisstruktur der mit AvyscanLab verteilten Dateien:
 
 =============================================================================================
 
-                              C L E A N S C A N
+                              A V Y S C A N   L A B
                                 ScanFilm SNC
                                www.scanfilm.ch
 

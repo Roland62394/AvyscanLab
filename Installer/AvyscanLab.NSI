@@ -212,6 +212,26 @@ Function .onInit
         Abort
     ${EndIf}
 
+    ; ── Check if already installed ──
+    ReadRegStr $0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "UninstallString"
+    ${If} $0 != ""
+        MessageBox MB_YESNOCANCEL|MB_ICONQUESTION \
+            "${APP_NAME} is already installed.$\n$\n\
+            Do you want to uninstall the previous version before continuing?$\n$\n\
+            Yes = Uninstall first, then install$\n\
+            No  = Install over existing (update)$\n\
+            Cancel = Abort" \
+            IDYES uninst_prev IDNO skip_uninst
+        Abort
+
+    uninst_prev:
+        ; Run the existing uninstaller silently
+        ExecWait '$0 /S' $1
+        Sleep 1000
+
+    skip_uninst:
+    ${EndIf}
+
     ; ── Close running instance of Avyscan Lab ──
     FindWindow $0 "" "${APP_NAME}"
     ${If} $0 != 0

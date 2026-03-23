@@ -1,26 +1,26 @@
-                              C L E A N S C A N
+                              A V Y S C A N   L A B
                             Guía del usuario
 
                                 ScanFilm SNC
                                www.scanfilm.ch
 
-                 Version de prueba — release 1.00 - marzo 2026
+                 Versión de prueba — release 1.00 - marzo 2026
 
 
 =============================================================================================
                                  TABLA DE CONTENIDOS
 =============================================================================================
 
-    1.  Presentación                        10.  Filtros personalizados (Custom)
-    2.  Requisitos e instalación           11.  Preajustes (Presets)
-    3.  Interfaz general                   12.  Codificación y renderizado
-    4.  Selección de la fuente             13.  Ajustes de la aplicación
-    5.  Reproductor de vídeo y navegación  14.  Vista previa del script
-    6.  Panel de filtros                   15.  Comentarios (Feedback)
-    7.  Filtro CROP (Recorte)              16.  Flujo de trabajo recomendado
-    8.  Filtros de restauración            17.  Consejos y atajos
-    9.  Filtros de mejora                  18.  Archivos y ubicaciones
-                                            19.  Contenido de la aplicación
+    1.  Presentación                          11.  Preajustes (Presets)
+    2.  Requisitos e instalación             12.  Codificación y renderizado
+    3.  Interfaz general                     13.  Configuración de la aplicación
+    4.  Selección de la fuente               14.  Vista previa del script
+    5.  Reproductor de vídeo y navegación    15.  Comentarios (Feedback)
+    6.  Panel de filtros                     16.  Visita guiada
+    7.  Filtro CROP (Recorte)                17.  Flujo de trabajo recomendado
+    8.  Filtros de restauración              18.  Consejos y atajos
+    9.  Filtros de mejora                    19.  Archivos y ubicaciones
+    10. Filtros personalizados (Custom)      20.  Contenido de la aplicación
 
 
 =============================================================================================
@@ -36,7 +36,11 @@ AvyscanLab es un software de restauración de películas analógicas digitalizad
     - Corregir las desviaciones cromáticas (GamMac)
     - Recortar la imagen
     - Reforzar la nitidez (Sharpen / Edge-aware)
-    - Añadir filtros AviSynth personalizados con interfaz de control
+    - Estabilizar películas 8 mm (DePan)
+    - Balance de blancos automático (AWB)
+    - Niveles RGB en 32 bits
+    - Balance de blancos en 32 bits
+    - Añadir filtros AviSynth personalizados con interfaz de control completa
 
 El software genera un script AviSynth+ optimizado y ofrece una previsualización en tiempo real
 mediante un reproductor de vídeo integrado (libmpv). La codificación final la realiza FFmpeg.
@@ -77,6 +81,11 @@ de la forma más exhaustiva posible, a sus autores:
           Técnica de refuerzo de la nitidez mediante máscara Sobel y curva
           gamma (^0.86), en la que se inspira el modo « edge » de AvyscanLab.
 
+      DePan — Fizick
+          Estimación y compensación del movimiento global para la estabilización
+          de películas 8 mm. Reduce eficazmente las vibraciones y oscilaciones
+          propias de los escáneres de película.
+
 =============================================================================================
                            2.  REQUISITOS E INSTALACIÓN
 =============================================================================================
@@ -105,7 +114,7 @@ La interfaz está organizada en tres zonas principales:
     ZONA SUPERIOR
     -----------------------------------------------------------------------------------------
     Barra de menús: Información (guía, vista previa del script, presets, acerca de, contacto,
-    ajustes), Idiomas (FR/EN/DE/ES), visita guiada.
+    ajustes, exportar/importar ajustes), Idiomas (FR/EN/DE/ES), visita guiada.
 
     Barra de fuente: campos de selección del archivo fuente, modo imagen/vídeo, threads,
     cargador de fuente (Auto/FFMS2/L-SMASH/LWLibav).
@@ -134,8 +143,12 @@ La interfaz está organizada en tres zonas principales:
     ZONA INFERIOR
     -----------------------------------------------------------------------------------------
     Panel de filtros dividido en dos columnas separadas por un separador redimensionable:
-        - Columna izquierda: botones de activación de los filtros (ON/OFF) y filtros personalizados
+        - Columna izquierda: botones de activación de los filtros (ON/OFF) y filtros
+          personalizados
         - Columna derecha: parámetros detallados del filtro seleccionado
+
+    Cada filtro dispone de un botón de reinicio (Reset) que restablece todos sus parámetros
+    a los valores predeterminados.
 
     La altura entre el reproductor y el panel de filtros es ajustable mediante el separador
     horizontal.
@@ -161,21 +174,22 @@ Velocidad de reproducción (FPS)
     Valores habituales para los formatos comunes:
                     8 mm: 16 o 18 fps
                     Super 8: 18 o 24 fps
+                    9,5 mm: 16 fps
                     16 mm: 18 o 24 fps
 
 Cargador de fuente
     El menú desplegable permite forzar el plugin de decodificación:
         Auto      Detección automática (recomendada)
         FFMS2     FFmpegSource2 — compatibilidad máxima
-        L-SMASH   LSmashSource — MP4/MOV optimizado
+        L-SMASH   LSmashSource — optimizado para MP4/MOV
         LWLibav   LWLibavVideoSource — formato alternativo
     En caso de error de lectura al abrir un archivo, pruebe a cambiar el cargador de fuente.
 
 Threads
-    Número de threads de procesamiento AviSynth (por defecto: 4). Aumente este valor para aprovechar
-    todos los núcleos del procesador.
-    Un valor demasiado alto puede provocar ralentizaciones o errores en las máquinas menos potentes.
-    Ajústelo en función de su hardware.
+    Número de threads de procesamiento AviSynth (por defecto: 4). Aumente este valor para
+    aprovechar todos los núcleos del procesador.
+    Un valor demasiado alto puede provocar ralentizaciones o errores en las máquinas menos
+    potentes. Ajústelo en función de su hardware.
 
 Multi-clips
     Puede cargar varios archivos. Cada clip dispone de sus propios ajustes
@@ -209,7 +223,8 @@ Interacciones con los parámetros:
     Arrastrar el slider       Ajuste en tiempo real
     Rueda en campo de texto   Ajusta el valor por paso (step)
     Entrada directa           Escriba un valor, valide con Intro o clic en otro lugar
-    Pasar sobre una etiqueta  Muestra la información emergente con rango y consejos del parámetro seleccionado
+    Pasar sobre una etiqueta  Muestra la información emergente con rango y consejos del
+                              parámetro seleccionado
 
 Modo media resolución:
     El botón "1/2" activa el modo media resolución: el script AviSynth procesa la imagen
@@ -217,12 +232,18 @@ Modo media resolución:
     considerablemente la previsualización en las máquinas menos potentes.
 
 Visualización de errores:
-    En caso de error del script AviSynth, aparece un banner en el reproductor y se abre una ventana
-    de error con:
+    En caso de error del script AviSynth, aparece un banner en el reproductor y se abre una
+    ventana de error con:
         - El mensaje de error (sin los prefijos técnicos de ffmpeg)
         - El extracto del script alrededor de la línea errónea (con marcador ►)
         - La salida completa de ffmpeg en una sección "Detalles" contraíble
         - Un botón "Copiar" para copiar el mensaje completo
+
+Histograma:
+    El botón de histograma muestra una superposición del histograma de la imagen actual
+    directamente sobre el reproductor. Haga clic derecho sobre el botón para cambiar el tipo
+    de histograma (luma, RGB, etc.). El histograma se actualiza en tiempo real con cada
+    cambio de fotograma o de parámetro.
 
 Preset por clip:
     El menú desplegable junto a la barra de transporte permite aplicar un preset
@@ -240,6 +261,8 @@ El panel inferior está dividido en dos columnas:
 Cada filtro posee:
     - Un botón ON/OFF para activar/desactivar el filtro
     - Un botón de expansión (>) que muestra su panel con sus parámetros detallados
+    - Un botón de reinicio (Reset) que restablece todos los parámetros a los valores
+      predeterminados del filtro
     - Presets rápidos (para ciertos filtros)
 
 Las opciones generales (fuera de los filtros) son:
@@ -252,10 +275,20 @@ Orden del pipeline de procesamiento:
     2. Recorte (crop)
     3. Eliminación de polvo (denoise / RemoveDirt)
     4. Reducción del grano (degrain / MVTools2)
-    5. Niveles de luminosidad (luma levels)
-    6. Corrección cromática (GamMac)
-    7. Filtros personalizados (6 puntos de inyección posibles)
-    8. Nitidez (sharpen) — siempre en último lugar
+    5. Estabilización (stabilisation / DePan)
+    6. Niveles de luminosidad (luma levels)
+    7. Niveles RGB en 32 bits (RGB levels 32-bit)
+    8. Corrección cromática (GamMac)
+    9. Balance de blancos automático (AWB)
+    10. Balance de blancos en 32 bits (WB 32-bit)
+    11. Filtros personalizados (6 puntos de inyección posibles)
+    12. Nitidez (sharpen) — siempre en último lugar
+
+Filtros activos e inactivos:
+    Los filtros activados (ON) aparecen en la zona superior de la columna izquierda.
+    Los filtros desactivados (OFF) se desplazan a la zona INACTIVE en la parte inferior.
+    Es posible reorganizar el orden de los filtros personalizados mediante arrastrar y soltar
+    (drag-and-drop).
 
 Los valores de los sliders se alinean automáticamente con el paso (step) definido
 para cada parámetro, lo que impide los valores inválidos.
@@ -326,6 +359,36 @@ a números pares (requisito del submuestreo chroma YUV).
     Nota: removedirtmc (con compensación de movimiento) se recomienda para obtener mejores
     resultados. El modo removedirt es más rápido pero menos preciso.
 
+    ESTABILIZACIÓN 8 MM (DePan)
+    -----------------------------------------------------------------------------------------
+    Estabilización de la imagen para películas 8 mm y Super 8. Utiliza DePanEstimate para
+    analizar el movimiento global del cuadro y DePan para compensarlo. Especialmente eficaz
+    para reducir las vibraciones y oscilaciones provocadas por los escáneres de película
+    o por los mecanismos de arrastre irregulares.
+
+    Parámetro              Rango                        Por defecto     Descripción
+    stab_dxmax             0-60                         30             Desplazamiento X máximo (px)
+    stab_dymax             0-60                         30             Desplazamiento Y máximo (px)
+    stab_zoommax           0.0-5.0                      1.0            Zoom máximo permitido
+    stab_rotmax            0.0-5.0                      1.0            Rotación máxima (grados)
+    stab_mirror            0-15                         0              Relleno de bordes (mirror)
+    stab_blur              0-100                        30             Suavizado de la estimación
+
+    Notas:
+        - dxmax/dymax: define la amplitud máxima de corrección horizontal y vertical.
+          Valores demasiado altos pueden provocar artefactos en los bordes.
+        - zoommax: limita la corrección de zoom. Un valor de 0 desactiva la
+          compensación de zoom.
+        - rotmax: limita la corrección de rotación. Un valor de 0 desactiva la
+          compensación de rotación.
+        - mirror: modo de relleno de los bordes expuestos tras la estabilización.
+          0 = negro, valores superiores aplican diferentes modos de espejo.
+        - blur: suaviza la trayectoria estimada para evitar correcciones bruscas.
+          Un valor alto produce un movimiento más fluido.
+
+    Consejo: la estabilización se aplica después de la reducción de grano (degrain)
+    para evitar que el análisis de movimiento se vea perturbado por el grano.
+
 
 =============================================================================================
                          9.  FILTROS DE MEJORA
@@ -344,6 +407,30 @@ a números pares (requisito del submuestreo chroma YUV).
 
     Nota: GammaY > 1 aclara los tonos medios, < 1 los oscurece.
     Es a menudo el parámetro más útil para las películas antiguas subexpuestas.
+
+    RGB LEVELS 32-BIT — Niveles RGB en 32 bits
+    -----------------------------------------------------------------------------------------
+    Ajuste independiente de los canales rojo, verde y azul en precisión 32 bits (coma flotante).
+    Permite correcciones finas de los niveles por canal con una precisión superior
+    a la de los niveles en 8 bits, sin pérdida de rango dinámico ni efecto de bandas (banding).
+
+    Parámetro              Rango              Por defecto  Descripción
+    RGB_R_Gain             0.0-2.0            1.0         Ganancia del canal rojo
+    RGB_G_Gain             0.0-2.0            1.0         Ganancia del canal verde
+    RGB_B_Gain             0.0-2.0            1.0         Ganancia del canal azul
+    RGB_R_Gamma            0.1-3.0            1.0         Gamma del canal rojo
+    RGB_G_Gamma            0.1-3.0            1.0         Gamma del canal verde
+    RGB_B_Gamma            0.1-3.0            1.0         Gamma del canal azul
+    RGB_R_Offset           -100 a 100         0           Desplazamiento del canal rojo
+    RGB_G_Offset           -100 a 100         0           Desplazamiento del canal verde
+    RGB_B_Offset           -100 a 100         0           Desplazamiento del canal azul
+
+    Notas:
+        - Gain: multiplica los valores del canal. >1 refuerza, <1 atenúa.
+        - Gamma: ajusta la curva de tonos medios del canal.
+        - Offset: añade o resta un valor constante al canal.
+        - El procesamiento en 32 bits evita el recorte (clipping) y el banding
+          que pueden aparecer con los ajustes en 8 bits.
 
     GAMMAC — Corrección cromática avanzada
     -----------------------------------------------------------------------------------------
@@ -367,6 +454,49 @@ a números pares (requisito del submuestreo chroma YUV).
 
     LockChan: 0=Rojo, 1=Verde, 2=Azul, -1=valor objetivo, -2=media, -3=mediana.
     Haga clic en el botón (i) para abrir la documentación detallada de GamMac.
+
+    AWB — Balance de blancos automático
+    -----------------------------------------------------------------------------------------
+    Ajuste automático del balance de blancos basado en el análisis estadístico
+    de la imagen. El algoritmo identifica las zonas neutras (grises/blancas) y corrige
+    la dominante de color para obtener blancos neutros.
+
+    Parámetro              Rango              Por defecto  Descripción
+    AWB_Strength           0.0-1.0            1.0         Fuerza de la corrección
+    AWB_Mode               auto/warm/cool     auto        Modo de corrección
+
+    Notas:
+        - Strength: 1.0 aplica la corrección completa, valores inferiores mezclan
+          con la imagen original.
+        - Mode auto: detección automática de la dominante y corrección neutra.
+        - Mode warm: corrección con un ligero tono cálido.
+        - Mode cool: corrección con un ligero tono frío.
+
+    Consejo: el balance de blancos automático es particularmente eficaz para las
+    películas con una dominante de color uniforme. Para dominantes variables entre
+    escenas, considere usar GamMac en su lugar.
+
+    WB 32-BIT — Balance de blancos en 32 bits
+    -----------------------------------------------------------------------------------------
+    Balance de blancos en precisión 32 bits (coma flotante). Ofrece un control manual
+    más preciso que el modo AWB automático, con multiplicadores por canal que operan
+    en espacio lineal para una corrección más fiel.
+
+    Parámetro              Rango              Por defecto  Descripción
+    WB32_R_Mult            0.5-2.0            1.0         Multiplicador rojo
+    WB32_G_Mult            0.5-2.0            1.0         Multiplicador verde
+    WB32_B_Mult            0.5-2.0            1.0         Multiplicador azul
+    WB32_Preserve_Luma     true/false         true        Preservar la luminosidad
+
+    Notas:
+        - Los multiplicadores actúan directamente sobre cada canal en espacio lineal 32 bits.
+        - Preserve_Luma: cuando está activado, compensa la luminosidad global
+          para que el ajuste del balance no aclare ni oscurezca la imagen.
+        - El procesamiento en 32 bits garantiza la máxima precisión y evita
+          los artefactos de cuantificación.
+
+    Consejo: utilice la pipeta (si está disponible) sobre una zona que debería
+    ser blanca o gris neutro para calcular automáticamente los multiplicadores.
 
     SHARPEN — Refuerzo de la nitidez
     -----------------------------------------------------------------------------------------
@@ -455,9 +585,9 @@ de restauración con una interfaz de control completa.
     al "+" en la sección CUSTOM. Seleccione un archivo .json exportado. Los filtros
     importados reciben un nuevo identificador para evitar duplicados.
 
-    Nota: las rutas de las DLL son absolutas. Si el filtro utiliza un plugin externo, asegúrese
-    de que la DLL esté presente en la misma ubicación en la máquina de destino, o edite el filtro
-    después de la importación para corregir la ruta.
+    Nota: las rutas de las DLL son absolutas. Si el filtro utiliza un plugin externo,
+    asegúrese de que la DLL esté presente en la misma ubicación en la máquina de destino,
+    o edite el filtro después de la importación para corregir la ruta.
 
     ELIMINAR UN FILTRO
     -----------------------------------------------------------------------------------------
@@ -467,46 +597,46 @@ de restauración con una interfaz de control completa.
 Ubicación de almacenamiento: %AppData%\AvyscanLab\custom_filters.json
 
 
-  IMPORTAR UN SCRIPT AVSI
-      -----------------------------------------------------------------------------------------
+    IMPORTAR UN SCRIPT AVSI
+    -----------------------------------------------------------------------------------------
 
-      Algunos filtros AviSynth se basan en funciones definidas en archivos
-      de script (.avsi). Estos archivos contienen funciones reutilizables que amplían
-      las posibilidades de AviSynth sin ser plugins compilados (.dll).
+    Algunos filtros AviSynth se basan en funciones definidas en archivos
+    de script (.avsi). Estos archivos contienen funciones reutilizables que amplían
+    las posibilidades de AviSynth sin ser plugins compilados (.dll).
 
-      Para añadir un script .avsi a un filtro personalizado:
+    Para añadir un script .avsi a un filtro personalizado:
 
-      1. Abra el formulario de edición del filtro (botón lápiz o creación de un nuevo
-         filtro mediante el botón "+").
+    1. Abra el formulario de edición del filtro (botón lápiz o creación de un nuevo
+       filtro mediante el botón "+").
 
-      2. En la sección "Scripts (Import .avsi)", haga clic en "+ Añadir AVSI...".
+    2. En la sección "Scripts (Import .avsi)", haga clic en "+ Añadir AVSI...".
 
-      3. Seleccione uno o varios archivos .avsi o .avs desde su disco.
-         Los archivos seleccionados se copian automáticamente en la carpeta
-         Plugins/Scripts/ de la aplicación, lo que garantiza su disponibilidad
-         independientemente de su ubicación original.
+    3. Seleccione uno o varios archivos .avsi o .avs desde su disco.
+       Los archivos seleccionados se copian automáticamente en la carpeta
+       Plugins/Scripts/ de la aplicación, lo que garantiza su disponibilidad
+       independientemente de su ubicación original.
 
-      4. Los scripts añadidos aparecen en la lista. Utilice el botón (x) para
-         eliminar un script de la lista.
+    4. Los scripts añadidos aparecen en la lista. Utilice el botón (x) para
+       eliminar un script de la lista.
 
-      5. Durante la generación del script AviSynth, AvyscanLab inserta automáticamente
-         una instrucción Import() para cada script referenciado, justo después de la
-         carga de los plugins:
+    5. Durante la generación del script AviSynth, AvyscanLab inserta automáticamente
+       una instrucción Import() para cada script referenciado, justo después de la
+       carga de los plugins:
 
              TryLoadPlugin("C:/.../MiPlugin.dll")
              Import("C:/.../Plugins/Scripts/MisFunciones.avsi")
 
-      Las funciones definidas en el archivo .avsi están entonces disponibles en el código
-      de su filtro personalizado.
+    Las funciones definidas en el archivo .avsi están entonces disponibles en el código
+    de su filtro personalizado.
 
-      Ejemplo: si su archivo MisFunciones.avsi define una función MiDenoiser(),
-      puede usarla directamente en el código del filtro:
-          c = MiDenoiser(c, fuerza={sigma})
+    Ejemplo: si su archivo MisFunciones.avsi define una función MiDenoiser(),
+    puede usarla directamente en el código del filtro:
+        c = MiDenoiser(c, fuerza={sigma})
 
-      Nota: durante la exportación de un filtro, solo se registra el nombre del archivo .avsi
-      (no su contenido). Si comparte un filtro con otro usuario,
-      transmita también los archivos .avsi necesarios. El usuario deberá
-      importarlos mediante el mismo mecanismo.
+    Nota: durante la exportación de un filtro, solo se registra el nombre del archivo
+    .avsi (no su contenido). Si comparte un filtro con otro usuario,
+    transmita también los archivos .avsi necesarios. El usuario deberá
+    importarlos mediante el mismo mecanismo.
 
 
 
@@ -615,21 +745,33 @@ de codificación.
     Opción "Apagar después de la codificación": marque esta casilla para apagar el ordenador
     automáticamente después de una codificación batch exitosa.
 
-    Nota técnica: la codificación utiliza un script de renderizado dedicado (ScriptRender.avs) donde
-    el modo preview está desactivado, garantizando la calidad final máxima.
+    Nota técnica: la codificación utiliza un script de renderizado dedicado (ScriptRender.avs)
+    donde el modo preview está desactivado, garantizando la calidad final máxima.
 
 
 =============================================================================================
-                         13.  AJUSTES DE LA APLICACIÓN
+                         13.  CONFIGURACIÓN DE LA APLICACIÓN
 =============================================================================================
 
 Menú Información > Ajustes:
 
     Parámetro              Descripción
     -----------------------------------------------------------------------------------------
-    Tema                   Oscuro (por defecto) o Claro
+    Tema                   Oscuro (por defecto), Gris o Claro
+    Acento                 Color de acento de la interfaz (personalización visual)
     Idioma                 Francés, Inglés, Alemán, Español
-    Reset settings         Restablece todos los ajustes por defecto y reinicia.
+
+    Exportar ajustes       Exporta todos los ajustes de la aplicación (presets, filtros
+                           personalizados, presets de codificación, configuración de la ventana)
+                           a un archivo .json. Permite hacer una copia de seguridad completa
+                           o transferir su configuración a otra máquina.
+
+    Importar ajustes       Importa un archivo de ajustes exportado previamente.
+                           Un informe de importación muestra los elementos importados
+                           con su estado (OK/error). La aplicación debe reiniciarse
+                           para que todos los cambios surtan efecto.
+
+    Restablecer ajustes    Restablece todos los ajustes por defecto y reinicia.
                            Atención, se trata realmente de un restablecimiento completo que
                            borra todos los presets, filtros personalizados y demás
                            configuraciones guardadas.
@@ -643,8 +785,8 @@ Menú Idiomas:
                               14.  VISTA PREVIA DEL SCRIPT
 =============================================================================================
 
-El menú Información > Vista previa del script abre una ventana que muestra el contenido completo
-del archivo ScriptUser.avs generado por AvyscanLab.
+El menú Información > Vista previa del script abre una ventana que muestra el contenido
+completo del archivo ScriptUser.avs generado por AvyscanLab.
 
 El botón "Recargar" relee el archivo desde el disco y actualiza la previsualización.
 Esto permite verificar el script AviSynth producido y copiarlo eventualmente
@@ -661,12 +803,37 @@ enviar directamente al desarrollador:
     - Una solicitud de funcionalidad
     - Una opinión general con puntuación (estrellas de 1 a 5)
 
-El formulario se transmite por Internet. El nombre y el correo electrónico son opcionales pero
-recomendados si desea una respuesta.
+El formulario se transmite por Internet. El nombre y el correo electrónico son opcionales
+pero recomendados si desea una respuesta.
 
 
 =============================================================================================
-                             16.  FLUJO DE TRABAJO RECOMENDADO
+                             16.  VISITA GUIADA
+=============================================================================================
+
+El menú Visita guiada (o el icono correspondiente en la barra de menús) lanza un recorrido
+interactivo paso a paso por la interfaz de AvyscanLab.
+
+La visita guiada presenta las zonas principales de la aplicación mediante cuadros
+informativos que se superponen a la interfaz:
+
+    - Cada paso resalta una zona o un control concreto de la interfaz
+    - Una descripción explica la función del elemento seleccionado
+    - Los botones "Anterior" y "Siguiente" permiten avanzar o retroceder
+    - Un indicador de progreso (puntos) muestra la posición actual en el recorrido
+    - El botón "Omitir" permite salir de la visita en cualquier momento
+    - Al final de la visita, el botón "¡Comenzar!" cierra el recorrido
+
+La visita guiada es especialmente recomendable para los usuarios nuevos. Cubre los
+conceptos fundamentales: barra de fuente, reproductor, panel de filtros, barra de transporte,
+menú de información y presets.
+
+Consejo: puede relanzar la visita guiada en cualquier momento desde el menú para
+refrescar la memoria sobre las funciones de cada zona de la interfaz.
+
+
+=============================================================================================
+                             17.  FLUJO DE TRABAJO RECOMENDADO
 =============================================================================================
 
     1. Abra su fuente (arrastrar y soltar o campo source).
@@ -685,21 +852,35 @@ recomendados si desea una respuesta.
                        si el grano persiste. Atención: valores demasiado altos
                        producen un efecto "plástico".
 
-       d) Luma       — Ajuste el brillo y el contraste. GammaY es a menudo el
+       d) Stabilise  — Para películas 8 mm / Super 8, active la estabilización
+                       para reducir las vibraciones. Ajuste dxmax/dymax según
+                       la amplitud de las oscilaciones observadas.
+
+       e) Luma       — Ajuste el brillo y el contraste. GammaY es a menudo el
                        parámetro más útil para aclarar las películas antiguas.
 
-       e) GamMac     — Corrija las desviaciones de color (amarilleamiento, dominante
+       f) RGB Levels — Si necesita un ajuste fino por canal, utilice los niveles
+                       RGB en 32 bits para una corrección precisa sin banding.
+
+       g) GamMac     — Corrija las desviaciones de color (amarilleamiento, dominante
                        azul, roja, etc.).
 
-       f) Sharpen    — Refuerce la nitidez en la última etapa. El modo "edge"
+       h) AWB        — Active el balance de blancos automático si la película tiene
+                       una dominante de color global uniforme.
+
+       i) WB 32-bit  — Para un control manual preciso del balance de blancos,
+                       utilice el modo 32 bits con los multiplicadores por canal.
+
+       j) Sharpen    — Refuerce la nitidez en la última etapa. El modo "edge"
                        preserva mejor las zonas lisas y evita amplificar el
                        grano residual.
 
     4. Utilice los presets disponibles en ciertos filtros para un ajuste rápido, luego afine.
 
     5. Verifique el resultado recorriendo varios pasajes de la película.
+       Utilice el histograma para verificar la distribución de los niveles.
 
-    6. Guarde su configuración como preset en el menú Settings para poder
+    6. Guarde su configuración como preset en el menú Información para poder
        reutilizarla fácilmente en otros clips de la misma película o de películas similares.
 
     7. Si tiene varios clips: cárguelos todos, luego aplique los presets adecuados.
@@ -716,7 +897,7 @@ recomendados si desea una respuesta.
 
 
 =============================================================================================
-                           17.  CONSEJOS Y ATAJOS
+                           18.  CONSEJOS Y ATAJOS
 =============================================================================================
 
     - La rueda del ratón en los campos numéricos ajusta el valor por paso.
@@ -726,16 +907,23 @@ recomendados si desea una respuesta.
     - La posición, el tamaño de la ventana y el estado de los paneles se memorizan entre
       las sesiones.
     - El panel Record se restaura al abrir si estaba abierto al cerrar.
-    - Las informaciones emergentes (al pasar) sobre cada parámetro muestran los rangos y consejos.
+    - Las informaciones emergentes (al pasar) sobre cada parámetro muestran los rangos
+      y consejos.
     - Arrastrar y soltar varios archivos crea automáticamente un clip por archivo.
     - Los sliders se posicionan directamente al hacer clic (no es necesario arrastrar).
     - La visita guiada (menú) permite descubrir los fundamentos de la interfaz paso a paso.
     - Los errores AviSynth muestran automáticamente la línea de script errónea.
     - El botón "Copiar" en la ventana de error copia el mensaje y los detalles.
+    - El botón de reinicio (Reset) de cada filtro restablece rápidamente los valores
+      predeterminados sin necesidad de recordarlos.
+    - El histograma (clic derecho para cambiar el tipo) permite verificar la exposición
+      y la distribución de los niveles en tiempo real.
+    - Exporte sus ajustes regularmente (Información > Exportar ajustes) para disponer
+      de una copia de seguridad.
 
 
 =============================================================================================
-                          18.  ARCHIVOS Y UBICACIONES
+                          19.  ARCHIVOS Y UBICACIONES
 =============================================================================================
 
     Archivo / Carpeta              Ubicación
@@ -753,7 +941,7 @@ recomendados si desea una respuesta.
 
 
 =============================================================================================
-                          19.  CONTENIDO DE LA APLICACIÓN
+                          20.  CONTENIDO DE LA APLICACIÓN
 =============================================================================================
 
 Árbol de archivos distribuidos con AvyscanLab:
@@ -823,7 +1011,7 @@ recomendados si desea una respuesta.
 
 =============================================================================================
 
-                              C L E A N S C A N
+                              A V Y S C A N   L A B
                                 ScanFilm SNC
                                www.scanfilm.ch
 
