@@ -561,7 +561,7 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
     }
 
     private static string GetAppDataPath(string fileName) =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AvyscanLab", fileName);
+        AppConstants.GetAppDataPath(fileName);
 
     private static void EnsureDirectory(string filePath)
     {

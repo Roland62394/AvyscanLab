@@ -224,6 +224,7 @@ namespace AvyscanLab.ViewModels
                 ["CfDlgHelpBody"] = "WORKFLOW\n1. Write your AviSynth code using 'c' as the clip variable.\n2. Select a line like \"var = value\" with the mouse \u2192 a prompt offers to convert it into a {placeholder} control.\n3. Or type {name} directly in the code to create a placeholder manually.\n\nBUTTONS (per parameter)\n\u2022 \uD83D\uDC41 Eye \u2014 Highlights the {placeholder} in the code editor and scrolls to it.\n\u2022 \u2715 Red X \u2014 Removes the control and replaces {placeholder} with its default value in the code.\n\nFOOTER BUTTONS\n\u2022 Delete \u2014 Permanently deletes this custom filter.\n\u2022 \u2750 Duplicate \u2014 Creates an independent copy of the filter with a new name.\n\u2022 \u2191 Export \u2014 Saves the filter as a JSON file to share or back up.\n\u2022 \u25B6 Preview \u2014 Reloads the modified script in the player without closing the dialog.\n\u2022 Cancel \u2014 Closes without saving changes.\n\u2022 Save \u2014 Saves the filter and closes the dialog.",
                 ["InactiveFilters"] = "INACTIVE",
                 ["DrawRegion"] = "Draw region",
+                ["ResetFilterDefaults"] = "Reset to defaults",
                 ["FilterResetOrderTip"] = "Restore default filter order",
                 ["FilterAddTip"] = "Add a new custom filter",
                 ["FilterImportTip"] = "Import a filter from JSON file"
@@ -444,7 +445,8 @@ namespace AvyscanLab.ViewModels
                 ["CfDlgHelpBody"] = "FONCTIONNEMENT\n1. \u00c9crivez votre code AviSynth en utilisant \u00ab c \u00bb comme variable clip.\n2. S\u00e9lectionnez une ligne du type \u00ab var = valeur \u00bb \u00e0 la souris \u2192 une fen\u00eatre propose de la convertir en contr\u00f4le {placeholder}.\n3. Ou tapez {nom} directement dans le code pour cr\u00e9er un placeholder manuellement.\n\nBOUTONS (par param\u00e8tre)\n\u2022 \uD83D\uDC41 \u0152il \u2014 Met en surbrillance le {placeholder} dans l\u2019\u00e9diteur de code et scrolle jusqu\u2019\u00e0 lui.\n\u2022 \u2715 X rouge \u2014 Supprime le contr\u00f4le et remplace {placeholder} par sa valeur par d\u00e9faut dans le code.\n\nBOUTONS DU BAS\n\u2022 Supprimer \u2014 Supprime d\u00e9finitivement ce filtre personnalis\u00e9.\n\u2022 \u2750 Dupliquer \u2014 Cr\u00e9e une copie ind\u00e9pendante du filtre avec un nouveau nom.\n\u2022 \u2191 Exporter \u2014 Sauvegarde le filtre au format JSON pour le partager ou l\u2019archiver.\n\u2022 \u25B6 Aper\u00e7u \u2014 Recharge le script modifi\u00e9 dans le lecteur sans fermer la fen\u00eatre.\n\u2022 Annuler \u2014 Ferme sans sauvegarder les modifications.\n\u2022 Enregistrer \u2014 Sauvegarde le filtre et ferme la fen\u00eatre.",
                 ["InactiveFilters"] = "INACTIFS",
                 ["DrawRegion"] = "Dessiner la zone",
-                ["FilterResetOrderTip"] = "R\u00e9tablir l\u2019ordre par d\u00e9faut des filtres",
+                ["ResetFilterDefaults"] = "Réinitialiser par défaut",
+                ["FilterResetOrderTip"] = "Rétablir l\u2019ordre par défaut des filtres",
                 ["FilterAddTip"] = "Ajouter un filtre personnalis\u00e9",
                 ["FilterImportTip"] = "Importer un filtre depuis un fichier JSON"
             },
@@ -664,6 +666,7 @@ namespace AvyscanLab.ViewModels
                 ["CfDlgHelpBody"] = "ABLAUF\n1. Schreiben Sie Ihren AviSynth-Code mit \u201ec\u201c als Clip-Variable.\n2. W\u00e4hlen Sie eine Zeile wie \u201evar = wert\u201c mit der Maus \u2192 ein Dialog bietet an, sie in ein {Platzhalter}-Steuerelement umzuwandeln.\n3. Oder geben Sie {Name} direkt im Code ein, um manuell einen Platzhalter zu erstellen.\n\nSCHALTFL\u00c4CHEN (pro Parameter)\n\u2022 \uD83D\uDC41 Auge \u2014 Hebt den {Platzhalter} im Code-Editor hervor und scrollt dorthin.\n\u2022 \u2715 Rotes X \u2014 Entfernt das Steuerelement und ersetzt {Platzhalter} durch seinen Standardwert im Code.\n\nFUSSZEILE\n\u2022 L\u00f6schen \u2014 L\u00f6scht diesen benutzerdefinierten Filter dauerhaft.\n\u2022 \u2750 Duplizieren \u2014 Erstellt eine unabh\u00e4ngige Kopie des Filters mit neuem Namen.\n\u2022 \u2191 Exportieren \u2014 Speichert den Filter als JSON-Datei zum Teilen oder Sichern.\n\u2022 \u25B6 Vorschau \u2014 L\u00e4dt das ge\u00e4nderte Skript im Player neu, ohne den Dialog zu schlie\u00dfen.\n\u2022 Abbrechen \u2014 Schlie\u00dft ohne \u00c4nderungen zu speichern.\n\u2022 Speichern \u2014 Speichert den Filter und schlie\u00dft den Dialog.",
                 ["InactiveFilters"] = "INAKTIV",
                 ["DrawRegion"] = "Region zeichnen",
+                ["ResetFilterDefaults"] = "Auf Standardwerte zurücksetzen",
                 ["FilterResetOrderTip"] = "Standard-Filterreihenfolge wiederherstellen",
                 ["FilterAddTip"] = "Neuen benutzerdefinierten Filter hinzuf\u00fcgen",
                 ["FilterImportTip"] = "Filter aus JSON-Datei importieren"
@@ -884,6 +887,7 @@ namespace AvyscanLab.ViewModels
                 ["CfDlgHelpBody"] = "FLUJO DE TRABAJO\n1. Escriba su c\u00f3digo AviSynth usando \u00abc\u00bb como variable de clip.\n2. Seleccione una l\u00ednea como \u00abvar = valor\u00bb con el rat\u00f3n \u2192 un di\u00e1logo ofrece convertirla en un control {marcador}.\n3. O escriba {nombre} directamente en el c\u00f3digo para crear un marcador manualmente.\n\nBOTONES (por par\u00e1metro)\n\u2022 \uD83D\uDC41 Ojo \u2014 Resalta el {marcador} en el editor de c\u00f3digo y desplaza hasta \u00e9l.\n\u2022 \u2715 X roja \u2014 Elimina el control y reemplaza {marcador} por su valor predeterminado en el c\u00f3digo.\n\nBOTONES INFERIORES\n\u2022 Eliminar \u2014 Elimina permanentemente este filtro personalizado.\n\u2022 \u2750 Duplicar \u2014 Crea una copia independiente del filtro con un nombre nuevo.\n\u2022 \u2191 Exportar \u2014 Guarda el filtro como archivo JSON para compartir o respaldar.\n\u2022 \u25B6 Vista previa \u2014 Recarga el script modificado en el reproductor sin cerrar el di\u00e1logo.\n\u2022 Cancelar \u2014 Cierra sin guardar los cambios.\n\u2022 Guardar \u2014 Guarda el filtro y cierra el di\u00e1logo.",
                 ["InactiveFilters"] = "INACTIVOS",
                 ["DrawRegion"] = "Dibujar zona",
+                ["ResetFilterDefaults"] = "Restablecer valores predeterminados",
                 ["FilterResetOrderTip"] = "Restaurar el orden predeterminado de los filtros",
                 ["FilterAddTip"] = "A\u00f1adir un nuevo filtro personalizado",
                 ["FilterImportTip"] = "Importar un filtro desde archivo JSON"

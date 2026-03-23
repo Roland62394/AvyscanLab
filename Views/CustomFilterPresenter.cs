@@ -517,13 +517,37 @@ public sealed class CustomFilterPresenter
         };
 
         var stack = new StackPanel { Spacing = 6 };
+
+        // Title row: filter name (left) + reset button (right)
+        var titleRow = new Grid { ColumnDefinitions = ColumnDefinitions.Parse("*,Auto") };
         var titleBlock = new TextBlock
         {
             Text = filter.Name.ToUpperInvariant(),
             Classes = { "section-title" },
             Cursor = new Cursor(StandardCursorType.Hand)
         };
-        stack.Children.Add(titleBlock);
+        Grid.SetColumn(titleBlock, 0);
+        titleRow.Children.Add(titleBlock);
+
+        var resetBtn = new Button
+        {
+            Content = "↺",
+            FontSize = 14,
+            Width = 22, Height = 22,
+            Padding = new Thickness(0),
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Background = Brushes.Transparent,
+            Foreground = _host.ThemeBrush("TextPrimary"),
+            BorderThickness = new Thickness(0),
+            Cursor = new Cursor(StandardCursorType.Hand)
+        };
+        ToolTip.SetTip(resetBtn, _host.GetUiText("ResetFilterDefaults"));
+        resetBtn.Click += (_, _) => ResetFilterToDefaults(filter);
+        Grid.SetColumn(resetBtn, 1);
+        titleRow.Children.Add(resetBtn);
+
+        stack.Children.Add(titleRow);
 
         // Add "Draw" toggle button for RegionDraw filters
         if (filter.RegionDraw)
@@ -836,6 +860,26 @@ public sealed class CustomFilterPresenter
     public void OnRegionDrawCompleted()
     {
         DeactivateRegionDraw();
+    }
+
+    // ── Reset filter defaults ───────────────────────────────────────
+
+    private void ResetFilterToDefaults(CustomFilter filter)
+    {
+        foreach (var ctrl in filter.Controls)
+        {
+            var configKey = ScriptService.GetCustomFilterConfigKey(filter.Id, ctrl.Placeholder);
+            _host.Config.Set(configKey, ctrl.Default);
+        }
+
+        // Rebuild the panel to reflect the new values
+        var panelName = $"CustomPanel_{filter.Id}";
+        RemoveParamPanel(panelName);
+        BuildParamPanel(filter);
+
+        _host.OnCustomFilterValueChanged();
+        _host.RegenerateScript(showValidationError: false);
+        _ = _host.LoadScriptAsync();
     }
 
     // ── Helpers ──────────────────────────────────────────────────────

@@ -35,18 +35,7 @@ namespace AvyscanLab.Views
     {
         #region Constants
 
-        private const string AppDataFolder         = "AvyscanLab";
-        private const string WindowSettingsFileName = "window-settings.json";
-        private const string PresetsFileName        = "presets.json";
-        private const string EncodingPresetsFileName = "encoding_presets.json";
-        private const string GammacPresetsFileName   = "gammac_presets.json";
-        private const string SessionFileName         = "session.json";
-        private const string CustomFiltersFileName   = "custom_filters.json";
-        private const string DefaultEncodingPresetName = "Default";
-
-        /// <summary>Trial: max recording duration per clip in seconds. 0 = unlimited (full version).</summary>
-        private const int TrialMaxSeconds = 60;
-        private const string UseImageConfigName     = ScriptService.UseImageConfigName;
+        private const string UseImageConfigName = ScriptService.UseImageConfigName;
 
         #endregion
 
@@ -124,24 +113,17 @@ namespace AvyscanLab.Views
 
         #region Constructor & lifecycle
 
+        /// <summary>Design-time / fallback constructor — creates all services locally.</summary>
         public MainWindow()
-        {
-            _config             = new ConfigStore();
-            _clipManager        = new ClipManager(_config);
-            _sourceService      = new SourceService();
-            _aviService         = new AviService();
-            _scriptService      = new ScriptService(_sourceService);
-            _presetService      = new PresetService(GetAppDataPath(PresetsFileName));
-            _encodingPresetService = new PresetService(GetAppDataPath(EncodingPresetsFileName));
-            _gammacPresetService  = new PresetService(GetAppDataPath(GammacPresetsFileName));
-            _windowStateService = new WindowStateService(GetAppDataPath(WindowSettingsFileName));
-            _sessionService     = new SessionService(GetAppDataPath(SessionFileName));
-            _customFilterService = new CustomFilterService(GetAppDataPath(CustomFiltersFileName));
-            _customFilterService.ImportBuiltInFilters();
-            _dialogService      = new DialogService();
-
-            InitializeWindow();
-        }
+            : this(
+                new ConfigStore(),
+                new SourceService(),
+                new ScriptService(new SourceService()),
+                new PresetService(AppConstants.GetAppDataPath(AppConstants.PresetsFileName)),
+                new WindowStateService(AppConstants.GetAppDataPath(AppConstants.WindowSettingsFileName)),
+                new DialogService(),
+                new AviService())
+        { }
 
         public MainWindow(
             ConfigStore         config,
@@ -157,11 +139,11 @@ namespace AvyscanLab.Views
             _sourceService      = sourceService;
             _scriptService      = scriptService;
             _presetService      = presetService;
-            _encodingPresetService = new PresetService(GetAppDataPath(EncodingPresetsFileName));
-            _gammacPresetService  = new PresetService(GetAppDataPath(GammacPresetsFileName));
+            _encodingPresetService = new PresetService(AppConstants.GetAppDataPath(AppConstants.EncodingPresetsFileName));
+            _gammacPresetService  = new PresetService(AppConstants.GetAppDataPath(AppConstants.GammacPresetsFileName));
             _windowStateService = windowStateService;
-            _sessionService     = new SessionService(GetAppDataPath(SessionFileName));
-            _customFilterService = new CustomFilterService(GetAppDataPath(CustomFiltersFileName));
+            _sessionService     = new SessionService(AppConstants.GetAppDataPath(AppConstants.SessionFileName));
+            _customFilterService = new CustomFilterService(AppConstants.GetAppDataPath(AppConstants.CustomFiltersFileName));
             _customFilterService.ImportBuiltInFilters();
             _dialogService      = dialogService;
             _aviService         = aviService;
@@ -749,8 +731,8 @@ namespace AvyscanLab.Views
 
         private static readonly string[] BackupFileNames =
         [
-            PresetsFileName, CustomFiltersFileName, EncodingPresetsFileName,
-            GammacPresetsFileName, SessionFileName, WindowSettingsFileName
+            AppConstants.PresetsFileName, AppConstants.CustomFiltersFileName, AppConstants.EncodingPresetsFileName,
+            AppConstants.GammacPresetsFileName, AppConstants.SessionFileName, AppConstants.WindowSettingsFileName
         ];
 
         private async void OnExportSettingsClick(object? sender, RoutedEventArgs e)
@@ -766,7 +748,7 @@ namespace AvyscanLab.Views
             });
             if (picker is null) return;
 
-            var appDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppDataFolder);
+            var appDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppConstants.AppDataFolder);
             var zipPath = picker.Path.LocalPath;
 
             // Save current session before export
@@ -802,7 +784,7 @@ namespace AvyscanLab.Views
             if (picker.Count == 0) return;
 
             var zipPath = picker[0].Path.LocalPath;
-            var appDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppDataFolder);
+            var appDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppConstants.AppDataFolder);
 
             // Validate each file in the archive and build a report
             var report = new List<(string Name, string Status)>();
@@ -956,7 +938,7 @@ namespace AvyscanLab.Views
             if (!result) return;
 
             // Delete entire AppData\AvyscanLab folder so the app leaves no trace
-            var appDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppDataFolder);
+            var appDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppConstants.AppDataFolder);
             try { if (Directory.Exists(appDataDir)) Directory.Delete(appDataDir, recursive: true); } catch { }
 
             // Restart application
@@ -3412,9 +3394,6 @@ namespace AvyscanLab.Views
             if (hash >= 0) cleaned = cleaned[..hash].TrimEnd();
             return cleaned.Trim().Trim('"');
         }
-
-        private static string GetAppDataPath(string fileName) =>
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppDataFolder, fileName);
 
         private void OnGuidedTourClick(object? sender, RoutedEventArgs e)
         {

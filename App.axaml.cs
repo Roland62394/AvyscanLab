@@ -15,7 +15,6 @@ namespace AvyscanLab
 {
     public partial class App : Application
     {
-        private const string AppDataFolder = "AvyscanLab";
 
         public override void Initialize()
         {
@@ -83,8 +82,8 @@ namespace AvyscanLab
                 var sourceService      = new SourceService();
                 var aviService         = new AviService();
                 var scriptService      = new ScriptService(sourceService);
-                var presetService      = new PresetService(GetAppDataPath("presets.json"));
-                var windowStateService = new WindowStateService(GetAppDataPath("window-settings.json"));
+                var presetService      = new PresetService(AppConstants.GetAppDataPath("presets.json"));
+                var windowStateService = new WindowStateService(AppConstants.GetAppDataPath("window-settings.json"));
                 var dialogService      = new DialogService();
 
                 var mainWindow = new MainWindow(
@@ -110,17 +109,13 @@ namespace AvyscanLab
             }
         }
 
-        private static string GetAppDataPath(string fileName) =>
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppDataFolder, fileName);
-
         private static void TryLogStartupException(Exception exception)
         {
             try
             {
-                var appData    = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                var logDir     = Path.Combine(appData, AppDataFolder);
-                Directory.CreateDirectory(logDir);
-                var logPath    = Path.Combine(logDir, "startup-error.log");
+                var logPath = AppConstants.GetAppDataPath("startup-error.log");
+                var logDir  = Path.GetDirectoryName(logPath);
+                if (!string.IsNullOrWhiteSpace(logDir)) Directory.CreateDirectory(logDir);
                 var message    = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {exception}\n";
                 File.AppendAllText(logPath, message);
             }

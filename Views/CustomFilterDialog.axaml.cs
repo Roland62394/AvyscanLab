@@ -38,9 +38,7 @@ public partial class CustomFilterDialog : Window
 
     private static CfDlgLayout? _cachedLayout;
 
-    private static string LayoutFilePath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "AvyscanLab", "cfdlg-layout.json");
+    private static string LayoutFilePath => AppConstants.GetAppDataPath(AppConstants.CfDlgLayoutFileName);
 
     private static CfDlgLayout? LoadLayout()
     {

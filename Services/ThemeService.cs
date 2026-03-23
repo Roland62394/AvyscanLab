@@ -7,7 +7,6 @@ namespace AvyscanLab.Services;
 
 public sealed class ThemeService
 {
-    private const string FileName = "theme-settings.json";
     private static readonly JsonSerializerOptions JsonOpts = new() { WriteIndented = true };
 
     private readonly string _filePath;
@@ -17,8 +16,7 @@ public sealed class ThemeService
 
     public ThemeService()
     {
-        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        _filePath = Path.Combine(appData, "AvyscanLab", FileName);
+        _filePath = AppConstants.GetAppDataPath(AppConstants.ThemeSettingsFileName);
         Load();
     }
 
