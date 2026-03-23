@@ -629,6 +629,9 @@ namespace AvyscanLab.Views
             if (this.FindControl<Button>("ResetFilterOrderBtn") is { } resetBtn)
                 ToolTip.SetTip(resetBtn, GetUiText("FilterResetOrderTip"));
 
+            // Rebuild custom filter panels so tooltips and labels use the new language
+            RebuildCustomFilterUI();
+
             if (persist && IsVisible)
             {
                 _scriptService.Generate(_config.Snapshot(), _customFilterService.Filters, ViewModel.CurrentLanguageCode);
