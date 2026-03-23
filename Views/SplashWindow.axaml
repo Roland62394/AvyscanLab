@@ -1,8 +1,8 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="AvyscanLab.Views.SplashWindow"
-        Width="500"
-        Height="480"
+        Width="420"
+        Height="440"
         CanResize="False"
         WindowStartupLocation="CenterScreen"
         SystemDecorations="None"
@@ -10,42 +10,53 @@
         Background="Transparent"
         TransparencyLevelHint="Transparent"
         Icon="/Assets/Ico.ico">
-    <Border Background="Black" CornerRadius="34" ClipToBounds="True"
-            BorderBrush="#3A3A3A" BorderThickness="1">
-        <Grid RowDefinitions="*,Auto,Auto,Auto">
-            <!-- Logo + sparkle overlay -->
-            <Grid Grid.Row="0"
-                  Width="450" Height="350"
-                  HorizontalAlignment="Center"
-                  VerticalAlignment="Center">
-                <Image Width="450"
-                       Height="350"
-                       Source="avares://AvyscanLab/Assets/Logo.png"
-                       Stretch="Fill"/>
+
+    <Border Background="Black"
+            CornerRadius="34"
+            ClipToBounds="True"
+            BorderBrush="#3A3A3A"
+            BorderThickness="1">
+
+        <Grid RowDefinitions="340,Auto,Auto,*">
+
+            <Grid Grid.Row="0" Margin="16,20,16,0">
+                <Image Source="avares://AvyscanLab/Assets/Logo.png"
+                       Stretch="UniformToFill"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"/>
             </Grid>
+
             <TextBlock Grid.Row="1"
                        Text="Trial Version — Fully functional"
-                       FontSize="16" FontWeight="SemiBold"
+                       FontSize="16"
+                       FontFamily="Consolas"
                        Foreground="#CEB35C"
                        HorizontalAlignment="Center"
-                       Margin="0,-58,0,0"/>
+                       Margin="0,0,0,3"/>
+
             <TextBlock Grid.Row="2"
                        Text="Limited to 3 files, 1 min. encoding each"
-                       FontSize="13" FontWeight="Light"
+                       FontSize="13"
+                       FontWeight="Light"
+                       FontFamily="Consolas"
                        Foreground="#A0A0A0"
                        HorizontalAlignment="Center"
-                       Margin="0,-38,0,6"/>
-            <Grid Grid.Row="3" Margin="40,20,40,10">
+                       Margin="0,0,0,18"/>
+
+            <Grid Grid.Row="3" Margin="40,0,40,10" VerticalAlignment="Bottom">
                 <TextBlock Text="RC 1.0.0"
                            FontSize="14"
                            FontFamily="Consolas"
                            Foreground="#A89898"
                            HorizontalAlignment="Left"/>
-                <TextBlock Text="© ScanFilm 2026"
+
+                <TextBlock Text="© ScanFilm SNC 2026"
                            FontSize="14"
+                           FontFamily="Consolas"
                            Foreground="#A89898"
                            HorizontalAlignment="Right"/>
             </Grid>
+
         </Grid>
     </Border>
 </Window>
