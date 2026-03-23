@@ -205,7 +205,9 @@ public sealed class EncodeController
         _host.RecordOpen = !_host.RecordOpen;
         if (_host.FindControl<Button>("RecordBtn") is { } btn)
         {
-            btn.Background = new SolidColorBrush(Color.Parse(_host.RecordOpen ? "#C62828" : "#3B4C64"));
+            btn.Background = _host.RecordOpen
+                ? new SolidColorBrush(Color.Parse("#C62828"))
+                : _host.ThemeBrush("BgInput");
             btn.Foreground = Brushes.White;
         }
         if (_host.FindControl<Border>("RecordOverlay") is { } overlay)
@@ -215,6 +217,22 @@ public sealed class EncodeController
             RebuildBatchClipList();
             UpdateDiskSpaceLabel(_host.FindControl<TextBox>("RecordDir")?.Text);
         }
+    }
+
+    /// <summary>Refreshes RecordBtn and batch clip list colors to match the current theme.</summary>
+    public void RefreshRecordButtonColors()
+    {
+        if (_host.FindControl<Button>("RecordBtn") is { } btn)
+        {
+            btn.Background = _host.RecordOpen
+                ? new SolidColorBrush(Color.Parse("#C62828"))
+                : _host.ThemeBrush("BgInput");
+            btn.Foreground = Brushes.White;
+        }
+
+        // Rebuild batch clip list so dynamically-created controls pick up the new theme
+        if (_host.RecordOpen)
+            RebuildBatchClipList();
     }
 
     // ── Encoding settings changed handlers ───────────────────────────
@@ -561,7 +579,7 @@ public sealed class EncodeController
         {
             Content = GetUiText("PresetModifiedDontAsk"),
             Margin = new Thickness(0, 4, 0, 0),
-            Foreground = new SolidColorBrush(Color.Parse("#AAAAAA")),
+            Foreground = ThemeBrush("TextSecondary"),
             FontSize = 11
         };
 
@@ -789,7 +807,7 @@ public sealed class EncodeController
                 Text = filename,
                 FontSize = 12,
                 FontFamily = monoFont,
-                Foreground = new SolidColorBrush(Color.Parse("#C8D0E0")),
+                Foreground = ThemeBrush("TextLabel"),
                 VerticalAlignment = VerticalAlignment.Center,
                 TextTrimming = TextTrimming.CharacterEllipsis,
             };
@@ -802,7 +820,6 @@ public sealed class EncodeController
                 FontFamily = monoFont,
                 Height = 28,
                 Padding = new Thickness(4, 2),
-                Foreground = new SolidColorBrush(Color.Parse("#C8D0E0")),
                 VerticalAlignment = VerticalAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
             };
@@ -839,7 +856,7 @@ public sealed class EncodeController
             {
                 Text = selectedPresetName,
                 FontSize = 12,
-                Foreground = new SolidColorBrush(Color.Parse("#C8D0E0")),
+                Foreground = ThemeBrush("TextLabel"),
                 VerticalAlignment = VerticalAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Right,
                 TextTrimming = TextTrimming.CharacterEllipsis,
@@ -853,7 +870,7 @@ public sealed class EncodeController
                 Height = 28,
                 VerticalAlignment = VerticalAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
-                BorderBrush = new SolidColorBrush(Color.Parse("#3C4558")),
+                BorderBrush = ThemeBrush("BorderSubtle"),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(3, 0, 0, 3),
             };
@@ -868,7 +885,7 @@ public sealed class EncodeController
                 Padding = new Thickness(0),
                 HorizontalContentAlignment = HorizontalAlignment.Center,
                 VerticalContentAlignment = VerticalAlignment.Center,
-                BorderBrush = new SolidColorBrush(Color.Parse("#3C4558")),
+                BorderBrush = ThemeBrush("BorderSubtle"),
                 BorderThickness = new Thickness(1, 1, 1, 1),
                 CornerRadius = new CornerRadius(0, 3, 3, 0),
             };
@@ -889,7 +906,7 @@ public sealed class EncodeController
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     HorizontalContentAlignment = HorizontalAlignment.Left,
                     Padding = new Thickness(8, 4),
-                    Foreground = new SolidColorBrush(Color.Parse("#C8D0E0")),
+                    Foreground = ThemeBrush("TextLabel"),
                 };
                 var capturedName = pName;
                 itemBtn.Click += (_, _) =>

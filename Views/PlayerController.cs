@@ -457,7 +457,7 @@ public sealed class PlayerController
         if (_host.FindControl<Button>("HistogramBtn") is { } btn)
         {
             btn.Background = on ? _host.ThemeBrush("AccentGreen") : _host.ThemeBrush("BgInput");
-            btn.Foreground = on ? Brushes.White : _host.ThemeBrush("TextLabel");
+            btn.Foreground = Brushes.White;
         }
     }
 
@@ -465,10 +465,7 @@ public sealed class PlayerController
     {
         _halfRes = !_halfRes;
         if (_host.FindControl<Button>("HalfResBtn") is { } btn)
-        {
-            btn.Background = _halfRes ? _host.ThemeBrush("AccentGreen") : new SolidColorBrush(Color.Parse("#3B4C64"));
-            btn.Foreground = Brushes.White;
-        }
+            ApplyHalfResButtonColors(btn);
         UpdateConfigurationValue("preview_half", _halfRes.ToString().ToLowerInvariant());
     }
 
@@ -481,11 +478,30 @@ public sealed class PlayerController
         {
             _halfRes = true;
             if (_host.FindControl<Button>("HalfResBtn") is { } btn)
-            {
-                btn.Background = _host.ThemeBrush("AccentGreen");
-                btn.Foreground = Brushes.White;
-            }
+                ApplyHalfResButtonColors(btn);
         }
+    }
+
+    /// <summary>Refreshes toggle-style transport button colors to match the current theme.</summary>
+    public void RefreshToggleButtonColors()
+    {
+        if (_host.FindControl<Button>("HalfResBtn") is { } halfBtn)
+            ApplyHalfResButtonColors(halfBtn);
+        UpdateHistogramButtonVisual();
+
+        // MaxViewerBtn
+        if (_host.FindControl<Button>("MaxViewerBtn") is { } maxBtn)
+        {
+            maxBtn.Background = _viewerMaximized
+                ? _host.ThemeBrush("AccentGreen")
+                : _host.ThemeBrush("BgInput");
+        }
+    }
+
+    private void ApplyHalfResButtonColors(Button btn)
+    {
+        btn.Background = _halfRes ? _host.ThemeBrush("AccentGreen") : _host.ThemeBrush("BgInput");
+        btn.Foreground = Brushes.White;
     }
 
     public void OnMaxViewerClick(object? sender, RoutedEventArgs e)
@@ -532,9 +548,7 @@ public sealed class PlayerController
             btn.Background = _viewerMaximized
                 ? _host.ThemeBrush("AccentGreen")
                 : _host.ThemeBrush("BgInput");
-            btn.Foreground = _viewerMaximized
-                ? Brushes.White
-                : _host.ThemeBrush("TextLabel");
+            btn.Foreground = Brushes.White;
         }
 
         Dispatcher.UIThread.Post(_host.Window.InvalidateVisual, DispatcherPriority.Render);

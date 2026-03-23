@@ -1052,6 +1052,17 @@ namespace AvyscanLab.Views
             // Update theme button visual states
             UpdateThemeButtonStates(theme);
             UpdateAccentSwatchStates(accent);
+
+            // Rebuild custom filter UI so toggle buttons pick up the new theme colors
+            RebuildCustomFilterUI();
+
+            // Refresh transport buttons whose Background was set in code
+            RefreshTransportButtonColors();
+            _playerController?.RefreshToggleButtonColors();
+            _encodeController?.RefreshRecordButtonColors();
+
+            // Rebuild clip tabs so their colors match the new theme
+            RebuildClipTabs();
         }
 
         private void UpdateThemeButtonStates(string theme)
@@ -1081,6 +1092,16 @@ namespace AvyscanLab.Views
             Resources.TryGetValue(key, out var val) && val is SolidColorBrush b
                 ? b
                 : new SolidColorBrush(Colors.Magenta);
+
+        private void RefreshTransportButtonColors()
+        {
+            foreach (var name in new[] { "VdbBeginning", "VdbPrevFrame", "VdbPlay", "VdbNextFrame", "VdbEnd", "SpeedBtn", "HalfResBtn" })
+            {
+                if (this.FindControl<Button>(name) is not { } btn) continue;
+                // Clear locally-set Background so the DynamicResource style takes over
+                btn.ClearValue(BackgroundProperty);
+            }
+        }
 
         private void ApplyThemeLabels()
         {
@@ -1346,8 +1367,8 @@ namespace AvyscanLab.Views
                 _recordOpen = true;
                 if (this.FindControl<Button>("RecordBtn") is { } recBtn)
                 {
-                    recBtn.Background = new SolidColorBrush(Color.Parse("#C62828"));
-                    recBtn.Foreground = Brushes.White;
+                    recBtn.Background = new SolidColorBrush(Color.Parse("#C62828")); // red = record panel open
+                    recBtn.Foreground = Brushes.White; // always white on red
                 }
                 if (this.FindControl<Border>("RecordOverlay") is { } overlay)
                     overlay.IsVisible = true;
@@ -2271,8 +2292,8 @@ namespace AvyscanLab.Views
                         ? ThemeBrush("AccentBlue")
                         : ThemeBrush("BgInput"),
                     BorderBrush = isActive
-                        ? new SolidColorBrush(Color.Parse("#4A9AD4"))
-                        : new SolidColorBrush(Color.Parse("#3A4660")),
+                        ? ThemeBrush("AccentBlue")
+                        : ThemeBrush("BorderSubtle"),
                     BorderThickness = new Thickness(1),
                     CornerRadius = new CornerRadius(4),
                     Padding = new Thickness(10, 4),
