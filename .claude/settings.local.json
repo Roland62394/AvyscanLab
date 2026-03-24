@@ -91,7 +91,9 @@
       "Bash(echo \"EXIT: $?\")",
       "Bash(find 'C:\\\\Users\\\\larde\\\\Documents\\\\Documents administratifs\\\\Scanfilm\\\\Technique\\\\ScriptRestore\\\\AvyscanLab' -type f \\\\\\(-name *.cs -o -name *.csproj -o -name *.sln -o -name *.axaml -o -name *.txt -o -name *.py -o -name *.nsi -o -name *.manifest \\\\\\))",
       "Bash(gh auth:*)",
-      "Bash(git credential:*)"
+      "Bash(git credential:*)",
+      "Bash(ls \"/c/Program Files \\(x86\\)/AviSynth+/plugins64+/\"*.avsi)",
+      "Bash(head -20 \"/c/Program Files \\(x86\\)/AviSynth+/plugins64+/FFMS2.avsi\")"
     ]
   }
 }

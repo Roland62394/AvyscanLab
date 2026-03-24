@@ -655,7 +655,7 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
         var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? ".";
         var candidate = Path.Combine(exeDir, "Plugins", "Scripts", script);
         if (File.Exists(candidate))
-            return candidate.Replace('\\', '/');
+            return Path.GetFullPath(candidate).Replace('\\', '/');
 
         // AviSynth+ plugin directories (includes .avsi files)
         foreach (var dir in AviSynthPluginDirs)
@@ -663,11 +663,11 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
             if (!Directory.Exists(dir)) continue;
             var c = Path.Combine(dir, script);
             if (File.Exists(c))
-                return c.Replace('\\', '/');
+                return Path.GetFullPath(c).Replace('\\', '/');
             try
             {
                 foreach (var found in Directory.GetFiles(dir, script, SearchOption.AllDirectories))
-                    return found.Replace('\\', '/');
+                    return Path.GetFullPath(found).Replace('\\', '/');
             }
             catch { /* access denied */ }
         }

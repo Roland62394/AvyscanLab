@@ -1,7 +1,7 @@
 {
   "Id": "gammac",
   "Name": "GamMac",
-  "Dlls": ["GamMac.dll"],
+  "Dlls": ["GamMac_x64.dll"],
   "Scripts": [],
   "Code": "if (FunctionExists(\"GamMac\")) {\n  try {\n    base_pix = PixelType(c)\n    mx  = _MatrixAuto(c)\n    rgb = EnsureColorspaceSafe(c, \"RGB24\", matrix=mx)\n    _gx = Min({X}, Width(rgb)-1)\n    _gy = Min({Y}, Height(rgb)-1)\n    _gw = ({W} > 0) ? Min({W}, Width(rgb)-_gx) : 0\n    _gh = ({H} > 0) ? Min({H}, Height(rgb)-_gy) : 0\n    rgb = GamMac(rgb,\n      \\ LockChan={LockChan}, LockVal={LockVal},\n      \\ x=_gx, y=_gy, w=_gw, h=_gh,\n      \\ Scale={Scale}, Th={Th}, HiTh={HiTh},\n      \\ Omin={Omin}, Omax={Omax}, Show={Show}, Verbosity={Verbosity})\n    c = EnsureColorspaceSafe(rgb, base_pix, matrix=mx)\n  } catch(err) { pipeline_err = \"GamMac: \" + err }\n}",
   "Position": "GamMac",
