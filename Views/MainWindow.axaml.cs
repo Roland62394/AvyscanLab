@@ -3530,15 +3530,17 @@ namespace AvyscanLab.Views
 
             if (isPreview)
             {
-                // Preview = StackHorizontal(original_half, final_half)
-                // The mpv video is [left_half | right_half], each half = source * scale
+                // Preview = StackHorizontal(original_half, separator, final_half)
+                // The separator is 4px wide (must match _BuildPreview in ScriptMaster)
+                const int sepW = 4;
+                // The mpv video is [left_half | sep | right_half], each half = source * scale
                 // preview_half=true:  source is already halved before filters,
                 //                     then _BuildPreview does NOT halve again (already_half=true)
                 //                     → each half = source/2. Scale from 1:1 = 0.5
                 // preview_half=false: source is full-res, filters run at 1:1,
                 //                     then _BuildPreview halves both → each half = source/2. Scale = 0.5
                 // In both cases, each half of the mpv video = source * 0.5
-                int halfW = size.Width / 2;
+                int halfW = (size.Width - sepW) / 2;
                 int halfH = size.Height;
                 const double scale = 0.5;
 
@@ -3547,8 +3549,8 @@ namespace AvyscanLab.Views
                 int iw = (int)w > 0 ? Math.Min((int)(w * scale), halfW - ix) : halfW - ix;
                 int ih = (int)h > 0 ? Math.Min((int)(h * scale), halfH - iy) : halfH - iy;
 
-                // Offset to right half (final clip)
-                mpv.ShowRegionOverlay(halfW + ix, iy, iw, ih);
+                // Offset to right half (final clip), past the separator
+                mpv.ShowRegionOverlay(halfW + sepW + ix, iy, iw, ih);
             }
             else
             {

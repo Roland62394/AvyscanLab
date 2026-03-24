@@ -496,7 +496,8 @@ function _BuildPreview(clip src_clip, clip final_clip, int "label_size", bool "a
     rw = Even(Width(res_show) * sh / rh)
     res_show = res_show.Spline36Resize(rw, sh)
   }
-  return StackHorizontal(src_show, res_show)
+  sep = BlankClip(src_show, width=4, color=$000000)
+  return StackHorizontal(src_show, sep, res_show)
 }
 
 
