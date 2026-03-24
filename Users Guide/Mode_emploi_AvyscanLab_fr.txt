@@ -5,14 +5,46 @@ Version document: 23 mars 2026
 1) OBJECTIF DU LOGICIEL
 ============================================================
 AvyscanLab est une application de restauration de films argentiques numérisés
-(8 mm, Super 8, 9,5 mm, 16 mm) basée sur AviSynth+.
+(8 mm, Super 8, 9,5 mm, 16 mm, 35mm) basée sur AviSynth+.
 
-Le logiciel permet de:
-- prévisualiser en temps réel le rendu du script (lecteur intégré libmpv);
-- corriger l’image (crop, grain, poussières, luma/chroma, netteté);
-- appliquer des modules personnalisés AviSynth (filtres Custom);
+Ce logiciel permet de traiter les défauts courants (grain, poussières, stabilisation, etc.) et d’ajuster les niveaux et couleurs pour redonner vie à vos films. 
+Il s’adresse à la fois aux amateurs souhaitant une solution clé en main et aux utilisateurs avancés désirant personnaliser leur pipeline de restauration.
+Sa conception modulaire et son interface conviviale offrent une grande flexibilité pour s’adapter à tous les types de projets et de compétences.
+Avyscan lab vous permet de choisir et paramétrer individuellement chaque filtre que vous souhaitez appliquer. 
+Sa complête modularité vous permet d’ajouter vos propres filtres personnalisés et de les partager avec la communauté.
+L'encodage en lot avec FFmpeg vous offre une flexibilité totale pour créer des masters de haute qualité ou des fichiers intermédiaires pour un travail ultérieur.
+
+
+Mode standard:
+- installation facile sans connaissance particulière, ni recherche de composants externes;
+- vérification de la disponibilité d'une version plus récente;
+- application disponible en 4 langues (FR, EN, DE, ES);
+- importer une ou des vidéos ou séquences d’images par simple glissés/déposés ;
 - gérer plusieurs clips dans un même projet;
-- encoder en lot avec FFmpeg vers des formats intermédiaires ou finaux.
+- choisissez les filtres que vous souhaitez appliquer et dans quel ordre (crop, degrain, denoise, sharpen, stabilisation, etc..);
+- ajuster les paramètres de chaque filtre dans une interface conviviale;
+- chaque paramètre de chaque filtre est expliqué avec une infobulle dédiée pour comprendre son rôle et son impact;
+- comparer l’image originale et l'image restaurée;
+- visualiser l’histogramme pour un contrôle précis de l’exposition et des couleurs (4 modes);
+- créer une bibliothèque de réglages (presets) pour les rappeler en 2 clics;
+- importer et exporter des filtres avec d'autres utilisateurs;
+- encodage possible de videos ou de suites d'images vers des formats intermédiaires ou finaux avec une totale flexibilité pour chaque clip;
+- créer une bibliothèque de paramètres d'encodage (presets) pour les rappeler en 2 clics et les appliquer individuellement à chaque clip; 
+
+
+Mode expert:
+- éditer le script AviSynth généré;
+- écrire vos propres filtres directement dans l'application, importer vos Dlls ainsi que vos fichiers .avsi;
+- génération paramétrable et automatiques des contrôles qui serviront à modifier les paramètres de vos filtres depuis l'interface;
+- les erreurs Avisynth sont affichées dans l'application pour un diagnostic rapide;
+- modifier à loisir l'ordre des filtres dans votre script;
+- dupliquer les filtres pour les appliquer plusieurs fois dans votre script en gardant la possibilité d'ajuster/modifier chaque doublon;
+- importer et exporter des filtres avec d'autres utilisateurs;
+- tous les filtres (y compris vos filtres) peuvent être rappeler en 2 clics et les appliquer individuellement à chaque clip;
+
+Et bien d'autres possibilités encore à découvrir au fil de votre utilisation.;
+
+
 
 ============================================================
 2) PRÉREQUIS ET INSTALLATION
@@ -20,7 +52,7 @@ Le logiciel permet de:
 Système visé:
 - Windows 10/11 64 bits;
 - AviSynth+ 64 bits (détection au démarrage);
-- FFmpeg et plugins fournis dans l’application.
+- FFmpeg fournis dans l’application.
 
 Démarrage:
 1. Lancez AvyscanLab.exe.
@@ -31,7 +63,7 @@ Démarrage:
 3) TOUR DE L’INTERFACE
 ============================================================
 A. Barre de menus
-- Infos: Guide utilisateur, aperçu script, visite guidée, mise à jour.
+- Infos: Guide utilisateur, aperçu script, visite guidée, recherche d'une mise à jour.
 - Settings: threads, source loader, thème (Dark/Grey/Light), accent,
   export/import paramètres, reset paramètres.
 - Language: FR, EN, DE, ES.
@@ -48,6 +80,7 @@ C. Lecteur
 - comparaison Orig / Result;
 - navigation image par image;
 - mode demi-résolution (preview plus fluide);
+- image agrandie (zoom);
 - histogramme;
 - bouton Record (panneau encodage).
 
@@ -60,9 +93,9 @@ D. Panneau filtres (bas)
 4) IMPORT SOURCE (VIDÉO OU SÉQUENCE)
 ============================================================
 Méthodes:
-- glisser-déposer dans la fenêtre;
-- bouton d’ouverture fichier;
-- ajout multiple pour traitement en lot.
+- glisser-déposer dans la fenêtre à l'aide de votre souris;
+- bouton d’ouverture fichier via l'explorateur;
+- ajout multiple de fichiers pour importation en lot.
 
 Formats vidéo principaux:
 .avi .mp4 .mov .mkv .wmv .m4v .mpeg .mpg .webm
@@ -90,7 +123,7 @@ Bonnes pratiques:
 - utilisez l’histogramme pour éviter hautes lumières brûlées et noirs bouchés.
 
 ============================================================
-6) FILTRES NATIFS: RÔLE ET ORDRE CONSEILLÉ
+6) FILTRES, RÔLE ET ORDRE CONSEILLÉ
 ============================================================
 Ordre recommandé:
 1. Crop
@@ -113,7 +146,7 @@ Paramètres clés:
 - pel / search / prefilter
 
 6.3 Denoise (RemoveDirt / RemoveDirtMC)
-Suppression poussières/rayures.
+Suppression poussières.
 - mode: removedirtmc recommandé
 - strength + dist selon niveau de défaut
 - option grey pour agir surtout sur la luma

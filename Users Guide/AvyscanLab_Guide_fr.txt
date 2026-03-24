@@ -1,10 +1,11 @@
-                              C L E A N S C A N
+                              AVYSCAN LAB
                             Guide de l’utilisateur
 
                                 ScanFilm SNC
                                www.scanfilm.ch
 
                  Version d’essai — release 1.00 - mars 2026
+                 Jusqu'à 3 fichiers chargés et 1 minute d'encodage par fichier
 
 
 =============================================================================================
@@ -27,21 +28,43 @@
                                   1.  PRÉSENTATION
 =============================================================================================
 
-AvyscanLab est un logiciel de restauration de films argentiques numérisés (8 mm, Super 8,
-9,5 mm, 16 mm). Il permet de :
+Avyscan Lab permet de traiter les défauts courants (grain, poussières, stabilisation, etc.) et d’ajuster les niveaux et couleurs pour redonner vie à vos films. 
+Il s’adresse à la fois aux amateurs souhaitant une solution clé en main et aux utilisateurs avancés désirant personnaliser leur pipeline de restauration.
+Sa conception modulaire et son interface conviviale offrent une grande flexibilité pour s’adapter à tous les types de projets et de compétences.
+Avyscan lab vous permet de choisir et paramétrer individuellement chaque filtre que vous souhaitez appliquer. 
+Sa complête modularité vous permet d’ajouter vos propres filtres personnalisés et de les partager avec la communauté.
+L'encodage en lot avec FFmpeg vous offre une flexibilité totale pour créer des masters de haute qualité ou des fichiers intermédiaires pour un travail ultérieur.
 
-    - Réduire le grain de pellicule (MVTools2 MDegrain)
-    - Supprimer les poussières et les rayures (RemoveDirt / RemoveDirtMC)
-    - Corriger la luminosité, le contraste, la saturation et les couleurs
-    - Corriger les dérives colorimétriques (GamMac)
-    - Recadrer l’image
-    - Renforcer la netteté (Sharpen / Edge-aware)
-    - Ajouter des filtres AviSynth personnalisés avec interface de contrôle
 
-Le logiciel génère un script AviSynth+ optimisé et offre une prévisualisation en temps réel
-via un lecteur vidéo intégré (libmpv). L’encodage final est assuré par FFmpeg.
+Mode standard:
+- installation facile sans connaissance particulière, ni recherche de composants externes;
+- vérification de la disponibilité d'une version plus récente;
+- application disponible en 4 langues (FR, EN, DE, ES);
+- importer une ou des vidéos ou séquences d’images par simple glissés/déposés ;
+- gérer plusieurs clips dans un même projet;
+- choisissez les filtres que vous souhaitez appliquer et dans quel ordre (crop, degrain, denoise, sharpen, stabilisation, etc..);
+- ajuster les paramètres de chaque filtre dans une interface conviviale;
+- chaque paramètre de chaque filtre est expliqué avec une infobulle dédiée pour comprendre son rôle et son impact;
+- comparer l’image originale et l'image restaurée;
+- visualiser l’histogramme pour un contrôle précis de l’exposition et des couleurs (4 modes);
+- créer une bibliothèque de réglages (presets) pour les rappeler en 2 clics;
+- importer et exporter des filtres avec d'autres utilisateurs;
+- encodage possible de videos ou de suites d'images vers des formats intermédiaires ou finaux avec une totale flexibilité pour chaque clip;
+- créer une bibliothèque de paramètres d'encodage (presets) pour les rappeler en 2 clics et les appliquer individuellement à chaque clip; 
 
-L’application est disponible en 4 langues : français, anglais, allemand et espagnol.
+
+Mode expert:
+- éditer le script AviSynth généré;
+- écrire vos propres filtres directement dans l'application, importer vos Dlls ainsi que vos fichiers .avsi;
+- génération paramétrable et automatiques des contrôles qui serviront à modifier les paramètres de vos filtres depuis l'interface;
+- les erreurs Avisynth sont affichées dans l'application pour un diagnostic rapide;
+- modifier à loisir l'ordre des filtres dans votre script;
+- dupliquer les filtres pour les appliquer plusieurs fois dans votre script en gardant la possibilité d'ajuster/modifier chaque doublon;
+- importer et exporter des filtres avec d'autres utilisateurs;
+- tous les filtres (y compris vos filtres) peuvent être rappeler en 2 clics et les appliquer individuellement à chaque clip;
+
+Et bien d'autres possibilités encore à découvrir au fil de votre utilisation.;
+
 
 =============================================================================================
                                 REMERCIEMENTS / CRÉDITS
