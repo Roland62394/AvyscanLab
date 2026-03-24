@@ -862,6 +862,43 @@ public sealed class CustomFilterPresenter
         DeactivateRegionDraw();
     }
 
+    /// <summary>
+    /// Rebuilds a single filter's parameter panel in place, preserving its
+    /// position among sibling panels. Use this instead of a full RebuildUI()
+    /// when only one panel's values have changed (e.g. after region draw commit).
+    /// </summary>
+    public void RebuildPanelInPlace(string filterId)
+    {
+        var filter = _filterService.GetById(filterId);
+        if (filter is null) return;
+
+        var panelName = $"CustomPanel_{filterId}";
+        var container = _host.FindControl<StackPanel>("CustomParamPanels");
+        var index = -1;
+        if (container is not null)
+        {
+            for (var i = 0; i < container.Children.Count; i++)
+            {
+                if (container.Children[i] is Border b && b.Name == panelName)
+                {
+                    index = i;
+                    container.Children.RemoveAt(i);
+                    break;
+                }
+            }
+        }
+
+        BuildParamPanel(filter);
+
+        // Move the newly appended panel back to its original position
+        if (container is not null && index >= 0 && index < container.Children.Count)
+        {
+            var newPanel = container.Children[^1];
+            container.Children.RemoveAt(container.Children.Count - 1);
+            container.Children.Insert(index, newPanel);
+        }
+    }
+
     // ── Reset filter defaults ───────────────────────────────────────
 
     private void ResetFilterToDefaults(CustomFilter filter)

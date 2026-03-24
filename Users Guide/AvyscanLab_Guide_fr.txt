@@ -256,32 +256,170 @@ Preset par clip :
                               6.  PANNEAU DE FILTRES
 =============================================================================================
 
-Le panneau inférieur est divisé en deux colonnes :
-    Colonne gauche : boutons d’activation (ON/OFF, vert = actif)
-    Colonne droite : paramètres détaillés du filtre sélectionné
+Le panneau inférieur est divisé en deux colonnes séparées par un séparateur
+redimensionnable (glissez-le horizontalement pour ajuster la largeur).
 
-Chaque filtre possède :
-    - Un bouton ON/OFF pour activer/désactiver le filtre
-    - Un bouton d’expansion (>) qui affiche son panneau avec ses paramètres détaillés
-    - Des presets rapides (pour certains filtres)
 
-Les options générales (hors filtres) sont :
-    preview            Prévisualisation AviSynth (comparaison avant/après)
-    enable_flip_h      Retournement horizontal
-    enable_flip_v      Retournement vertical
+    COLONNE GAUCHE : LISTE DES FILTRES
+    -----------------------------------------------------------------------------------------
 
-Ordre du pipeline de traitement :
-    1. Retournement (flip)
-    2. Recadrage (crop)
-    3. Suppression des poussières (denoise / RemoveDirt)
-    4. Réduction du grain (degrain / MVTools2)
-    5. Niveaux de luminosité (luma levels)
-    6. Correction colorimétrique (GamMac)
-    7. Filtres personnalisés (6 points d’injection possibles)
-    8. Netteté (sharpen) — toujours en dernier
+    En-tête
+        Le titre "FILTERS" est accompagné de trois boutons :
+            ↲   Réinitialiser l’ordre des filtres à leur position par défaut.
+            ↓   Importer un filtre personnalisé depuis un fichier .json.
+            +   Créer un nouveau filtre personnalisé (ouvre le formulaire d’édition).
 
-Les valeurs des sliders sont automatiquement alignées sur le pas (step) défini
-pour chaque paramètre, ce qui empêche les valeurs invalides.
+    Chaque filtre est représenté par une ligne avec trois éléments :
+
+        Bouton ON/OFF       Cliquez sur le nom du filtre pour l’activer (vert)
+                            ou le désactiver (gris). Un filtre désactivé n’est
+                            pas appliqué au script mais reste dans la liste.
+
+        Bouton d’expansion  La flèche (>) ouvre le panneau de paramètres du
+                            filtre dans la colonne droite. Elle devient (v)
+                            quand le panneau est ouvert. Un second clic referme
+                            le panneau. Ce bouton est masqué pour les filtres
+                            qui n’ont pas de paramètres réglables.
+
+        Bouton d’édition    Le crayon ouvre le formulaire d’édition complet du
+                            filtre (modifier le code, dupliquer, exporter ou
+                            supprimer le filtre).
+
+    Réordonner les filtres
+        Maintenez le clic sur une ligne de filtre et glissez-la vers le haut ou
+        le bas pour modifier sa position dans le pipeline. Un trait vert horizontal
+        indique le point d’insertion. Relâchez pour confirmer la nouvelle position.
+        L’ordre affiché correspond à l’ordre d’application dans le script AviSynth.
+
+    Filtres inactifs
+        Les filtres désactivés sont regroupés dans une section repliable en bas
+        de la liste. Cliquez sur l’en-tête "Filtres inactifs (n)" pour afficher
+        ou masquer cette section. Le réordonnancement par glisser-déposer fonctionne
+        également au sein de cette section.
+
+    Les options générales (hors filtres) sont :
+        preview            Prévisualisation AviSynth (comparaison avant/après)
+        enable_flip_h      Retournement horizontal
+        enable_flip_v      Retournement vertical
+
+    Ordre du pipeline de traitement :
+        1. Retournement (flip)
+        2. Recadrage (crop)
+        3. Suppression des poussières (denoise / RemoveDirt)
+        4. Réduction du grain (degrain / MVTools2)
+        5. Niveaux de luminosité (luma levels)
+        6. Correction colorimétrique (GamMac)
+        7. Filtres personnalisés (6 points d’injection possibles)
+        8. Netteté (sharpen) — toujours en dernier
+
+
+    COLONNE DROITE : PARAMÈTRES DES FILTRES
+    -----------------------------------------------------------------------------------------
+
+    Quand vous cliquez sur la flèche (>) d’un filtre, son panneau de paramètres
+    s’affiche dans la colonne droite. Plusieurs panneaux peuvent être ouverts
+    simultanément et s’affichent côte à côte horizontalement.
+
+    Si aucun panneau n’est ouvert, le texte "← sélectionnez un filtre" s’affiche.
+
+    Chaque panneau contient :
+
+        Barre de titre      Le nom du filtre en majuscules. Vous pouvez glisser
+                            cette barre horizontalement pour réordonner les panneaux
+                            entre eux (un trait vert vertical indique le point
+                            d’insertion).
+
+        Bouton reset (↺)    Remet tous les paramètres du filtre à leurs valeurs
+                            par défaut, sans fermer le panneau.
+
+    Types de contrôles de paramètres :
+
+        Curseur (slider)    Un curseur horizontal avec une zone de saisie à droite.
+                            Déplacez le curseur ou entrez une valeur manuellement.
+                            Les valeurs sont automatiquement alignées sur le pas
+                            (step) défini pour chaque paramètre. Utilisez la
+                            molette de la souris sur le curseur pour ajuster la
+                            valeur par incréments.
+
+        Liste déroulante    Une liste de choix prédéfinis. Sélectionnez la valeur
+        (combo)             souhaitée dans le menu.
+
+        Case à cocher       Un bouton bascule ON/OFF. Les valeurs associées à
+        (checkbox)          chaque état sont définies par le filtre (par exemple
+                            "true"/"false" ou "enabled"/"disabled").
+
+        Champ texte         Un champ de saisie libre. La valeur est enregistrée
+                            quand vous quittez le champ (clic ailleurs ou Tab).
+
+    Chaque paramètre dispose d’une infobulle (survolez son nom) qui décrit son
+    rôle et son impact. Les noms avec une infobulle sont soulignés.
+
+    Toute modification d’un paramètre met à jour immédiatement la prévisualisation
+    vidéo, ce qui permet d’ajuster les réglages en temps réel.
+
+
+    DESSIN DE RÉGION (DRAW REGION)
+    -----------------------------------------------------------------------------------------
+
+    Certains filtres (comme Crop) proposent un bouton "Draw Region" dans leur
+    panneau de paramètres. Cette fonction permet de définir visuellement une zone
+    sur l’image au lieu de saisir des coordonnées manuellement.
+
+    Utilisation :
+        1. Ouvrez le panneau de paramètres du filtre (bouton >).
+        2. Cliquez sur le bouton "Draw Region" (il devient vert quand il est actif).
+           La lecture est automatiquement mise en pause.
+        3. Sur l’image vidéo, maintenez le clic gauche et tracez un rectangle.
+           Un cadre en surimpression indique la zone sélectionnée en temps réel.
+        4. Relâchez la souris : les coordonnées sont automatiquement reportées
+           dans les paramètres du filtre et la prévisualisation est mise à jour.
+        5. Le mode dessin se désactive automatiquement après le tracé. Vous pouvez
+           aussi le désactiver manuellement en recliquant sur le bouton.
+
+    Deux modes de région existent selon le filtre :
+        - Mode XYWH : définit la position (X, Y) et la taille (Largeur, Hauteur)
+          de la zone sélectionnée.
+        - Mode Crop : définit les marges de recadrage (gauche, haut, droite, bas)
+          à partir du rectangle tracé.
+
+    Les coordonnées sont automatiquement converties en pixels source (résolution
+    originale), quel que soit le mode d’affichage (preview, demi-résolution).
+
+    Note : un seul filtre peut être en mode dessin à la fois. Activer le dessin
+    sur un autre filtre désactive automatiquement le précédent.
+
+
+    GESTION DES FILTRES PERSONNALISÉS
+    -----------------------------------------------------------------------------------------
+
+    Ajouter           Bouton "+" : ouvre le formulaire de création. Renseignez le
+                      nom, la position dans le pipeline, le code AviSynth et les
+                      contrôles de paramètres. Le filtre est ajouté activé.
+
+    Importer          Bouton "↓" : ouvre un sélecteur de fichier (par défaut dans
+                      le dossier Filters/). Un fichier .json peut contenir un ou
+                      plusieurs filtres. Chaque filtre importé reçoit un nouvel
+                      identifiant pour éviter les conflits.
+
+    Éditer            Bouton crayon (✎) sur la ligne du filtre : ouvre le
+                      formulaire d’édition avec le filtre pré-rempli.
+
+    Dupliquer         Depuis le formulaire d’édition : crée une copie du filtre
+                      placée juste après l’original. Utile pour appliquer le même
+                      traitement avec des réglages différents.
+
+    Exporter          Depuis le formulaire d’édition : sauvegarde le filtre dans
+                      un fichier .json que vous pouvez partager.
+
+    Supprimer         Depuis le formulaire d’édition : supprime définitivement le
+                      filtre et tous ses réglages.
+
+    Réinitialiser     Bouton "↲" dans l’en-tête : restaure l’ordre par défaut des
+    l’ordre           filtres intégrés. Les filtres créés par l’utilisateur
+                      conservent leur position actuelle.
+
+    Les valeurs des sliders sont automatiquement alignées sur le pas (step) défini
+    pour chaque paramètre, ce qui empêche les valeurs invalides.
 
 
 =============================================================================================

@@ -3715,9 +3715,9 @@ namespace AvyscanLab.Views
             // Update the mpv drawbox overlay
             ((IFilterPresenterHost)this).ShowRegionOverlay(filterId, x, y, w, h);
 
-            // Refresh sliders if panel is open
+            // Refresh sliders if panel is open (rebuild only this panel to preserve order)
             if (_openParamPanels.Contains($"CustomPanel_{filterId}"))
-                RebuildCustomFilterUI();
+                CustomFilters.RebuildPanelInPlace(filterId);
 
             // Auto-deactivate draw mode after drawing
             CustomFilters.OnRegionDrawCompleted();

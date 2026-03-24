@@ -80,12 +80,14 @@ C. Lecteur
 - comparaison Orig / Result;
 - navigation image par image;
 - mode demi-résolution (preview plus fluide);
+- réduction de la vitesse de lecture pour permettre une lecture sans accoups sur des réglages lourds;
 - image agrandie (zoom);
 - histogramme;
 - bouton Record (panneau encodage).
 
 D. Panneau filtres (bas)
-- colonne gauche: activation/desactivation modules;
+- colonne gauche: 
+activation/desactivation modules;
 - colonne droite: paramètres du filtre sélectionné;
 - gestion des filtres Custom (ajout/import/export/ordre).
 
