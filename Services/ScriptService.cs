@@ -609,18 +609,35 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
         if (Path.IsPathRooted(dll))
             return dll.Replace('\\', '/');
 
+        // App-local Plugins/ directory (next to exe)
+        var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? ".";
+        var localCandidate = Path.Combine(exeDir, "Plugins", dll);
+        if (File.Exists(localCandidate))
+            return Path.GetFullPath(localCandidate).Replace('\\', '/');
+        // Also search subdirectories of app-local Plugins/
+        var localPluginsDir = Path.Combine(exeDir, "Plugins");
+        if (Directory.Exists(localPluginsDir))
+        {
+            try
+            {
+                foreach (var found in Directory.GetFiles(localPluginsDir, dll, SearchOption.AllDirectories))
+                    return Path.GetFullPath(found).Replace('\\', '/');
+            }
+            catch { /* access denied */ }
+        }
+
         foreach (var dir in AviSynthPluginDirs)
         {
             if (!Directory.Exists(dir)) continue;
             // Direct match
             var candidate = Path.Combine(dir, dll);
             if (File.Exists(candidate))
-                return candidate.Replace('\\', '/');
+                return Path.GetFullPath(candidate).Replace('\\', '/');
             // Search in subdirectories
             try
             {
                 foreach (var found in Directory.GetFiles(dir, dll, SearchOption.AllDirectories))
-                    return found.Replace('\\', '/');
+                    return Path.GetFullPath(found).Replace('\\', '/');
             }
             catch { /* access denied */ }
         }

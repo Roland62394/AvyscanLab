@@ -590,6 +590,18 @@ namespace AvyscanLab.Views
                     item.Header = GetUiText(textKey);
             }
 
+            // Tooltips for settings menu items
+            foreach (var (ctrlName, tipKey) in new[]
+            {
+                ("ExportSettingsMenuItem", "ExportSettingsTip"),
+                ("ImportSettingsMenuItem", "ImportSettingsTip"),
+                ("ResetSettingsMenuItem",  "ResetSettingsTip"),
+            })
+            {
+                if (this.FindControl<MenuItem>(ctrlName) is { } mi)
+                    ToolTip.SetTip(mi, GetUiText(tipKey));
+            }
+
             RefreshPresetCombo();
 
             if (this.FindControl<Button>("GlobalPresetBtn") is { } globalPresetBtn)

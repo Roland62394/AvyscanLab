@@ -46,8 +46,10 @@
        </Style>
    </Window.Styles>
 
-   <Border BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" Margin="6"
-           Background="{DynamicResource BgPanel}">
+   <Border BorderBrush="{DynamicResource AccentBlue}" BorderThickness="2" Margin="4"
+           Background="{DynamicResource BgPanel}"
+           BoxShadow="0 4 16 0 #40000000"
+           CornerRadius="4">
        <Grid RowDefinitions="Auto,*,Auto">
 
            <!-- Title bar -->

@@ -1,7 +1,7 @@
 {
   "Id": "denoise",
   "Name": "Denoise (RemoveDirt/MC)",
-  "Dlls": [],
+  "Dlls": ["RemoveDirt.dll"],
   "Scripts": [],
   "Code": "function DenoiseFilm(clip c, string \"mode\", float \"strength\", int \"dist\", bool \"grey\", string \"matrix\")\n{\n  mode   = Default(mode,     \"removedirtmc\")\n  lim    = int(Default(strength, 10.0))\n  dist   = Default(dist,     3)\n  grey   = Default(grey,     false)\n  matrix = Default(matrix,   _MatrixAuto(c))\n\n  base_pix = PixelType(c)\n  bd = BitsPerComponent(c)\n\n  c8  = (bd == 8) ? c : ConvertBits(c, 8, dither=1)\n  c8  = MakeEvenY(c8)\n  yuv = EnsureColorspaceSafe(c8, \"YV12\", matrix=matrix)\n\n  if (mode == \"removedirtmc\" && FunctionExists(\"RemoveDirtMC\")) {\n    result = RemoveDirtMC(yuv, limit=lim, _grey=grey, dist=dist)\n  } else if (mode == \"removedirt\" && FunctionExists(\"RemoveDirt\")) {\n    result = RemoveDirt(yuv, limit=lim, grey=grey, dist=dist)\n  } else {\n    result = TemporalSoften(yuv, 1, 4, 4, 12, 2)\n  }\n\n  result = (bd == 8) ? result : ConvertBits(result, bd)\n  return (PixelType(result) == base_pix) ? result\n       \\                                  : EnsureColorspaceSafe(result, base_pix, matrix=matrix)\n}\n\nc = DenoiseFilm(c, mode=\"{mode}\", strength={strength}, dist={dist}, grey={grey})",
   "Position": "Denoise",
