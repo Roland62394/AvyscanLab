@@ -89,6 +89,7 @@ namespace AvyscanLab.Views
         private readonly Dictionary<string, (Slider Slider, SliderSpec Spec)> _sliderMap = [];
         private bool  _isClosing;
         private bool  _exitFeedbackShown;
+        private CancellationTokenSource? _benchmarkCts;
         private bool  _isInitializing;
         private bool  _layoutInitialized;
         private bool  _sourceValidationErrorVisible;
@@ -1250,8 +1251,11 @@ namespace AvyscanLab.Views
             {
                 var panels = _openParamPanels.Count > 0 ? _openParamPanels.ToArray() : null;
                 var lastDir = this.FindControl<TextBox>("RecordDir")?.Text?.Trim();
-                var prevTour = _windowStateService.Load()?.TourCompleted;
-                _windowStateService.Save(s with { Language = ViewModel.CurrentLanguageCode, OpenPanels = panels, LastOutputDir = lastDir, AutoSaveEncodingPreset = _encodeController.AutoSaveEncodingPreset ? true : null, RecordPanelOpen = _recordOpen ? true : null, TourCompleted = prevTour });
+                var prev = _windowStateService.Load();
+                var prevTour = prev?.TourCompleted;
+                var prevSuppressFeedback = prev?.SuppressExitFeedback;
+                var threadsAuto = this.FindControl<CheckBox>("ThreadsAutoCheckBox")?.IsChecked == true ? true : (bool?)null;
+                _windowStateService.Save(s with { Language = ViewModel.CurrentLanguageCode, OpenPanels = panels, LastOutputDir = lastDir, AutoSaveEncodingPreset = _encodeController.AutoSaveEncodingPreset ? true : null, RecordPanelOpen = _recordOpen ? true : null, TourCompleted = prevTour, SuppressExitFeedback = prevSuppressFeedback, ThreadsAuto = threadsAuto });
             }
         }
 
@@ -1582,7 +1586,255 @@ namespace AvyscanLab.Views
                 threadsTextBox.LostFocus += (_, _) => CloseSettingsMenu();
             }
 
+            if (this.FindControl<CheckBox>("ThreadsAutoCheckBox") is { } threadsAutoCheckBox)
+            {
+                // Restore saved state (apply silently — no benchmark at startup)
+                var savedAuto = _windowStateService.Load()?.ThreadsAuto == true;
+                threadsAutoCheckBox.IsChecked = savedAuto;
+                if (savedAuto)
+                {
+                    var tb = this.FindControl<TextBox>("threads");
+                    if (tb is not null)
+                    {
+                        SetTextSafely(tb, Environment.ProcessorCount.ToString());
+                        tb.IsReadOnly = true;
+                        tb.Opacity = 0.6;
+                    }
+                }
+
+                threadsAutoCheckBox.IsCheckedChanged += (_, _) =>
+                {
+                    var isAuto = threadsAutoCheckBox.IsChecked == true;
+                    ApplyThreadsAuto(isAuto);
+                };
+            }
+
             RegisterPathPickers();
+        }
+
+        private async void ApplyThreadsAuto(bool isAuto)
+        {
+            var threadsTextBox = this.FindControl<TextBox>("threads");
+            if (threadsTextBox is null) return;
+
+            _benchmarkCts?.Cancel();
+
+            if (isAuto)
+            {
+                // Close menu so the player status messages are visible
+                CloseSettingsMenu();
+
+                threadsTextBox.IsReadOnly = true;
+                threadsTextBox.Opacity = 0.6;
+
+                // Quick fallback: use CPU count immediately
+                var cpuCount = Environment.ProcessorCount;
+                SetTextSafely(threadsTextBox, cpuCount.ToString());
+                UpdateConfigurationValue("threads", cpuCount.ToString(), showValidationError: false);
+
+                // If a clip is loaded and player is ready, run benchmark
+                var mpv = _playerController?.MpvService;
+                if (_playerController is not null && mpv is { IsReady: true } && TryValidateSourceSelection(out _))
+                {
+                    _benchmarkCts = new CancellationTokenSource();
+                    try
+                    {
+                        await RunThreadsBenchmarkAsync(threadsTextBox, _benchmarkCts.Token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        ShowPlayerStatus("Benchmark annulé");
+                    }
+                    catch (Exception ex)
+                    {
+                        ShowPlayerStatus($"Benchmark erreur : {ex.Message}");
+                    }
+                }
+            }
+            else
+            {
+                threadsTextBox.IsReadOnly = false;
+                threadsTextBox.Opacity = 1.0;
+            }
+        }
+
+        private async Task RunThreadsBenchmarkAsync(TextBox threadsTextBox, CancellationToken ct)
+        {
+            var mpv = _playerController.MpvService!;
+            var containerFps = mpv.GetFps();
+            if (containerFps <= 0) return;
+
+            // Save original state
+            var originalPosition = mpv.GetPosition();
+            var wasPaused = mpv.IsPaused();
+            var originalThreads = _config.Get("threads") ?? Environment.ProcessorCount.ToString();
+
+            // Build candidate list: powers of 2 up to CPU count, plus CPU count itself
+            var cpuCount = Environment.ProcessorCount;
+            var candidates = new List<int>();
+            for (var n = 2; n <= cpuCount; n *= 2)
+                candidates.Add(n);
+            if (candidates.Count == 0 || candidates[^1] != cpuCount)
+                candidates.Add(cpuCount);
+
+            // Seek to a stable position (2s into the clip, or half for short clips)
+            var seekPos = Math.Min(2.0, mpv.Duration / 2.0);
+            var measureDuration = mpv.Duration < 6 ? 2000 : 4000;
+
+            // Run multiple passes with shuffled order to neutralize cache/thermal bias
+            const int passCount = 3;
+            var allMeasurements = new Dictionary<int, List<double>>();
+            foreach (var c in candidates)
+                allMeasurements[c] = new List<double>();
+
+            string? resultMessage = null;
+
+            try
+            {
+                ShowPlayerStatus($"Benchmark threads : démarrage ({cpuCount} CPU, {passCount} passes)…");
+
+                for (var pass = 0; pass < passCount; pass++)
+                {
+                    // Shuffle candidates each pass to avoid systematic cache advantage
+                    var shuffled = candidates.OrderBy(_ => Random.Shared.Next()).ToList();
+
+                    for (var i = 0; i < shuffled.Count; i++)
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        if (_isClosing) return;
+
+                        var threadCount = shuffled[i];
+                        var globalStep = pass * shuffled.Count + i + 1;
+                        var totalSteps = passCount * shuffled.Count;
+
+                        try
+                        {
+                            ShowPlayerStatus($"Benchmark : passe {pass + 1}/{passCount}, {threadCount} threads ({globalStep}/{totalSteps})…");
+                            SetTextSafely(threadsTextBox, $"{threadCount}…");
+
+                            // Update config & regenerate script
+                            _config.Set("threads", threadCount.ToString());
+                            RegenerateScript(showValidationError: false);
+                            await LoadScriptAsync(resetPosition: false);
+
+                            // Wait for mpv to finish loading the script
+                            await WaitForPlaybackRestartAsync(ct, TimeSpan.FromSeconds(15));
+
+                            ct.ThrowIfCancellationRequested();
+
+                            // Seek to stable position and let it settle
+                            mpv.Seek(seekPos);
+                            await Task.Delay(500, ct);
+
+                            // Warmup: play briefly to prime caches and AviSynth buffers
+                            mpv.SetSpeed(100.0);
+                            mpv.Play();
+                            await Task.Delay(1500, ct);
+
+                            // Measure
+                            mpv.Seek(seekPos);
+                            await Task.Delay(300, ct);
+                            var startPos = mpv.GetPosition();
+                            var sw = System.Diagnostics.Stopwatch.StartNew();
+                            await Task.Delay(measureDuration, ct);
+                            sw.Stop();
+                            var endPos = mpv.GetPosition();
+                            mpv.Pause();
+                            mpv.SetSpeed(1.0);
+
+                            var elapsed = sw.Elapsed.TotalSeconds;
+                            if (elapsed > 0 && endPos > startPos)
+                            {
+                                var effectiveFps = (endPos - startPos) * containerFps / elapsed;
+                                allMeasurements[threadCount].Add(effectiveFps);
+                            }
+                        }
+                        catch (OperationCanceledException) { throw; }
+                        catch
+                        {
+                            // This thread count failed (e.g. AviSynth crash) — skip it
+                            mpv.SetSpeed(1.0);
+                            try { mpv.Pause(); } catch { /* best-effort */ }
+                        }
+                    }
+                }
+
+                // Compute median for each candidate
+                var results = new Dictionary<int, double>();
+                foreach (var (threadCount, measurements) in allMeasurements)
+                {
+                    if (measurements.Count == 0) continue;
+                    var sorted = measurements.OrderBy(v => v).ToList();
+                    var median = sorted[sorted.Count / 2];
+                    results[threadCount] = median;
+                }
+
+                // Pick the best
+                if (results.Count > 0)
+                {
+                    var best = results.OrderByDescending(kv => kv.Value).First();
+                    _config.Set("threads", best.Key.ToString());
+                    RegenerateScript(showValidationError: false);
+
+                    // Build detail string: "2t=12.3 | 4t=18.5 | 8t=16.1"
+                    var detail = string.Join(" | ",
+                        results.OrderBy(kv => kv.Key)
+                               .Select(kv => $"{kv.Key}t={kv.Value:F1}"));
+                    resultMessage = $"Benchmark : {best.Key} threads optimal ({detail})";
+                }
+                else
+                {
+                    resultMessage = "Benchmark : aucun résultat valide";
+                }
+            }
+            finally
+            {
+                // Restore original state
+                mpv.SetSpeed(1.0);
+                await LoadScriptAsync(resetPosition: false);
+                try { await WaitForPlaybackRestartAsync(CancellationToken.None, TimeSpan.FromSeconds(10)); }
+                catch { /* best-effort */ }
+                mpv.Seek(originalPosition);
+                if (wasPaused) mpv.Pause();
+                else mpv.Play();
+
+                // Update textbox with final value
+                var finalThreads = _config.Get("threads") ?? originalThreads;
+                SetTextSafely(threadsTextBox, finalThreads);
+
+                // Show result via player banner (visible and not overwritten by script reload)
+                ShowPlayerStatus(resultMessage ?? "Benchmark terminé");
+            }
+        }
+
+        private Task WaitForPlaybackRestartAsync(CancellationToken ct, TimeSpan timeout)
+        {
+            var mpv = _playerController?.MpvService;
+            if (mpv is null) return Task.CompletedTask;
+
+            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            Action? handler = null;
+            handler = () =>
+            {
+                mpv.PlaybackRestart -= handler;
+                tcs.TrySetResult();
+            };
+            mpv.PlaybackRestart += handler;
+
+            ct.Register(() =>
+            {
+                mpv.PlaybackRestart -= handler;
+                tcs.TrySetCanceled();
+            });
+
+            // Timeout fallback
+            _ = Task.Delay(timeout, CancellationToken.None).ContinueWith(_ =>
+            {
+                mpv.PlaybackRestart -= handler;
+                tcs.TrySetResult();
+            }, TaskScheduler.Default);
+
+            return tcs.Task;
         }
 
         private void RegisterTextBoxHandler(TextBox textBox, FieldSpec spec)

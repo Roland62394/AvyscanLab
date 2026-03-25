@@ -477,6 +477,7 @@
                                     <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2">
                                         <TextBlock x:Name="ThreadsLabel" Text="threads" VerticalAlignment="Center"/>
                                         <TextBox x:Name="threads" Width="44" TextAlignment="Center"/>
+                                        <CheckBox x:Name="ThreadsAutoCheckBox" Content="Auto benchmark" VerticalAlignment="Center" Margin="4,0,0,0"/>
                                     </StackPanel>
                                 </MenuItem.Header>
                             </MenuItem>

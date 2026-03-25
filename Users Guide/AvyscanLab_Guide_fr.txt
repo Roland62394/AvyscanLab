@@ -146,8 +146,8 @@ L’interface est organisée en trois zones principales :
         <<      Image précédente
         >       Lecture / Pause
         >>      Image suivante
-        1x      Vitesse (cycle : 0.25x -> 0.5x -> 1x)
-        1/2     Demi-résolution (prévisualisation plus rapide)
+        1x      Vitesse (cycle : 0.25x -> 0.5x -> 1x, l'abaissement de la vitesse permet une lecture plus fluide, sans accoup sur les machines moins puissantes)
+        1/2     Demi-résolution (soulage le processeur et permet une meilleure réactivé)
         []      Maximiser/Restaurer le lecteur (F11)
         REC     Ouvrir le panneau d’encodage
 
@@ -181,11 +181,7 @@ Séquence d’images
 
 Cadence de lecture (FPS)
     Le champ "fps" définit la cadence de lecture.
-    Valeurs courantes pour les formats usuels :
-                    8 mm : 16 ou 18 ips
-                    Super 8 : 18 ou 24 ips
-                    16 mm : 18 ou 24 ips
-
+  
 Chargeur source
     Le menu déroulant permet de forcer le plugin de décodage :
         Auto      Détection automatique (recommandée)
@@ -195,13 +191,13 @@ Chargeur source
     En cas d’erreur de lecture à l’ouverture d’un fichier, essayez de changer le chargeur source.
 
 Threads
-    Nombre de threads de traitement AviSynth (défaut : 4). Augmentez cette valeur pour exploiter
+    Nombre de threads de traitement AviSynth (dépend de votre processeur). Augmentez cette valeur pour exploiter
     tous les cœurs du processeur.
     Une valeur trop élevée peut provoquer des ralentissements ou des erreurs sur les machines les moins puissantes.
     Ajustez-la en fonction de votre matériel.
 
 Multi-clips
-    Vous pouvez charger plusieurs fichiers. Chaque clip dispose de ses propres réglages
+    Vous pouvez charger plusieurs fichiers dans Avyscan Lab. Chaque clip disposera de ses propres réglages
     de filtres et de son propre preset. Glissez-déposez plusieurs fichiers à la fois
     ou utilisez le bouton + pour en ajouter.
 
