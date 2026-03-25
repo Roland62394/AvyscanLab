@@ -89,7 +89,7 @@ namespace AvyscanLab.Views
         private readonly Dictionary<string, (Slider Slider, SliderSpec Spec)> _sliderMap = [];
         private bool  _isClosing;
         private bool  _exitFeedbackShown;
-        private CancellationTokenSource? _benchmarkCts;
+
         private bool  _isInitializing;
         private bool  _layoutInitialized;
         private bool  _sourceValidationErrorVisible;
@@ -1588,7 +1588,7 @@ namespace AvyscanLab.Views
 
             if (this.FindControl<CheckBox>("ThreadsAutoCheckBox") is { } threadsAutoCheckBox)
             {
-                // Restore saved state (apply silently — no benchmark at startup)
+                // Restore saved state
                 var savedAuto = _windowStateService.Load()?.ThreadsAuto == true;
                 threadsAutoCheckBox.IsChecked = savedAuto;
                 if (savedAuto)
@@ -1612,49 +1612,19 @@ namespace AvyscanLab.Views
             RegisterPathPickers();
         }
 
-        private async void ApplyThreadsAuto(bool isAuto)
+        private void ApplyThreadsAuto(bool isAuto)
         {
             var threadsTextBox = this.FindControl<TextBox>("threads");
             if (threadsTextBox is null) return;
 
-            _benchmarkCts?.Cancel();
-
             if (isAuto)
             {
-                // Close menu so the player status messages are visible
-                CloseSettingsMenu();
-
                 threadsTextBox.IsReadOnly = true;
                 threadsTextBox.Opacity = 0.6;
 
-                // Quick fallback: choose a conservative default aligned with common AviSynth practice.
-                var fallbackThreads = GetConservativeAutoThreads();
-                SetTextSafely(threadsTextBox, fallbackThreads.ToString());
-                UpdateConfigurationValue("threads", fallbackThreads.ToString(), showValidationError: false);
-                ShowPlayerStatus($"Threads auto : {fallbackThreads} (valeur provisoire)");
-
-                // If a clip is loaded and player is ready, run benchmark
-                var mpv = _playerController?.MpvService;
-                if (_playerController is not null && mpv is { IsReady: true } && TryValidateSourceSelection(out _))
-                {
-                    _benchmarkCts = new CancellationTokenSource();
-                    try
-                    {
-                        await RunThreadsBenchmarkAsync(threadsTextBox, _benchmarkCts.Token);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        ShowPlayerStatus("Benchmark annulé");
-                    }
-                    catch (Exception ex)
-                    {
-                        ShowPlayerStatus($"Benchmark erreur : {ex.Message}");
-                    }
-                }
-                else
-                {
-                    ShowPlayerStatus($"Threads auto : {fallbackThreads} (benchmark indisponible pour l'instant)");
-                }
+                var autoThreads = GetConservativeAutoThreads();
+                SetTextSafely(threadsTextBox, autoThreads.ToString());
+                UpdateConfigurationValue("threads", autoThreads.ToString(), showValidationError: false);
             }
             else
             {
@@ -1669,192 +1639,6 @@ namespace AvyscanLab.Views
             if (cpuCount < 4) return cpuCount;
             var halfCpu = Math.Max(1, cpuCount / 2);
             return Math.Clamp(halfCpu, 4, 8);
-        }
-
-        private async Task RunThreadsBenchmarkAsync(TextBox threadsTextBox, CancellationToken ct)
-        {
-            var mpv = _playerController.MpvService!;
-            var containerFps = mpv.GetFps();
-            if (containerFps <= 0)
-            {
-                ShowPlayerStatus("Benchmark : FPS indisponible, conservation de la valeur provisoire");
-                return;
-            }
-
-            // Save original state
-            var originalPosition = mpv.GetPosition();
-            var wasPaused = mpv.IsPaused();
-            var originalThreads = _config.Get("threads") ?? Environment.ProcessorCount.ToString();
-
-            // Build candidate list: keep a conservative range (4..8) where AviSynth is usually the most stable.
-            var cpuCount = Environment.ProcessorCount;
-            var minThreads = cpuCount >= 4 ? 4 : 1;
-            var maxThreads = Math.Min(cpuCount, 8);
-            var candidates = Enumerable.Range(minThreads, maxThreads - minThreads + 1).ToList();
-
-            // Seek to a stable position (2s into the clip, or half for short clips)
-            var seekPos = Math.Min(2.0, mpv.Duration / 2.0);
-            var measureDuration = mpv.Duration < 6 ? 2500 : 5000;
-            const int samplesPerCandidate = 3;
-
-            var allMeasurements = new Dictionary<int, List<double>>();
-            foreach (var c in candidates)
-                allMeasurements[c] = new List<double>();
-
-            string? resultMessage = null;
-
-            try
-            {
-                ShowPlayerStatus($"Benchmark threads : démarrage ({cpuCount} CPU, {samplesPerCandidate} mesures / valeur)…");
-                await Task.Delay(1200, ct);
-
-                for (var i = 0; i < candidates.Count; i++)
-                {
-                    ct.ThrowIfCancellationRequested();
-                    if (_isClosing) return;
-
-                    var threadCount = candidates[i];
-
-                    try
-                    {
-                        ShowPlayerStatus($"Benchmark : test {threadCount} threads ({i + 1}/{candidates.Count})…");
-                        SetTextSafely(threadsTextBox, $"{threadCount}…");
-
-                        // Update config & regenerate script
-                        _config.Set("threads", threadCount.ToString());
-                        RegenerateScript(showValidationError: false);
-                        await LoadScriptAsync(resetPosition: false);
-
-                        // Wait for mpv to finish loading the script
-                        await WaitForPlaybackRestartAsync(ct, TimeSpan.FromSeconds(15));
-                        ct.ThrowIfCancellationRequested();
-
-                        // Seek to stable position and let it settle
-                        mpv.Seek(seekPos);
-                        await Task.Delay(600, ct);
-
-                        // Warmup: play briefly to prime caches and AviSynth buffers
-                        mpv.SetSpeed(100.0);
-                        mpv.Play();
-                        await Task.Delay(1800, ct);
-                        mpv.Pause();
-                        mpv.SetSpeed(1.0);
-
-                        for (var sample = 0; sample < samplesPerCandidate; sample++)
-                        {
-                            ct.ThrowIfCancellationRequested();
-                            mpv.Seek(seekPos);
-                            await Task.Delay(350, ct);
-
-                            mpv.SetSpeed(100.0);
-                            mpv.Play();
-                            var startPos = mpv.GetPosition();
-                            var sw = System.Diagnostics.Stopwatch.StartNew();
-                            await Task.Delay(measureDuration, ct);
-                            sw.Stop();
-                            var endPos = mpv.GetPosition();
-                            mpv.Pause();
-                            mpv.SetSpeed(1.0);
-
-                            var elapsed = sw.Elapsed.TotalSeconds;
-                            if (elapsed > 0 && endPos > startPos)
-                            {
-                                var effectiveFps = (endPos - startPos) * containerFps / elapsed;
-                                allMeasurements[threadCount].Add(effectiveFps);
-                            }
-                        }
-                    }
-                    catch (OperationCanceledException) { throw; }
-                    catch
-                    {
-                        // This thread count failed (e.g. AviSynth crash) — skip it
-                        mpv.SetSpeed(1.0);
-                        try { mpv.Pause(); } catch { /* best-effort */ }
-                    }
-                }
-
-                // Compute median for each candidate
-                var results = new Dictionary<int, double>();
-                foreach (var (threadCount, measurements) in allMeasurements)
-                {
-                    if (measurements.Count == 0) continue;
-                    var sorted = measurements.OrderBy(v => v).ToList();
-                    var median = sorted[sorted.Count / 2];
-                    results[threadCount] = median;
-                }
-
-                // Pick a stable winner: smallest thread count within 3% of the best score
-                if (results.Count > 0)
-                {
-                    var bestScore = results.Values.Max();
-                    var threshold = bestScore * 0.97;
-                    var selected = results
-                        .Where(kv => kv.Value >= threshold)
-                        .OrderBy(kv => kv.Key)
-                        .First();
-
-                    _config.Set("threads", selected.Key.ToString());
-                    RegenerateScript(showValidationError: false);
-
-                    var detail = string.Join(" | ",
-                        results.OrderBy(kv => kv.Key)
-                               .Select(kv => $"{kv.Key}t={kv.Value:F1}"));
-                    resultMessage = $"Benchmark : {selected.Key} threads retenu ({detail})";
-                }
-                else
-                {
-                    resultMessage = "Benchmark : aucun résultat valide";
-                }
-            }
-            finally
-            {
-                // Restore original state
-                mpv.SetSpeed(1.0);
-                await LoadScriptAsync(resetPosition: false);
-                try { await WaitForPlaybackRestartAsync(CancellationToken.None, TimeSpan.FromSeconds(10)); }
-                catch { /* best-effort */ }
-                mpv.Seek(originalPosition);
-                if (wasPaused) mpv.Pause();
-                else mpv.Play();
-
-                // Update textbox with final value
-                var finalThreads = _config.Get("threads") ?? originalThreads;
-                SetTextSafely(threadsTextBox, finalThreads);
-
-                // Delay slightly so post-load banner updates do not hide benchmark result.
-                await Task.Delay(250);
-                ShowPlayerStatus(resultMessage ?? "Benchmark terminé");
-            }
-        }
-
-        private Task WaitForPlaybackRestartAsync(CancellationToken ct, TimeSpan timeout)
-        {
-            var mpv = _playerController?.MpvService;
-            if (mpv is null) return Task.CompletedTask;
-
-            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            Action? handler = null;
-            handler = () =>
-            {
-                mpv.PlaybackRestart -= handler;
-                tcs.TrySetResult();
-            };
-            mpv.PlaybackRestart += handler;
-
-            ct.Register(() =>
-            {
-                mpv.PlaybackRestart -= handler;
-                tcs.TrySetCanceled();
-            });
-
-            // Timeout fallback
-            _ = Task.Delay(timeout, CancellationToken.None).ContinueWith(_ =>
-            {
-                mpv.PlaybackRestart -= handler;
-                tcs.TrySetResult();
-            }, TaskScheduler.Default);
-
-            return tcs.Task;
         }
 
         private void RegisterTextBoxHandler(TextBox textBox, FieldSpec spec)
