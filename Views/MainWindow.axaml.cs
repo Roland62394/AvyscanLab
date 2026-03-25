@@ -1679,10 +1679,9 @@ namespace AvyscanLab.Views
 
             // Seek to a stable position (2s into the clip, or half for short clips)
             var seekPos = Math.Min(2.0, mpv.Duration / 2.0);
-            var measureDuration = mpv.Duration < 6 ? 2000 : 4000;
+            var measureDuration = mpv.Duration < 6 ? 2500 : 5000;
+            const int samplesPerCandidate = 3;
 
-            // Run multiple passes with shuffled order to neutralize cache/thermal bias
-            const int passCount = 3;
             var allMeasurements = new Dictionary<int, List<double>>();
             foreach (var c in candidates)
                 allMeasurements[c] = new List<double>();
@@ -1691,49 +1690,49 @@ namespace AvyscanLab.Views
 
             try
             {
-                ShowPlayerStatus($"Benchmark threads : démarrage ({cpuCount} CPU, {passCount} passes)…");
+                ShowPlayerStatus($"Benchmark threads : démarrage ({cpuCount} CPU, {samplesPerCandidate} mesures / valeur)…");
+                await Task.Delay(1200, ct);
 
-                for (var pass = 0; pass < passCount; pass++)
+                for (var i = 0; i < candidates.Count; i++)
                 {
-                    // Shuffle candidates each pass to avoid systematic cache advantage
-                    var shuffled = candidates.OrderBy(_ => Random.Shared.Next()).ToList();
+                    ct.ThrowIfCancellationRequested();
+                    if (_isClosing) return;
 
-                    for (var i = 0; i < shuffled.Count; i++)
+                    var threadCount = candidates[i];
+
+                    try
                     {
+                        ShowPlayerStatus($"Benchmark : test {threadCount} threads ({i + 1}/{candidates.Count})…");
+                        SetTextSafely(threadsTextBox, $"{threadCount}…");
+
+                        // Update config & regenerate script
+                        _config.Set("threads", threadCount.ToString());
+                        RegenerateScript(showValidationError: false);
+                        await LoadScriptAsync(resetPosition: false);
+
+                        // Wait for mpv to finish loading the script
+                        await WaitForPlaybackRestartAsync(ct, TimeSpan.FromSeconds(15));
                         ct.ThrowIfCancellationRequested();
-                        if (_isClosing) return;
 
-                        var threadCount = shuffled[i];
-                        var globalStep = pass * shuffled.Count + i + 1;
-                        var totalSteps = passCount * shuffled.Count;
+                        // Seek to stable position and let it settle
+                        mpv.Seek(seekPos);
+                        await Task.Delay(600, ct);
 
-                        try
+                        // Warmup: play briefly to prime caches and AviSynth buffers
+                        mpv.SetSpeed(100.0);
+                        mpv.Play();
+                        await Task.Delay(1800, ct);
+                        mpv.Pause();
+                        mpv.SetSpeed(1.0);
+
+                        for (var sample = 0; sample < samplesPerCandidate; sample++)
                         {
-                            ShowPlayerStatus($"Benchmark : passe {pass + 1}/{passCount}, {threadCount} threads ({globalStep}/{totalSteps})…");
-                            SetTextSafely(threadsTextBox, $"{threadCount}…");
-
-                            // Update config & regenerate script
-                            _config.Set("threads", threadCount.ToString());
-                            RegenerateScript(showValidationError: false);
-                            await LoadScriptAsync(resetPosition: false);
-
-                            // Wait for mpv to finish loading the script
-                            await WaitForPlaybackRestartAsync(ct, TimeSpan.FromSeconds(15));
-
                             ct.ThrowIfCancellationRequested();
-
-                            // Seek to stable position and let it settle
                             mpv.Seek(seekPos);
-                            await Task.Delay(500, ct);
+                            await Task.Delay(350, ct);
 
-                            // Warmup: play briefly to prime caches and AviSynth buffers
                             mpv.SetSpeed(100.0);
                             mpv.Play();
-                            await Task.Delay(1500, ct);
-
-                            // Measure
-                            mpv.Seek(seekPos);
-                            await Task.Delay(300, ct);
                             var startPos = mpv.GetPosition();
                             var sw = System.Diagnostics.Stopwatch.StartNew();
                             await Task.Delay(measureDuration, ct);
@@ -1749,13 +1748,13 @@ namespace AvyscanLab.Views
                                 allMeasurements[threadCount].Add(effectiveFps);
                             }
                         }
-                        catch (OperationCanceledException) { throw; }
-                        catch
-                        {
-                            // This thread count failed (e.g. AviSynth crash) — skip it
-                            mpv.SetSpeed(1.0);
-                            try { mpv.Pause(); } catch { /* best-effort */ }
-                        }
+                    }
+                    catch (OperationCanceledException) { throw; }
+                    catch
+                    {
+                        // This thread count failed (e.g. AviSynth crash) — skip it
+                        mpv.SetSpeed(1.0);
+                        try { mpv.Pause(); } catch { /* best-effort */ }
                     }
                 }
 
@@ -1769,18 +1768,23 @@ namespace AvyscanLab.Views
                     results[threadCount] = median;
                 }
 
-                // Pick the best
+                // Pick a stable winner: smallest thread count within 3% of the best score
                 if (results.Count > 0)
                 {
-                    var best = results.OrderByDescending(kv => kv.Value).First();
-                    _config.Set("threads", best.Key.ToString());
+                    var bestScore = results.Values.Max();
+                    var threshold = bestScore * 0.97;
+                    var selected = results
+                        .Where(kv => kv.Value >= threshold)
+                        .OrderBy(kv => kv.Key)
+                        .First();
+
+                    _config.Set("threads", selected.Key.ToString());
                     RegenerateScript(showValidationError: false);
 
-                    // Build detail string: "2t=12.3 | 4t=18.5 | 8t=16.1"
                     var detail = string.Join(" | ",
                         results.OrderBy(kv => kv.Key)
                                .Select(kv => $"{kv.Key}t={kv.Value:F1}"));
-                    resultMessage = $"Benchmark : {best.Key} threads optimal ({detail})";
+                    resultMessage = $"Benchmark : {selected.Key} threads retenu ({detail})";
                 }
                 else
                 {
@@ -1802,7 +1806,8 @@ namespace AvyscanLab.Views
                 var finalThreads = _config.Get("threads") ?? originalThreads;
                 SetTextSafely(threadsTextBox, finalThreads);
 
-                // Show result via player banner (visible and not overwritten by script reload)
+                // Delay slightly so post-load banner updates do not hide benchmark result.
+                await Task.Delay(250);
                 ShowPlayerStatus(resultMessage ?? "Benchmark terminé");
             }
         }
