@@ -1254,8 +1254,7 @@ namespace AvyscanLab.Views
                 var prev = _windowStateService.Load();
                 var prevTour = prev?.TourCompleted;
                 var prevSuppressFeedback = prev?.SuppressExitFeedback;
-                var threadsAuto = this.FindControl<CheckBox>("ThreadsAutoCheckBox")?.IsChecked == true ? true : (bool?)null;
-                _windowStateService.Save(s with { Language = ViewModel.CurrentLanguageCode, OpenPanels = panels, LastOutputDir = lastDir, AutoSaveEncodingPreset = _encodeController.AutoSaveEncodingPreset ? true : null, RecordPanelOpen = _recordOpen ? true : null, TourCompleted = prevTour, SuppressExitFeedback = prevSuppressFeedback, ThreadsAuto = threadsAuto });
+                _windowStateService.Save(s with { Language = ViewModel.CurrentLanguageCode, OpenPanels = panels, LastOutputDir = lastDir, AutoSaveEncodingPreset = _encodeController.AutoSaveEncodingPreset ? true : null, RecordPanelOpen = _recordOpen ? true : null, TourCompleted = prevTour, SuppressExitFeedback = prevSuppressFeedback });
             }
         }
 
@@ -1586,60 +1585,9 @@ namespace AvyscanLab.Views
                 threadsTextBox.LostFocus += (_, _) => CloseSettingsMenu();
             }
 
-            if (this.FindControl<CheckBox>("ThreadsAutoCheckBox") is { } threadsAutoCheckBox)
-            {
-                // Restore saved state
-                var savedAuto = _windowStateService.Load()?.ThreadsAuto == true;
-                threadsAutoCheckBox.IsChecked = savedAuto;
-                if (savedAuto)
-                {
-                    var tb = this.FindControl<TextBox>("threads");
-                    if (tb is not null)
-                    {
-                        SetTextSafely(tb, Environment.ProcessorCount.ToString());
-                        tb.IsReadOnly = true;
-                        tb.Opacity = 0.6;
-                    }
-                }
-
-                threadsAutoCheckBox.IsCheckedChanged += (_, _) =>
-                {
-                    var isAuto = threadsAutoCheckBox.IsChecked == true;
-                    ApplyThreadsAuto(isAuto);
-                };
-            }
-
             RegisterPathPickers();
         }
 
-        private void ApplyThreadsAuto(bool isAuto)
-        {
-            var threadsTextBox = this.FindControl<TextBox>("threads");
-            if (threadsTextBox is null) return;
-
-            if (isAuto)
-            {
-                threadsTextBox.IsReadOnly = true;
-                threadsTextBox.Opacity = 0.6;
-
-                var autoThreads = GetConservativeAutoThreads();
-                SetTextSafely(threadsTextBox, autoThreads.ToString());
-                UpdateConfigurationValue("threads", autoThreads.ToString(), showValidationError: false);
-            }
-            else
-            {
-                threadsTextBox.IsReadOnly = false;
-                threadsTextBox.Opacity = 1.0;
-            }
-        }
-
-        private static int GetConservativeAutoThreads()
-        {
-            var cpuCount = Math.Max(1, Environment.ProcessorCount);
-            if (cpuCount < 4) return cpuCount;
-            var halfCpu = Math.Max(1, cpuCount / 2);
-            return Math.Clamp(halfCpu, 4, 8);
-        }
 
         private void RegisterTextBoxHandler(TextBox textBox, FieldSpec spec)
         {
