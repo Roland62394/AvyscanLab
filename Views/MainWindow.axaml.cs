@@ -1627,10 +1627,11 @@ namespace AvyscanLab.Views
                 threadsTextBox.IsReadOnly = true;
                 threadsTextBox.Opacity = 0.6;
 
-                // Quick fallback: use CPU count immediately
-                var cpuCount = Environment.ProcessorCount;
-                SetTextSafely(threadsTextBox, cpuCount.ToString());
-                UpdateConfigurationValue("threads", cpuCount.ToString(), showValidationError: false);
+                // Quick fallback: choose a conservative default aligned with common AviSynth practice.
+                var fallbackThreads = GetConservativeAutoThreads();
+                SetTextSafely(threadsTextBox, fallbackThreads.ToString());
+                UpdateConfigurationValue("threads", fallbackThreads.ToString(), showValidationError: false);
+                ShowPlayerStatus($"Threads auto : {fallbackThreads} (valeur provisoire)");
 
                 // If a clip is loaded and player is ready, run benchmark
                 var mpv = _playerController?.MpvService;
@@ -1650,6 +1651,10 @@ namespace AvyscanLab.Views
                         ShowPlayerStatus($"Benchmark erreur : {ex.Message}");
                     }
                 }
+                else
+                {
+                    ShowPlayerStatus($"Threads auto : {fallbackThreads} (benchmark indisponible pour l'instant)");
+                }
             }
             else
             {
@@ -1658,24 +1663,34 @@ namespace AvyscanLab.Views
             }
         }
 
+        private static int GetConservativeAutoThreads()
+        {
+            var cpuCount = Math.Max(1, Environment.ProcessorCount);
+            if (cpuCount < 4) return cpuCount;
+            var halfCpu = Math.Max(1, cpuCount / 2);
+            return Math.Clamp(halfCpu, 4, 8);
+        }
+
         private async Task RunThreadsBenchmarkAsync(TextBox threadsTextBox, CancellationToken ct)
         {
             var mpv = _playerController.MpvService!;
             var containerFps = mpv.GetFps();
-            if (containerFps <= 0) return;
+            if (containerFps <= 0)
+            {
+                ShowPlayerStatus("Benchmark : FPS indisponible, conservation de la valeur provisoire");
+                return;
+            }
 
             // Save original state
             var originalPosition = mpv.GetPosition();
             var wasPaused = mpv.IsPaused();
             var originalThreads = _config.Get("threads") ?? Environment.ProcessorCount.ToString();
 
-            // Build candidate list: powers of 2 up to CPU count, plus CPU count itself
+            // Build candidate list: keep a conservative range (4..8) where AviSynth is usually the most stable.
             var cpuCount = Environment.ProcessorCount;
-            var candidates = new List<int>();
-            for (var n = 2; n <= cpuCount; n *= 2)
-                candidates.Add(n);
-            if (candidates.Count == 0 || candidates[^1] != cpuCount)
-                candidates.Add(cpuCount);
+            var minThreads = cpuCount >= 4 ? 4 : 1;
+            var maxThreads = Math.Min(cpuCount, 8);
+            var candidates = Enumerable.Range(minThreads, maxThreads - minThreads + 1).ToList();
 
             // Seek to a stable position (2s into the clip, or half for short clips)
             var seekPos = Math.Min(2.0, mpv.Duration / 2.0);
