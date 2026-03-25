@@ -127,8 +127,8 @@ L’interface est organisée en trois zones principales :
 
     ZONE SUPÉRIEURE
     -----------------------------------------------------------------------------------------
-    Barre de menus : Infos (guide, aperçu du script, presets, à propos, contact, réglages),
-    Langues (FR/EN/DE/ES), visite guidée.
+    Barre de menus : Infos (mode d'emploi, settings, aperçu du script, contact, à propos),
+    Langues (FR/EN/DE/ES).
 
     Barre de source : champs de sélection du fichier source, mode image/vidéo, threads,
     chargeur source (Auto/FFMS2/L-SMASH/LWLibav).
