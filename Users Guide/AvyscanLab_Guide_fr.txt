@@ -1,4 +1,4 @@
-                              AVYSCAN LAB
+                                 AVYSCAN LAB
                             Guide de l’utilisateur
 
                                 ScanFilm SNC
@@ -491,11 +491,6 @@ aux nombres pairs (exigence du sous-échantillonnage chroma YUV).
           overlap est réduit en conséquence.
         - overlap n’accepte que des valeurs paires (step = 2).
 
-    Presets rapides :
-        Grain fin        thSAD=200, thSADC=150
-        Grain moyen      thSAD=350, thSADC=250 (défaut)
-        Grain fort       thSAD=500, thSADC=400
-
     Notes :
         - mdegrain2 : 2 références temporelles (recommandé, bon rapport qualité/vitesse)
         - mdegrain3 : 3 références (meilleur résultat, plus lent)
@@ -568,13 +563,6 @@ aux nombres pairs (exigence du sous-échantillonnage chroma YUV).
     Sharp_Radius           0.5-5.0            1.5         Rayon de flou (masque)
     Sharp_Threshold        0-100              0           Seuil anti-bruit
 
-    Presets rapides :
-        Léger            Strength=5
-        Standard         Strength=8 (défaut)
-        Moyen            Strength=12
-        Fort             Strength=16
-        Très fort        Strength=20
-
     Notes :
         - simple : Sharpen() global, efficace mais peut amplifier le grain résiduel.
         - edge : contours uniquement via masque Sobel + gamma (technique
@@ -588,114 +576,159 @@ aux nombres pairs (exigence du sous-échantillonnage chroma YUV).
 AvyscanLab permet de créer vos propres filtres AviSynth et de les intégrer dans le pipeline
 de restauration avec une interface de contrôle complète.
 
-    CRÉER UN FILTRE PERSONNALISÉ
+
+    FORMULAIRE D’ÉDITION DE FILTRE
     -----------------------------------------------------------------------------------------
 
-    1. Cliquez sur le bouton "+" à droite du titre "CUSTOM" dans le panneau de filtres.
-       Le formulaire de filtre personnalisé s’ouvre.
+    Le formulaire s’ouvre en cliquant sur le bouton "+" (création) ou le bouton crayon ✎
+    (édition d’un filtre existant). Il est divisé en trois zones séparées par un
+    séparateur redimensionnable. La taille, la position de la fenêtre et la répartition
+    des zones sont mémorisées entre les sessions.
 
-    2. Renseignez le nom du filtre et la position dans le pipeline :
-       - BeforePipeline : avant tous les filtres
-       - AfterGamMac    : après la correction colorimétrique
-       - AfterDenoise   : après la suppression des poussières
-       - AfterDegrain   : après la réduction du grain
-       - AfterLuma      : après les niveaux de luminosité
-       - AfterSharpen   : après la netteté (fin du pipeline)
+    ZONE SUPÉRIEURE — Nom, plugins et scripts
+    .........................................................................................
 
-    3. Si votre filtre nécessite un plugin AviSynth externe (.dll), cliquez sur
-       "+ Ajouter DLL..." pour l’ajouter. Les DLL sont chargées via TryLoadPlugin()
-       et les doublons sont automatiquement éliminés.
+    Nom du filtre
+        Champ de saisie libre. Si laissé vide, le nom par défaut "Custom" est attribué.
 
-    4. Écrivez le code AviSynth dans l’éditeur. Utilisez "c" comme variable clip :
-           c = MonFiltre(c, force={sigma})
-       Les mots entre accolades {nom} sont détectés automatiquement comme paramètres.
+    Dessin de région (Region Draw)
+        Case à cocher qui active la possibilité de dessiner une zone sur l’image pour
+        ce filtre. Lorsqu’elle est cochée, un menu déroulant apparaît pour choisir le
+        mode de région :
+            - X / Y / W / H     : position et taille de la zone
+            - Crop (L / T / R / B) : marges de recadrage
+        Les placeholders correspondants (X, Y, W, H ou left, top, right, bottom) sont
+        automatiquement détectés dans le code.
 
-    5. Pour chaque paramètre détecté, configurez le type de contrôle :
-       - slider   : curseur avec Min, Max, Step et Défaut.
-                    Les valeurs sont automatiquement alignées sur le pas (step).
-                    Avec un step de 2, seules les valeurs paires sont autorisées.
-       - combo    : liste déroulante avec valeurs séparées par des virgules
-       - checkbox : case à cocher avec valeurs On/Off personnalisables
-       - text     : champ texte libre
+    Plugins (TryLoadPlugin)
+        Bouton "+ Add DLL..." : ouvre un sélecteur de fichiers pour ajouter un ou
+        plusieurs plugins AviSynth (.dll). Chaque DLL ajoutée apparaît avec son chemin
+        complet (vert si le fichier existe, rouge sinon) et un bouton de suppression.
+        Les DLL sont chargées via TryLoadPlugin() dans le script généré.
 
-    6. Utilisez le bouton "Aperçu" pour tester le filtre en temps réel sans quitter
-       le formulaire.
+    Scripts (Import .avsi)
+        Bouton "+ Add AVSI..." : ouvre un sélecteur pour ajouter des fichiers de script
+        (.avsi ou .avs). Les fichiers sélectionnés sont automatiquement copiés dans le
+        dossier Plugins/Scripts/ de l’application. Seul le nom du fichier est stocké.
+        Lors de la génération du script AviSynth, AvyscanLab insère automatiquement
+        une instruction Import() pour chaque script référencé :
 
-    7. Cliquez sur "Enregistrer" pour sauvegarder.
+            TryLoadPlugin("C:/.../MonPlugin.dll")
+            Import("C:/.../Plugins/Scripts/MesFonctions.avsi")
+
+    ZONE CENTRALE — Éditeur de code AviSynth
+    .........................................................................................
+
+    Écrivez le code AviSynth dans l’éditeur. Utilisez "c" comme variable clip et les
+    accolades {nom} pour définir des paramètres modifiables depuis l’interface :
+
+        c = MonFiltre(c, force={sigma}, mode={bt_mode})
+
+    Les placeholders {nom} sont détectés automatiquement en temps réel. Chaque nouveau
+    placeholder génère une ligne de contrôle dans la zone inférieure. Si un placeholder
+    est supprimé du code, son contrôle disparaît également.
+
+    Conversion variable en paramètre
+        Sélectionnez dans l’éditeur une ligne du type "variable = valeur" avec la souris.
+        AvyscanLab propose de la convertir automatiquement en paramètre : la valeur est
+        remplacée par {variable} dans le code et un nouveau contrôle est créé avec la
+        valeur d’origine comme valeur par défaut. Cette aide peut être désactivée pour
+        la session en cours.
+
+    Bouton ▶ Preview
+        Teste le filtre en temps réel dans le lecteur sans quitter le formulaire.
+        Le filtre est temporairement activé pour la prévisualisation.
+
+    ZONE INFÉRIEURE — Paramètres détectés
+    .........................................................................................
+
+    Chaque placeholder {nom} détecté dans le code apparaît sous forme d’une ligne
+    horizontale contenant les éléments suivants :
+
+        👁  Bouton oeil : surligne le placeholder dans l’éditeur de code (bascule
+            verte quand actif).
+
+        ✕   Bouton supprimer : retire le contrôle et remplace le placeholder dans le
+            code par sa valeur par défaut. Une confirmation est demandée.
+
+        {nom}   Nom du placeholder affiché en bleu, police monospace.
+
+        Type    Liste déroulante pour choisir le type de contrôle :
+
+            slider      Curseur avec champs Min, Max, Step et Défaut (Dflt).
+                        Les valeurs sont automatiquement alignées sur le pas (step).
+                        Avec un step de 2, seules les valeurs paires sont autorisées.
+                        Bouton ½ : si activé, la valeur du paramètre est divisée
+                        par 2 en mode demi-résolution (preview), ce qui est utile pour
+                        les paramètres liés à la taille en pixels.
+
+            combo       Liste déroulante. Champ "Values" : saisissez les valeurs
+                        séparées par des virgules (ex: val1, val2, val3).
+                        Champ "Dflt" : valeur par défaut (la première option est
+                        utilisée si le champ est vide).
+
+            checkbox    Case à cocher. Champs "On" et "Off" : valeurs associées
+                        à chaque état (par défaut "true" et "false").
+                        Champ "Dflt" : valeur par défaut.
+
+            text        Champ de saisie libre. Champ "Dflt" : valeur par défaut.
+
+        💬  Champ description : texte optionnel qui sera affiché comme infobulle
+            lorsque l’utilisateur survole le paramètre dans le panneau de filtres.
+
+
+    BOUTONS DU FORMULAIRE
+    -----------------------------------------------------------------------------------------
+
+    Supprimer       Supprime définitivement le filtre (bouton rouge, à gauche).
+                    Une confirmation est demandée. Le message diffère selon qu’il
+                    s’agit d’un filtre intégré ou d’un filtre créé par l’utilisateur.
+
+    ↑ Export        Sauvegarde le filtre dans un fichier .json que vous pouvez
+                    partager avec d’autres utilisateurs.
+
+    ❐ Duplicate     Crée une copie du filtre avec le suffixe "(2)". La copie reçoit
+                    un nouvel identifiant et est placée juste après l’original.
+                    Utile pour appliquer à plusieurs reprises le même traitement avec des réglages différents.
+
+    ? Help          Affiche une aide contextuelle sur le formulaire.
+
+    Annuler         Ferme le formulaire sans sauvegarder les modifications.
+
+    Enregistrer     Sauvegarde le filtre et ferme le formulaire (bouton vert).
+
 
     UTILISER UN FILTRE PERSONNALISÉ
     -----------------------------------------------------------------------------------------
 
-    Le filtre apparaît dans la section CUSTOM avec :
+    Le filtre apparaît dans la colonne gauche du panneau de filtres avec :
         - Un bouton ON/OFF pour activer/désactiver le filtre
-        - Un bouton flèche (>) pour ouvrir le panneau de paramètres
-        - Un bouton crayon pour ouvrir le formulaire d’édition
+        - Un bouton flèche ▶ pour ouvrir le panneau de paramètres
+        - Un bouton crayon ✎ pour ouvrir le formulaire d’édition
 
     Les paramètres sont affichés dans la colonne droite du panneau de filtres avec les
     contrôles définis (sliders, listes, cases à cocher, champs texte).
 
+
     EXPORTER / IMPORTER UN FILTRE
     -----------------------------------------------------------------------------------------
 
-    Exporter : dans le formulaire d’édition, cliquez sur "Exporter". Le filtre est
+    Exporter : dans le formulaire d’édition, cliquez sur "↑ Export". Le filtre est
     sauvegardé dans un fichier .json que vous pouvez partager avec d’autres utilisateurs.
 
-    Importer : dans le panneau de filtres, cliquez sur le bouton flèche vers le bas à côté
-    du "+" dans la section CUSTOM. Sélectionnez un fichier .json exporté. Les filtres
-    importés reçoivent un nouvel identifiant pour éviter les doublons.
+    Importer : dans le panneau de filtres, cliquez sur le bouton ↓ à côté du "+".
+    Sélectionnez un fichier .json exporté. Les filtres importés reçoivent un nouvel
+    identifiant pour éviter les doublons.
 
     Note : les chemins DLL sont absolus. Si le filtre utilise un plugin externe, assurez-vous
     que la DLL est présente au même emplacement sur la machine cible, ou éditez le filtre
     après importation pour corriger le chemin.
 
-    SUPPRIMER UN FILTRE
-    -----------------------------------------------------------------------------------------
-
-    Ouvrez le formulaire d’édition (bouton crayon) et cliquez sur "Supprimer".
+    Note : lors de l’exportation d’un filtre, seul le nom des fichiers .avsi est
+    enregistré (pas leur contenu). Si vous partagez un filtre avec un autre utilisateur,
+    transmettez également les fichiers .avsi nécessaires.
 
 Emplacement de stockage : %AppData%\AvyscanLab\custom_filters.json
-
-
-  IMPORTER UN SCRIPT AVSI
-      -----------------------------------------------------------------------------------------
-
-      Certains filtres AviSynth reposent sur des fonctions définies dans des fichiers
-      de script (.avsi). Ces fichiers contiennent des fonctions réutilisables qui étendent
-      les possibilités d’AviSynth sans être des plugins compilés (.dll).
-
-      Pour ajouter un script .avsi à un filtre personnalisé :
-
-      1. Ouvrez le formulaire d’édition du filtre (bouton crayon ou création d’un nouveau
-         filtre via le bouton "+").
-
-      2. Dans la section "Scripts (Import .avsi)", cliquez sur "+ Ajouter AVSI...".
-
-      3. Sélectionnez un ou plusieurs fichiers .avsi ou .avs depuis votre disque.
-         Les fichiers sélectionnés sont automatiquement copiés dans le dossier
-         Plugins/Scripts/ de l’application, ce qui garantit leur disponibilité
-         indépendamment de leur emplacement d’origine.
-
-      4. Les scripts ajoutés apparaissent dans la liste. Utilisez le bouton (x) pour
-         retirer un script de la liste.
-
-      5. Lors de la génération du script AviSynth, AvyscanLab insère automatiquement
-         une instruction Import() pour chaque script référencé, juste après le
-         chargement des plugins :
-
-             TryLoadPlugin("C:/.../MonPlugin.dll")
-             Import("C:/.../Plugins/Scripts/MesFonctions.avsi")
-
-      Les fonctions définies dans le fichier .avsi sont alors disponibles dans le code
-      de votre filtre personnalisé.
-
-      Exemple : si votre fichier MesFonctions.avsi définit une fonction MonDebruitage(),
-      vous pouvez l’utiliser directement dans le code du filtre :
-          c = MonDebruitage(c, force={sigma})
-
-      Note : lors de l’exportation d’un filtre, seul le nom du fichier .avsi est
-      enregistré (pas son contenu). Si vous partagez un filtre avec un autre utilisateur,
-      transmettez également les fichiers .avsi nécessaires. L’utilisateur devra les
-      importer via le même mécanisme.
 
 
 
@@ -884,16 +917,14 @@ si vous souhaitez une réponse.
                        préserve mieux les zones lisses et évite d’amplifier le
                        grain résiduel.
 
-    4. Utilisez les presets disponibles sur certains filtres pour un réglage rapide, puis affinez.
+    4. Vérifiez le résultat en parcourant plusieurs passages du film.
 
-    5. Vérifiez le résultat en parcourant plusieurs passages du film.
-
-    6. Sauvegardez votre configuration en preset dans le menu Settings pour pouvoir
+    5. Sauvegardez votre configuration en preset via le bouton 👁 pour pouvoir
        la réutiliser facilement sur d’autres clips du même film ou d’autres films similaires.
 
-    7. Si vous avez plusieurs clips : chargez-les tous, puis appliquez les presets adaptés.
+    6. Si vous avez plusieurs clips : chargez-les tous, puis appliquez les presets adaptés.
 
-    8. Ouvrez le panneau Record, choisissez les paramètres d’encodage.
+    7. Ouvrez le panneau Record, choisissez les paramètres d’encodage.
        Chaque film peut avoir un preset d’encodage différent, ce qui permet d’organiser
        facilement les rendus.
        Chaque film peut ou non être inclus dans un batch d’encodage.
