@@ -247,6 +247,7 @@ public sealed class DialogService : IDialogService
             FontFamily = UiConstants.CodeFont
         };
 
+        var copyButton   = MakeButton(vm.GetLocalizedText(fr: "Copier dans le presse-papier", en: "Copy to clipboard"), minWidth: 200);
         var reloadButton = MakeButton(vm.GetLocalizedText(fr: "Recharger", en: "Reload"), minWidth: 100);
         var closeButton  = MakeButton(vm.GetUiText("GamMacCloseButton"));
 
@@ -268,10 +269,21 @@ public sealed class DialogService : IDialogService
                         Spacing = 8,
                         HorizontalAlignment = HorizontalAlignment.Right,
                         [DockPanel.DockProperty] = Dock.Bottom,
-                        Children = { reloadButton, closeButton }
+                        Children = { copyButton, reloadButton, closeButton }
                     },
                     scriptEditor
                 }
+            }
+        };
+
+        copyButton.Click += async (_, _) =>
+        {
+            if (dialog.Clipboard is { } clipboard && !string.IsNullOrEmpty(scriptEditor.Text))
+            {
+                await clipboard.SetTextAsync(scriptEditor.Text);
+                copyButton.Content = vm.GetLocalizedText(fr: "✓ Copié !", en: "✓ Copied!");
+                await Task.Delay(1500);
+                copyButton.Content = vm.GetLocalizedText(fr: "Copier dans le presse-papier", en: "Copy to clipboard");
             }
         };
 
