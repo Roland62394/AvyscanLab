@@ -41,20 +41,20 @@ Mode standard:
 - vérification de la disponibilité d'une version plus récente;
 - application disponible en 4 langues (FR, EN, DE, ES);
 - importer une ou des vidéos ou séquences d’images par simple glissés/déposés ;
-- gérer plusieurs clips dans un même projet;
+- gérer plusieurs clips de différents formats dans un même projet;
 - choisissez les filtres que vous souhaitez appliquer et dans quel ordre (crop, degrain, denoise, sharpen, stabilisation, etc..);
 - ajuster les paramètres de chaque filtre dans une interface conviviale;
-- chaque paramètre de chaque filtre est expliqué avec une infobulle dédiée pour comprendre son rôle et son impact;
+- chaque paramètre de chaque filtre est expliqué avec une info-bulle dédiée pour comprendre son utilité;
 - comparer l’image originale et l'image restaurée;
 - visualiser l’histogramme pour un contrôle précis de l’exposition et des couleurs (4 modes);
 - créer une bibliothèque de réglages (presets) pour les rappeler en 2 clics;
-- importer et exporter des filtres avec d'autres utilisateurs;
+- importer et exporter des filtres depuis une bibliothèque ou avec d'autres utilisateurs;
 - encodage possible de videos ou de suites d'images vers des formats intermédiaires ou finaux avec une totale flexibilité pour chaque clip;
 - créer une bibliothèque de paramètres d'encodage (presets) pour les rappeler en 2 clics et les appliquer individuellement à chaque clip; 
 
 
 Mode expert:
-- éditer le script AviSynth généré;
+- éditer le script AviSynth généré et coller son contenu dans un autre logiciel;
 - écrire vos propres filtres directement dans l'application, importer vos Dlls ainsi que vos fichiers .avsi;
 - génération paramétrable et automatiques des contrôles qui serviront à modifier les paramètres de vos filtres depuis l'interface;
 - les erreurs Avisynth sont affichées dans l'application pour un diagnostic rapide;
@@ -127,42 +127,73 @@ L’interface est organisée en trois zones principales :
 
     ZONE SUPÉRIEURE
     -----------------------------------------------------------------------------------------
-    Barre de menus : Infos (mode d'emploi, settings, aperçu du script, contact, à propos),
-    Langues (FR/EN/DE/ES).
-
-    Barre de source : champs de sélection du fichier source, mode image/vidéo, threads,
-    chargeur source (Auto/FFMS2/L-SMASH/LWLibav).
-
-    Onglets clips : chaque clip chargé apparaît sous forme d’onglet avec le nom du fichier
-    et le preset appliqué (ex. : "[perso2]"). Cliquez sur un onglet pour basculer entre les
-    clips. Le bouton + permet d’ajouter un clip, le x ferme un onglet.
+    Barre de menus : 
+    - Infos: mode d'emploi en 4 langues, aperçu du script, visite guidée,recherche d'une mise à jour
+    - Réglages:  - nombre de thread (recommandé de 4 à 8 max)
+                 - choix du chargeur (Auto, Ffms2, L-smash, LWLibav)
+                 - choix d'un thème pour l'interface (clair, gris, sombre) et choix de la couleur des curseurs
+                 - Exportation (sauvegarde) et importation des réglages du programme:
+                          - presets.json — presets de filtres
+                          - custom_filters.json — filtres custom                                                                         
+                          - encoding_presets.json — presets d'encodage
+                          - gammac_presets.json — presets de correction gamma
+                          - session.json — état de la session (clips, réglages courants)
+                          - window-settings.json — position/taille de la fenêtre, langue
+                 - Réinitialier : remise à l'tat d'origine des paramètres de l'application
+    - Choix de la langue : anglais, français, allemend, espagnol
+    - Contact : ouvre un formulaire de contact pour nous faire part de vos remarques
+    - A propos : qui sommes-nous ?
+     
+    Barre de source : 
+    - Onglets de sélection des fichiers source 
+    - Chaque clip chargé apparaît sous forme d’onglet avec le nom du fichier et le preset appliqué (ex. : "[perso2]")
+    - Le bouton + permet d’ajouter un clip, le x ferme un onglet
+    - Lorsque qu'une suite d'images est chargée (.tif, .tiff, .png, etc..), à droite le programme recherche la première et la dernière image trouvée dans le répertoire
 
     ZONE CENTRALE
     -----------------------------------------------------------------------------------------
     Lecteur vidéo mpv : affiche la prévisualisation du script AviSynth en temps réel.
 
-    Barre de transport (en bas du lecteur) :
+        Barre de progression et compteur d'image + position actuelle / durée totale.
+        Affiche le compteur d'images, ainsi la position du curseur par rapport à la durée totale du clip
         |<      Début du clip
         <<      Image précédente
         >       Lecture / Pause
         >>      Image suivante
         1x      Vitesse (cycle : 0.25x -> 0.5x -> 1x, l'abaissement de la vitesse permet une lecture plus fluide, sans accoup sur les machines moins puissantes)
-        1/2     Demi-résolution (soulage le processeur et permet une meilleure réactivé)
-        []      Maximiser/Restaurer le lecteur (F11)
+        1/2     Pour la prévisualisation, la taille de l'affichage est divisée par 2 afin de soulager le processeur et de permettre une meilleure réactivé.
+        []      Maximiser/Restaurer la taille de l'image (F11)
+        Preset  Permet de sélectionner un preset de réglage préalablement mémorisé
+        👁      Affiche la fenêtre permettant de créer/effacer/mettre à jour, des presets de réglages (presets de filtres, pas d'encodage)
         REC     Ouvrir le panneau d’encodage
 
-    Barre de progression : position actuelle / durée totale.
-    Cliquez ou glissez pour naviguer.
 
     ZONE INFÉRIEURE
     -----------------------------------------------------------------------------------------
-    Panneau de filtres divisé en deux colonnes séparées par un séparateur redimensionnable :
-        - Colonne gauche : boutons d’activation des filtres (ON/OFF) et filtres personnalisés
-        - Colonne droite : paramètres détaillés du filtre sélectionné
+    Panneau de filtres divisé en deux colonnes séparées redimensionnables :
+        
+        - Colonne gauche : 
+               ↻ Rétablis l'ordre "standart" de la chronologie des filtres
+               ↓ Importer un filtre depuis un fichier .JSON
+               + Créer un filtre soi-même
+               Boutons d’activation des filtres (ON/OFF)
+               ▶ Ouvrir/déplier le panneau de réglages du filtre (bouton expand)
+               ✎ Éditer un filtre en vue de le modifier
+        
+               ▸ Section filtres inactifs (collapsible)
+                 ▾ Section ouverte (filtres inactifs dépliés)
+                   Permet de sélectionner les filtres inactifs présents en local et de les ajouter aux filtres actifs
 
-    La hauteur entre le lecteur et le panneau de filtres est ajustable via le séparateur
-    horizontal.
+               L'ordre des filtres peut être changé par un glissé/déplacé du bouton d'activation
 
+        - Colonne droite : 
+              - Chaque filtre peut-être déplacé horizontalement en cliquant sur le nom du filtre afin d'en changer l'ordre de présentation
+              ↺ Remise aux valeurs standard de tous les paramètres
+              - Dessiner la zone : certain filtre de racadrage, de stabilisation, ou de correction des coouleurs détermine une zone de l'image
+                Afin de faciliter la délimitation de cette zone, vous pouvez la dessiner directement dans le viewer au lieu de saisir manuelement des valeurs numériques
+              - Info-bulles : Un survol de la souris permet de se renseigner sur les actions que chaque paramètre. Lors de la création d'un filtre par l'utilisateur, celui-ci
+                peut également renseigner chaque champs avec le texte de son choix.
+              - Un curseur ou un champ permet de choisir la valeur des paramètres.
 
 =============================================================================================
                             4.  SÉLECTION DE LA SOURCE
@@ -171,8 +202,7 @@ L’interface est organisée en trois zones principales :
 Fichier vidéo
     Glissez-déposez un fichier vidéo sur la zone de lecture, ou cliquez sur le bouton
     à côté du champ "source" pour ouvrir un explorateur de fichiers.
-    Formats supportés : .avi  .mp4  .mov  .mkv  .wmv  .webm  .m4v  .flv  .ts  .mts
-                        .m2ts  .mxf  .mpeg  .mpg  .ogv  .3gp
+    Fichiers supportés :.avi, .mp4, .mov, .mkv, .wmv, .mpeg, .mpg.
 
 Séquence d’images
     Sélectionnez un répertoire contenant des fichiers images (par exemple : 00001.tif, 00002.tif, etc.).
@@ -194,7 +224,7 @@ Threads
     Nombre de threads de traitement AviSynth (dépend de votre processeur). Augmentez cette valeur pour exploiter
     tous les cœurs du processeur.
     Une valeur trop élevée peut provoquer des ralentissements ou des erreurs sur les machines les moins puissantes.
-    Ajustez-la en fonction de votre matériel.
+    Ajustez-la en fonction de votre matériel (idéal entre 4 et 8 )
 
 Multi-clips
     Vous pouvez charger plusieurs fichiers dans Avyscan Lab. Chaque clip disposera de ses propres réglages
@@ -208,6 +238,8 @@ Multi-clips
 
 Le lecteur intégré affiche le résultat du script AviSynth en temps réel. Toute modification
 de paramètre régénère automatiquement le script et rafraîchit l’aperçu.
+Pendant le calcul des modifications, le bouton "Play" devient orange et change de luminosité.
+Lorsque le programme est prêt, ce bouton redevient vert.
 
 Raccourcis clavier :
 
