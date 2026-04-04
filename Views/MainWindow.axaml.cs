@@ -155,6 +155,7 @@ namespace AvyscanLab.Views
         private void InitializeWindow()
         {
             InitializeComponent();
+            _mainGrid = this.FindControl<Grid>("MainGrid");
             DataContext = new MainWindowViewModel();
             ConfigureMenuBar();
             InitTheme();
