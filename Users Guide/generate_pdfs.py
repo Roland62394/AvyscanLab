@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate professional PDF user guides for AvyscanLab from .txt sources."""
+"""Generate professional PDF user guides for AvyScanLab from .txt sources."""
 
 import os
 import re
@@ -31,10 +31,10 @@ GREY_TEXT    = (100, 100, 110)
 BLACK        = (30, 30, 30)
 
 LANGS = {
-    "fr": "AvyscanLab_Guide_fr.txt",
-    "en": "AvyscanLab_Guide_en.txt",
-    "de": "AvyscanLab_Guide_de.txt",
-    "es": "AvyscanLab_Guide_es.txt",
+    "fr": "AvyScanLab_Guide_fr.txt",
+    "en": "AvyScanLab_Guide_en.txt",
+    "de": "AvyScanLab_Guide_de.txt",
+    "es": "AvyScanLab_Guide_es.txt",
 }
 
 
@@ -344,7 +344,7 @@ def generate_pdf(lang: str, txt_file: str):
 
 
 def main():
-    print("Generating AvyscanLab PDF guides...")
+    print("Generating AvyScanLab PDF guides...")
     for lang, txt_file in LANGS.items():
         generate_pdf(lang, txt_file)
     print("Done.")

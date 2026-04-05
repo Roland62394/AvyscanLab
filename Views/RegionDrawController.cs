@@ -3,9 +3,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
-using AvyscanLab.Services;
+using AvyScanLab.Services;
 
-namespace AvyscanLab.Views;
+namespace AvyScanLab.Views;
 
 /// <summary>
 /// Handles mouse-drawn rectangle selection on the video player to set GamMac X/Y/W/H.

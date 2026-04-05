@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace AvyscanLab.Services;
+namespace AvyScanLab.Services;
 
 public sealed class Preset(string name, Dictionary<string, string> values)
 {

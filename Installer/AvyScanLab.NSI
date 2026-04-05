@@ -1,5 +1,5 @@
 ; ─────────────────────────────────────────────────────
-; ScanRestore — NSIS Installer Script
+; AvyScan Lab — NSIS Installer Script
 ; ─────────────────────────────────────────────────────
 ; Prerequisites:
 ;   1. Install NSIS 3+ from https://nsis.sourceforge.io/Download
@@ -8,7 +8,7 @@
 ;   3. Place AviSynthPlus installer in Installer/ folder:
 ;        AviSynthPlus_3.7.5_20250420_vcredist.exe
 ;   4. Right-click this file → "Compile NSIS Script"
-;      or run:  makensis AvyscanLab.nsi
+;      or run:  makensis AvyScanLab.nsi
 ;
 ; The installer will be created in Installer\Output\
 ; ─────────────────────────────────────────────────────
@@ -19,11 +19,11 @@
 !include "WinMessages.nsh"
 
 ; ── App metadata ──
-!define APP_NAME      "ScanRestore"
+!define APP_NAME      "AvyScan Lab"
 !define APP_VERSION   "vers. 1.0"
 !define APP_PUBLISHER "ScanFilm SNC"
 !define APP_URL       "https://www.scanfilm.ch"
-!define APP_EXE       "AvyscanLab.exe"
+!define APP_EXE       "AvyScanLab.exe"
 !define PUBLISH_DIR   "..\bin\Release\net10.0\win-x64\publish"
 !define AVS_INSTALLER "AviSynthPlus_3.7.5_20250420_vcredist.exe"
 
@@ -34,7 +34,7 @@
 
 ; ── Installer settings ──
 Name "${APP_NAME} ${APP_VERSION}"
-OutFile "Output\AvyscanLab_Setup.exe"
+OutFile "Output\AvyScanLab_Setup.exe"
 InstallDir "$PROGRAMFILES64\${APP_NAME}"
 InstallDirRegKey HKLM "Software\${APP_NAME}" "InstallDir"
 RequestExecutionLevel admin
@@ -126,7 +126,7 @@ SectionEnd
 
 ; ── AviSynth+ restoration plugins (installed into plugins64+ folder) ──
 Section "Restoration plugins (required)" SecGplPlugins
-    SectionIn RO  ; Cannot be deselected — required for ScanRestore
+    SectionIn RO  ; Cannot be deselected — required for AvyScan Lab
 
     ; Read AviSynth+ plugin directory from 64-bit registry view
     SetRegView 64
@@ -232,7 +232,7 @@ Function .onInit
     skip_uninst:
     ${EndIf}
 
-    ; ── Close running instance of ScanRestore ──
+    ; ── Close running instance of AvyScan Lab ──
     FindWindow $0 "" "${APP_NAME}"
     ${If} $0 != 0
         MessageBox MB_OKCANCEL|MB_ICONINFORMATION \
@@ -299,7 +299,7 @@ FunctionEnd
 ; UNINSTALLER
 ; ─────────────────────────────────────────────────────
 Section "Uninstall"
-    ; Remove ScanRestore files (includes Plugins\ffmpeg, mpv, etc.)
+    ; Remove AvyScan Lab files (includes Plugins\ffmpeg, mpv, etc.)
     RMDir /r "$INSTDIR\Plugins"
     RMDir /r "$INSTDIR\mpv"
     RMDir /r "$INSTDIR\Users Guide"
@@ -309,7 +309,7 @@ Section "Uninstall"
     Delete "$INSTDIR\Uninstall.exe"
     RMDir  "$INSTDIR"
 
-    ; Remove AviSynth+ plugins installed by ScanRestore (64-bit registry)
+    ; Remove AviSynth+ plugins installed by AvyScan Lab (64-bit registry)
     SetRegView 64
     ReadRegStr $AVS_PLUGINDIR HKLM "SOFTWARE\AviSynth" "plugindir+"
     SetRegView 32
@@ -339,7 +339,7 @@ Section "Uninstall"
     RMDir /r "$SMPROGRAMS\${APP_NAME}"
 
     ; Remove AppData (generated configs, sessions, presets)
-    RMDir /r "$APPDATA\AvyscanLab"
+    RMDir /r "$APPDATA\AvyScanLab"
 
     ; Remove registry keys
     DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"

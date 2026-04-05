@@ -27,7 +27,7 @@
                                   1.  PRÉSENTATION
 =============================================================================================
 
-AvyscanLab est un logiciel de restauration de films argentiques numérisés (8 mm, Super 8,
+AvyScanLab est un logiciel de restauration de films argentiques numérisés (8 mm, Super 8,
 9,5 mm, 16 mm). Il permet de :
 
     - Réduire le grain de pellicule (MVTools2 MDegrain)
@@ -47,13 +47,13 @@ L’application est disponible en 4 langues : français, anglais, allemand et es
                                 REMERCIEMENTS / CRÉDITS
 =============================================================================================
 
-AvyscanLab s’appuie sur la qualité des plugins AviSynth+ développés
+AvyScanLab s’appuie sur la qualité des plugins AviSynth+ développés
 et maintenus par la communauté open source. Nous adressons nos remerciements les plus chaleureux,
 aussi exhaustivement que possible, à leurs auteurs :
 
      MVTools2 — Manao, Fizick, Tsp, TSchniede, SEt
           Estimation de mouvement et réduction temporelle du grain (MDegrain).
-          Le cœur du pipeline de restauration de AvyscanLab.
+          Le cœur du pipeline de restauration de AvyScanLab.
 
       RemoveDirt — Kassandro
           Détection et suppression temporelles des poussières et des rayures.
@@ -75,7 +75,7 @@ aussi exhaustivement que possible, à leurs auteurs :
 
       LimitedSharpenFaster — Didée
           Technique de renforcement de la netteté par masque Sobel et courbe
-          gamma (^0.86), dont s’inspire le mode « edge » de AvyscanLab.
+          gamma (^0.86), dont s’inspire le mode « edge » de AvyScanLab.
 
 =============================================================================================
                            2.  PRÉREQUIS ET INSTALLATION
@@ -87,13 +87,13 @@ Système requis :
     - Espace disque suffisant pour les fichiers source et les rendus
 
 Composants :
-    - AviSynth+ 64 bits doit être installé. S’il est absent, AvyscanLab le détecte au démarrage
+    - AviSynth+ 64 bits doit être installé. S’il est absent, AvyScanLab le détecte au démarrage
       et propose son installation.
     - FFmpeg est fourni avec l’application (dossier Plugins/ffmpeg/).
     - Le lecteur mpv est fourni avec l’application (dossier mpv/).
 
 Aucune installation supplémentaire n’est requise. Il suffit de décompresser l’archive
-et de lancer l’exécutable AvyscanLab.exe.
+et de lancer l’exécutable AvyScanLab.exe.
 
 
 =============================================================================================
@@ -153,7 +153,7 @@ Fichier vidéo
 
 Séquence d’images
     Sélectionnez un répertoire contenant des fichiers images (par exemple : 00001.tif, 00002.tif, etc.).
-    AvyscanLab détecte automatiquement la première et la dernière image de la séquence.
+    AvyScanLab détecte automatiquement la première et la dernière image de la séquence.
     Formats supportés : .tif  .tiff  .jpg  .jpeg  .png  .bmp
 
 Cadence de lecture (FPS)
@@ -396,7 +396,7 @@ aux nombres pairs (exigence du sous-échantillonnage chroma YUV).
                         10.  FILTRES PERSONNALISÉS (CUSTOM)
 =============================================================================================
 
-AvyscanLab permet de créer vos propres filtres AviSynth et de les intégrer dans le pipeline
+AvyScanLab permet de créer vos propres filtres AviSynth et de les intégrer dans le pipeline
 de restauration avec une interface de contrôle complète.
 
     CRÉER UN FILTRE PERSONNALISÉ
@@ -464,7 +464,7 @@ de restauration avec une interface de contrôle complète.
 
     Ouvrez le formulaire d’édition (bouton crayon) et cliquez sur "Supprimer".
 
-Emplacement de stockage : %AppData%\AvyscanLab\custom_filters.json
+Emplacement de stockage : %AppData%\AvyScanLab\custom_filters.json
 
 
   IMPORTER UN SCRIPT AVSI
@@ -489,7 +489,7 @@ Emplacement de stockage : %AppData%\AvyscanLab\custom_filters.json
       4. Les scripts ajoutés apparaissent dans la liste. Utilisez le bouton (x) pour
          retirer un script de la liste.
 
-      5. Lors de la génération du script AviSynth, AvyscanLab insère automatiquement
+      5. Lors de la génération du script AviSynth, AvyScanLab insère automatiquement
          une instruction Import() pour chaque script référencé, juste après le
          chargement des plugins :
 
@@ -524,7 +524,7 @@ Emplacement de stockage : %AppData%\AvyscanLab\custom_filters.json
     Supprimer           Efface un preset
 
     Les champs source, film, img, start, end et crop ne sont PAS inclus dans les presets.
-    Emplacement : %AppData%\AvyscanLab\presets.json
+    Emplacement : %AppData%\AvyScanLab\presets.json
 
     PRESETS PAR CLIP
     -----------------------------------------------------------------------------------------
@@ -538,7 +538,7 @@ Emplacement de stockage : %AppData%\AvyscanLab\custom_filters.json
     Les combinaisons d’encodage (encodeur + conteneur + qualité + chroma + résolution)
     peuvent être sauvegardées et rechargées depuis le panneau Record.
     Le preset "Default" est toujours présent et apparaît en premier.
-    Emplacement : %AppData%\AvyscanLab\encoding_presets.json
+    Emplacement : %AppData%\AvyScanLab\encoding_presets.json
 
 
 =============================================================================================
@@ -644,7 +644,7 @@ Menu Langues :
 =============================================================================================
 
 Le menu Infos > Aperçu du script ouvre une fenêtre affichant le contenu complet du fichier
-ScriptUser.avs généré par AvyscanLab.
+ScriptUser.avs généré par AvyScanLab.
 
 Le bouton "Recharger" relit le fichier depuis le disque et rafraîchit la prévisualisation.
 Cela permet de vérifier le script AviSynth produit et de le copier éventuellement
@@ -743,11 +743,11 @@ si vous souhaitez une réponse.
     ScriptUser.avs                 Dossier de l’exe
     ScriptMaster.xx.avs            Dossier de l’exe (xx = langue)
     ScriptRender.avs               Dossier de l’exe (généré pour l’encodage)
-    presets.json                   %AppData%\AvyscanLab
-    encoding_presets.json          %AppData%\AvyscanLab
-    custom_filters.json            %AppData%\AvyscanLab
-    window_settings.json           %AppData%\AvyscanLab
-    session.json                   %AppData%\AvyscanLab
+    presets.json                   %AppData%\AvyScanLab
+    encoding_presets.json          %AppData%\AvyScanLab
+    custom_filters.json            %AppData%\AvyScanLab
+    window_settings.json           %AppData%\AvyScanLab
+    session.json                   %AppData%\AvyScanLab
     Plugins/                       Dossier de l’exe
     mpv/                           Dossier de l’exe
 
@@ -756,9 +756,9 @@ si vous souhaitez une réponse.
                           19.  CONTENU DE L’APPLICATION
 =============================================================================================
 
-Arborescence des fichiers distribués avec AvyscanLab :
+Arborescence des fichiers distribués avec AvyScanLab :
 
-    AvyscanLab.exe                           Exécutable principal
+    AvyScanLab.exe                           Exécutable principal
     ScriptMaster.en.avs                     Modèle de script AviSynth
     UserGuide.txt                           Guide texte (français, source)
 
@@ -770,10 +770,10 @@ Arborescence des fichiers distribués avec AvyscanLab :
       libmpv-2.dll                          Lecteur vidéo (libmpv)
 
     Users Guide/
-      AvyscanLab_Guide_en.txt                Guide utilisateur (anglais)
-      AvyscanLab_Guide_fr.txt                Guide utilisateur (français)
-      AvyscanLab_Guide_de.txt                Guide utilisateur (allemand)
-      AvyscanLab_Guide_es.txt                Guide utilisateur (espagnol)
+      AvyScanLab_Guide_en.txt                Guide utilisateur (anglais)
+      AvyScanLab_Guide_fr.txt                Guide utilisateur (français)
+      AvyScanLab_Guide_de.txt                Guide utilisateur (allemand)
+      AvyScanLab_Guide_es.txt                Guide utilisateur (espagnol)
 
     Plugins/
       Avisynth/

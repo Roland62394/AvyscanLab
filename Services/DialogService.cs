@@ -12,10 +12,10 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
-using AvyscanLab.ViewModels;
-using AvyscanLab.Views;
+using AvyScanLab.ViewModels;
+using AvyScanLab.Views;
 
-namespace AvyscanLab.Services;
+namespace AvyScanLab.Services;
 
 public sealed class DialogService : IDialogService
 {
@@ -940,7 +940,7 @@ public sealed class DialogService : IDialogService
                 using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
                 var payload = new Dictionary<string, string>
                 {
-                    ["_subject"] = $"ScanRestore Feedback: {category}",
+                    ["_subject"] = $"AvyScan Lab Feedback: {category}",
                     ["name"] = string.IsNullOrWhiteSpace(name) ? "Anonymous" : name,
                     ["email"] = string.IsNullOrWhiteSpace(email) ? "noreply@avyscanlab.app" : email,
                     ["category"] = category,
@@ -1013,10 +1013,10 @@ public sealed class DialogService : IDialogService
 
         var titleText = new TextBlock
         {
-            Text = L("Thank you for using ScanRestore!",
-                "Merci d\u2019utiliser ScanRestore\u00a0!",
-                "Vielen Dank f\u00fcr die Nutzung von ScanRestore!",
-                "\u00a1Gracias por usar ScanRestore!"),
+            Text = L("Thank you for using AvyScan Lab!",
+                "Merci d\u2019utiliser AvyScan Lab\u00a0!",
+                "Vielen Dank f\u00fcr die Nutzung von AvyScan Lab!",
+                "\u00a1Gracias por usar AvyScan Lab!"),
             FontSize = 16,
             FontWeight = FontWeight.SemiBold,
             Foreground = TB("TextLabel"),
@@ -1129,10 +1129,10 @@ public sealed class DialogService : IDialogService
         var messageText = new TextBlock
         {
             Text = L(
-                $"A new version of ScanRestore is available: v{latestVersion}\nYou are currently using v{UpdateService.CurrentVersion}.",
-                $"Une nouvelle version de ScanRestore est disponible : v{latestVersion}\nVous utilisez actuellement la v{UpdateService.CurrentVersion}.",
-                $"Eine neue Version von ScanRestore ist verf\u00fcgbar: v{latestVersion}\nSie verwenden derzeit v{UpdateService.CurrentVersion}.",
-                $"Una nueva versi\u00f3n de ScanRestore est\u00e1 disponible: v{latestVersion}\nActualmente usa la v{UpdateService.CurrentVersion}."),
+                $"A new version of AvyScan Lab is available: v{latestVersion}\nYou are currently using v{UpdateService.CurrentVersion}.",
+                $"Une nouvelle version de AvyScan Lab est disponible : v{latestVersion}\nVous utilisez actuellement la v{UpdateService.CurrentVersion}.",
+                $"Eine neue Version von AvyScan Lab ist verf\u00fcgbar: v{latestVersion}\nSie verwenden derzeit v{UpdateService.CurrentVersion}.",
+                $"Una nueva versi\u00f3n de AvyScan Lab est\u00e1 disponible: v{latestVersion}\nActualmente usa la v{UpdateService.CurrentVersion}."),
             FontSize = 13,
             TextWrapping = TextWrapping.Wrap,
             Foreground = TB("TextPrimary"),

@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Text.Json;
 
-namespace AvyscanLab.Services;
+namespace AvyScanLab.Services;
 
 public sealed class WindowStateService(string filePath) : IWindowStateService
 {

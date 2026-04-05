@@ -1,4 +1,4 @@
-namespace AvyscanLab.Services;
+namespace AvyScanLab.Services;
 
 public interface IAviSynthService
 {

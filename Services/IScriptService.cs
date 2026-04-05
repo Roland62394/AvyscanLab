@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using AvyscanLab.Models;
+using AvyScanLab.Models;
 
-namespace AvyscanLab.Services;
+namespace AvyScanLab.Services;
 
 public interface IScriptService
 {

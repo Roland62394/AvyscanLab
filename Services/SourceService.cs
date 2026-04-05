@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace AvyscanLab.Services;
+namespace AvyScanLab.Services;
 
 public sealed partial class SourceService
 {

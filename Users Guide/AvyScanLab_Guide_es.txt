@@ -28,10 +28,10 @@
                                   1.  PRESENTACIÓN
 =============================================================================================
 
-ScanRestore permite tratar los defectos habituales (grano, polvo, estabilización, etc.) y ajustar los niveles y colores para devolver la vida a sus películas.
+AvyScan Lab permite tratar los defectos habituales (grano, polvo, estabilización, etc.) y ajustar los niveles y colores para devolver la vida a sus películas.
 Está dirigido tanto a aficionados que buscan una solución llave en mano como a usuarios avanzados que desean personalizar su pipeline de restauración.
 Su diseño modular y su interfaz intuitiva ofrecen una gran flexibilidad para adaptarse a todo tipo de proyectos y niveles de competencia.
-Avyscan lab le permite elegir y configurar individualmente cada filtro que desee aplicar.
+AvyScan Lab le permite elegir y configurar individualmente cada filtro que desee aplicar.
 Su completa modularidad le permite añadir sus propios filtros personalizados y compartirlos con la comunidad.
 La codificación por lotes con FFmpeg le ofrece una flexibilidad total para crear masters de alta calidad o archivos intermedios para un trabajo posterior.
 
@@ -70,13 +70,13 @@ Y muchas otras posibilidades por descubrir a lo largo de su uso.
                                 AGRADECIMIENTOS / CRÉDITOS
 =============================================================================================
 
-AvyscanLab se apoya en la calidad de los plugins AviSynth+ desarrollados
+AvyScanLab se apoya en la calidad de los plugins AviSynth+ desarrollados
 y mantenidos por la comunidad open source. Dirigimos nuestro más sincero agradecimiento,
 de la forma más exhaustiva posible, a sus autores:
 
      MVTools2 — Manao, Fizick, Tsp, TSchniede, SEt
           Estimación de movimiento y reducción temporal del grano (MDegrain).
-          El núcleo del pipeline de restauración de AvyscanLab.
+          El núcleo del pipeline de restauración de AvyScanLab.
 
       RemoveDirt — Kassandro
           Detección y supresión temporal del polvo y los arañazos.
@@ -98,7 +98,7 @@ de la forma más exhaustiva posible, a sus autores:
 
       LimitedSharpenFaster — Didée
           Técnica de refuerzo de la nitidez mediante máscara Sobel y curva
-          gamma (^0.86), en la que se inspira el modo « edge » de AvyscanLab.
+          gamma (^0.86), en la que se inspira el modo « edge » de AvyScanLab.
 
 =============================================================================================
                            2.  REQUISITOS E INSTALACIÓN
@@ -110,13 +110,13 @@ Sistema requerido:
     - Espacio en disco suficiente para los archivos fuente y los renderizados
 
 Componentes:
-    - AviSynth+ 64 bits debe estar instalado. Si está ausente, AvyscanLab lo detecta al inicio
+    - AviSynth+ 64 bits debe estar instalado. Si está ausente, AvyScanLab lo detecta al inicio
       y propone su instalación.
     - FFmpeg se incluye con la aplicación (carpeta Plugins/ffmpeg/).
     - El reproductor mpv se incluye con la aplicación (carpeta mpv/).
 
 No se requiere ninguna instalación adicional. Basta con descomprimir el archivo
-y ejecutar el ejecutable AvyscanLab.exe.
+y ejecutar el ejecutable AvyScanLab.exe.
 
 
 =============================================================================================
@@ -206,7 +206,7 @@ Archivo de vídeo
 
 Secuencia de imágenes
     Seleccione un directorio que contenga archivos de imagen (por ejemplo: 00001.tif, 00002.tif, etc.).
-    AvyscanLab detecta automáticamente la primera y la última imagen de la secuencia.
+    AvyScanLab detecta automáticamente la primera y la última imagen de la secuencia.
     Formatos compatibles: .tif  .tiff  .jpg  .jpeg  .png  .bmp
 
 Frecuencia de reproducción (FPS)
@@ -227,7 +227,7 @@ Threads
     Ajústelo en función de su hardware (ideal entre 4 y 8).
 
 Multi-clips
-    Puede cargar varios archivos en ScanRestore. Cada clip dispondrá de sus propios ajustes
+    Puede cargar varios archivos en AvyScan Lab. Cada clip dispondrá de sus propios ajustes
     de filtros y de su propio preset. Arrastre y suelte varios archivos a la vez
     o utilice el botón + para añadir más.
 
@@ -573,7 +573,7 @@ a números pares (requisito del submuestreo de croma YUV).
                         10.  FILTROS PERSONALIZADOS (CUSTOM)
 =============================================================================================
 
-AvyscanLab permite crear sus propios filtros AviSynth e integrarlos en el pipeline
+AvyScanLab permite crear sus propios filtros AviSynth e integrarlos en el pipeline
 de restauración con una interfaz de control completa.
 
 
@@ -610,7 +610,7 @@ de restauración con una interfaz de control completa.
         Botón "+ Add AVSI...": abre un selector para añadir archivos de script
         (.avsi o .avs). Los archivos seleccionados se copian automáticamente en la
         carpeta Plugins/Scripts/ de la aplicación. Solo se almacena el nombre del archivo.
-        Durante la generación del script AviSynth, AvyscanLab inserta automáticamente
+        Durante la generación del script AviSynth, AvyScanLab inserta automáticamente
         una instrucción Import() para cada script referenciado:
 
             TryLoadPlugin("C:/.../MonPlugin.dll")
@@ -630,7 +630,7 @@ de restauración con una interfaz de control completa.
 
     Conversión de variable a parámetro
         Seleccione en el editor una línea del tipo "variable = valor" con el ratón.
-        AvyscanLab propone convertirla automáticamente en parámetro: el valor se
+        AvyScanLab propone convertirla automáticamente en parámetro: el valor se
         reemplaza por {variable} en el código y se crea un nuevo control con el
         valor de origen como valor predeterminado. Esta ayuda puede desactivarse para
         la sesión actual.
@@ -728,7 +728,7 @@ de restauración con una interfaz de control completa.
     (no su contenido). Si comparte un filtro con otro usuario,
     transmita también los archivos .avsi necesarios.
 
-Ubicación de almacenamiento: %AppData%\AvyscanLab\custom_filters.json
+Ubicación de almacenamiento: %AppData%\AvyScanLab\custom_filters.json
 
 
 
@@ -746,7 +746,7 @@ Ubicación de almacenamiento: %AppData%\AvyscanLab\custom_filters.json
     Eliminar            Borra un preset
 
     Los campos source, film, img, start, end y crop NO están incluidos en los presets.
-    Ubicación: %AppData%\AvyscanLab\presets.json
+    Ubicación: %AppData%\AvyScanLab\presets.json
 
     PRESETS POR CLIP
     -----------------------------------------------------------------------------------------
@@ -760,7 +760,7 @@ Ubicación de almacenamiento: %AppData%\AvyscanLab\custom_filters.json
     Las combinaciones de codificación (codificador + contenedor + calidad + croma + resolución)
     pueden guardarse y recargarse desde el panel Record.
     El preset "Default" siempre está presente y aparece en primer lugar.
-    Ubicación: %AppData%\AvyscanLab\encoding_presets.json
+    Ubicación: %AppData%\AvyScanLab\encoding_presets.json
 
 
 =============================================================================================
@@ -866,7 +866,7 @@ Menú Idiomas:
 =============================================================================================
 
 El menú Info > Vista previa del script abre una ventana que muestra el contenido completo del archivo
-ScriptUser.avs generado por AvyscanLab.
+ScriptUser.avs generado por AvyScanLab.
 
 El botón "Recargar" relee el archivo desde el disco y actualiza la previsualización.
 Esto permite verificar el script AviSynth producido y copiarlo eventualmente
@@ -963,11 +963,11 @@ si desea una respuesta.
     ScriptUser.avs                 Carpeta del exe
     ScriptMaster.xx.avs            Carpeta del exe (xx = idioma)
     ScriptRender.avs               Carpeta del exe (generado para la codificación)
-    presets.json                   %AppData%\AvyscanLab
-    encoding_presets.json          %AppData%\AvyscanLab
-    custom_filters.json            %AppData%\AvyscanLab
-    window_settings.json           %AppData%\AvyscanLab
-    session.json                   %AppData%\AvyscanLab
+    presets.json                   %AppData%\AvyScanLab
+    encoding_presets.json          %AppData%\AvyScanLab
+    custom_filters.json            %AppData%\AvyScanLab
+    window_settings.json           %AppData%\AvyScanLab
+    session.json                   %AppData%\AvyScanLab
     Plugins/                       Carpeta del exe
     mpv/                           Carpeta del exe
 
@@ -976,9 +976,9 @@ si desea una respuesta.
                           19.  CONTENIDO DE LA APLICACIÓN
 =============================================================================================
 
-Árbol de archivos distribuidos con AvyscanLab:
+Árbol de archivos distribuidos con AvyScanLab:
 
-    AvyscanLab.exe                           Ejecutable principal
+    AvyScanLab.exe                           Ejecutable principal
     ScriptMaster.en.avs                     Plantilla de script AviSynth
     UserGuide.txt                           Guía de texto (francés, fuente)
 
@@ -990,10 +990,10 @@ si desea una respuesta.
       libmpv-2.dll                          Reproductor de vídeo (libmpv)
 
     Users Guide/
-      AvyscanLab_Guide_en.txt                Guía del usuario (inglés)
-      AvyscanLab_Guide_fr.txt                Guía del usuario (francés)
-      AvyscanLab_Guide_de.txt                Guía del usuario (alemán)
-      AvyscanLab_Guide_es.txt                Guía del usuario (español)
+      AvyScanLab_Guide_en.txt                Guía del usuario (inglés)
+      AvyScanLab_Guide_fr.txt                Guía del usuario (francés)
+      AvyScanLab_Guide_de.txt                Guía del usuario (alemán)
+      AvyScanLab_Guide_es.txt                Guía del usuario (español)
 
     Plugins/
       Avisynth/

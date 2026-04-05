@@ -16,11 +16,11 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
-using AvyscanLab.Models;
-using AvyscanLab.Services;
-using AvyscanLab.ViewModels;
+using AvyScanLab.Models;
+using AvyScanLab.Services;
+using AvyScanLab.ViewModels;
 
-namespace AvyscanLab.Views;
+namespace AvyScanLab.Views;
 
 /// <summary>Contract the encode controller needs from the host window.</summary>
 public interface IEncodeHost
@@ -1817,6 +1817,6 @@ public sealed class EncodeController
     [Conditional("DEBUG")]
     private static void DebugLog(string msg)
     {
-        Debug.WriteLine($"[ScanRestore:Encode] {DateTime.Now:HH:mm:ss.fff} {msg}");
+        Debug.WriteLine($"[AvyScan Lab:Encode] {DateTime.Now:HH:mm:ss.fff} {msg}");
     }
 }

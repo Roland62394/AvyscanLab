@@ -10,7 +10,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
 
-namespace AvyscanLab.Services;
+namespace AvyScanLab.Services;
 
 /// <summary>Minimal contract the tour needs from the host window.</summary>
 public interface ITourHost

@@ -9,11 +9,11 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
-using AvyscanLab.Models;
-using AvyscanLab.Services;
-using AvyscanLab.ViewModels;
+using AvyScanLab.Models;
+using AvyScanLab.Services;
+using AvyScanLab.ViewModels;
 
-namespace AvyscanLab.Views;
+namespace AvyScanLab.Views;
 
 /// <summary>Contract the custom filter presenter needs from the host window.</summary>
 public interface IFilterPresenterHost

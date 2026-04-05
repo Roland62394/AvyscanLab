@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace AvyscanLab.Services;
+namespace AvyScanLab.Services;
 
 public sealed class Debouncer
 {

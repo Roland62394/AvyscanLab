@@ -5,9 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using AvyscanLab.Models;
+using AvyScanLab.Models;
 
-namespace AvyscanLab.Services;
+namespace AvyScanLab.Services;
 
 public sealed partial class ScriptService(SourceService source) : IScriptService
 {

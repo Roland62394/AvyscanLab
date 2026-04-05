@@ -1,9 +1,9 @@
 using System.IO;
 using System.Text.RegularExpressions;
-using AvyscanLab.Services;
+using AvyScanLab.Services;
 using Xunit;
 
-namespace AvyscanLab.Tests.Services;
+namespace AvyScanLab.Tests.Services;
 
 public partial class ScriptModuleAssemblyTests
 {
@@ -65,12 +65,12 @@ public partial class ScriptModuleAssemblyTests
     {
         var filters = new[]
         {
-            new AvyscanLab.Models.CustomFilter
+            new AvyScanLab.Models.CustomFilter
             {
                 Id = "test1", Name = "Test Filter", Enabled = true,
                 Position = "AfterDenoise", Code = "c = c"
             },
-            new AvyscanLab.Models.CustomFilter
+            new AvyScanLab.Models.CustomFilter
             {
                 Id = "test2", Name = "Disabled", Enabled = false,
                 Position = "AfterGamMac", Code = "c = c"
@@ -93,7 +93,7 @@ public partial class ScriptModuleAssemblyTests
     {
         var filters = new[]
         {
-            new AvyscanLab.Models.CustomFilter
+            new AvyScanLab.Models.CustomFilter
             {
                 Id = "abc", Name = "Blur", Enabled = true,
                 Position = "AfterSharpen", Code = "c = Blur(c, {radius})",

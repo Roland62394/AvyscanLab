@@ -8,8 +8,8 @@ from pathlib import Path
 import textwrap
 
 ROOT = Path(__file__).resolve().parent
-TXT_PATH = ROOT / "Users Guide" / "Mode_emploi_AvyscanLab_fr.txt"
-PDF_PATH = ROOT / "Users Guide" / "Mode_emploi_AvyscanLab_fr.pdf"
+TXT_PATH = ROOT / "Users Guide" / "Mode_emploi_AvyScanLab_fr.txt"
+PDF_PATH = ROOT / "Users Guide" / "Mode_emploi_AvyScanLab_fr.pdf"
 
 
 @dataclass

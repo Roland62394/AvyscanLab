@@ -6,7 +6,7 @@ using Avalonia.Platform;
 using Avalonia.Input;
 using Avalonia.Media;
 
-namespace AvyscanLab.Views
+namespace AvyScanLab.Views
 {
     public partial class AboutWindow : Window
     {

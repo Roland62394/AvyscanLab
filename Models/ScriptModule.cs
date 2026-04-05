@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace AvyscanLab.Models;
+namespace AvyScanLab.Models;
 
 /// <summary>
 /// Represents a modular AviSynth filter that can be assembled into the restoration pipeline.

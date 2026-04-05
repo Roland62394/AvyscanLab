@@ -1,4 +1,4 @@
-namespace AvyscanLab.Services;
+namespace AvyScanLab.Services;
 
 /// <summary>
 /// Slider and text-field specifications, extracted from MainWindow to reduce file size.

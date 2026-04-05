@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using AvyscanLab.Services;
+using AvyScanLab.Services;
 using Xunit;
 
-namespace AvyscanLab.Tests.Services;
+namespace AvyScanLab.Tests.Services;
 
 public class ConfigStoreTests
 {

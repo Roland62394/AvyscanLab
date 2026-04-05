@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate PDF user guides from .txt source files for ScanRestore."""
+"""Generate PDF user guides from .txt source files for AvyScan Lab."""
 
 import os
 import shutil
@@ -15,10 +15,10 @@ FONT_BOLD    = os.path.join(FONTS_DIR, "consolab.ttf")
 FONT_ITALIC  = os.path.join(FONTS_DIR, "consolai.ttf")
 
 GUIDES = {
-    "fr": os.path.join(GUIDE_DIR, "AvyscanLab_Guide_fr.txt"),
-    "en": os.path.join(GUIDE_DIR, "AvyscanLab_Guide_en.txt"),
-    "de": os.path.join(GUIDE_DIR, "AvyscanLab_Guide_de.txt"),
-    "es": os.path.join(GUIDE_DIR, "AvyscanLab_Guide_es.txt"),
+    "fr": os.path.join(GUIDE_DIR, "AvyScanLab_Guide_fr.txt"),
+    "en": os.path.join(GUIDE_DIR, "AvyScanLab_Guide_en.txt"),
+    "de": os.path.join(GUIDE_DIR, "AvyScanLab_Guide_de.txt"),
+    "es": os.path.join(GUIDE_DIR, "AvyScanLab_Guide_es.txt"),
 }
 
 
@@ -26,7 +26,7 @@ class GuidePDF(FPDF):
     def header(self):
         self.set_font("Consolas", "I", 7)
         self.set_text_color(120, 120, 120)
-        self.cell(0, 4, "ScanRestore \u2014 ScanFilm SNC \u2014 www.scanfilm.ch",
+        self.cell(0, 4, "AvyScan Lab \u2014 ScanFilm SNC \u2014 www.scanfilm.ch",
                   align="R", new_x="LMARGIN", new_y="NEXT")
         self.ln(2)
 

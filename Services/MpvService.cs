@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace AvyscanLab.Services;
+namespace AvyScanLab.Services;
 
 public enum ScopeType { Histogram, HistogramParade, Waveform, Vectorscope }
 

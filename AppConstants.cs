@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace AvyscanLab;
+namespace AvyScanLab;
 
 /// <summary>
 /// Centralised application-wide constants and helpers.
@@ -9,7 +9,7 @@ namespace AvyscanLab;
 /// </summary>
 public static class AppConstants
 {
-    public const string AppDataFolder = "AvyscanLab";
+    public const string AppDataFolder = "AvyScanLab";
 
     // ── Trial limits ──
     /// <summary>Max recording duration per clip in seconds. 0 = unlimited (full version).</summary>
@@ -27,7 +27,7 @@ public static class AppConstants
 
     public const string DefaultEncodingPresetName = "Default";
 
-    /// <summary>Builds a full path under the user's AppData/AvyscanLab folder.</summary>
+    /// <summary>Builds a full path under the user's AppData/AvyScanLab folder.</summary>
     public static string GetAppDataPath(string fileName) =>
         Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),

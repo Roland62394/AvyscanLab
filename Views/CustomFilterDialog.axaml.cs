@@ -11,11 +11,11 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
-using AvyscanLab.Models;
-using AvyscanLab.Services;
-using AvyscanLab.ViewModels;
+using AvyScanLab.Models;
+using AvyScanLab.Services;
+using AvyScanLab.ViewModels;
 
-namespace AvyscanLab.Views;
+namespace AvyScanLab.Views;
 
 public partial class CustomFilterDialog : Window
 {
