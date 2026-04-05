@@ -1817,6 +1817,6 @@ public sealed class EncodeController
     [Conditional("DEBUG")]
     private static void DebugLog(string msg)
     {
-        Debug.WriteLine($"[Avyscan Lab:Encode] {DateTime.Now:HH:mm:ss.fff} {msg}");
+        Debug.WriteLine($"[ScanRestore:Encode] {DateTime.Now:HH:mm:ss.fff} {msg}");
     }
 }

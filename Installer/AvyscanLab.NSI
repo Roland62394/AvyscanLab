@@ -1,5 +1,5 @@
 ; ─────────────────────────────────────────────────────
-; Avyscan Lab — NSIS Installer Script
+; ScanRestore — NSIS Installer Script
 ; ─────────────────────────────────────────────────────
 ; Prerequisites:
 ;   1. Install NSIS 3+ from https://nsis.sourceforge.io/Download
@@ -19,7 +19,7 @@
 !include "WinMessages.nsh"
 
 ; ── App metadata ──
-!define APP_NAME      "Avyscan Lab"
+!define APP_NAME      "ScanRestore"
 !define APP_VERSION   "vers. 1.0"
 !define APP_PUBLISHER "ScanFilm SNC"
 !define APP_URL       "https://www.scanfilm.ch"
@@ -126,7 +126,7 @@ SectionEnd
 
 ; ── AviSynth+ restoration plugins (installed into plugins64+ folder) ──
 Section "Restoration plugins (required)" SecGplPlugins
-    SectionIn RO  ; Cannot be deselected — required for Avyscan Lab
+    SectionIn RO  ; Cannot be deselected — required for ScanRestore
 
     ; Read AviSynth+ plugin directory from 64-bit registry view
     SetRegView 64
@@ -232,7 +232,7 @@ Function .onInit
     skip_uninst:
     ${EndIf}
 
-    ; ── Close running instance of Avyscan Lab ──
+    ; ── Close running instance of ScanRestore ──
     FindWindow $0 "" "${APP_NAME}"
     ${If} $0 != 0
         MessageBox MB_OKCANCEL|MB_ICONINFORMATION \
@@ -299,7 +299,7 @@ FunctionEnd
 ; UNINSTALLER
 ; ─────────────────────────────────────────────────────
 Section "Uninstall"
-    ; Remove Avyscan Lab files (includes Plugins\ffmpeg, mpv, etc.)
+    ; Remove ScanRestore files (includes Plugins\ffmpeg, mpv, etc.)
     RMDir /r "$INSTDIR\Plugins"
     RMDir /r "$INSTDIR\mpv"
     RMDir /r "$INSTDIR\Users Guide"
@@ -309,7 +309,7 @@ Section "Uninstall"
     Delete "$INSTDIR\Uninstall.exe"
     RMDir  "$INSTDIR"
 
-    ; Remove AviSynth+ plugins installed by Avyscan Lab (64-bit registry)
+    ; Remove AviSynth+ plugins installed by ScanRestore (64-bit registry)
     SetRegView 64
     ReadRegStr $AVS_PLUGINDIR HKLM "SOFTWARE\AviSynth" "plugindir+"
     SetRegView 32

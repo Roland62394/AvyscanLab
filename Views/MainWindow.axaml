@@ -8,7 +8,7 @@
         x:Class="AvyscanLab.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/Logo.png"
-        Title="Avyscan Lab"
+        Title="ScanRestore"
         Background="{DynamicResource BgDeep}"
         Width="960"
         MinWidth="700"

@@ -28,10 +28,10 @@
                                   1.  OVERVIEW
 =============================================================================================
 
-Avyscan Lab allows you to process common defects (grain, dust, stabilization, etc.) and adjust levels and colors to bring your films back to life.
+ScanRestore allows you to process common defects (grain, dust, stabilization, etc.) and adjust levels and colors to bring your films back to life.
 It is designed for both amateurs looking for a turnkey solution and advanced users wishing to customize their restoration pipeline.
 Its modular design and user-friendly interface offer great flexibility to adapt to all types of projects and skill levels.
-Avyscan Lab lets you choose and configure each filter you wish to apply individually.
+ScanRestore lets you choose and configure each filter you wish to apply individually.
 Its full modularity allows you to add your own custom filters and share them with the community.
 Batch encoding with FFmpeg gives you total flexibility to create high-quality masters or intermediate files for further work.
 
@@ -227,7 +227,7 @@ Threads
     Adjust it according to your hardware (ideal between 4 and 8).
 
 Multi-clips
-    You can load multiple files in Avyscan Lab. Each clip will have its own filter settings
+    You can load multiple files in ScanRestore. Each clip will have its own filter settings
     and its own preset. Drag and drop multiple files at once
     or use the + button to add more.
 

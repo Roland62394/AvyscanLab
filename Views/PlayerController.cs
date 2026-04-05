@@ -199,7 +199,7 @@ public sealed class PlayerController
     private void OnMpvFileLoaded()
     {
         DebugLog("OnMpvFileLoaded — file loaded successfully");
-        _host.Window.Title = "Avyscan Lab";
+        _host.Window.Title = "ScanRestore";
 
         if (_host.LoadingSourceFallback)
         {
@@ -354,7 +354,7 @@ public sealed class PlayerController
     public void ShowPlayerStatus(string message)
     {
         DebugLog("ShowPlayerStatus: " + message.Replace('\n', ' '));
-        _host.Window.Title = "Avyscan Lab";
+        _host.Window.Title = "ScanRestore";
 
         if (_host.FindControl<Border>("PlayerErrorBanner") is { } banner
          && _host.FindControl<TextBlock>("PlayerErrorText")  is { } text)

@@ -14,7 +14,7 @@ public sealed class UpdateService
 
     /// <summary>
     /// Checks for a newer version by reading latest.txt from the server.
-    /// Line 1: version number (e.g. "1.0.1"). Line 2 (optional): filename (e.g. "Avyscan Lab RC 1.0.1 x64.exe").
+    /// Line 1: version number (e.g. "1.0.1"). Line 2 (optional): filename (e.g. "ScanRestore RC 1.0.1 x64.exe").
     /// Returns (latestVersion, downloadUrl) if an update is available, or null if up-to-date or on error.
     /// </summary>
     public static async Task<(string Version, string DownloadUrl)?> CheckForUpdateAsync()
@@ -34,7 +34,7 @@ public sealed class UpdateService
 
             if (CompareVersions(latestVersion, CurrentVersion) > 0)
             {
-                var fileName = lines.Length >= 2 ? lines[1] : $"Avyscan Lab v{latestVersion} x64.exe";
+                var fileName = lines.Length >= 2 ? lines[1] : $"ScanRestore v{latestVersion} x64.exe";
                 var downloadUrl = $"{DownloadBaseUrl}{Uri.EscapeDataString(fileName)}";
                 return (latestVersion, downloadUrl);
             }

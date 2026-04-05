@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate PDF user guides from .txt source files for Avyscan Lab."""
+"""Generate PDF user guides from .txt source files for ScanRestore."""
 
 import os
 import shutil
@@ -26,7 +26,7 @@ class GuidePDF(FPDF):
     def header(self):
         self.set_font("Consolas", "I", 7)
         self.set_text_color(120, 120, 120)
-        self.cell(0, 4, "Avyscan Lab \u2014 ScanFilm SNC \u2014 www.scanfilm.ch",
+        self.cell(0, 4, "ScanRestore \u2014 ScanFilm SNC \u2014 www.scanfilm.ch",
                   align="R", new_x="LMARGIN", new_y="NEXT")
         self.ln(2)
 

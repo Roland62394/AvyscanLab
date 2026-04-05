@@ -1,4 +1,4 @@
-"""Generate the 4 Avyscan Lab User Guide PDFs (en, fr, de, es) using fpdf2."""
+"""Generate the 4 ScanRestore User Guide PDFs (en, fr, de, es) using fpdf2."""
 
 import os
 from fpdf import FPDF
@@ -19,7 +19,7 @@ GUIDES = {
         "toc_title": "TABLE DES MATIERES",
         "sections": [
             ("1. Presentation", [
-                "Avyscan Lab est un logiciel de restauration de films argentiques numerises (8 mm, Super 8,",
+                "ScanRestore est un logiciel de restauration de films argentiques numerises (8 mm, Super 8,",
                 "9,5 mm, 16 mm). Il permet de :",
                 "",
                 "  - Reduire le grain de pellicule",
@@ -38,13 +38,13 @@ GUIDES = {
                 "  - Espace disque suffisant pour les fichiers source et les rendus",
                 "",
                 "Composants :",
-                "  - AviSynth+ 64 bits doit etre installe. Si absent, Avyscan Lab le detecte au demarrage",
+                "  - AviSynth+ 64 bits doit etre installe. Si absent, ScanRestore le detecte au demarrage",
                 "    et propose un lien de telechargement. Une version embarquee est utilisee en secours.",
                 "  - FFmpeg est fourni avec l'application (dossier Plugins/ffmpeg/).",
                 "  - Le lecteur mpv est fourni avec l'application (dossier mpv/).",
                 "",
                 "Aucune installation supplementaire n'est requise. Il suffit de decompresser l'archive",
-                "et de lancer l'executable Avyscan Lab.exe.",
+                "et de lancer l'executable ScanRestore.exe.",
             ]),
             ("3. Interface generale", [
                 "L'interface est organisee en trois zones :",
@@ -116,7 +116,7 @@ GUIDES = {
                 "Emplacement : %AppData%\\AvyscanLab\\presets.json",
             ]),
             ("8. Filtres personnalises (Custom)", [
-                "Avyscan Lab permet de creer vos propres filtres AviSynth et de les integrer dans le",
+                "ScanRestore permet de creer vos propres filtres AviSynth et de les integrer dans le",
                 "pipeline de restauration. Les filtres personnalises sont affiches dans la section",
                 "CUSTOM du panneau de filtres (colonne gauche).",
                 "",
@@ -200,7 +200,7 @@ GUIDES = {
             ]),
             ("11. Apercu du script", [
                 "Menu Infos > Apercu du script ouvre une fenetre affichant le contenu complet du",
-                "fichier ScriptUser.avs genere par Avyscan Lab.",
+                "fichier ScriptUser.avs genere par ScanRestore.",
                 "Le bouton \"Recharger\" relit le fichier depuis le disque.",
             ]),
             ("12. Retour d'experience (Feedback)", [
@@ -245,7 +245,7 @@ GUIDES = {
                 "  mpv/                        Dossier de l'exe",
             ]),
             ("16. Contenu de l'application", [
-                "Arborescence des fichiers distribues avec Avyscan Lab :",
+                "Arborescence des fichiers distribues avec ScanRestore :",
                 "",
                 "  AvyscanLab.exe                         Executable principal",
                 "  ScriptMaster.en.avs                   Modele de script AviSynth",
@@ -323,7 +323,7 @@ GUIDES = {
         "toc_title": "TABLE OF CONTENTS",
         "sections": [
             ("1. Introduction", [
-                "Avyscan Lab is a restoration tool for digitized film (8 mm, Super 8, 9.5 mm, 16 mm).",
+                "ScanRestore is a restoration tool for digitized film (8 mm, Super 8, 9.5 mm, 16 mm).",
                 "It allows you to:",
                 "",
                 "  - Reduce film grain",
@@ -342,12 +342,12 @@ GUIDES = {
                 "  - Sufficient disk space for source files and renders",
                 "",
                 "Components:",
-                "  - AviSynth+ 64-bit must be installed. If missing, Avyscan Lab detects it at startup",
+                "  - AviSynth+ 64-bit must be installed. If missing, ScanRestore detects it at startup",
                 "    and offers a download link. A bundled version is used as fallback.",
                 "  - FFmpeg is included (Plugins/ffmpeg/ folder).",
                 "  - The mpv player is included (mpv/ folder).",
                 "",
-                "No additional installation required. Extract the archive and run Avyscan Lab.exe.",
+                "No additional installation required. Extract the archive and run ScanRestore.exe.",
             ]),
             ("3. General interface", [
                 "The interface is organized in three areas:",
@@ -419,7 +419,7 @@ GUIDES = {
                 "Location: %AppData%\\AvyscanLab\\presets.json",
             ]),
             ("8. Custom Filters", [
-                "Avyscan Lab lets you create your own AviSynth filters and integrate them into the",
+                "ScanRestore lets you create your own AviSynth filters and integrate them into the",
                 "restoration pipeline. Custom filters appear in the CUSTOM section of the filter",
                 "panel (left column).",
                 "",
@@ -503,7 +503,7 @@ GUIDES = {
             ]),
             ("11. Script preview", [
                 "Menu Infos > Script preview opens a window showing the full content of the",
-                "ScriptUser.avs file generated by Avyscan Lab.",
+                "ScriptUser.avs file generated by ScanRestore.",
                 "The \"Reload\" button re-reads the file from disk.",
             ]),
             ("12. Feedback", [
@@ -548,7 +548,7 @@ GUIDES = {
                 "  mpv/                        Application folder",
             ]),
             ("16. Application contents", [
-                "File tree distributed with Avyscan Lab:",
+                "File tree distributed with ScanRestore:",
                 "",
                 "  AvyscanLab.exe                         Main executable",
                 "  ScriptMaster.en.avs                   AviSynth script template",
@@ -626,7 +626,7 @@ GUIDES = {
         "toc_title": "INHALTSVERZEICHNIS",
         "sections": [
             ("1. Vorstellung", [
-                "Avyscan Lab ist ein Restaurierungstool fuer digitalisierte Filme (8 mm, Super 8,",
+                "ScanRestore ist ein Restaurierungstool fuer digitalisierte Filme (8 mm, Super 8,",
                 "9,5 mm, 16 mm). Es ermoeglicht:",
                 "",
                 "  - Filmkorn reduzieren",
@@ -645,12 +645,12 @@ GUIDES = {
                 "  - Ausreichend Speicherplatz fuer Quell- und Ausgabedateien",
                 "",
                 "Komponenten:",
-                "  - AviSynth+ 64-Bit muss installiert sein. Falls nicht, erkennt Avyscan Lab dies",
+                "  - AviSynth+ 64-Bit muss installiert sein. Falls nicht, erkennt ScanRestore dies",
                 "    beim Start und bietet einen Download-Link an.",
                 "  - FFmpeg ist enthalten (Plugins/ffmpeg/).",
                 "  - Der mpv-Player ist enthalten (mpv/).",
                 "",
-                "Keine zusaetzliche Installation erforderlich. Archiv entpacken und Avyscan Lab.exe starten.",
+                "Keine zusaetzliche Installation erforderlich. Archiv entpacken und ScanRestore.exe starten.",
             ]),
             ("3. Allgemeine Oberflaeche", [
                 "Die Oberflaeche ist in drei Bereiche unterteilt:",
@@ -715,7 +715,7 @@ GUIDES = {
                 "Speicherort: %AppData%\\AvyscanLab\\presets.json",
             ]),
             ("8. Benutzerdefinierte Filter (Custom)", [
-                "Avyscan Lab ermoeglicht es, eigene AviSynth-Filter zu erstellen und in die",
+                "ScanRestore ermoeglicht es, eigene AviSynth-Filter zu erstellen und in die",
                 "Restaurierungspipeline zu integrieren. Benutzerdefinierte Filter erscheinen im",
                 "Abschnitt CUSTOM des Filterpanels (linke Spalte).",
                 "",
@@ -795,7 +795,7 @@ GUIDES = {
             ]),
             ("11. Skript-Vorschau", [
                 "Menue Infos > Skript-Vorschau oeffnet ein Fenster mit dem vollstaendigen Inhalt",
-                "der von Avyscan Lab generierten ScriptUser.avs-Datei.",
+                "der von ScanRestore generierten ScriptUser.avs-Datei.",
             ]),
             ("12. Feedback", [
                 "Das Feedback-Menue oeffnet ein integriertes Kontaktformular:",
@@ -838,7 +838,7 @@ GUIDES = {
                 "  mpv/                        Anwendungsordner",
             ]),
             ("16. Anwendungsinhalt", [
-                "Dateibaum, der mit Avyscan Lab ausgeliefert wird:",
+                "Dateibaum, der mit ScanRestore ausgeliefert wird:",
                 "",
                 "  AvyscanLab.exe                         Hauptprogramm",
                 "  ScriptMaster.en.avs                   AviSynth-Skriptvorlage",
@@ -916,7 +916,7 @@ GUIDES = {
         "toc_title": "INDICE",
         "sections": [
             ("1. Presentacion", [
-                "Avyscan Lab es una herramienta de restauracion para peliculas digitalizadas (8 mm,",
+                "ScanRestore es una herramienta de restauracion para peliculas digitalizadas (8 mm,",
                 "Super 8, 9,5 mm, 16 mm). Permite:",
                 "",
                 "  - Reducir el grano de pelicula",
@@ -935,12 +935,12 @@ GUIDES = {
                 "  - Espacio en disco suficiente para archivos fuente y renders",
                 "",
                 "Componentes:",
-                "  - AviSynth+ 64 bits debe estar instalado. Si falta, Avyscan Lab lo detecta al",
+                "  - AviSynth+ 64 bits debe estar instalado. Si falta, ScanRestore lo detecta al",
                 "    inicio y ofrece un enlace de descarga.",
                 "  - FFmpeg esta incluido (carpeta Plugins/ffmpeg/).",
                 "  - El reproductor mpv esta incluido (carpeta mpv/).",
                 "",
-                "No se requiere instalacion adicional. Extraiga el archivo y ejecute Avyscan Lab.exe.",
+                "No se requiere instalacion adicional. Extraiga el archivo y ejecute ScanRestore.exe.",
             ]),
             ("3. Interfaz general", [
                 "La interfaz esta organizada en tres areas:",
@@ -1005,7 +1005,7 @@ GUIDES = {
                 "Ubicacion: %AppData%\\AvyscanLab\\presets.json",
             ]),
             ("8. Filtros personalizados (Custom)", [
-                "Avyscan Lab permite crear sus propios filtros AviSynth e integrarlos en el pipeline",
+                "ScanRestore permite crear sus propios filtros AviSynth e integrarlos en el pipeline",
                 "de restauracion. Los filtros personalizados aparecen en la seccion CUSTOM del",
                 "panel de filtros (columna izquierda).",
                 "",
@@ -1085,7 +1085,7 @@ GUIDES = {
             ]),
             ("11. Vista previa del script", [
                 "Menu Infos > Vista previa del script abre una ventana con el contenido completo",
-                "del archivo ScriptUser.avs generado por Avyscan Lab.",
+                "del archivo ScriptUser.avs generado por ScanRestore.",
             ]),
             ("12. Comentarios (Feedback)", [
                 "El menu Comentarios abre un formulario de contacto integrado:",
@@ -1128,7 +1128,7 @@ GUIDES = {
                 "  mpv/                        Carpeta de la aplicacion",
             ]),
             ("16. Contenido de la aplicacion", [
-                "Arbol de archivos distribuidos con Avyscan Lab:",
+                "Arbol de archivos distribuidos con ScanRestore:",
                 "",
                 "  AvyscanLab.exe                         Ejecutable principal",
                 "  ScriptMaster.en.avs                   Plantilla de script AviSynth",
@@ -1209,7 +1209,7 @@ class GuidePDF(FPDF):
         if self.page_no() > 1:
             self.set_font("Helvetica", "I", 8)
             self.set_text_color(120, 120, 120)
-            self.cell(0, 6, f"Avyscan Lab - {self.guide['subtitle']}", align="L")
+            self.cell(0, 6, f"ScanRestore - {self.guide['subtitle']}", align="L")
             self.cell(0, 6, f"Beta 5.0", align="R", new_x="LMARGIN", new_y="NEXT")
             self.line(10, 14, 200, 14)
             self.ln(4)
@@ -1303,7 +1303,7 @@ def generate_pdf(lang, guide_data):
 
 
 if __name__ == "__main__":
-    print("Generating Avyscan Lab User Guides...")
+    print("Generating ScanRestore User Guides...")
     for lang, data in GUIDES.items():
         generate_pdf(lang, data)
     print("Done!")

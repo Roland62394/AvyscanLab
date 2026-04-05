@@ -28,7 +28,7 @@
                                   1.  PRÉSENTATION
 =============================================================================================
 
-Avyscan Lab permet de traiter les défauts courants (grain, poussières, stabilisation, etc.) et d’ajuster les niveaux et couleurs pour redonner vie à vos films. 
+ScanRestore permet de traiter les défauts courants (grain, poussières, stabilisation, etc.) et d’ajuster les niveaux et couleurs pour redonner vie à vos films. 
 Il s’adresse à la fois aux amateurs souhaitant une solution clé en main et aux utilisateurs avancés désirant personnaliser leur pipeline de restauration.
 Sa conception modulaire et son interface conviviale offrent une grande flexibilité pour s’adapter à tous les types de projets et de compétences.
 Avyscan lab vous permet de choisir et paramétrer individuellement chaque filtre que vous souhaitez appliquer. 
@@ -227,7 +227,7 @@ Threads
     Ajustez-la en fonction de votre matériel (idéal entre 4 et 8 )
 
 Multi-clips
-    Vous pouvez charger plusieurs fichiers dans Avyscan Lab. Chaque clip disposera de ses propres réglages
+    Vous pouvez charger plusieurs fichiers dans ScanRestore. Chaque clip disposera de ses propres réglages
     de filtres et de son propre preset. Glissez-déposez plusieurs fichiers à la fois
     ou utilisez le bouton + pour en ajouter.
 
@@ -1043,7 +1043,7 @@ Arborescence des fichiers distribués avec AvyscanLab :
 
 =============================================================================================
 
-                              C L E A N S C A N
+                   AVISCAN LAB 1.0.0 — GUIDE DE L’UTILISATEUR
                                 ScanFilm SNC
                                www.scanfilm.ch
 
