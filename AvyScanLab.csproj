@@ -125,6 +125,9 @@
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
     <EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
     <PublishReadyToRun>true</PublishReadyToRun>
+
+    <!-- Note : PublishTrimmed désactivé car incompatible avec System.Text.Json par réflexion.
+         La protection repose sur SingleFile + ReadyToRun + Obfuscar. -->
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

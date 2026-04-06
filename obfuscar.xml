@@ -1,0 +1,55 @@
+<?xml version='1.0'?>
+<!--
+  Obfuscar configuration for AvyScanLab
+  Conservative settings: obfuscates internal/private members
+  while preserving Avalonia MVVM bindings and public API.
+-->
+<Obfuscator>
+  <Var name="InPath" value="." />
+  <Var name="OutPath" value=".\Obfuscated" />
+
+  <!-- Renommage: uniquement Unicode (plus difficile à lire, pas de faux positif AV) -->
+  <Var name="RenameProperties" value="true" />
+  <Var name="RenameFields" value="true" />
+  <Var name="RenameEvents" value="true" />
+  <Var name="HidePrivateApi" value="true" />
+  <Var name="HideStrings" value="true" />
+  <Var name="UseUnicodeNames" value="true" />
+  <Var name="OptimizeMethods" value="true" />
+
+  <!-- Ne PAS utiliser KeepPublicApi=false car Avalonia a besoin des noms publics -->
+  <Var name="KeepPublicApi" value="true" />
+
+  <!-- Assemblée à obfusquer -->
+  <Module file="AvyscanLab.dll">
+
+    <!-- Préserver les ViewModels (MVVM bindings XAML) -->
+    <SkipNamespace name="AvyScanLab.ViewModels" />
+
+    <!-- Préserver les Views (nommage XAML x:Name, event handlers) -->
+    <SkipNamespace name="AvyScanLab.Views" />
+
+    <!-- Préserver les Models (sérialisation JSON) -->
+    <SkipNamespace name="AvyScanLab.Models" />
+
+    <!-- Préserver Program et App (points d'entrée Avalonia) -->
+    <SkipType name="AvyScanLab.Program" />
+    <SkipType name="AvyScanLab.App" />
+    <SkipType name="AvyScanLab.AppConstants" />
+
+    <!-- Les Services sont obfusqués (internes, pas de binding XAML) -->
+    <!-- Sauf les interfaces (utilisées par injection) -->
+    <SkipType name="AvyScanLab.Services.IDialogService" />
+    <SkipType name="AvyScanLab.Services.IScriptService" />
+    <SkipType name="AvyScanLab.Services.IPresetService" />
+    <SkipType name="AvyScanLab.Services.IAviService" />
+    <SkipType name="AvyScanLab.Services.IAviSynthService" />
+    <SkipType name="AvyScanLab.Services.IWindowStateService" />
+
+    <!-- Préserver les types sérialisés en JSON (noms de propriétés) -->
+    <SkipType name="AvyScanLab.Services.Preset" />
+    <SkipType name="AvyScanLab.Services.SessionState" />
+    <SkipType name="AvyScanLab.Services.ConfigStore" />
+
+  </Module>
+</Obfuscator>
