@@ -3360,17 +3360,8 @@ namespace AvyScanLab.Views
 
         #region Info dialogs
 
-        private void OnUserGuideClick(object? sender, RoutedEventArgs e)
-        {
-            var lang = ViewModel.CurrentLanguageCode;
-            var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? string.Empty;
-            var guidePath = System.IO.Path.Combine(exeDir, "Users Guide", $"AvyScanLab_Guide_{lang}.pdf");
-            if (!System.IO.File.Exists(guidePath))
-                guidePath = System.IO.Path.Combine(exeDir, "Users Guide", "AvyScanLab_Guide_en.pdf");
-            if (System.IO.File.Exists(guidePath))
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                    { FileName = guidePath, UseShellExecute = true });
-        }
+        private async void OnUserGuideClick(object? sender, RoutedEventArgs e) =>
+            await _dialogService.ShowUserGuideEditorAsync(this, ViewModel);
 
         private async void OnScriptPreviewClick(object? sender, RoutedEventArgs e) =>
             await _dialogService.ShowScriptPreviewDialogAsync(this, _scriptService,

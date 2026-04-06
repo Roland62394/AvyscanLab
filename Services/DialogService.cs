@@ -1173,4 +1173,778 @@ public sealed class DialogService : IDialogService
 
         await dlg.ShowDialog(owner);
     }
+
+    // ── User Guide Editor ──────────────────────────────────────────────────
+
+    public async Task ShowUserGuideEditorAsync(Window owner, MainWindowViewModel vm)
+    {
+        var lang = vm.CurrentLanguageCode;
+        string L(string en, string fr, string de, string es) => lang switch
+        {
+            "fr" => fr, "de" => de, "es" => es, _ => en
+        };
+
+        var exeDir = System.IO.Path.GetDirectoryName(Environment.ProcessPath) ?? string.Empty;
+        var languages = new[] { "fr", "en", "de", "es" };
+        var langLabels = new Dictionary<string, string>
+        {
+            ["fr"] = "Français", ["en"] = "English", ["de"] = "Deutsch", ["es"] = "Español"
+        };
+
+        // ── State ──
+        var currentLang = lang;
+        var isEditMode = false;
+        var hasUnsavedChanges = false;
+        var isWrap = false;
+
+        // ── Helpers to resolve file paths ──
+        string OriginalPath(string lg) =>
+            System.IO.Path.Combine(exeDir, "Users Guide", $"AvyScanLab_Guide_{lg}.txt");
+
+        string UserNotesPath(string lg) =>
+            AppConstants.GetAppDataPath($"UserGuide_{lg}.txt");
+
+        string LoadText(string lg)
+        {
+            var userPath = UserNotesPath(lg);
+            if (File.Exists(userPath)) return File.ReadAllText(userPath, Encoding.UTF8);
+            var origPath = OriginalPath(lg);
+            return File.Exists(origPath) ? File.ReadAllText(origPath, Encoding.UTF8) : string.Empty;
+        }
+
+        bool HasUserNotes(string lg) => File.Exists(UserNotesPath(lg));
+
+        void SaveUserNotes(string lg, string text)
+        {
+            var dir = System.IO.Path.GetDirectoryName(AppConstants.GetAppDataPath("_"))!;
+            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+            File.WriteAllText(UserNotesPath(lg), text, Encoding.UTF8);
+        }
+
+        // ── Highlight data per language ──
+        string HighlightPath(string lg) =>
+            AppConstants.GetAppDataPath($"UserGuide_{lg}_highlights.json");
+
+        List<(int Start, int Length, int ColorIdx)> LoadHighlights(string lg)
+        {
+            var path = HighlightPath(lg);
+            if (!File.Exists(path)) return new();
+            try
+            {
+                var items = System.Text.Json.JsonSerializer.Deserialize<List<int[]>>(
+                    File.ReadAllText(path, Encoding.UTF8));
+                return items?.Select(a => (a[0], a[1], a[2])).ToList() ?? new();
+            }
+            catch { return new(); }
+        }
+
+        void SaveHighlights(string lg, List<(int Start, int Length, int ColorIdx)> list)
+        {
+            var dir = System.IO.Path.GetDirectoryName(AppConstants.GetAppDataPath("_"))!;
+            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+            var data = list.Select(h => new[] { h.Start, h.Length, h.ColorIdx }).ToList();
+            File.WriteAllText(HighlightPath(lg),
+                System.Text.Json.JsonSerializer.Serialize(data), Encoding.UTF8);
+        }
+
+        var currentHighlights = LoadHighlights(currentLang);
+
+        // ── Highlight colours ──
+        var highlightColors = new (string Label, string Hex)[]
+        {
+            ("Yellow",  "#FFFF00"),
+            ("Green",   "#90EE90"),
+            ("Cyan",    "#00FFFF"),
+            ("Orange",  "#FFB347"),
+            ("Pink",    "#FFB6C1"),
+        };
+
+        // ── Background colours ──
+        var bgColors = new (string Label, string Hex, string FgHex)[]
+        {
+            ("White",       "#FFFFFF", "#000000"),
+            ("Light gray",  "#F0F0F0", "#1A1A1A"),
+            ("Sepia",       "#FDF6E3", "#3B2E1A"),
+            ("Light blue",  "#EBF5FB", "#1A1A2E"),
+            ("Dark",        "#1E1E1E", "#D4D4D4"),
+            ("Black",       "#000000", "#E0E0E0"),
+        };
+
+        // ══════════════════════════════════════════════════════════════════
+        //  CONTROLS
+        // ══════════════════════════════════════════════════════════════════
+
+        // ── Language ──
+        var langCombo = new ComboBox
+        {
+            ItemsSource = languages.Select(lg => langLabels[lg]).ToList(),
+            SelectedIndex = Array.IndexOf(languages, currentLang) is var idx && idx >= 0 ? idx : 1,
+            MinWidth = 95, FontSize = 12, Padding = new Thickness(4, 2),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        // ── Font ──
+        var fontNames = new[] { "Consolas", "Cascadia Code", "Courier New", "Segoe UI", "Arial", "Verdana", "Times New Roman" };
+        var fontCombo = new ComboBox
+        {
+            ItemsSource = fontNames,
+            SelectedIndex = 0,
+            MinWidth = 115, FontSize = 12, Padding = new Thickness(4, 2),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var fontSizeSlider = new Slider
+        {
+            Minimum = 9, Maximum = 24, Value = 13, Width = 80,
+            VerticalAlignment = VerticalAlignment.Center,
+            TickFrequency = 1, IsSnapToTickEnabled = true
+        };
+        var fontSizeLabel = new TextBlock
+        {
+            Text = "13", VerticalAlignment = VerticalAlignment.Center,
+            Foreground = TB("TextPrimary"), MinWidth = 18, FontSize = 12
+        };
+
+        // ── Background ──
+        var bgCombo = new ComboBox
+        {
+            ItemsSource = bgColors.Select(c => c.Label).ToList(),
+            SelectedIndex = 0,
+            MinWidth = 90, FontSize = 12, Padding = new Thickness(4, 2),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        // ── Toggles ──
+        var editToggle = new Avalonia.Controls.Primitives.ToggleButton
+        {
+            Content = L("Read mode", "Mode lecture", "Lesemodus", "Modo lectura"),
+            VerticalAlignment = VerticalAlignment.Center,
+            Padding = new Thickness(6, 3), FontSize = 12
+        };
+        var wrapToggle = new Avalonia.Controls.Primitives.ToggleButton
+        {
+            Content = L("Wrap", "Retour ligne", "Umbruch", "Ajuste"),
+            VerticalAlignment = VerticalAlignment.Center,
+            Padding = new Thickness(6, 3), FontSize = 12
+        };
+
+        // ── Indent / Unindent / Bullets (edit mode) ──
+        var indentBtn = new Button
+        {
+            Content = L("Indent →", "Retrait →", "Einrücken →", "Sangría →"),
+            VerticalAlignment = VerticalAlignment.Center,
+            Padding = new Thickness(6, 3), FontSize = 12, IsEnabled = false
+        };
+        var unindentBtn = new Button
+        {
+            Content = L("← Unindent", "← Dés-retrait", "← Ausrücken", "← Quitar"),
+            VerticalAlignment = VerticalAlignment.Center,
+            Padding = new Thickness(6, 3), FontSize = 12, IsEnabled = false
+        };
+        var bulletBtn = new Button
+        {
+            Content = L("- → •", "- → •", "- → •", "- → •"),
+            VerticalAlignment = VerticalAlignment.Center,
+            Padding = new Thickness(6, 3), FontSize = 12, IsEnabled = false
+        };
+
+        // ── Highlight ──
+        var highlightCombo = new ComboBox
+        {
+            ItemsSource = highlightColors.Select(c => c.Label).ToList(),
+            SelectedIndex = 0, MinWidth = 75, FontSize = 12, Padding = new Thickness(4, 2),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var highlightBtn = new Button { Content = L("Highlight", "Surligner", "Markieren", "Resaltar"), Padding = new Thickness(6, 3), FontSize = 12 };
+        var clearHighlightBtn = new Button { Content = L("Clear HL", "Eff. surl.", "HL löschen", "Borrar HL"), Padding = new Thickness(6, 3), FontSize = 12 };
+        // Prevent highlight buttons from stealing focus → preserves text selection
+        highlightBtn.Focusable = false;
+        clearHighlightBtn.Focusable = false;
+
+        // ── Search ──
+        var searchBox = new TextBox
+        {
+            Watermark = L("Search…", "Rechercher…", "Suchen…", "Buscar…"),
+            MinWidth = 150, FontSize = 12, Padding = new Thickness(4, 2),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var searchPrev = new Button { Content = "◀", MinWidth = 24, VerticalAlignment = VerticalAlignment.Center, Padding = new Thickness(4, 2), FontSize = 11, Focusable = false };
+        var searchNext = new Button { Content = "▶", MinWidth = 24, VerticalAlignment = VerticalAlignment.Center, Padding = new Thickness(4, 2), FontSize = 11, Focusable = false };
+        var searchCount = new TextBlock
+        {
+            Text = "", VerticalAlignment = VerticalAlignment.Center,
+            Foreground = TB("TextSecondary"), FontSize = 11, MinWidth = 50
+        };
+
+        // ── Status ──
+        var statusText = new TextBlock
+        {
+            Text = HasUserNotes(currentLang)
+                ? L("User notes loaded", "Notes utilisateur chargées", "Benutzernotizen geladen", "Notas del usuario cargadas")
+                : "",
+            Foreground = TB("TextSecondary"), FontSize = 11,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        // ══════════════════════════════════════════════════════════════════
+        //  TEXT AREA — single TextBox + SelectableTextBlock in a Panel
+        // ══════════════════════════════════════════════════════════════════
+
+        var richDisplay = new SelectableTextBlock
+        {
+            FontFamily = new FontFamily(fontNames[0]),
+            FontSize = 13,
+            TextWrapping = TextWrapping.NoWrap,
+            Padding = new Thickness(10),
+            Background = Brushes.White,
+            Foreground = Brushes.Black
+        };
+
+        var richScroll = new ScrollViewer
+        {
+            Content = richDisplay,
+            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto
+        };
+
+        var textEditor = new TextBox
+        {
+            Text = LoadText(currentLang),
+            IsReadOnly = true,
+            AcceptsReturn = true,
+            AcceptsTab = true,
+            TextWrapping = TextWrapping.NoWrap,
+            FontFamily = new FontFamily(fontNames[0]),
+            FontSize = 13,
+            Padding = new Thickness(10),
+            Background = Brushes.White,
+            Foreground = Brushes.Black,
+            CaretBrush = Brushes.Black
+        };
+
+        void RebuildRichDisplay(string text, List<(int Start, int Length, int ColorIdx)> highlights)
+        {
+            richDisplay.Inlines!.Clear();
+            if (string.IsNullOrEmpty(text)) return;
+
+            var defaultFg = richDisplay.Foreground;
+
+            var sorted = highlights
+                .Where(h => h.Start >= 0 && h.Start < text.Length)
+                .OrderBy(h => h.Start).ToList();
+
+            var pos = 0;
+            foreach (var hl in sorted)
+            {
+                var hlEnd = Math.Min(hl.Start + hl.Length, text.Length);
+                if (hl.Start < pos) continue;
+                if (hl.Start > pos)
+                    richDisplay.Inlines!.Add(new Avalonia.Controls.Documents.Run(text[pos..hl.Start]));
+                var colorIdx = Math.Clamp(hl.ColorIdx, 0, highlightColors.Length - 1);
+                richDisplay.Inlines!.Add(new Avalonia.Controls.Documents.Run(text[hl.Start..hlEnd])
+                {
+                    Background = new SolidColorBrush(Color.Parse(highlightColors[colorIdx].Hex)),
+                    Foreground = Brushes.Black
+                });
+                pos = hlEnd;
+            }
+            if (pos < text.Length)
+                richDisplay.Inlines!.Add(new Avalonia.Controls.Documents.Run(text[pos..]));
+        }
+
+        // Initialize rich display
+        RebuildRichDisplay(textEditor.Text ?? "", currentHighlights);
+
+        // Container: richScroll for read mode, textEditor for edit mode
+        var editorContainer = new Panel
+        {
+            Children = { richScroll, textEditor }
+        };
+        // Start in read mode → show rich display
+        textEditor.IsVisible = false;
+        richScroll.IsVisible = true;
+
+        // ── Track richDisplay selection (focus loss resets it before button handler) ──
+        var lastRichSelStart = 0;
+        var lastRichSelEnd = 0;
+        richDisplay.PropertyChanged += (_, args) =>
+        {
+            if (args.Property == SelectableTextBlock.SelectionStartProperty
+                || args.Property == SelectableTextBlock.SelectionEndProperty)
+            {
+                lastRichSelStart = richDisplay.SelectionStart;
+                lastRichSelEnd = richDisplay.SelectionEnd;
+            }
+        };
+
+        // ── Bottom buttons ──
+        var saveBtn = new Button { Content = L("Save notes", "Sauver notes", "Notizen speichern", "Guardar notas"), Padding = new Thickness(8, 4), FontSize = 12 };
+        saveBtn.IsEnabled = false;
+        var resetBtn = new Button { Content = L("Reset to original", "Revenir à l'original", "Original wiederherstellen", "Restaurar original"), Padding = new Thickness(8, 4), FontSize = 12 };
+        resetBtn.IsEnabled = HasUserNotes(currentLang);
+        var copyBtn = new Button { Content = L("Copy", "Copier", "Kopieren", "Copiar"), Padding = new Thickness(8, 4), FontSize = 12 };
+        var closeBtn = new Button { Content = L("Close", "Fermer", "Schließen", "Cerrar"), Padding = new Thickness(8, 4), FontSize = 12 };
+
+        // ══════════════════════════════════════════════════════════════════
+        //  LABELS REFRESH
+        // ══════════════════════════════════════════════════════════════════
+
+        void RefreshLabels()
+        {
+            string Lc(string en, string fr, string de, string es) => currentLang switch
+            {
+                "fr" => fr, "de" => de, "es" => es, _ => en
+            };
+            editToggle.Content = isEditMode
+                ? Lc("Edit mode", "Mode édition", "Bearbeitungsmodus", "Modo edición")
+                : Lc("Read mode", "Mode lecture", "Lesemodus", "Modo lectura");
+            wrapToggle.Content = Lc("Wrap", "Retour ligne", "Umbruch", "Ajuste");
+            indentBtn.Content = Lc("Indent →", "Retrait →", "Einrücken →", "Sangría →");
+            unindentBtn.Content = Lc("← Unindent", "← Dés-retrait", "← Ausrücken", "← Quitar");
+            highlightBtn.Content = Lc("Highlight", "Surligner", "Markieren", "Resaltar");
+            clearHighlightBtn.Content = Lc("Clear HL", "Eff. surl.", "HL löschen", "Borrar HL");
+            searchBox.Watermark = Lc("Search…", "Rechercher…", "Suchen…", "Buscar…");
+            saveBtn.Content = Lc("Save notes", "Sauver notes", "Notizen speichern", "Guardar notas");
+            resetBtn.Content = Lc("Reset to original", "Revenir à l'original", "Original wiederherstellen", "Restaurar original");
+            copyBtn.Content = Lc("Copy", "Copier", "Kopieren", "Copiar");
+            closeBtn.Content = Lc("Close", "Fermer", "Schließen", "Cerrar");
+            statusText.Text = HasUserNotes(currentLang)
+                ? Lc("User notes loaded", "Notes utilisateur chargées", "Benutzernotizen geladen", "Notas del usuario cargadas")
+                : "";
+            resetBtn.IsEnabled = HasUserNotes(currentLang);
+        }
+
+        // ══════════════════════════════════════════════════════════════════
+        //  SEARCH
+        // ══════════════════════════════════════════════════════════════════
+
+        var searchPositions = new List<int>();
+        var searchCurrentIndex = -1;
+
+        void DoSearch()
+        {
+            searchPositions.Clear();
+            searchCurrentIndex = -1;
+            var query = searchBox.Text?.Trim() ?? "";
+            if (string.IsNullOrEmpty(query) || string.IsNullOrEmpty(textEditor.Text))
+            { searchCount.Text = ""; return; }
+            var text = textEditor.Text;
+            var pos = 0;
+            while ((pos = text.IndexOf(query, pos, StringComparison.OrdinalIgnoreCase)) >= 0)
+            { searchPositions.Add(pos); pos += query.Length; }
+            searchCount.Text = searchPositions.Count > 0 ? $"{searchPositions.Count}" : "0";
+            if (searchPositions.Count > 0) NavigateSearch(0);
+        }
+
+        void NavigateSearch(int index)
+        {
+            if (searchPositions.Count == 0) return;
+            searchCurrentIndex = (index % searchPositions.Count + searchPositions.Count) % searchPositions.Count;
+            var query = searchBox.Text?.Trim() ?? "";
+            // Search works in textEditor (switch view temporarily if needed)
+            if (!textEditor.IsVisible)
+            {
+                textEditor.IsVisible = true;
+                richScroll.IsVisible = false;
+            }
+            textEditor.SelectionStart = searchPositions[searchCurrentIndex];
+            textEditor.SelectionEnd = searchPositions[searchCurrentIndex] + query.Length;
+            searchCount.Text = $"{searchCurrentIndex + 1}/{searchPositions.Count}";
+        }
+
+        // ══════════════════════════════════════════════════════════════════
+        //  EVENTS
+        // ══════════════════════════════════════════════════════════════════
+
+        // ── Background colour ──
+        void ApplyBackground(int bgIdx)
+        {
+            if (bgIdx < 0 || bgIdx >= bgColors.Length) return;
+            var bg = new SolidColorBrush(Color.Parse(bgColors[bgIdx].Hex));
+            var fg = new SolidColorBrush(Color.Parse(bgColors[bgIdx].FgHex));
+
+            // Override Avalonia theme resources so hover/focus don't reset to dark
+            textEditor.Resources["TextControlBackground"] = bg;
+            textEditor.Resources["TextControlBackgroundPointerOver"] = bg;
+            textEditor.Resources["TextControlBackgroundFocused"] = bg;
+            textEditor.Resources["TextControlBackgroundDisabled"] = bg;
+            textEditor.Resources["TextControlForeground"] = fg;
+            textEditor.Resources["TextControlForegroundPointerOver"] = fg;
+            textEditor.Resources["TextControlForegroundFocused"] = fg;
+            textEditor.Resources["TextControlBorderBrush"] = Brushes.Transparent;
+            textEditor.Resources["TextControlBorderBrushPointerOver"] = Brushes.Transparent;
+            textEditor.Resources["TextControlBorderBrushFocused"] = Brushes.Transparent;
+            textEditor.Background = bg;
+            textEditor.Foreground = fg;
+            textEditor.CaretBrush = fg;
+
+            richDisplay.Background = bg;
+            richDisplay.Foreground = fg;
+            richScroll.Background = bg;
+            if (!isEditMode) RebuildRichDisplay(textEditor.Text ?? "", currentHighlights);
+        }
+        bgCombo.SelectionChanged += (_, _) => ApplyBackground(bgCombo.SelectedIndex);
+        // Apply initial background
+        ApplyBackground(0);
+
+        // ── Font ──
+        fontCombo.SelectionChanged += (_, _) =>
+        {
+            if (fontCombo.SelectedItem is string name)
+            {
+                var ff = new FontFamily(name);
+                textEditor.FontFamily = ff;
+                richDisplay.FontFamily = ff;
+            }
+        };
+        fontSizeSlider.PropertyChanged += (_, args) =>
+        {
+            if (args.Property.Name == "Value")
+            {
+                var sz = (int)fontSizeSlider.Value;
+                fontSizeLabel.Text = sz.ToString();
+                textEditor.FontSize = sz;
+                richDisplay.FontSize = sz;
+            }
+        };
+
+        // ── Indent / Unindent / Bullets logic ──
+        const string IndentStr = "    "; // 4 spaces
+
+        // Returns (lineStart, lineEnd) covering all lines touched by the selection
+        (int Start, int End) GetSelectedLineRange()
+        {
+            var text = textEditor.Text ?? "";
+            if (text.Length == 0) return (0, 0);
+            var selStart = Math.Min(textEditor.SelectionStart, textEditor.SelectionEnd);
+            var selEnd = Math.Max(textEditor.SelectionStart, textEditor.SelectionEnd);
+
+            // Walk back to start of first selected line
+            var lineStart = selStart;
+            while (lineStart > 0 && text[lineStart - 1] != '\n') lineStart--;
+
+            // Walk forward to end of last selected line
+            var lineEnd = selEnd;
+            while (lineEnd < text.Length && text[lineEnd] != '\n' && text[lineEnd] != '\r') lineEnd++;
+
+            return (lineStart, lineEnd);
+        }
+
+        void IndentSelection(bool indent)
+        {
+            var text = textEditor.Text ?? "";
+            if (text.Length == 0) return;
+            var (lineStart, lineEnd) = GetSelectedLineRange();
+            var block = text[lineStart..lineEnd];
+            var lines = block.Split('\n');
+            var sb = new StringBuilder();
+            for (var i = 0; i < lines.Length; i++)
+            {
+                if (i > 0) sb.Append('\n');
+                var line = lines[i].TrimEnd('\r');
+                if (indent)
+                {
+                    sb.Append(IndentStr).Append(line);
+                }
+                else
+                {
+                    // Remove up to 4 leading spaces
+                    var removed = 0;
+                    var j = 0;
+                    while (j < line.Length && line[j] == ' ' && removed < 4) { j++; removed++; }
+                    sb.Append(line[j..]);
+                }
+            }
+            var newBlock = sb.ToString();
+            textEditor.Text = string.Concat(text.AsSpan(0, lineStart), newBlock, text.AsSpan(lineEnd));
+            textEditor.SelectionStart = lineStart;
+            textEditor.SelectionEnd = lineStart + newBlock.Length;
+        }
+
+        void ToggleBullets()
+        {
+            var text = textEditor.Text ?? "";
+            if (text.Length == 0) return;
+            var (lineStart, lineEnd) = GetSelectedLineRange();
+            var block = text[lineStart..lineEnd];
+            var lines = block.Split('\n');
+            // Detect: if any line has "- " → convert all to "• ", otherwise "• " → "- "
+            var hasDash = lines.Any(l => { var t = l.TrimStart(); return t.StartsWith("- "); });
+            var sb = new StringBuilder();
+            for (var i = 0; i < lines.Length; i++)
+            {
+                if (i > 0) sb.Append('\n');
+                var line = lines[i].TrimEnd('\r');
+                var trimmed = line.TrimStart();
+                var leading = line[..(line.Length - trimmed.Length)];
+                if (hasDash && trimmed.StartsWith("- "))
+                    sb.Append(leading).Append("• ").Append(trimmed[2..]);
+                else if (!hasDash && trimmed.StartsWith("• "))
+                    sb.Append(leading).Append("- ").Append(trimmed[2..]);
+                else
+                    sb.Append(line);
+            }
+            var newBlock = sb.ToString();
+            textEditor.Text = string.Concat(text.AsSpan(0, lineStart), newBlock, text.AsSpan(lineEnd));
+            textEditor.SelectionStart = lineStart;
+            textEditor.SelectionEnd = lineStart + newBlock.Length;
+        }
+
+        indentBtn.Click += (_, _) => IndentSelection(true);
+        unindentBtn.Click += (_, _) => IndentSelection(false);
+        bulletBtn.Click += (_, _) => ToggleBullets();
+
+        // ── Edit mode toggle ──
+        editToggle.Click += (_, _) =>
+        {
+            isEditMode = editToggle.IsChecked == true;
+            if (isEditMode)
+            {
+                textEditor.IsReadOnly = false;
+                textEditor.IsVisible = true;
+                richScroll.IsVisible = false;
+            }
+            else
+            {
+                textEditor.IsReadOnly = true;
+                textEditor.IsVisible = false;
+                richScroll.IsVisible = true;
+                RebuildRichDisplay(textEditor.Text ?? "", currentHighlights);
+            }
+            RefreshLabels();
+            saveBtn.IsEnabled = isEditMode && hasUnsavedChanges;
+            highlightBtn.IsEnabled = !isEditMode;
+            clearHighlightBtn.IsEnabled = !isEditMode;
+            highlightCombo.IsEnabled = !isEditMode;
+            indentBtn.IsEnabled = isEditMode;
+            unindentBtn.IsEnabled = isEditMode;
+            bulletBtn.IsEnabled = isEditMode;
+        };
+
+        // ── Word wrap toggle ──
+        wrapToggle.Click += (_, _) =>
+        {
+            isWrap = wrapToggle.IsChecked == true;
+            textEditor.TextWrapping = isWrap ? TextWrapping.Wrap : TextWrapping.NoWrap;
+            richDisplay.TextWrapping = isWrap ? TextWrapping.Wrap : TextWrapping.NoWrap;
+            richScroll.HorizontalScrollBarVisibility = isWrap
+                ? Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled
+                : Avalonia.Controls.Primitives.ScrollBarVisibility.Auto;
+        };
+
+        // ── Highlight (uses saved selection — focus loss safe) ──
+        highlightBtn.Click += (_, _) =>
+        {
+            var selStart = lastRichSelStart;
+            var selEnd = lastRichSelEnd;
+            if (selStart == selEnd) return;
+
+            var start = Math.Min(selStart, selEnd);
+            var length = Math.Abs(selEnd - selStart);
+            var colorIdx = highlightCombo.SelectedIndex;
+            if (colorIdx < 0) colorIdx = 0;
+
+            currentHighlights.Add((start, length, colorIdx));
+            SaveHighlights(currentLang, currentHighlights);
+            RebuildRichDisplay(textEditor.Text ?? "", currentHighlights);
+        };
+
+        clearHighlightBtn.Click += (_, _) =>
+        {
+            currentHighlights.Clear();
+            var path = HighlightPath(currentLang);
+            if (File.Exists(path)) File.Delete(path);
+            RebuildRichDisplay(textEditor.Text ?? "", currentHighlights);
+        };
+
+        // ── Text changed ──
+        textEditor.PropertyChanged += (_, args) =>
+        {
+            if (args.Property.Name == "Text" && isEditMode)
+            { hasUnsavedChanges = true; saveBtn.IsEnabled = true; }
+        };
+
+        // ── Language switch ──
+        langCombo.SelectionChanged += (_, _) =>
+        {
+            var newIdx = langCombo.SelectedIndex;
+            if (newIdx < 0 || newIdx >= languages.Length) return;
+            var newLang = languages[newIdx];
+            if (newLang == currentLang) return;
+            if (hasUnsavedChanges && isEditMode)
+            { SaveUserNotes(currentLang, textEditor.Text ?? ""); hasUnsavedChanges = false; }
+            currentLang = newLang;
+            textEditor.Text = LoadText(currentLang);
+            currentHighlights = LoadHighlights(currentLang);
+            if (!isEditMode) RebuildRichDisplay(textEditor.Text ?? "", currentHighlights);
+            hasUnsavedChanges = false;
+            saveBtn.IsEnabled = false;
+            RefreshLabels();
+        };
+
+        // ── Search ──
+        searchBox.PropertyChanged += (_, args) => { if (args.Property.Name == "Text") DoSearch(); };
+        searchNext.Click += (_, _) => NavigateSearch(searchCurrentIndex + 1);
+        searchPrev.Click += (_, _) => NavigateSearch(searchCurrentIndex - 1);
+
+        // ── Save / Reset / Copy ──
+        saveBtn.Click += (_, _) =>
+        {
+            SaveUserNotes(currentLang, textEditor.Text ?? "");
+            hasUnsavedChanges = false; saveBtn.IsEnabled = false; RefreshLabels();
+        };
+        resetBtn.Click += (_, _) =>
+        {
+            var userPath = UserNotesPath(currentLang);
+            if (File.Exists(userPath)) File.Delete(userPath);
+            var hlPath = HighlightPath(currentLang);
+            if (File.Exists(hlPath)) File.Delete(hlPath);
+            currentHighlights.Clear();
+            textEditor.Text = File.Exists(OriginalPath(currentLang))
+                ? File.ReadAllText(OriginalPath(currentLang), Encoding.UTF8) : string.Empty;
+            if (!isEditMode) RebuildRichDisplay(textEditor.Text ?? "", currentHighlights);
+            hasUnsavedChanges = false; saveBtn.IsEnabled = false; RefreshLabels();
+        };
+        copyBtn.Click += async (_, _) =>
+        {
+            if (owner.Clipboard is { } clipboard && !string.IsNullOrEmpty(textEditor.Text))
+            {
+                await clipboard.SetTextAsync(textEditor.Text);
+                var prev = copyBtn.Content; copyBtn.Content = "✓";
+                await Task.Delay(1200); copyBtn.Content = prev;
+            }
+        };
+
+        // ══════════════════════════════════════════════════════════════════
+        //  LAYOUT — grouped toolbar with separators
+        // ══════════════════════════════════════════════════════════════════
+
+        static Border Separator() => new()
+        {
+            Width = 1, Height = 18,
+            Background = new SolidColorBrush(Color.Parse("#666666")),
+            Margin = new Thickness(10, 0),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        TextBlock Lbl(string text) => new()
+        {
+            Text = text, FontSize = 11, VerticalAlignment = VerticalAlignment.Center,
+            Foreground = TB("TextLabel"), Margin = new Thickness(0, 0, 4, 0)
+        };
+
+        var lblLang = Lbl(L("Language:", "Langue :", "Sprache:", "Idioma:"));
+        var lblFont = Lbl(L("Font:", "Police :", "Schrift:", "Fuente:"));
+        var lblSize = Lbl(L("Size:", "Taille :", "Größe:", "Tamaño:"));
+        var lblBg   = Lbl(L("Background:", "Fond :", "Hintergrund:", "Fondo:"));
+        var lblHl   = Lbl(L("Color:", "Couleur :", "Farbe:", "Color:"));
+
+        // Row 1 : Language | Font + Size | Background | Mode toggles
+        var row1 = new WrapPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Margin = new Thickness(0, 0, 0, 4),
+            Children =
+            {
+                lblLang, langCombo,
+                Separator(),
+                lblFont, fontCombo, lblSize, fontSizeSlider, fontSizeLabel,
+                Separator(),
+                lblBg, bgCombo,
+                Separator(),
+                editToggle, new Border { Width = 8 }, wrapToggle
+            }
+        };
+
+        // Row 2 : Highlight | Indent | Search | Status
+        var row2 = new WrapPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Margin = new Thickness(0, 0, 0, 4),
+            Children =
+            {
+                highlightBtn, new Border { Width = 8 }, lblHl, highlightCombo,
+                new Border { Width = 10 }, clearHighlightBtn,
+                Separator(),
+                indentBtn, new Border { Width = 4 }, unindentBtn, new Border { Width = 4 }, bulletBtn,
+                Separator(),
+                searchBox, new Border { Width = 4 },
+                searchPrev, searchNext, new Border { Width = 4 }, searchCount,
+                new Border { Width = 10 }, statusText
+            }
+        };
+
+        // Header border grouping
+        var headerPanel = new StackPanel
+        {
+            Margin = new Thickness(0, 0, 0, 2),
+            Children =
+            {
+                row1,
+                new Border { Height = 1, Background = new SolidColorBrush(Color.Parse("#444444")), Margin = new Thickness(0, 1, 0, 3) },
+                row2,
+                new Border { Height = 1, Background = new SolidColorBrush(Color.Parse("#444444")), Margin = new Thickness(0, 1, 0, 1) },
+            }
+        };
+
+        // Bottom
+        var bottomBar = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Spacing = 8,
+            Margin = new Thickness(0, 8, 0, 0),
+            Children = { saveBtn, resetBtn, copyBtn, closeBtn }
+        };
+
+        var mainPanel = new DockPanel
+        {
+            Margin = new Thickness(12),
+            LastChildFill = true,
+            Children = { headerPanel, bottomBar, editorContainer }
+        };
+        DockPanel.SetDock(headerPanel, Dock.Top);
+        DockPanel.SetDock(bottomBar, Dock.Bottom);
+
+        var dialog = new Window
+        {
+            Title = L("User Guide — AvyScan Lab", "Guide utilisateur — AvyScan Lab",
+                       "Benutzerhandbuch — AvyScan Lab", "Guía del usuario — AvyScan Lab"),
+            Width = 1050, Height = 740,
+            MinWidth = 600, MinHeight = 420,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = true,
+            Content = mainPanel
+        };
+
+        closeBtn.Click += (_, _) =>
+        {
+            if (hasUnsavedChanges && isEditMode)
+                SaveUserNotes(currentLang, textEditor.Text ?? "");
+            dialog.Close();
+        };
+
+        // ── Secret shortcut: Ctrl+Shift+Alt+S → save edits to ORIGINAL guide file ──
+        dialog.KeyDown += (_, args) =>
+        {
+            if (args.Key == Avalonia.Input.Key.S
+                && args.KeyModifiers == (Avalonia.Input.KeyModifiers.Control
+                    | Avalonia.Input.KeyModifiers.Shift
+                    | Avalonia.Input.KeyModifiers.Alt))
+            {
+                var origPath = OriginalPath(currentLang);
+                if (!string.IsNullOrEmpty(textEditor.Text))
+                {
+                    File.WriteAllText(origPath, textEditor.Text, Encoding.UTF8);
+                    // Brief visual confirmation on the title bar
+                    var origTitle = dialog.Title;
+                    dialog.Title = origTitle + "  ✓ SAVED TO ORIGINAL";
+                    Task.Delay(2000).ContinueWith(_ =>
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() => dialog.Title = origTitle));
+                }
+                args.Handled = true;
+            }
+        };
+
+        await dialog.ShowDialog(owner);
+    }
 }

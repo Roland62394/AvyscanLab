@@ -18,4 +18,5 @@ public interface IDialogService
     Task ShowFeedbackDialogAsync(Window owner, MainWindowViewModel vm);
     Task<(bool OpenContact, bool DontShowAgain)> ShowExitFeedbackDialogAsync(Window owner, MainWindowViewModel vm);
     Task ShowUpdateAvailableDialogAsync(Window owner, MainWindowViewModel vm, string latestVersion, string downloadUrl);
+    Task ShowUserGuideEditorAsync(Window owner, MainWindowViewModel vm);
 }
