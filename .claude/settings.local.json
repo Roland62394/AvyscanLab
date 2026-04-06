@@ -93,7 +93,8 @@
       "Bash(gh auth:*)",
       "Bash(git credential:*)",
       "Bash(ls \"/c/Program Files \\(x86\\)/AviSynth+/plugins64+/\"*.avsi)",
-      "Bash(head -20 \"/c/Program Files \\(x86\\)/AviSynth+/plugins64+/FFMS2.avsi\")"
+      "Bash(head -20 \"/c/Program Files \\(x86\\)/AviSynth+/plugins64+/FFMS2.avsi\")",
+      "Bash(python3 fix_guides.py)"
     ]
   }
 }

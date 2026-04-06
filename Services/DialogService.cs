@@ -1332,19 +1332,22 @@ public sealed class DialogService : IDialogService
         {
             Content = L("Indent →", "Retrait →", "Einrücken →", "Sangría →"),
             VerticalAlignment = VerticalAlignment.Center,
-            Padding = new Thickness(6, 3), FontSize = 12, IsEnabled = false
+            Padding = new Thickness(6, 3), FontSize = 12, IsEnabled = false,
+            Focusable = false
         };
         var unindentBtn = new Button
         {
             Content = L("← Unindent", "← Dés-retrait", "← Ausrücken", "← Quitar"),
             VerticalAlignment = VerticalAlignment.Center,
-            Padding = new Thickness(6, 3), FontSize = 12, IsEnabled = false
+            Padding = new Thickness(6, 3), FontSize = 12, IsEnabled = false,
+            Focusable = false
         };
         var bulletBtn = new Button
         {
             Content = L("- → •", "- → •", "- → •", "- → •"),
             VerticalAlignment = VerticalAlignment.Center,
-            Padding = new Thickness(6, 3), FontSize = 12, IsEnabled = false
+            Padding = new Thickness(6, 3), FontSize = 12, IsEnabled = false,
+            Focusable = false
         };
 
         // ── Highlight ──
@@ -1607,16 +1610,30 @@ public sealed class DialogService : IDialogService
             }
         };
 
+        // ── Track TextBox selection continuously (buttons steal focus → selection lost) ──
+        var lastEditorSelStart = 0;
+        var lastEditorSelEnd = 0;
+        textEditor.PropertyChanged += (_, args) =>
+        {
+            if (args.Property == TextBox.SelectionStartProperty
+                || args.Property == TextBox.SelectionEndProperty)
+            {
+                lastEditorSelStart = textEditor.SelectionStart;
+                lastEditorSelEnd = textEditor.SelectionEnd;
+            }
+        };
+
         // ── Indent / Unindent / Bullets logic ──
         const string IndentStr = "    "; // 4 spaces
 
-        // Returns (lineStart, lineEnd) covering all lines touched by the selection
-        (int Start, int End) GetSelectedLineRange()
+        // Returns (lineStart, lineEnd) covering all lines touched by the cached selection
+        (int Start, int End) GetSelectedLineRange(string text)
         {
-            var text = textEditor.Text ?? "";
             if (text.Length == 0) return (0, 0);
-            var selStart = Math.Min(textEditor.SelectionStart, textEditor.SelectionEnd);
-            var selEnd = Math.Max(textEditor.SelectionStart, textEditor.SelectionEnd);
+            var selStart = Math.Min(lastEditorSelStart, lastEditorSelEnd);
+            var selEnd = Math.Max(lastEditorSelStart, lastEditorSelEnd);
+            selStart = Math.Clamp(selStart, 0, text.Length);
+            selEnd = Math.Clamp(selEnd, 0, text.Length);
 
             // Walk back to start of first selected line
             var lineStart = selStart;
@@ -1629,69 +1646,61 @@ public sealed class DialogService : IDialogService
             return (lineStart, lineEnd);
         }
 
-        void IndentSelection(bool indent)
+        // Split text block into lines, stripping \r from each
+        static string[] SplitLines(string block)
         {
-            var text = textEditor.Text ?? "";
-            if (text.Length == 0) return;
-            var (lineStart, lineEnd) = GetSelectedLineRange();
-            var block = text[lineStart..lineEnd];
-            var lines = block.Split('\n');
-            var sb = new StringBuilder();
-            for (var i = 0; i < lines.Length; i++)
-            {
-                if (i > 0) sb.Append('\n');
-                var line = lines[i].TrimEnd('\r');
-                if (indent)
-                {
-                    sb.Append(IndentStr).Append(line);
-                }
-                else
-                {
-                    // Remove up to 4 leading spaces
-                    var removed = 0;
-                    var j = 0;
-                    while (j < line.Length && line[j] == ' ' && removed < 4) { j++; removed++; }
-                    sb.Append(line[j..]);
-                }
-            }
-            var newBlock = sb.ToString();
-            textEditor.Text = string.Concat(text.AsSpan(0, lineStart), newBlock, text.AsSpan(lineEnd));
-            textEditor.SelectionStart = lineStart;
-            textEditor.SelectionEnd = lineStart + newBlock.Length;
+            var raw = block.Split('\n');
+            for (var i = 0; i < raw.Length; i++)
+                raw[i] = raw[i].TrimEnd('\r');
+            return raw;
         }
 
-        void ToggleBullets()
+        void ApplyLineTransform(Func<string[], string[]> transform)
         {
             var text = textEditor.Text ?? "";
             if (text.Length == 0) return;
-            var (lineStart, lineEnd) = GetSelectedLineRange();
-            var block = text[lineStart..lineEnd];
-            var lines = block.Split('\n');
-            // Detect: if any line has "- " → convert all to "• ", otherwise "• " → "- "
-            var hasDash = lines.Any(l => { var t = l.TrimStart(); return t.StartsWith("- "); });
-            var sb = new StringBuilder();
-            for (var i = 0; i < lines.Length; i++)
+            var (lineStart, lineEnd) = GetSelectedLineRange(text);
+            if (lineStart == lineEnd) return;
+
+            var lines = SplitLines(text[lineStart..lineEnd]);
+            var result = transform(lines);
+            var newBlock = string.Join('\n', result);
+            textEditor.Text = string.Concat(text.AsSpan(0, lineStart), newBlock, text.AsSpan(lineEnd));
+
+            // Re-select the transformed block and give focus back to the editor
+            textEditor.SelectionStart = lineStart;
+            textEditor.SelectionEnd = lineStart + newBlock.Length;
+            lastEditorSelStart = lineStart;
+            lastEditorSelEnd = lineStart + newBlock.Length;
+            textEditor.Focus();
+        }
+
+        indentBtn.Click += (_, _) => ApplyLineTransform(lines =>
+            lines.Select(l => IndentStr + l).ToArray());
+
+        unindentBtn.Click += (_, _) => ApplyLineTransform(lines =>
+            lines.Select(l =>
             {
-                if (i > 0) sb.Append('\n');
-                var line = lines[i].TrimEnd('\r');
-                var trimmed = line.TrimStart();
-                var leading = line[..(line.Length - trimmed.Length)];
+                var removed = 0;
+                var j = 0;
+                while (j < l.Length && l[j] == ' ' && removed < 4) { j++; removed++; }
+                return l[j..];
+            }).ToArray());
+
+        bulletBtn.Click += (_, _) => ApplyLineTransform(lines =>
+        {
+            var hasDash = lines.Any(l => l.TrimStart().StartsWith("- "));
+            return lines.Select(l =>
+            {
+                var trimmed = l.TrimStart();
+                var leading = l[..(l.Length - trimmed.Length)];
                 if (hasDash && trimmed.StartsWith("- "))
-                    sb.Append(leading).Append("• ").Append(trimmed[2..]);
-                else if (!hasDash && trimmed.StartsWith("• "))
-                    sb.Append(leading).Append("- ").Append(trimmed[2..]);
-                else
-                    sb.Append(line);
-            }
-            var newBlock = sb.ToString();
-            textEditor.Text = string.Concat(text.AsSpan(0, lineStart), newBlock, text.AsSpan(lineEnd));
-            textEditor.SelectionStart = lineStart;
-            textEditor.SelectionEnd = lineStart + newBlock.Length;
-        }
-
-        indentBtn.Click += (_, _) => IndentSelection(true);
-        unindentBtn.Click += (_, _) => IndentSelection(false);
-        bulletBtn.Click += (_, _) => ToggleBullets();
+                    return leading + "• " + trimmed[2..];
+                if (!hasDash && trimmed.StartsWith("• "))
+                    return leading + "- " + trimmed[2..];
+                return l;
+            }).ToArray();
+        });
 
         // ── Edit mode toggle ──
         editToggle.Click += (_, _) =>
