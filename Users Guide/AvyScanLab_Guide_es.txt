@@ -1,19 +1,19 @@
-                              AVYSCAN LAB
+                                 AvyScan LAB
                             Guía del usuario
 
                                 ScanFilm SNC
                                www.scanfilm.ch
 
                  Versión de prueba — release 1.00 - marzo 2026
-                 Hasta 3 archivos cargados y 1 minuto de codificación por archivo
+          Hasta 3 archivos cargados y 1 minuto de codificación por archivo
 
 
 =============================================================================================
-                                 ÍNDICE
+                                      ÍNDICE
 =============================================================================================
 
     1.  Presentación                        10.  Filtros personalizados (Custom)
-    2.  Requisitos e instalación            11.  Ajustes predefinidos (Presets)
+    2.  Requisitos e instalación            11.  Preajustes (Presets)
     3.  Interfaz general                    12.  Codificación y renderizado
     4.  Selección de la fuente              13.  Flujo de trabajo recomendado
     5.  Reproductor de vídeo y navegación   14.  Consejos y atajos
@@ -28,39 +28,42 @@
 =============================================================================================
 
 AvyScan Lab permite tratar los defectos habituales (grano, polvo, estabilización, etc.) y ajustar los niveles y colores para devolver la vida a sus películas.
-Está dirigido tanto a aficionados que buscan una solución llave en mano como a usuarios avanzados que desean personalizar su pipeline de restauración.
+Su función es escribir scripts .avs y confiar su ejecución al frameserver AviSynth, que debe estar instalado en el equipo de trabajo.
+AviSynth también debe disponer, en su directorio x64, de las DLL necesarias para el funcionamiento de sus filtros.
+AvyScan está dirigido tanto a aficionados que buscan una solución lista para usar como a usuarios avanzados que desean personalizar su pipeline de restauración.
 Su diseño modular y su interfaz intuitiva ofrecen una gran flexibilidad para adaptarse a todo tipo de proyectos y niveles de competencia.
 AvyScan Lab le permite elegir y configurar individualmente cada filtro que desee aplicar.
-Su completa modularidad le permite añadir sus propios filtros personalizados y compartirlos con la comunidad.
+Su modularidad completa le permite añadir sus propios filtros personalizados y compartirlos con la comunidad.
 La codificación por lotes con FFmpeg le ofrece una flexibilidad total para crear masters de alta calidad o archivos intermedios para un trabajo posterior.
 
 
-Modo estándar:
-• instalación sencilla sin conocimientos especiales ni búsqueda de componentes externos;
-• verificación de la disponibilidad de una versión más reciente;
-• aplicación disponible en 4 idiomas (FR, EN, DE, ES);
-• importar uno o varios vídeos o secuencias de imágenes mediante arrastrar y soltar;
-• gestionar varios clips de diferentes formatos en un mismo proyecto;
-• elija los filtros que desea aplicar y en qué orden (crop, degrain, denoise, sharpen, estabilización, etc.);
-• ajustar los parámetros de cada filtro en una interfaz intuitiva;
-• cada parámetro de cada filtro se explica con una descripción emergente dedicada para comprender su utilidad;
-• comparar la imagen original y la imagen restaurada;
-• visualizar el histograma para un control preciso de la exposición y los colores (4 modos);
-• crear una biblioteca de ajustes (presets) para recuperarlos en 2 clics;
-• importar y exportar filtros desde una biblioteca o con otros usuarios;
-• codificación posible de vídeos o secuencias de imágenes hacia formatos intermedios o finales con total flexibilidad para cada clip;
-• crear una biblioteca de parámetros de codificación (presets) para recuperarlos en 2 clics y aplicarlos individualmente a cada clip;
+Modo estándar :
+        • instalación sencilla sin conocimientos especiales ni búsqueda de componentes externos
+        • verificación de la disponibilidad de una versión más reciente
+        • aplicación disponible en 4 idiomas (FR, EN, DE, ES)
+        • manual de usuario en 4 idiomas en forma de un mini procesador de textos editable por el usuario
+        • importar uno o varios vídeos o secuencias de imágenes mediante arrastrar y soltar
+        • gestionar varios clips de diferentes formatos en un mismo proyecto
+        • elegir los filtros que desea aplicar y en qué orden (crop, degrain, denoise, sharpen, estabilización, etc.)
+        • ajustar los parámetros de cada filtro en una interfaz intuitiva
+        • cada parámetro de cada filtro se explica con una descripción emergente dedicada para comprender su utilidad
+        • comparar la imagen original y la imagen restaurada
+        • visualizar el histograma para un control preciso de la exposición y los colores (4 modos)
+        • crear una biblioteca de ajustes (presets) para recuperarlos en 2 clics
+        • importar y exportar filtros desde una biblioteca o con otros usuarios
+        • codificación posible de vídeos o secuencias de imágenes hacia formatos intermedios o finales con una flexibilidad total para cada clip
+        • crear una biblioteca de parámetros de codificación (presets) para recuperarlos en 2 clics y aplicarlos individualmente a cada clip
 
 
-Modo experto:
-• editar el script AviSynth generado y pegar su contenido en otro software;
-• escribir sus propios filtros directamente en la aplicación, importar sus Dlls así como sus archivos .avsi;
-• generación configurable y automática de los controles que servirán para modificar los parámetros de sus filtros desde la interfaz;
-• los errores AviSynth se muestran en la aplicación para un diagnóstico rápido;
-• modificar libremente el orden de los filtros en su script;
-• duplicar los filtros para aplicarlos varias veces en su script conservando la posibilidad de ajustar/modificar cada duplicado;
-• importar y exportar filtros con otros usuarios;
-• todos los filtros (incluidos sus filtros) pueden recuperarse en 2 clics y aplicarse individualmente a cada clip;
+Modo experto :
+        • editar el script AviSynth generado y pegar su contenido en otro programa
+        • escribir sus propios filtros directamente en la aplicación, importar sus DLL así como sus archivos .avsi
+        • generación parametrizable y automática de los controles que servirán para modificar los parámetros de sus filtros desde la interfaz
+        • los errores de AviSynth se muestran en la aplicación para un diagnóstico rápido
+        • modificar libremente el orden de los filtros en su script
+        • duplicar los filtros para aplicarlos varias veces en su script conservando la posibilidad de ajustar/modificar cada duplicado
+        • importar y exportar filtros con otros usuarios
+        • todos los filtros (incluidos sus filtros) pueden recuperarse en 2 clics y aplicarse individualmente a cada clip
 
 Y muchas otras posibilidades por descubrir a lo largo de su uso.
 
@@ -70,29 +73,29 @@ Y muchas otras posibilidades por descubrir a lo largo de su uso.
 =============================================================================================
 
 AvyScanLab se apoya en la calidad de los plugins AviSynth+ desarrollados
-y mantenidos por la comunidad open source. Dirigimos nuestro más sincero agradecimiento,
-de la forma más exhaustiva posible, a sus autores:
+y mantenidos por la comunidad open source. Dirigimos nuestros más sinceros agradecimientos,
+de la manera más exhaustiva posible, a sus autores:
 
-     MVTools2 — Manao, Fizick, Tsp, TSchniede, SEt
+      MVTools2 — Manao, Fizick, Tsp, TSchniede, SEt
           Estimación de movimiento y reducción temporal del grano (MDegrain).
           El núcleo del pipeline de restauración de AvyScanLab.
 
       RemoveDirt — Kassandro
-          Detección y supresión temporal del polvo y los arañazos.
+          Detección y eliminación temporal del polvo y las rayaduras.
           RemoveDirtMC (con compensación de movimiento) sigue siendo inigualable para
-          la limpieza de películas analógicas.
+          la limpieza de películas argentinas.
 
       GamMac — StainlessS
-          Corrección colorimétrica avanzada mediante análisis de canales RGB.
+          Corrección colorimétrica avanzada mediante análisis de los canales RGB.
           Una herramienta valiosa para corregir las derivas de color
           de las películas envejecidas.
 
       MaskTools2 — Manao, tp7
-          Operaciones con máscaras, indispensables para el refuerzo
+          Operaciones sobre máscaras, indispensables para el refuerzo
           selectivo de la nitidez (modo edge-aware).
 
       RgTools — tp7, pinterf
-          Herramientas de supresión del grano y operaciones matriciales,
+          Herramientas de eliminación del grano y operaciones matriciales,
           utilizadas como prefiltro en el análisis de movimiento.
 
       LimitedSharpenFaster — Didée
@@ -103,19 +106,17 @@ de la forma más exhaustiva posible, a sus autores:
                            2.  REQUISITOS E INSTALACIÓN
 =============================================================================================
 
-Sistema requerido:
+Sistema requerido :
     • Windows 10 u 11 (64 bits)
     • 4 GB de RAM mínimo (8 GB recomendados)
     • Espacio en disco suficiente para los archivos fuente y los renderizados
 
-Componentes:
-    • AviSynth+ 64 bits debe estar instalado. Si está ausente, AvyScanLab lo detecta al inicio
-      y propone su instalación.
+Componentes :
+    • AviSynth+ 64 bits debe estar instalado. Si está ausente, AvyScanLab lo detecta al inicio y propone su instalación.
     • FFmpeg se incluye con la aplicación (carpeta Plugins/ffmpeg/).
     • El reproductor mpv se incluye con la aplicación (carpeta mpv/).
 
-No se requiere ninguna instalación adicional. Basta con descomprimir el archivo
-y ejecutar el ejecutable AvyScanLab.exe.
+No se requiere ninguna instalación adicional. Basta con descomprimir el archivo y ejecutar AvyScanLab.exe.
 
 
 =============================================================================================
@@ -127,27 +128,28 @@ La interfaz está organizada en tres zonas principales:
     ZONA SUPERIOR
     -----------------------------------------------------------------------------------------
     Barra de menús:
-    • Info: manual de usuario en 4 idiomas, vista previa del script, visita guiada, búsqueda de actualización
-    • Configuración:  - número de threads (recomendado de 4 a 8 máx.)
-                 • elección del cargador (Auto, Ffms2, L-smash, LWLibav)
-                 • elección de un tema para la interfaz (claro, gris, oscuro) y elección del color de los cursores
-                 • Exportación (copia de seguridad) e importación de la configuración del programa:
-                          • presets.json — presets de filtros
-                          • custom_filters.json — filtros custom
-                          • encoding_presets.json — presets de codificación
-                          • gammac_presets.json — presets de corrección gamma
-                          • session.json — estado de la sesión (clips, ajustes actuales)
-                          • window-settings.json — posición/tamaño de la ventana, idioma
-                 • Reiniciar: restauración al estado original de los parámetros de la aplicación
+    • Info: manual de usuario en 4 idiomas, vista previa del script, visita guiada, búsqueda de una actualización
+
+    • Ajustes:    • número de threads (recomendado: de 4 a 8 máx.)
+                  • elección del cargador (Auto, Ffms2, L-SMASH, LWLibav)
+                  • elección de un tema para la interfaz (claro, gris, oscuro) y elección del color de los cursores
+                  • exportación (copia de seguridad) e importación de los ajustes del programa:
+                          - presets.json — presets de filtros
+                          - custom_filters.json — filtros custom
+                          - encoding_presets.json — presets de codificación
+                          - gammac_presets.json — presets de corrección gamma
+                          - session.json — estado de la sesión (clips, ajustes actuales)
+                          - window-settings.json — posición/tamaño de la ventana, idioma
+                  • Reiniciar: restauración del estado original de los parámetros de la aplicación
     • Elección del idioma: inglés, francés, alemán, español
     • Contacto: abre un formulario de contacto para enviarnos sus comentarios
     • Acerca de: ¿quiénes somos?
 
     Barra de fuente:
-    • Pestañas de selección de archivos fuente
+    • Pestañas de selección de los archivos fuente
     • Cada clip cargado aparece como una pestaña con el nombre del archivo y el preset aplicado (ej.: "[perso2]")
     • El botón + permite añadir un clip, la x cierra una pestaña
-    • Cuando se carga una secuencia de imágenes (.tif, .tiff, .png, etc.), a la derecha el programa busca la primera y la última imagen encontrada en el directorio
+    • Cuando se carga una secuencia de imágenes (.tif, .tiff, .png, etc.), el programa busca a la derecha la primera y la última imagen encontradas en el directorio
 
     ZONA CENTRAL
     -----------------------------------------------------------------------------------------
@@ -158,10 +160,10 @@ La interfaz está organizada en tres zonas principales:
         <<      Fotograma anterior
         >       Reproducción / Pausa
         >>      Fotograma siguiente
-        1x      Velocidad (ciclo: 0.25x -> 0.5x -> 1x, la reducción de velocidad permite una reproducción más fluida, sin saltos en máquinas menos potentes)
+        1x      Velocidad (ciclo: 0.25x -> 0.5x -> 1x; la reducción de la velocidad permite una reproducción más fluida, sin saltos en las máquinas menos potentes)
         1/2     Para la previsualización, el tamaño de la visualización se divide por 2 para aliviar el procesador y permitir una mejor reactividad.
         []      Maximizar/Restaurar el tamaño de la imagen (F11)
-        Preset  Permite seleccionar un preset de ajustes previamente guardado
+        Preset  Permite seleccionar un preset de ajuste previamente memorizado
         👁      Muestra la ventana que permite crear/eliminar/actualizar presets de ajustes (presets de filtros, no de codificación)
         REC     Abrir el panel de codificación
 
@@ -172,24 +174,24 @@ La interfaz está organizada en tres zonas principales:
 
         • Columna izquierda:
                ↻ Restablece el orden estándar de la cronología de los filtros
-               ↓ Importar un filtro desde un archivo .JSON
+               ↓ Importar un filtro desde un archivo .json
                + Crear un filtro uno mismo
-               Botones de activación de filtros (ON/OFF)
-               ▶ Abrir/desplegar el panel de ajustes del filtro (botón expandir)
+               Botones de activación de los filtros (ON/OFF)
+               ▶ Abrir/desplegar el panel de ajustes del filtro (botón expand)
                ✎ Editar un filtro para modificarlo
 
-               ▸ Sección filtros inactivos (plegable)
+               ▸ Sección de filtros inactivos (plegable)
                  ▾ Sección abierta (filtros inactivos desplegados)
                    Permite seleccionar los filtros inactivos presentes en local y añadirlos a los filtros activos
 
-               El orden de los filtros puede cambiarse mediante arrastrar y soltar del botón de activación
+               El orden de los filtros puede modificarse arrastrando y soltando el botón de activación
 
         • Columna derecha:
               • Cada filtro puede desplazarse horizontalmente haciendo clic en el nombre del filtro para cambiar su orden de presentación
-              ↺ Restauración a los valores estándar de todos los parámetros
-              • Dibujar la zona: ciertos filtros de recorte, estabilización o corrección de colores determinan una zona de la imagen.
+              ↺ Restauración de los valores estándar de todos los parámetros
+              • Dibujar la zona: ciertos filtros de recorte, de estabilización o de corrección de colores determinan una zona de la imagen
                 Para facilitar la delimitación de esta zona, puede dibujarla directamente en el visor en lugar de introducir manualmente valores numéricos
-              • Descripciones emergentes: al pasar el ratón se puede obtener información sobre la acción de cada parámetro. Al crear un filtro por parte del usuario, este
+              • Descripciones emergentes: un desplazamiento del ratón permite informarse sobre la acción de cada parámetro. Al crear un filtro, el usuario
                 también puede rellenar cada campo con el texto de su elección.
               • Un cursor o un campo permite elegir el valor de los parámetros.
 
@@ -200,15 +202,15 @@ La interfaz está organizada en tres zonas principales:
 Archivo de vídeo
     Arrastre y suelte un archivo de vídeo en la zona de reproducción, o haga clic en el botón
     junto al campo "source" para abrir un explorador de archivos.
-    Archivos compatibles: .avi, .mp4, .mov, .mkv, .wmv, .mpeg, .mpg, .webm, .m4v.
+    Archivos compatibles: .avi, .mp4, .mov, .mkv, .wmv, .mpeg, .mpg.
 
 Secuencia de imágenes
     Seleccione un directorio que contenga archivos de imagen (por ejemplo: 00001.tif, 00002.tif, etc.).
     AvyScanLab detecta automáticamente la primera y la última imagen de la secuencia.
     Formatos compatibles: .tif  .tiff  .jpg  .jpeg  .png  .bmp
 
-Frecuencia de reproducción (FPS)
-    El campo "fps" define la frecuencia de reproducción.
+Velocidad de reproducción (FPS)
+    El campo "fps" define la velocidad de reproducción.
 
 Cargador de fuente
     El menú desplegable permite forzar el plugin de decodificación:
@@ -216,13 +218,13 @@ Cargador de fuente
         FFMS2     FFmpegSource2 — compatibilidad máxima
         L-SMASH   LSmashSource — MP4/MOV optimizado
         LWLibav   LWLibavVideoSource — formato alternativo
-    En caso de error de lectura al abrir un archivo, intente cambiar el cargador de fuente.
+    En caso de error de lectura al abrir un archivo, pruebe a cambiar el cargador de fuente.
 
 Threads
     Número de threads de procesamiento AviSynth (depende de su procesador). Aumente este valor para aprovechar
     todos los núcleos del procesador.
     Un valor demasiado alto puede provocar ralentizaciones o errores en las máquinas menos potentes.
-    Ajústelo en función de su hardware (ideal entre 4 y 8).
+    Ajústelo en función de su hardware (idealmente entre 4 y 8).
 
 Multi-clips
     Puede cargar varios archivos en AvyScan Lab. Cada clip dispondrá de sus propios ajustes
@@ -234,10 +236,10 @@ Multi-clips
                          5.  REPRODUCTOR DE VÍDEO Y NAVEGACIÓN
 =============================================================================================
 
-El reproductor integrado muestra el resultado del script AviSynth en tiempo real. Cualquier modificación
-de parámetro regenera automáticamente el script y actualiza la vista previa.
+El reproductor integrado muestra el resultado del script AviSynth en tiempo real.
+Cualquier modificación de parámetro regenera automáticamente el script y actualiza la vista previa.
 Durante el cálculo de las modificaciones, el botón "Play" se vuelve naranja y cambia de luminosidad.
-Cuando el programa está listo, este botón vuelve a ser verde.
+Cuando el programa está listo, este botón vuelve a verde.
 
 Atajos de teclado:
 
@@ -256,34 +258,31 @@ Interacciones con los parámetros:
     -----------------------------------------------------------------------------------------
     Clic en slider            Posiciona directamente el cursor
     Arrastrar el slider       Ajuste en tiempo real
-    Rueda sobre campo texto   Ajusta el valor por paso (step)
-    Entrada directa           Escriba un valor, valide con Enter o clic fuera
+    Rueda en campo texto      Ajusta el valor por pasos (step)
+    Entrada directa           Escriba un valor, valide con Enter o clic en otro lugar
     Pasar sobre una etiqueta  Muestra la descripción emergente con rango y consejos del parámetro seleccionado
 
 Modo media resolución:
-    El botón "1/2" activa el modo media resolución: el script AviSynth procesa la imagen
-    a la mitad de su tamaño ANTES de los filtros pesados, y luego la muestra. Esto acelera
-    considerablemente la previsualización en máquinas menos potentes.
+    El botón "1/2" activa el modo media resolución: el script AviSynth procesa la imagen a la mitad de su tamaño ANTES de los filtros pesados, y luego la muestra.
+    Esto acelera considerablemente la previsualización en las máquinas menos potentes.
 
 Visualización de errores:
-    En caso de error del script AviSynth, aparece una banda en el reproductor y se abre una ventana
-    de error con:
-        • El mensaje de error (sin los prefijos técnicos de ffmpeg)
-        • El extracto del script alrededor de la línea defectuosa (con marcador ►)
-        • La salida completa de ffmpeg en una sección "Detalles" plegable
+    En caso de error de script AviSynth, una banda aparece en el reproductor y una ventana de error se abre con:
+        • El mensaje de error (sin los prefijos técnicos de FFmpeg)
+        • El extracto del script alrededor de la línea errónea (con marcador ►)
+        • La salida completa de FFmpeg en una sección "Detalles" plegable
         • Un botón "Copiar" para copiar el mensaje completo
 
 Preset por clip:
-    El menú desplegable junto a la barra de transporte permite aplicar un preset
-    de filtros únicamente al clip activo.
+    El menú desplegable junto a la barra de transporte permite aplicar un preset de filtros únicamente al clip activo.
 
 
 =============================================================================================
                               6.  PANEL DE FILTROS
 =============================================================================================
 
-El panel inferior está dividido en dos columnas separadas por un separador
-redimensionable (arrástrelo horizontalmente para ajustar el ancho).
+El panel inferior está dividido en dos columnas separadas por un separador redimensionable
+(arrástrelo horizontalmente para ajustar el ancho).
 
 
     COLUMNA IZQUIERDA: LISTA DE FILTROS
@@ -291,37 +290,32 @@ redimensionable (arrástrelo horizontalmente para ajustar el ancho).
 
     Encabezado
         El título "FILTERS" va acompañado de tres botones:
-            ↲   Reiniciar el orden de los filtros a su posición predeterminada.
+            ↲   Reiniciar el orden de los filtros a su posición por defecto.
             ↓   Importar un filtro personalizado desde un archivo .json.
             +   Crear un nuevo filtro personalizado (abre el formulario de edición).
 
     Cada filtro está representado por una línea con tres elementos:
 
-        Botón ON/OFF        Haga clic en el nombre del filtro para activarlo (verde)
-                            o desactivarlo (gris). Un filtro desactivado no se
-                            aplica al script pero permanece en la lista.
+        Botón ON/OFF        Haga clic en el nombre del filtro para activarlo (verde) o desactivarlo (gris).
+                            Un filtro desactivado no se aplica al script pero permanece en la lista.
 
-        Botón de expansión  La flecha (>) abre el panel de parámetros del
-                            filtro en la columna derecha. Se convierte en (v)
-                            cuando el panel está abierto. Un segundo clic cierra
-                            el panel. Este botón está oculto para los filtros
-                            que no tienen parámetros ajustables.
+        Botón de expansión  La flecha (>) abre el panel de parámetros del filtro en la columna derecha.
+                            Se convierte en (v) cuando el panel está abierto.
+                            Un segundo clic cierra el panel.
+                            Este botón está oculto para los filtros que no tienen parámetros ajustables.
 
-        Botón de edición    El lápiz abre el formulario de edición completo del
-                            filtro (modificar el código, duplicar, exportar o
-                            eliminar el filtro).
+        Botón de edición    El lápiz abre el formulario de edición completo del filtro (modificar el código, duplicar, exportar o eliminar el filtro).
+
 
     Reordenar los filtros
-        Mantenga el clic en una línea de filtro y arrástrela hacia arriba o
-        hacia abajo para modificar su posición en el pipeline. Una línea verde horizontal
-        indica el punto de inserción. Suelte para confirmar la nueva posición.
+        Mantenga el clic en una línea de filtro y arrástrela hacia arriba o hacia abajo para modificar su posición en el pipeline.
+        Una línea verde horizontal indica el punto de inserción. Suelte para confirmar la nueva posición.
         El orden mostrado corresponde al orden de aplicación en el script AviSynth.
 
     Filtros inactivos
-        Los filtros desactivados se agrupan en una sección plegable en la parte inferior
-        de la lista. Haga clic en el encabezado "Filtros inactivos (n)" para mostrar
-        u ocultar esta sección. La reordenación por arrastrar y soltar funciona
-        también dentro de esta sección.
+        Los filtros desactivados se agrupan en una sección plegable en la parte inferior de la lista.
+        Haga clic en el encabezado "Filtros inactivos (n)" para mostrar u ocultar esta sección.
+        La reordenación por arrastrar y soltar también funciona dentro de esta sección.
 
     Las opciones generales (fuera de filtros) son:
         preview            Previsualización AviSynth (comparación antes/después)
@@ -331,72 +325,65 @@ redimensionable (arrástrelo horizontalmente para ajustar el ancho).
     Orden del pipeline de procesamiento:
         1. Volteo (flip)
         2. Recorte (crop)
-        3. Supresión del polvo (denoise / RemoveDirt)
+        3. Eliminación del polvo (denoise / RemoveDirt)
         4. Reducción del grano (degrain / MVTools2)
         5. Niveles de luminosidad (luma levels)
         6. Corrección colorimétrica (GamMac)
         7. Filtros personalizados (6 puntos de inyección posibles)
-        8. Nitidez (sharpen) — siempre en último lugar
+        8. Nitidez (sharpen) — siempre al final
 
 
     COLUMNA DERECHA: PARÁMETROS DE LOS FILTROS
     -----------------------------------------------------------------------------------------
 
-    Cuando hace clic en la flecha (>) de un filtro, su panel de parámetros
-    se muestra en la columna derecha. Varios paneles pueden estar abiertos
-    simultáneamente y se muestran uno al lado del otro horizontalmente.
+    Cuando hace clic en la flecha (>) de un filtro, su panel de parámetros se muestra en la columna derecha.
+    Varios paneles pueden estar abiertos simultáneamente y se muestran uno junto a otro horizontalmente.
 
     Si ningún panel está abierto, se muestra el texto "← seleccione un filtro".
 
     Cada panel contiene:
 
-        Barra de título     El nombre del filtro en mayúsculas. Puede arrastrar
-                            esta barra horizontalmente para reordenar los paneles
-                            entre sí (una línea verde vertical indica el punto
-                            de inserción).
+        Barra de título     El nombre del filtro en mayúsculas. Puede arrastrar esta barra horizontalmente para reordenar los paneles
+                            entre sí (una línea verde vertical indica el punto de inserción).
 
-        Botón reset (↺)     Restablece todos los parámetros del filtro a sus valores
-                            predeterminados, sin cerrar el panel.
+        Botón reset (↺)     Restaura todos los parámetros del filtro a sus valores
+                            por defecto, sin cerrar el panel.
 
     Tipos de controles de parámetros:
 
         Cursor (slider)     Un cursor horizontal con una zona de entrada a la derecha.
-                            Desplace el cursor o introduzca un valor manualmente.
-                            Los valores se alinean automáticamente con el paso
-                            (step) definido para cada parámetro. Utilice la
-                            rueda del ratón sobre el cursor para ajustar el
-                            valor por incrementos.
+                            Mueva el cursor o introduzca un valor manualmente.
+                            Los valores se alinean automáticamente con el paso (step) definido para cada parámetro.
+                            Use la rueda del ratón sobre el cursor para ajustar el valor por incrementos.
 
-        Lista desplegable   Una lista de opciones predefinidas. Seleccione el valor
-        (combo)             deseado en el menú.
+        Lista desplegable   Una lista de opciones predefinidas. Seleccione el valor deseado en el menú.
+        (combo)
 
-        Casilla de          Un botón de alternancia ON/OFF. Los valores asociados a
-        verificación        cada estado están definidos por el filtro (por ejemplo
-        (checkbox)          "true"/"false" o "enabled"/"disabled").
+        Casilla de          Un botón de conmutación ON/OFF. Los valores asociados a cada estado son definidos por el filtro
+        verificación        (por ejemplo "true"/"false" o "enabled"/"disabled").
+        (checkbox)
 
-        Campo de texto      Un campo de entrada libre. El valor se registra
-                            cuando abandona el campo (clic fuera o Tab).
+        Campo de texto      Un campo de entrada libre. El valor se registra cuando abandona el campo (clic en otro lugar o Tab).
 
-    Cada parámetro dispone de una descripción emergente (pase el ratón sobre su nombre) que describe su
-    función y su impacto. Los nombres con descripción emergente están subrayados.
 
-    Cualquier modificación de un parámetro actualiza inmediatamente la previsualización
-    de vídeo, lo que permite ajustar los ajustes en tiempo real.
+    Cada parámetro dispone de una descripción emergente (pase el ratón sobre su nombre) que describe su función e impacto.
+    Los nombres con una descripción emergente están subrayados.
+
+    Cualquier modificación de un parámetro actualiza inmediatamente la previsualización de vídeo, lo que permite ajustar los parámetros en tiempo real.
 
 
     DIBUJO DE REGIÓN (DRAW REGION)
     -----------------------------------------------------------------------------------------
 
-    Ciertos filtros (como Crop) ofrecen un botón "Draw Region" en su
-    panel de parámetros. Esta función permite definir visualmente una zona
-    sobre la imagen en lugar de introducir coordenadas manualmente.
+    Ciertos filtros (como Crop) ofrecen un botón "Draw Region" en su panel de parámetros.
+    Esta función permite definir visualmente una zona en la imagen en lugar de introducir coordenadas manualmente.
 
     Uso:
         1. Abra el panel de parámetros del filtro (botón >).
         2. Haga clic en el botón "Draw Region" (se vuelve verde cuando está activo).
            La reproducción se pausa automáticamente.
-        3. Sobre la imagen de vídeo, mantenga el clic izquierdo y trace un rectángulo.
-           Un recuadro superpuesto indica la zona seleccionada en tiempo real.
+        3. En la imagen de vídeo, mantenga el clic izquierdo y trace un rectángulo.
+           Un marco superpuesto indica la zona seleccionada en tiempo real.
         4. Suelte el ratón: las coordenadas se transfieren automáticamente
            a los parámetros del filtro y la previsualización se actualiza.
         5. El modo de dibujo se desactiva automáticamente después del trazado. También puede
@@ -408,54 +395,56 @@ redimensionable (arrástrelo horizontalmente para ajustar el ancho).
         • Modo Crop: define los márgenes de recorte (izquierda, arriba, derecha, abajo)
           a partir del rectángulo trazado.
 
-    Las coordenadas se convierten automáticamente a píxeles fuente (resolución
-    original), independientemente del modo de visualización (preview, media resolución).
+    Las coordenadas se convierten automáticamente en píxeles fuente (resolución original),
+    independientemente del modo de visualización (preview, media resolución).
 
-    Nota: solo un filtro puede estar en modo de dibujo a la vez. Activar el dibujo
-    en otro filtro desactiva automáticamente el anterior.
+
+    Nota: solo un filtro puede estar en modo de dibujo a la vez.
+           Activar el dibujo en otro filtro desactiva automáticamente el anterior.
 
 
     GESTIÓN DE FILTROS PERSONALIZADOS
     -----------------------------------------------------------------------------------------
 
-    Añadir            Botón "+": abre el formulario de creación. Rellene el
-                      nombre, la posición en el pipeline, el código AviSynth y los
-                      controles de parámetros. El filtro se añade activado.
+    Añadir ("+"):
+        Abre el formulario de creación.
+        Rellene el nombre, la posición en el pipeline, el código AviSynth y los controles de parámetros.
+        El filtro se añade activado.
 
-    Importar          Botón "↓": abre un selector de archivos (por defecto en
-                      la carpeta Filters/). Un archivo .json puede contener uno o
-                      varios filtros. Cada filtro importado recibe un nuevo
-                      identificador para evitar conflictos.
+    Importar ("↓"):
+        Abre un selector de archivos (por defecto en la carpeta Filters/).
+        Un archivo .json puede contener uno o varios filtros.
+        Cada filtro importado recibe un nuevo identificador para evitar conflictos.
 
-    Editar            Botón lápiz (✎) en la línea del filtro: abre el
-                      formulario de edición con el filtro precargado.
+    Editar ("✎"):
+        En la línea del filtro, abre el formulario de edición con el filtro precargado.
 
-    Duplicar          Desde el formulario de edición: crea una copia del filtro
-                      colocada justo después del original. Útil para aplicar el mismo
-                      tratamiento con ajustes diferentes.
+    Duplicar:
+        Desde el formulario de edición, crea una copia del filtro colocada justo después del original.
+        Útil para aplicar el mismo tratamiento con ajustes diferentes.
 
-    Exportar          Desde el formulario de edición: guarda el filtro en
-                      un archivo .json que puede compartir.
+    Exportar:
+        Desde el formulario de edición, guarda el filtro en un archivo .json que puede compartir.
 
-    Eliminar          Desde el formulario de edición: elimina definitivamente el
-                      filtro y todos sus ajustes.
+    Eliminar:
+        Desde el formulario de edición, elimina definitivamente el filtro y todos sus ajustes.
 
-    Reiniciar         Botón "↲" en el encabezado: restaura el orden predeterminado de
-    el orden          los filtros integrados. Los filtros creados por el usuario
-                      conservan su posición actual.
+    Reiniciar ("↲")
+        En el encabezado, restaura el orden por defecto de los filtros integrados.
+        Los filtros creados por el usuario conservan su posición actual.
 
     Los valores de los sliders se alinean automáticamente con el paso (step) definido
-    para cada parámetro, lo que impide los valores no válidos.
+    para cada parámetro, lo que impide los valores inválidos.
 
 
 =============================================================================================
                            7.  FILTRO CROP (RECORTE)
 =============================================================================================
 
-Elimina píxeles en los bordes de la imagen. Los valores se redondean automáticamente
-a números pares (requisito del submuestreo de croma YUV).
+Elimina píxeles en los bordes de la imagen. Los valores se redondean automáticamente a números pares
+(exigencia del submuestreo chroma YUV).
 
-    Parámetro       Rango          Por defecto   Descripción
+    Parámetro       Rango          Defecto     Descripción
     -----------------------------------------------------------------------------------------
     Crop_L          0-500 px       0           Píxeles eliminados a la izquierda
     Crop_T          0-500 px       0           Píxeles eliminados arriba
@@ -472,10 +461,10 @@ a números pares (requisito del submuestreo de croma YUV).
     Reducción temporal del grano de película mediante el análisis de movimiento MVTools2.
     El filtro compara varios fotogramas consecutivos para distinguir el detalle del grano.
 
-    Parámetro              Rango                        Por defecto   Descripción
+    Parámetro              Rango                        Defecto     Descripción
     degrain_mode           mdegrain1/2/3/temporal       mdegrain2   Algoritmo
     degrain_thSAD          0-1000                       350         Umbral luma
-    degrain_thSADC         0-1000                       250         Umbral croma
+    degrain_thSADC         0-1000                       250         Umbral chroma
     degrain_blksize        4/8/16/32/64                 16          Tamaño de bloque
     degrain_overlap        0 a blksize/2                blksize/2   Solapamiento
     degrain_pel            1 o 2                        2           Precisión sub-píxel
@@ -483,10 +472,9 @@ a números pares (requisito del submuestreo de croma YUV).
     degrain_prefilter      remgrain/blur/none           remgrain    Prefiltro
 
     Restricciones automáticas:
-        • blksize solo puede tomar los valores 4, 8, 16, 32 o 64 (potencias de 2,
-          requisito de MVTools2 MAnalyse). El slider se ajusta automáticamente.
-        • overlap se limita automáticamente a blksize/2. Si reduce blksize,
-          overlap se reduce en consecuencia.
+        • blksize solo puede tomar los valores 4, 8, 16, 32 o 64 (potencias de 2, exigencia de MVTools2 MAnalyse).
+          El slider se ajusta automáticamente.
+        • overlap se limita automáticamente a blksize/2. Si reduce blksize, overlap se reduce en consecuencia.
         • overlap solo acepta valores pares (step = 2).
 
     Notas:
@@ -495,18 +483,18 @@ a números pares (requisito del submuestreo de croma YUV).
         • mdegrain1: 1 referencia (rápido, menos eficaz)
         • temporal : TemporalSoften (sin MVTools2, básico)
 
-    DENOISE — Supresión del polvo (RemoveDirt)
+    DENOISE — Eliminación del polvo (RemoveDirt)
     -----------------------------------------------------------------------------------------
-    Detección y supresión temporal del polvo y defectos puntuales.
+    Detección y eliminación temporal del polvo y defectos puntuales.
 
-    Parámetro              Rango                        Por defecto      Descripción
+    Parámetro              Rango                        Defecto        Descripción
     denoise_mode           removedirtmc/removedirt      removedirtmc   Algoritmo
     denoise_strength       1-24                         10             Umbral de detección
     denoise_dist           1-20                         3              Radio espacial
     denoise_grey           true/false                   false          Solo luma
 
-    Nota: removedirtmc (con compensación de movimiento) se recomienda para mejores
-    resultados. El modo removedirt es más rápido pero menos preciso.
+    Nota: removedirtmc (con compensación de movimiento) se recomienda para mejores resultados.
+           El modo removedirt es más rápido pero menos preciso.
 
 
 =============================================================================================
@@ -517,7 +505,7 @@ a números pares (requisito del submuestreo de croma YUV).
     -----------------------------------------------------------------------------------------
     Ajuste global de la luminosidad, el contraste, la saturación y el tono.
 
-    Parámetro       Rango              Por defecto   Descripción
+    Parámetro       Rango              Defecto     Descripción
     Lum_Bright      -255 a 255         0           Desplazamiento de luminosidad
     Lum_Contrast    0.1 a 3.0          1.05        Multiplicador de contraste
     Lum_Sat         0.1 a 3.0          1.10        Saturación de colores
@@ -529,10 +517,10 @@ a números pares (requisito del submuestreo de croma YUV).
 
     GAMMAC — Corrección colorimétrica avanzada
     -----------------------------------------------------------------------------------------
-    Corrección automática de las derivas de color entre canales RGB. Especialmente
-    útil para películas que presentan amarilleamiento, dominante azul o roja.
+    Corrección automática de las derivas de color entre canales RGB.
+    Particularmente útil para las películas que presentan amarillamiento, dominante azul o roja.
 
-    Parámetro       Rango              Por defecto   Descripción
+    Parámetro       Rango              Defecto     Descripción
     LockChan        -3 a 2             1           Canal de referencia
     LockVal         1-255              250         Umbral de bloqueo
     Scale           0-2                2           Modo de escala
@@ -553,9 +541,9 @@ a números pares (requisito del submuestreo de croma YUV).
     SHARPEN — Refuerzo de la nitidez
     -----------------------------------------------------------------------------------------
     Refuerzo de la nitidez de la imagen. Siempre se aplica en último lugar en el pipeline
-    para evitar amplificar los artefactos de los otros filtros.
+    para evitar amplificar los artefactos de los demás filtros.
 
-    Parámetro              Rango              Por defecto   Descripción
+    Parámetro              Rango              Defecto     Descripción
     Sharp_Mode             simple/edge        simple      Algoritmo
     Sharp_Strength         1-20               8           Fuerza del refuerzo
     Sharp_Radius           0.5-5.0            1.5         Radio de desenfoque (máscara)
@@ -583,110 +571,110 @@ de restauración con una interfaz de control completa.
     separador redimensionable. El tamaño, la posición de la ventana y la distribución
     de las zonas se memorizan entre sesiones.
 
+
     ZONA SUPERIOR — Nombre, plugins y scripts
     .........................................................................................
 
     Nombre del filtro
-        Campo de entrada libre. Si se deja vacío, se asigna el nombre predeterminado "Custom".
+        Campo de entrada libre. Si se deja vacío, se asigna el nombre por defecto "Custom".
 
     Dibujo de región (Region Draw)
-        Casilla de verificación que activa la posibilidad de dibujar una zona sobre la imagen para
-        este filtro. Cuando está marcada, aparece un menú desplegable para elegir el
-        modo de región:
-            • X / Y / W / H     : posición y tamaño de la zona
-            • Crop (L / T / R / B) : márgenes de recorte
-        Los placeholders correspondientes (X, Y, W, H o left, top, right, bottom) se
-        detectan automáticamente en el código.
+        Casilla de verificación que activa la posibilidad de dibujar una zona en la imagen para este filtro.
+        Cuando está marcada, aparece un menú desplegable para elegir el modo de región:
+
+            • X / Y / W / H           : posición y tamaño de la zona
+            • Crop (L / T / R / B)    : márgenes de recorte
+
+        Los placeholders correspondientes (X, Y, W, H o left, top, right, bottom) se detectan automáticamente en el código.
 
     Plugins (TryLoadPlugin)
-        Botón "+ Add DLL...": abre un selector de archivos para añadir uno o
-        varios plugins AviSynth (.dll). Cada DLL añadida aparece con su ruta
-        completa (verde si el archivo existe, rojo en caso contrario) y un botón de eliminación.
+        Botón "+ Add DLL...": abre un selector de archivos para añadir uno o varios plugins AviSynth (.dll).
+        Cada DLL añadida aparece con su ruta completa (verde si el archivo existe, rojo en caso contrario) y un botón de eliminación.
         Las DLL se cargan mediante TryLoadPlugin() en el script generado.
 
     Scripts (Import .avsi)
-        Botón "+ Add AVSI...": abre un selector para añadir archivos de script
-        (.avsi o .avs). Los archivos seleccionados se copian automáticamente en la
-        carpeta Plugins/Scripts/ de la aplicación. Solo se almacena el nombre del archivo.
-        Durante la generación del script AviSynth, AvyScanLab inserta automáticamente
-        una instrucción Import() para cada script referenciado:
+        Botón "+ Add AVSI...": abre un selector para añadir archivos de script (.avsi o .avs).
+        Los archivos seleccionados se copian automáticamente en la carpeta Plugins/Scripts/ de la aplicación.
+        Solo se almacena el nombre del archivo.
+        Al generar el script AviSynth, AvyScanLab inserta automáticamente una instrucción Import() para cada script referenciado:
+            • TryLoadPlugin("C:/.../MonPlugin.dll")
+            • Import("C:/.../Plugins/Scripts/MesFonctions.avsi")
 
-            TryLoadPlugin("C:/.../MonPlugin.dll")
-            Import("C:/.../Plugins/Scripts/MesFonctions.avsi")
 
-    ZONA CENTRAL — Editor de código AviSynth
+    ZONA CENTRAL — EDITOR DE CÓDIGO AVISYNTH
     .........................................................................................
 
-    Escriba el código AviSynth en el editor. Utilice "c" como variable clip y las
-    llaves {nombre} para definir parámetros modificables desde la interfaz:
+    Escriba el código AviSynth en el editor. Use "c" como variable clip y las llaves {nombre} para definir
+    parámetros modificables desde la interfaz:
 
         c = MonFiltre(c, force={sigma}, mode={bt_mode})
 
-    Los placeholders {nombre} se detectan automáticamente en tiempo real. Cada nuevo
-    placeholder genera una línea de control en la zona inferior. Si un placeholder
-    se elimina del código, su control también desaparece.
+    Los placeholders {nombre} se detectan automáticamente en tiempo real.
+    Cada nuevo placeholder genera una línea de control en la zona inferior.
+    Si un placeholder se elimina del código, su control también desaparece.
 
-    Conversión de variable a parámetro
-        Seleccione en el editor una línea del tipo "variable = valor" con el ratón.
-        AvyScanLab propone convertirla automáticamente en parámetro: el valor se
-        reemplaza por {variable} en el código y se crea un nuevo control con el
-        valor de origen como valor predeterminado. Esta ayuda puede desactivarse para
-        la sesión actual.
+    Conversión de una variable en parámetro
+        • Seleccione en el editor una línea del tipo "variable = valor" con el ratón.
+        • AvyScanLab propone convertirla automáticamente en parámetro: el valor se reemplaza por {variable}
+          en el código y se crea un nuevo control con el valor original como valor por defecto.
+          Esta ayuda puede desactivarse para la sesión actual.
 
     Botón ▶ Preview
-        Prueba el filtro en tiempo real en el reproductor sin salir del formulario.
+        Prueba el filtro en tiempo real en el reproductor sin abandonar el formulario.
         El filtro se activa temporalmente para la previsualización.
+
 
     ZONA INFERIOR — Parámetros detectados
     .........................................................................................
 
-    Cada placeholder {nombre} detectado en el código aparece como una línea
-    horizontal que contiene los siguientes elementos:
+    Cada placeholder {nombre} detectado en el código aparece como una línea horizontal que contiene los siguientes elementos:
 
-        👁  Botón ojo: resalta el placeholder en el editor de código (alternancia
-            verde cuando está activo).
+        👁  Botón ojo
+                Resalta el placeholder en el editor de código (conmutación verde cuando está activo).
 
-        ✕   Botón eliminar: retira el control y reemplaza el placeholder en el
-            código por su valor predeterminado. Se solicita confirmación.
+        ✕   Botón eliminar
+                Retira el control y reemplaza el placeholder en el código por su valor por defecto.
+                Se solicita confirmación.
 
-        {nombre}   Nombre del placeholder mostrado en azul, fuente monospace.
+        {nombre}
+                Nombre del placeholder mostrado en azul, fuente monospace.
 
-        Tipo    Lista desplegable para elegir el tipo de control:
+        Tipo
+                Lista desplegable para elegir el tipo de control:
 
-            slider      Cursor con campos Mín, Máx, Step y Por defecto (Dflt).
+            slider
+                        Cursor con campos Min, Max, Step y Defecto (Dflt).
                         Los valores se alinean automáticamente con el paso (step).
                         Con un step de 2, solo se permiten valores pares.
-                        Botón ½: si está activado, el valor del parámetro se divide
-                        por 2 en modo media resolución (preview), lo cual es útil para
-                        los parámetros relacionados con el tamaño en píxeles.
+                        Botón ½: si está activado, el valor del parámetro se divide por 2 en modo media resolución (preview),
+                        lo que es útil para los parámetros relacionados con el tamaño en píxeles.
 
-            combo       Lista desplegable. Campo "Values": introduzca los valores
-                        separados por comas (ej: val1, val2, val3).
-                        Campo "Dflt": valor predeterminado (se usa la primera opción
-                        si el campo está vacío).
+            combo (lista desplegable)
+                        Campo "Values": introduzca los valores separados por comas (ej.: val1, val2, val3).
+                        Campo "Dflt": valor por defecto (se usa la primera opción si el campo está vacío).
 
-            checkbox    Casilla de verificación. Campos "On" y "Off": valores asociados
-                        a cada estado (por defecto "true" y "false").
-                        Campo "Dflt": valor predeterminado.
+            checkbox (casilla de verificación)
+                        Campos "On" y "Off": valores asociados a cada estado (por defecto "true" y "false").
+                        Campo "Dflt": valor por defecto.
 
-            text        Campo de entrada libre. Campo "Dflt": valor predeterminado.
+            text
+                        Campo de entrada libre. Campo "Dflt": valor por defecto.
 
-        💬  Campo descripción: texto opcional que se mostrará como descripción emergente
-            cuando el usuario pase el ratón sobre el parámetro en el panel de filtros.
+        💬  Campo descripción: texto opcional que se mostrará como descripción emergente cuando el usuario pase el ratón sobre el parámetro en el panel de filtros.
 
 
     BOTONES DEL FORMULARIO
     -----------------------------------------------------------------------------------------
 
     Eliminar        Elimina definitivamente el filtro (botón rojo, a la izquierda).
-                    Se solicita confirmación. El mensaje difiere según se trate
-                    de un filtro integrado o de un filtro creado por el usuario.
+                    Se solicita confirmación.
+                    El mensaje difiere según se trate de un filtro integrado o de un filtro creado por el usuario.
 
-    ↑ Export        Guarda el filtro en un archivo .json que puede
-                    compartir con otros usuarios.
+    ↑ Export        Guarda el filtro en un archivo .json que puede compartir con otros usuarios.
 
-    ❐ Duplicate     Crea una copia del filtro con el sufijo "(2)". La copia recibe
-                    un nuevo identificador y se coloca justo después del original.
+
+    ❐ Duplicate     Crea una copia del filtro con el sufijo "(2)".
+                    La copia recibe un nuevo identificador y se coloca justo después del original.
                     Útil para aplicar varias veces el mismo tratamiento con ajustes diferentes.
 
     ? Help          Muestra una ayuda contextual sobre el formulario.
@@ -696,7 +684,7 @@ de restauración con una interfaz de control completa.
     Guardar         Guarda el filtro y cierra el formulario (botón verde).
 
 
-    UTILIZAR UN FILTRO PERSONALIZADO
+    USAR UN FILTRO PERSONALIZADO
     -----------------------------------------------------------------------------------------
 
     El filtro aparece en la columna izquierda del panel de filtros con:
@@ -711,27 +699,26 @@ de restauración con una interfaz de control completa.
     EXPORTAR / IMPORTAR UN FILTRO
     -----------------------------------------------------------------------------------------
 
-    Exportar: en el formulario de edición, haga clic en "↑ Export". El filtro se
-    guarda en un archivo .json que puede compartir con otros usuarios.
+    Exportar: En el formulario de edición, haga clic en "↑ Export".
+               El filtro se guarda en un archivo .json que puede compartir con otros usuarios.
 
-    Importar: en el panel de filtros, haga clic en el botón ↓ junto al "+".
-    Seleccione un archivo .json exportado. Los filtros importados reciben un nuevo
-    identificador para evitar duplicados.
+    Importar: En el panel de filtros, haga clic en el botón ↓ junto al "+".
+               Seleccione un archivo .json exportado. Los filtros importados reciben un nuevo identificador para evitar duplicados.
 
-    Nota: las rutas DLL son absolutas. Si el filtro utiliza un plugin externo, asegúrese
-    de que la DLL esté presente en la misma ubicación en la máquina de destino, o edite el filtro
-    después de la importación para corregir la ruta.
+    Notas:
+            • Las rutas DLL son absolutas.
+              Si el filtro utiliza un plugin externo, asegúrese de que la DLL está presente en la misma ubicación en la máquina de destino, o edite el filtro
+              tras la importación para corregir la ruta.
 
-    Nota: al exportar un filtro, solo se registra el nombre de los archivos .avsi
-    (no su contenido). Si comparte un filtro con otro usuario,
-    transmita también los archivos .avsi necesarios.
+            • Al exportar un filtro, solo se registra el nombre de los archivos .avsi (no su contenido).
+              Si comparte un filtro con otro usuario, transmita también los archivos .avsi necesarios.
 
-Ubicación de almacenamiento: %AppData%\AvyScanLab\custom_filters.json
+    Ubicación de almacenamiento: %AppData%\AvyScanLab\custom_filters.json
 
 
 
 =============================================================================================
-                            11.  AJUSTES PREDEFINIDOS (PRESETS)
+                            11.  PREAJUSTES (PRESETS)
 =============================================================================================
 
     PRESETS GLOBALES (filtros)
@@ -748,16 +735,16 @@ Ubicación de almacenamiento: %AppData%\AvyScanLab\custom_filters.json
 
     PRESETS POR CLIP
     -----------------------------------------------------------------------------------------
-    Cada clip puede tener sus propios ajustes de filtros. Cuando modifica manualmente
-    un parámetro, el clip se nombra automáticamente "perso1", "perso2", etc.
-    El menú desplegable en la barra de transporte permite cargar un preset global para
-    el clip activo únicamente.
+    Cada clip puede tener sus propios ajustes de filtros. Cuando modifica manualmente un parámetro,
+    el clip se nombra automáticamente "perso1", "perso2", etc.
+    El menú desplegable en la barra de transporte permite cargar un preset global solo para el clip activo.
 
     PRESETS DE CODIFICACIÓN
     -----------------------------------------------------------------------------------------
-    Las combinaciones de codificación (codificador + contenedor + calidad + croma + resolución)
-    pueden guardarse y recargarse desde el panel Record.
+    Las combinaciones de codificación (codificador + contenedor + calidad + chroma + resolución) pueden guardarse
+    y recargarse desde el panel Record.
     El preset "Default" siempre está presente y aparece en primer lugar.
+
     Ubicación: %AppData%\AvyScanLab\encoding_presets.json
 
 
@@ -768,18 +755,16 @@ Ubicación de almacenamiento: %AppData%\AvyScanLab\custom_filters.json
 Haga clic en el botón REC (rojo) en la barra de transporte para abrir el panel
 de codificación.
 
-    PASO 1 — Selección de clips
+    PASO 1 — Selección de los clips
     -----------------------------------------------------------------------------------------
-    Marque los clips a codificar en la lista. Utilice "Seleccionar todo" para
-    codificarlos todos de una sola vez (batch). Cada clip puede tener un nombre de salida
-    y un preset de codificación diferentes.
-    Cada preset puede incluir una carpeta de destino diferente, lo que permite organizar
-    fácilmente los renderizados de varios clips.
+    Marque los clips a codificar en la lista. Use "Seleccionar todo" para codificarlos todos de una vez (batch).
+    Cada clip puede tener un nombre de salida y un preset de codificación diferentes.
+    Cada preset puede incluir una carpeta de destino diferente, lo que permite organizar fácilmente los renderizados de varios clips.
 
     PASO 2 — Carpeta de destino
     -----------------------------------------------------------------------------------------
-    Haga clic en el botón Examinar o introduzca la ruta. El espacio en disco disponible
-    se muestra en tiempo real.
+    Haga clic en el botón "Examinar" o introduzca la ruta.
+    El espacio en disco disponible se muestra en tiempo real.
 
     PASO 3 — Elección del codificador
     -----------------------------------------------------------------------------------------
@@ -788,7 +773,7 @@ de codificación.
     x265           Lossy            Difusión (HEVC)
     FFV1           Lossless         Archivado profesional
     UT Video       Lossless         Edición rápida
-    ProRes         Lossy HQ         Posproducción
+    ProRes         Lossy HQ         Postproducción
     TIFF seq.      Lossless         Imágenes individuales (archivado)
     PNG seq.       Lossless         Imágenes individuales
     JPG seq.       Lossy            Imágenes individuales
@@ -799,20 +784,20 @@ de codificación.
 
     PASO 5 — Parámetros avanzados (solo códecs lossy)
     -----------------------------------------------------------------------------------------
-    Modo de calidad:
-        CRF      Calidad constante (por defecto). Cuanto más bajo sea el valor, mejor será la
-                 calidad. Valores típicos: 18-23. El slider va de 0 a 51.
-        Bitrate  Tasa fija en Mb/s. El mínimo recomendado se calcula automáticamente
-                 en función de la resolución y del croma elegidos.
+    Modo calidad:
+        CRF      Calidad constante (por defecto). Cuanto menor sea el valor, mejor será la calidad.
+                 Valores típicos: 18-23. El slider va de 0 a 51.
+        Bitrate  Tasa fija en Mb/s. El mínimo recomendado se calcula automáticamente en función de la resolución
+                 y el chroma elegidos.
 
-    Submuestreo de croma:
+    Submuestreo chroma:
         4:2:0    Estándar (archivo más pequeño)
         4:2:2    Mejor calidad de color
         4:4:4    Calidad máxima (archivo voluminoso)
 
-        Nota: la tasa de bits y el croma están acoplados. Modificar el croma ajusta la
-        tasa de bits mínima recomendada. Introducir una tasa de bits elevada puede ajustar
-        automáticamente el croma al nivel máximo soportado.
+        Nota: el bitrate y el chroma están acoplados.
+               Modificar el chroma ajusta la tasa mínima recomendada.
+               Introducir una tasa elevada puede ajustar automáticamente el chroma al nivel máximo soportado.
 
     Resolución de salida:
         Original   Resolución fuente conservada
@@ -821,8 +806,7 @@ de codificación.
         576p       720x576 (PAL)
         480p       720x480 (NTSC)
 
-        Nota: las dimensiones impares se ajustan automáticamente a números pares
-        (requisito de x264/x265) mediante un filtro de padding.
+        Nota: las dimensiones impares se ajustan automáticamente a números pares (exigencia de x264/x265) mediante un filtro de padding.
 
     DURANTE LA CODIFICACIÓN
     -----------------------------------------------------------------------------------------
@@ -832,11 +816,9 @@ de codificación.
     • Una barra de progreso muestra el porcentaje de avance
     • El cierre de la aplicación detiene automáticamente la codificación en curso
 
-    Opción "Apagar después de la codificación": marque esta casilla para apagar el ordenador
-    automáticamente después de una codificación batch exitosa.
+    Opción "Apagar tras codificación": marque esta casilla para apagar el ordenador automáticamente tras una codificación batch exitosa.
 
-    Nota técnica: la codificación utiliza un script de renderizado dedicado (ScriptRender.avs) donde
-    el modo preview está desactivado, garantizando la calidad final máxima.
+    Nota técnica: la codificación utiliza un script de renderizado dedicado (ScriptRender.avs) donde el modo preview está desactivado.
 
 
 =============================================================================================
@@ -851,58 +833,50 @@ de codificación.
 
        a) Crop       — Elimine los bordes negros o ajuste el encuadre.
 
-       b) Denoise    — Elimine el polvo y los arañazos. El preset "estándar"
-                       funciona en la mayoría de los casos. Aumente strength si los
-                       defectos persisten.
+       b) Denoise    — Elimine el polvo y las rayaduras. El preset "standard" es adecuado en la mayoría de los casos.
+                       Aumente strength si los defectos persisten.
 
-       c) Degrain    — Comience con el preset "Grano medio", luego aumente thSAD
-                       si el grano persiste. Atención: valores demasiado altos
-                       producen un efecto "plástico".
+       c) Degrain    — Comience con el preset "Grain moyen", luego aumente thSAD si el grano persiste.
+                       Atención: valores demasiado altos producen un efecto "plástico".
 
-       d) Luma       — Ajuste la luminosidad y el contraste. GammaY es a menudo el
-                       parámetro más útil para aclarar películas antiguas.
+       d) Luma       — Ajuste la luminosidad y el contraste.
+                       GammaY es a menudo el parámetro más útil para aclarar las películas antiguas.
 
-       e) GamMac     — Corrija las derivas de color (amarilleamiento, dominante
-                       azul, roja, etc.).
+       e) GamMac     — Corrija las derivas de color (amarillamiento, dominante azul, roja, etc.).
 
-       f) Sharpen    — Refuerce la nitidez en la última etapa. El modo "edge"
-                       preserva mejor las zonas lisas y evita amplificar el
-                       grano residual.
+       f) Sharpen    — Refuerce la nitidez en la última etapa. El modo "edge" preserva mejor las zonas lisas
+                       y evita amplificar el grano residual.
 
     4. Verifique el resultado recorriendo varios pasajes de la película.
 
-    5. Guarde su configuración como preset mediante el botón 👁 para poder
-       reutilizarla fácilmente en otros clips de la misma película o de películas similares.
+    5. Guarde su configuración como preset mediante el botón 👁 para poder reutilizarla fácilmente en otros clips
+       de la misma película u otras películas similares.
 
     6. Si tiene varios clips: cárguelos todos, luego aplique los presets adecuados.
 
     7. Abra el panel Record, elija los parámetros de codificación.
-       Cada película puede tener un preset de codificación diferente, lo que permite organizar
-       fácilmente los renderizados.
+       Cada película puede tener un preset de codificación diferente, lo que permite organizar fácilmente los renderizados.
        Cada película puede o no incluirse en un batch de codificación.
        ¡Lance el renderizado!
 
-    Consejo: active el modo media resolución (1/2) durante el ajuste de los parámetros
-    para acelerar la previsualización, luego desactívelo para verificar el resultado
-    a plena resolución antes de la codificación.
+    Consejo: active el modo media resolución (1/2) durante el ajuste de los parámetros para acelerar la previsualización,
+              luego desactívelo para verificar el resultado en resolución completa antes de la codificación.
 
 
 =============================================================================================
                            14.  CONSEJOS Y ATAJOS
 =============================================================================================
 
-    • La rueda del ratón sobre los campos numéricos ajusta el valor por pasos.
+    • La rueda del ratón en los campos numéricos ajusta el valor por pasos.
     • El modo media resolución (botón 1/2) acelera considerablemente la previsualización.
-    • Todos los parámetros se guardan automáticamente en ScriptUser.avs con cada
-      modificación.
-    • La posición, el tamaño de la ventana y el estado de los paneles se memorizan entre
-      sesiones.
+    • Todos los parámetros se guardan automáticamente en ScriptUser.avs con cada modificación.
+    • La posición, el tamaño de la ventana y el estado de los paneles se memorizan entre sesiones.
     • El panel Record se restaura al abrir si estaba abierto al cerrar.
     • Las descripciones emergentes (al pasar el ratón) sobre cada parámetro muestran los rangos y consejos.
     • Arrastrar y soltar varios archivos crea automáticamente un clip por archivo.
     • Los sliders se posicionan directamente al hacer clic (no es necesario arrastrar).
-    • La visita guiada (menú) permite descubrir las bases de la interfaz paso a paso.
-    • Los errores AviSynth muestran automáticamente la línea de script defectuosa.
+    • La visita guiada (menú) permite descubrir las primeras bases de la interfaz paso a paso.
+    • Los errores de AviSynth muestran automáticamente la línea de script errónea.
     • El botón "Copiar" en la ventana de error copia el mensaje y los detalles.
 
 
@@ -930,9 +904,9 @@ de codificación.
 
 Árbol de archivos distribuidos con AvyScanLab:
 
-    AvyScanLab.exe                           Ejecutable principal
-    ScriptMaster.en.avs                     Plantilla de script AviSynth
-    UserGuide.txt                           Guía de texto (francés, fuente)
+    AvyScanLab.exe                          Ejecutable principal
+    ScriptMaster.en.avs                     Modelo de script AviSynth
+    UserGuide.txt                           Guía de texto (4 idiomas)
 
     Assets/
       Ico.ico                               Icono de la aplicación
@@ -942,22 +916,12 @@ de codificación.
       libmpv-2.dll                          Reproductor de vídeo (libmpv)
 
     Users Guide/
-      AvyScanLab_Guide_en.txt                Guía del usuario (inglés)
-      AvyScanLab_Guide_fr.txt                Guía del usuario (francés)
-      AvyScanLab_Guide_de.txt                Guía del usuario (alemán)
-      AvyScanLab_Guide_es.txt                Guía del usuario (español)
+      AvyScanLab_Guide_en.txt               Guía del usuario (inglés)
+      AvyScanLab_Guide_fr.txt               Guía del usuario (francés)
+      AvyScanLab_Guide_de.txt               Guía del usuario (alemán)
+      AvyScanLab_Guide_es.txt               Guía del usuario (español)
 
-    Plugins/
-      Avisynth/
-        AviSynth.dll                        Motor AviSynth+ integrado
-        DevIL.dll                           Carga de imágenes (dependencia)
-        ImageSeq.dll                        Soporte de secuencias de imágenes
-
-      Dual/L-Smash-Works/
-        LSMASHSource.dll                    Decodificador L-SMASH (MP4/MOV)
-        LSMASHSource_indexing.exe           Herramienta de indexación
-
-      ffmpeg/
+    ffmpeg/
         ffmpeg.exe                          Codificador de vídeo
         ffprobe.exe                         Análisis de archivos de vídeo
         avcodec-62.dll                      Códec FFmpeg
@@ -971,11 +935,17 @@ de codificación.
       FFMS2/
         ffms2.dll                           Decodificador FFMS2
 
+      Dual/L-Smash-Works/
+        LSMASHSource.dll                    Decodificador L-SMASH (MP4/MOV)
+        LSMASHSource_indexing.exe           Herramienta de indexación
+
+ Árbol de DLL y .avsi instalados en AviSynth+ x64:
+
       GamMac/
         GamMac_x64.dll                      Corrección colorimétrica GamMac
 
       Masktools2/
-        masktools2.dll                      Operaciones con máscaras
+        masktools2.dll                      Operaciones sobre máscaras
 
       MVTools2/
         mvtools2.dll                        Estimación y compensación de movimiento
@@ -983,10 +953,10 @@ de codificación.
         DePanEstimate.dll                   Estimación DePan
 
       RemoveDirt/
-        RemoveDirt.dll                      Supresión del polvo
+        RemoveDirt.dll                      Eliminación del polvo
 
       RgTools/
-        RgTools.dll                         Herramientas de supresión del grano
+        RgTools.dll                         Herramientas de eliminación del grano
 
       Scripts/
         FFMS2.avsi                          Script de importación FFMS2
@@ -995,10 +965,10 @@ de codificación.
 
 =============================================================================================
 
-                              A V Y S C A N   L A B
+                   AvyScan LAB 1.0.0 — GUÍA DEL USUARIO
                                 ScanFilm SNC
                                www.scanfilm.ch
 
-             Soporte: utilice el formulario Feedback integrado en la aplicación.
+      Soporte: utilice el formulario Feedback integrado en la aplicación.
 
 =============================================================================================
