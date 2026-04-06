@@ -5,6 +5,7 @@
 ;   1. Install NSIS 3+ from https://nsis.sourceforge.io/Download
 ;   2. Build/publish the app:
 ;        dotnet publish -c Release -r win-x64 --self-contained
+;      or use publish-release.bat for obfuscated build
 ;   3. Place AviSynthPlus installer in Installer/ folder:
 ;        AviSynthPlus_3.7.5_20250420_vcredist.exe
 ;   4. Right-click this file → "Compile NSIS Script"
@@ -90,6 +91,10 @@ Section "!${APP_NAME} (required)" SecCore
     ; AviSynth script templates
     File "${PUBLISH_DIR}\ScriptMaster.en.avs"
 
+    ; Built-in filter definitions (JSON)
+    SetOutPath "$INSTDIR\Filters"
+    File /nonfatal "${PUBLISH_DIR}\Filters\*.json"
+
     ; ffmpeg (encoding)
     SetOutPath "$INSTDIR\Plugins\ffmpeg"
     File "${PUBLISH_DIR}\Plugins\ffmpeg\ffmpeg.exe"
@@ -99,9 +104,9 @@ Section "!${APP_NAME} (required)" SecCore
     SetOutPath "$INSTDIR\mpv"
     File /r "${PUBLISH_DIR}\mpv\*.*"
 
-    ; User guide
+    ; User guide (txt — displayed in built-in editor)
     SetOutPath "$INSTDIR\Users Guide"
-    File /nonfatal /r "${PUBLISH_DIR}\Users Guide\*.*"
+    File /nonfatal "${PUBLISH_DIR}\Users Guide\AvyScanLab_Guide_*.txt"
 
     ; Back to root for shortcuts
     SetOutPath "$INSTDIR"
@@ -188,7 +193,7 @@ SectionEnd
 
 ; ── Section descriptions ──
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
-    !insertmacro MUI_DESCRIPTION_TEXT ${SecCore}       "Core application files (required)."
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecCore}       "Core application files, built-in filters and user guide (required)."
     !insertmacro MUI_DESCRIPTION_TEXT ${SecGplPlugins} "AviSynth+ restoration plugins (LSMASHSource, RgTools, GamMac, MVTools2, MaskTools2, RemoveDirt, FFMS2). Installed into AviSynth+ plugins64+ folder."
     !insertmacro MUI_DESCRIPTION_TEXT ${SecDesktop}    "Create a shortcut on the Desktop."
     !insertmacro MUI_DESCRIPTION_TEXT ${SecStartMenu}  "Create a shortcut in the Start Menu."
@@ -301,11 +306,13 @@ FunctionEnd
 Section "Uninstall"
     ; Remove AvyScan Lab files (includes Plugins\ffmpeg, mpv, etc.)
     RMDir /r "$INSTDIR\Plugins"
+    RMDir /r "$INSTDIR\Filters"
     RMDir /r "$INSTDIR\mpv"
     RMDir /r "$INSTDIR\Users Guide"
     Delete "$INSTDIR\${APP_EXE}"
     Delete "$INSTDIR\ScriptMaster.en.avs"
     Delete "$INSTDIR\ScriptUser.avs"
+    Delete "$INSTDIR\ScriptRender.avs"
     Delete "$INSTDIR\Uninstall.exe"
     RMDir  "$INSTDIR"
 
