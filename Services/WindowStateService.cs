@@ -17,8 +17,12 @@ public sealed class WindowStateService(string filePath) : IWindowStateService
 
     public void Save(WindowSettings settings)
     {
-        EnsureDirectory(filePath);
-        File.WriteAllText(filePath, JsonSerializer.Serialize(settings, JsonIndented));
+        try
+        {
+            EnsureDirectory(filePath);
+            File.WriteAllText(filePath, JsonSerializer.Serialize(settings, JsonIndented));
+        }
+        catch { /* Save must never crash the app (e.g. on shutdown with locked file) */ }
     }
 
     private static void EnsureDirectory(string path)

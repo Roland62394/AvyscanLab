@@ -44,6 +44,7 @@ public sealed class ConfigStore
         foreach (var kv in values)
         {
             _values[kv.Key] = kv.Value ?? string.Empty;
+            Changed?.Invoke(kv.Key, kv.Value ?? string.Empty);
         }
     }
 }

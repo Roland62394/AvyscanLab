@@ -525,7 +525,11 @@ public sealed class MpvService : IDisposable
                                               || text.Contains("error", StringComparison.OrdinalIgnoreCase)
                                               || text.Contains("failed", StringComparison.OrdinalIgnoreCase);
                                 if (isError || isRelevant)
-                                    lock (_errorLogLock) { _errorLogs.Add($"[{prefix}] {text}"); }
+                                    lock (_errorLogLock)
+                                    {
+                                        if (_errorLogs.Count >= 200) _errorLogs.RemoveAt(0);
+                                        _errorLogs.Add($"[{prefix}] {text}");
+                                    }
                             }
                         }
                         catch { }
@@ -533,6 +537,8 @@ public sealed class MpvService : IDisposable
                     break;
 
                 case EventEndFile:
+                {
+                    var isError = false;
                     if (ev.Data != 0)
                     {
                         try
@@ -540,6 +546,7 @@ public sealed class MpvService : IDisposable
                             var endFile = Marshal.PtrToStructure<MpvEventEndFile>(ev.Data);
                             if (endFile.Reason == EndFileReasonError)
                             {
+                                isError = true;
                                 string msg;
                                 lock (_errorLogLock)
                                 {
@@ -550,13 +557,14 @@ public sealed class MpvService : IDisposable
                                     _errorLogs.Clear();
                                 }
                                 LoadFailed?.Invoke(msg);
-                                break;
                             }
                         }
-                        catch { }
+                        catch { isError = true; }
                     }
-                    EndReached?.Invoke();
+                    if (!isError)
+                        EndReached?.Invoke();
                     break;
+                }
 
                 case EventPropertyChange:
                     if (ev.Data != 0)

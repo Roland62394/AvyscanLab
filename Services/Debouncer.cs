@@ -7,15 +7,21 @@ namespace AvyScanLab.Services;
 public sealed class Debouncer
 {
     private readonly TimeSpan _delay;
+    private readonly object _lock = new();
     private CancellationTokenSource? _cts;
 
     public Debouncer(TimeSpan delay) => _delay = delay;
 
     public async Task DebounceAsync(Func<Task> action)
     {
-        _cts?.Cancel();
-        _cts = new CancellationTokenSource();
-        var token = _cts.Token;
+        CancellationToken token;
+        lock (_lock)
+        {
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = new CancellationTokenSource();
+            token = _cts.Token;
+        }
 
         try
         {
@@ -31,5 +37,11 @@ public sealed class Debouncer
         }
     }
 
-    public void Cancel() => _cts?.Cancel();
+    public void Cancel()
+    {
+        lock (_lock)
+        {
+            _cts?.Cancel();
+        }
+    }
 }

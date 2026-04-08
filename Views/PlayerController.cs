@@ -22,7 +22,7 @@ public interface IPlayerHost
     Window Window { get; }
     SolidColorBrush ThemeBrush(string key);
     string GetUiText(string key);
-    string GetLocalizedText(string fr, string en);
+    string GetLocalizedText(string fr, string en, string? de = null, string? es = null);
     MainWindowViewModel ViewModel { get; }
     ConfigStore Config { get; }
     IScriptService ScriptService { get; }

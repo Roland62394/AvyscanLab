@@ -84,6 +84,13 @@ function Even(int v) { return (v/2)*2 }
 function CropSafe(clip c, int l, int t, int r, int b)
 {
   l = Even(l)  t = Even(t)  r = Even(r)  b = Even(b)
+  # Clamp margins so the result is at least 2×2 pixels
+  maxH = Width(c) - 2
+  maxV = Height(c) - 2
+  l = Min(l, maxH)
+  r = Min(r, maxH - l)
+  t = Min(t, maxV)
+  b = Min(b, maxV - t)
   return c.Crop(l, t, -r, -b)
 }
 

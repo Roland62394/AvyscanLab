@@ -5,5 +5,7 @@
   "Scripts": [],
   "Code": "c = c.FlipHorizontal()",
   "Position": "FlipH",
+  "RegionDrawMode": "xywh",
+  "RegionDrawPlaceholders": [],
   "Controls": []
 }

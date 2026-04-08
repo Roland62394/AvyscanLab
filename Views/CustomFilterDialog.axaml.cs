@@ -350,6 +350,14 @@ public partial class CustomFilterDialog : Window
 
     private void OnPreviewClick()
     {
+        // Save original values so we can restore them after preview (Cancel must not persist changes)
+        var origName = _filter.Name;
+        var origCode = _filter.Code;
+        var origDlls = _filter.Dlls;
+        var origScripts = _filter.Scripts;
+        var origControls = _filter.Controls;
+        var wasEnabled = _filter.Enabled;
+
         // Apply current form state to filter temporarily for preview
         _filter.Name = string.IsNullOrWhiteSpace(FilterNameBox.Text)
             ? "Custom" : FilterNameBox.Text.Trim();
@@ -357,13 +365,16 @@ public partial class CustomFilterDialog : Window
         _filter.Dlls = [.._dlls];
         _filter.Scripts = [.._scripts];
         _filter.Controls = _controls.Select(CloneControl).ToList();
-
-        // Ensure filter is enabled for preview
-        var wasEnabled = _filter.Enabled;
         _filter.Enabled = true;
 
         OnPreview?.Invoke(_filter);
 
+        // Restore original values so Cancel discards preview changes
+        _filter.Name = origName;
+        _filter.Code = origCode;
+        _filter.Dlls = origDlls;
+        _filter.Scripts = origScripts;
+        _filter.Controls = origControls;
         _filter.Enabled = wasEnabled;
     }
 
@@ -577,14 +588,14 @@ public partial class CustomFilterDialog : Window
     private async System.Threading.Tasks.Task<bool> ConfirmRemovePlaceholder(string placeholder)
     {
         var confirmed = false;
-        var msg = L("CfDlgRemoveConfirm").Replace("$name$", $"{{{placeholder}}}");
+        var msg = L("CfDlgRemoveControlConfirm").Replace("$name$", $"{{{placeholder}}}");
 
         var yesBtn = new Button { Content = L("CfDlgConvertYes"), MinWidth = 80 };
         var noBtn = new Button { Content = L("CfDlgConvertNo"), MinWidth = 80 };
 
         var dialog = new Window
         {
-            Title = L("CfDlgRemoveConfirmTitle"),
+            Title = L("CfDlgRemoveControlTitle"),
             SizeToContent = SizeToContent.WidthAndHeight,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             MaxWidth = 460,

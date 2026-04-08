@@ -5,6 +5,8 @@
   "Scripts": [],
   "Code": "base_pix = PixelType(c)\nmx       = _MatrixAuto(c)\nluma_yuv = EnsureColorspaceSafe(c, \"YV24\", matrix=mx)\n\nif ({bright} != 0.0 || {contrast} != 1.0 || {sat} != 1.0 || {hue} != 0.0) {\n  luma_yuv = Tweak(luma_yuv, sat={sat}, hue={hue}, bright={bright}, cont={contrast})\n}\nif ({gamma} != 1.0) {\n  luma_yuv = ColorYUV(luma_yuv, gamma_y={gamma})\n}\n\nc = EnsureColorspaceSafe(luma_yuv, base_pix, matrix=mx)",
   "Position": "Luma",
+  "RegionDrawMode": "xywh",
+  "RegionDrawPlaceholders": [],
   "Controls": [
     {
       "Placeholder": "bright",

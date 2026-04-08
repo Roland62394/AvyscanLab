@@ -89,7 +89,7 @@ public sealed partial class SourceService
             .Any(file =>
             {
                 var ext = Path.GetExtension(file);
-                if (!ext.Equals(".tif", StringComparison.OrdinalIgnoreCase) && !ext.Equals(".tiff", StringComparison.OrdinalIgnoreCase))
+                if (!ImageExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase))
                 {
                     return false;
                 }

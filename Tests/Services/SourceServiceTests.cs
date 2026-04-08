@@ -224,13 +224,29 @@ public class SourceServiceTests
     }
 
     [Fact]
-    public void ImageSequenceExists_ReturnsFalse_WhenDirectoryHasOnlyNonTiffFiles()
+    public void ImageSequenceExists_ReturnsTrue_WhenDirectoryHasNumericJpgFiles()
     {
         var dir = Directory.CreateTempSubdirectory("avyscanlab_tests_");
         File.WriteAllText(Path.Combine(dir.FullName, "00001.jpg"), "");
         try
         {
-            Assert.False(_svc.ImageSequenceExists(Path.Combine(dir.FullName, "00001.tif")));
+            Assert.True(_svc.ImageSequenceExists(Path.Combine(dir.FullName, "00001.jpg")));
+        }
+        finally
+        {
+            dir.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public void ImageSequenceExists_ReturnsFalse_WhenDirectoryHasOnlyNonImageFiles()
+    {
+        var dir = Directory.CreateTempSubdirectory("avyscanlab_tests_");
+        File.WriteAllText(Path.Combine(dir.FullName, "00001.txt"), "");
+        try
+        {
+            // Pass a pattern path that doesn't exist as a file, so it falls through to directory enumeration
+            Assert.False(_svc.ImageSequenceExists(Path.Combine(dir.FullName, "%05d.txt")));
         }
         finally
         {

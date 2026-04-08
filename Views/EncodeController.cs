@@ -1240,15 +1240,16 @@ public sealed class EncodeController
         Config.Set("film", normalized);
         Config.Set("img", normalized);
 
+        // Reset crop defaults before loading clip config, so clip-specific crop values take precedence
+        foreach (var cropField in new[] { "Crop_L", "Crop_T", "Crop_R", "Crop_B" })
+            Config.Set(cropField, "0");
+        Config.Set("enable_crop", "false");
+
         {
             var clipCfg = Clips[clipIndex].Config;
             foreach (var kv in clipCfg)
                 Config.Set(kv.Key, kv.Value);
         }
-
-        foreach (var cropField in new[] { "Crop_L", "Crop_T", "Crop_R", "Crop_B" })
-            Config.Set(cropField, "0");
-        Config.Set("enable_crop", "false");
 
         var isFilm = _host.SourceService.IsVideoSource(sourcePath);
         Config.Set("use_img", (!isFilm).ToString().ToLowerInvariant());
@@ -1442,8 +1443,12 @@ public sealed class EncodeController
 
                     _encodingProcess.Start();
 
+                    var clipDuration = _host.MpvService?.Duration ?? 0;
+                    var effectiveDuration = TrialMaxSeconds > 0
+                        ? (clipDuration > 0 ? Math.Min(TrialMaxSeconds, clipDuration) : TrialMaxSeconds)
+                        : clipDuration;
                     var stderrTask = ReadFfmpegStderrAsync(
-                        _encodingProcess.StandardError, TrialMaxSeconds, _encodingCts.Token,
+                        _encodingProcess.StandardError, effectiveDuration, _encodingCts.Token,
                         batchLabel);
 
                     await _encodingProcess.WaitForExitAsync(_encodingCts.Token);
@@ -1684,7 +1689,7 @@ public sealed class EncodeController
 
         try
         {
-            var proc = new Process
+            using var proc = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {

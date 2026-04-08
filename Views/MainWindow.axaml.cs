@@ -744,7 +744,7 @@ namespace AvyScanLab.Views
         }
 
         private string GetUiText(string key) => ViewModel.GetUiText(key);
-        private string GetLocalizedText(string fr, string en) => ViewModel.GetLocalizedText(fr, en);
+        private string GetLocalizedText(string fr, string en, string? de = null, string? es = null) => ViewModel.GetLocalizedText(fr, en, de, es);
 
         private static readonly string[] BackupFileNames =
         [
@@ -902,12 +902,13 @@ namespace AvyScanLab.Views
                 foreach (var (name, bytes) in validFiles)
                     await File.WriteAllBytesAsync(Path.Combine(appDir, name), bytes);
 
-                // Restart application to apply
+                // Restart application to apply — close gracefully so Closing handlers run
                 var exePath = Environment.ProcessPath;
                 if (exePath is not null)
                 {
                     System.Diagnostics.Process.Start(exePath);
-                    Environment.Exit(0);
+                    _isClosing = true;
+                    Close();
                 }
             }
             catch (Exception ex)
@@ -958,12 +959,13 @@ namespace AvyScanLab.Views
             var appDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppConstants.AppDataFolder);
             try { if (Directory.Exists(appDataDir)) Directory.Delete(appDataDir, recursive: true); } catch { }
 
-            // Restart application
+            // Restart application — close gracefully so Closing handlers run
             var exePath = Environment.ProcessPath;
             if (exePath is not null)
             {
                 System.Diagnostics.Process.Start(exePath);
-                Environment.Exit(0);
+                _isClosing = true;
+                Close();
             }
         }
 
@@ -1659,17 +1661,17 @@ namespace AvyScanLab.Views
                     else if (ctrl is ComboBox cb)
                         cb.SelectedItem = kv.Value;
                 }
+
+                foreach (var kv in values)
+                    UpdateConfigurationValue(kv.Key, kv.Value, showValidationError: false);
+                _config.Set("sharp_preset", preset);
+                MarkClipAsPerso();
             }
             finally
             {
                 _suppressTextEvents = false;
+                _applyingPreset = false;
             }
-
-            foreach (var kv in values)
-                UpdateConfigurationValue(kv.Key, kv.Value, showValidationError: false);
-            _config.Set("sharp_preset", preset);
-            _applyingPreset = false;
-            MarkClipAsPerso();
         }
 
         private void ApplyDegrainPreset(string preset)
@@ -1688,17 +1690,17 @@ namespace AvyScanLab.Views
                     else if (ctrl is ComboBox cb)
                         cb.SelectedItem = kv.Value;
                 }
+
+                foreach (var kv in values)
+                    UpdateConfigurationValue(kv.Key, kv.Value, showValidationError: false);
+                _config.Set("degrain_preset", preset);
+                MarkClipAsPerso();
             }
             finally
             {
                 _suppressTextEvents = false;
+                _applyingPreset = false;
             }
-
-            foreach (var kv in values)
-                UpdateConfigurationValue(kv.Key, kv.Value, showValidationError: false);
-            _config.Set("degrain_preset", preset);
-            _applyingPreset = false;
-            MarkClipAsPerso();
         }
 
         private void ApplyDenoisePreset(string preset)
@@ -1717,17 +1719,17 @@ namespace AvyScanLab.Views
                     else if (ctrl is ComboBox cb)
                         cb.SelectedItem = kv.Value;
                 }
+
+                foreach (var kv in values)
+                    UpdateConfigurationValue(kv.Key, kv.Value, showValidationError: false);
+                _config.Set("denoise_preset", preset);
+                MarkClipAsPerso();
             }
             finally
             {
                 _suppressTextEvents = false;
+                _applyingPreset = false;
             }
-
-            foreach (var kv in values)
-                UpdateConfigurationValue(kv.Key, kv.Value, showValidationError: false);
-            _config.Set("denoise_preset", preset);
-            _applyingPreset = false;
-            MarkClipAsPerso();
         }
 
         /// <summary>Marks the current preset as modified (dirty) when user changes a parameter.</summary>
@@ -2483,16 +2485,16 @@ namespace AvyScanLab.Views
                 {
                     _switchingClip = false;
                     SyncAllCombos();
-                }, Avalonia.Threading.DispatcherPriority.Background);
-            }
 
-            // If the user clicked another clip while we were switching,
-            // honour the last requested index now.
-            if (_pendingClipSwitch >= 0)
-            {
-                var next = _pendingClipSwitch;
-                _pendingClipSwitch = -1;
-                SwitchToClip(next);
+                    // If the user clicked another clip while we were switching,
+                    // honour the last requested index now (_switchingClip is false here).
+                    if (_pendingClipSwitch >= 0)
+                    {
+                        var next = _pendingClipSwitch;
+                        _pendingClipSwitch = -1;
+                        SwitchToClip(next);
+                    }
+                }, Avalonia.Threading.DispatcherPriority.Background);
             }
         }
 
@@ -3634,8 +3636,12 @@ namespace AvyScanLab.Views
         }
 
         /// <summary>
-        /// Returns the source clip size in 1:1 coordinates.
-        /// Derives it from the mpv video size and current preview/half-res mode.
+        /// Returns the clip size in "config coordinate" space — i.e. the dimensions
+        /// that region-draw coordinates are expressed in.
+        /// In non-preview non-half mode this equals the mpv video size (= filter input size).
+        /// In half-res mode, coordinates are doubled (CanvasToSourceCoords upscales ×2),
+        /// so we return mpv size × 2 to match.
+        /// In preview mode, we use the right-half width (= filter output at half-res) × 2.
         /// </summary>
         private (int W, int H) GetSourceSize()
         {
@@ -3650,15 +3656,21 @@ namespace AvyScanLab.Views
 
             if (isPreview)
             {
-                // StackHorizontal(half, half) → video = (sourceW, sourceH/2)
-                return (size.Width, size.Height * 2);
+                // Preview = StackHorizontal(src_half, 4px sep, final_half)
+                // The right half may be narrower than the left if filters crop.
+                // Right-half width = total - left_half - sep.
+                // Since we can't know left_half exactly, approximate as (total - sep) / 2.
+                // Coordinates are ×2 (half→source), so return ×2.
+                const int separatorWidth = 4;
+                int halfW = (size.Width - separatorWidth) / 2;
+                return (halfW * 2, size.Height * 2);
             }
             if (isHalfRes)
             {
-                // Video is at half resolution
+                // Video is at half resolution; coordinates are ×2
                 return (size.Width * 2, size.Height * 2);
             }
-            // 1:1
+            // 1:1 — mpv video = filter input/output (no resize)
             return (size.Width, size.Height);
         }
 
@@ -3682,10 +3694,39 @@ namespace AvyScanLab.Views
                 return (value / step) * step;
             }
 
+            // GetVideoClipSize returns the dimensions of the clip as the filter
+            // sees it — i.e. the mpv video dimensions (which already reflect upstream
+            // crop/stab/resize), NOT the original source.  In half-res mode the
+            // coordinates from CanvasToSourceCoords are already in "source 1:1" space
+            // (doubled), so we double the clip size to match.
+            var mpv = _playerController.MpvService;
+            var vidSize = mpv?.GetVideoSize() ?? (0, 0);
+            bool isHalfRes = _config.Get("preview_half") is { } hv
+                             && bool.TryParse(hv, out var hb) && hb;
+            bool isPreview = this.FindControl<Button>("preview") is { Tag: true };
+            int sw, sh;
+            if (isPreview)
+            {
+                const int sep = 4;
+                // Right half width = (total - sep) / 2, doubled for source 1:1
+                sw = ((vidSize.Width - sep) / 2) * 2;
+                sh = vidSize.Height * 2;
+            }
+            else if (isHalfRes)
+            {
+                // Video is at half-res; coordinates were doubled by CanvasToSourceCoords
+                sw = vidSize.Width * 2;
+                sh = vidSize.Height * 2;
+            }
+            else
+            {
+                sw = vidSize.Width;
+                sh = vidSize.Height;
+            }
+
             if (filter.RegionDrawMode == "crop")
             {
                 // Convert drawn XYWH → crop margins using placeholder names
-                var (sw, sh) = GetSourceSize();
                 int cl = Snap(p0, x);
                 int ct = Snap(p1, y);
                 int cr = Snap(p2, Math.Max(0, sw - x - w));
@@ -3697,26 +3738,36 @@ namespace AvyScanLab.Views
             }
             else
             {
-                _config.Set($"cf_{filterId}_{p0}", Snap(p0, x).ToString());
-                _config.Set($"cf_{filterId}_{p1}", Snap(p1, y).ToString());
-                _config.Set($"cf_{filterId}_{p2}", Snap(p2, w).ToString());
-                _config.Set($"cf_{filterId}_{p3}", Snap(p3, h).ToString());
+                // Clamp to clip bounds — the target filter may receive a smaller clip
+                // than the original source due to upstream crop/stab filters.
+                int cx = Math.Clamp(x, 0, Math.Max(0, sw - 2));
+                int cy = Math.Clamp(y, 0, Math.Max(0, sh - 2));
+                int cw = sw > 0 ? Math.Min(w, sw - cx - 1) : w;
+                int ch = sh > 0 ? Math.Min(h, sh - cy - 1) : h;
+
+                // Use 0 for "full extent" — many AviSynth plugins (e.g. GamMac)
+                // treat W=0/H=0 as "full width/height" and reject W >= clip_width.
+                if (cx <= 0 && cw >= sw - 2) cw = 0;
+                if (cy <= 0 && ch >= sh - 2) ch = 0;
+
+                _config.Set($"cf_{filterId}_{p0}", Snap(p0, cx).ToString());
+                _config.Set($"cf_{filterId}_{p1}", Snap(p1, cy).ToString());
+                _config.Set($"cf_{filterId}_{p2}", Snap(p2, Math.Max(0, cw)).ToString());
+                _config.Set($"cf_{filterId}_{p3}", Snap(p3, Math.Max(0, ch)).ToString());
             }
 
             if (!_applyingPreset && !_switchingClip)
                 MarkClipAsPerso();
 
-            RegenerateScript(showValidationError: false);
+            // Auto-deactivate draw mode and clear the overlay BEFORE regenerating
+            // (otherwise the drawbox persists on screen if the script reload fails)
+            CustomFilters.OnRegionDrawCompleted();
 
-            // Update the mpv drawbox overlay
-            ((IFilterPresenterHost)this).ShowRegionOverlay(filterId, x, y, w, h);
+            RegenerateScript(showValidationError: false);
 
             // Refresh sliders if panel is open (rebuild only this panel to preserve order)
             if (_openParamPanels.Contains($"CustomPanel_{filterId}"))
                 CustomFilters.RebuildPanelInPlace(filterId);
-
-            // Auto-deactivate draw mode after drawing
-            CustomFilters.OnRegionDrawCompleted();
 
             _ = LoadScriptAsync();
         }
@@ -3756,7 +3807,7 @@ namespace AvyScanLab.Views
         Window IPlayerHost.Window => this;
         SolidColorBrush IPlayerHost.ThemeBrush(string key) => ThemeBrush(key);
         string IPlayerHost.GetUiText(string key) => GetUiText(key);
-        string IPlayerHost.GetLocalizedText(string fr, string en) => GetLocalizedText(fr, en);
+        string IPlayerHost.GetLocalizedText(string fr, string en, string? de, string? es) => GetLocalizedText(fr, en, de, es);
         MainWindowViewModel IPlayerHost.ViewModel => ViewModel;
         ConfigStore IPlayerHost.Config => _config;
         IScriptService IPlayerHost.ScriptService => _scriptService;

@@ -36,7 +36,9 @@ public sealed class AviSynthService : IAviSynthService
     private static bool IsAviSynthPlusDllPresent()
     {
         var sys = Environment.GetFolderPath(Environment.SpecialFolder.System);
-        return !string.IsNullOrWhiteSpace(sys) && File.Exists(Path.Combine(sys, "avisynth.dll"));
+        if (string.IsNullOrWhiteSpace(sys)) return false;
+        var dll = Path.Combine(sys, "avisynth.dll");
+        return File.Exists(dll) && FileVersionInfo.GetVersionInfo(dll).FileMajorPart >= 3;
     }
 
     [SupportedOSPlatform("windows")]

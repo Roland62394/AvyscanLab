@@ -239,14 +239,18 @@ public sealed class RegionDrawController
         bool isPreview = _isPreview();
         if (isPreview)
         {
-            double halfVidW = vidW / 2.0;
+            // Preview layout: [src_half(W1)] [sep(4px)] [res_half(W1)]
+            // Total vidW = 2*W1 + 4.  The right half starts at W1 + 4.
+            const int separatorWidth = 4;
+            double halfW = (vidW - separatorWidth) / 2.0;
+            double rightStart = halfW + separatorWidth;
 
             // Must be on the right half (the "final" clip)
-            if (vx + vw <= halfVidW) return null; // entirely on left half → ignore
+            if (vx + vw <= rightStart) return null; // entirely on left half or separator → ignore
 
             // Clamp to right half — coordinates within the half
-            double rx = Math.Max(vx - halfVidW, 0);
-            double rw = Math.Min(vx + vw, vidW) - Math.Max(vx, halfVidW);
+            double rx = Math.Max(vx - rightStart, 0);
+            double rw = Math.Min(vx + vw, rightStart + halfW) - Math.Max(vx, rightStart);
             double ry = vy;
             double rh = vh;
 

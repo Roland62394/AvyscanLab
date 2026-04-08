@@ -266,6 +266,11 @@ public sealed class GuidedTourService
 
             async void UpdateStep()
             {
+                try { await UpdateStepCore(); } catch { /* prevent async void crash */ }
+            }
+
+            async Task UpdateStepCore()
+            {
                 var (targetName, titleKey, bodyKey, emoji, beforeAction) = Steps[step];
                 bool isFirst = step == 0;
                 bool isLast = step == Steps.Length - 1;
@@ -332,19 +337,6 @@ public sealed class GuidedTourService
                 {
                     target.Classes.Add("tour-highlight");
                     highlightedTarget = target;
-
-                    // Tunnel click handler for steps that need it
-                    if (step >= 2 && step is not (2 or 3 or 4 or 5 or 6 or 7))
-                    {
-                        highlightClickHandler = (_, e) =>
-                        {
-                            e.Handled = true;
-                            step++;
-                            if (step >= Steps.Length) CloseTour(); else UpdateStep();
-                        };
-                        target.AddHandler(InputElement.PointerPressedEvent,
-                            highlightClickHandler, RoutingStrategies.Tunnel);
-                    }
 
                     // Special AddClipBtn highlight
                     if (target is Button { Name: "AddClipBtn" } addClip)

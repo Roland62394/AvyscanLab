@@ -5,5 +5,7 @@
   "Scripts": [],
   "Code": "c = c.FlipVertical()",
   "Position": "FlipV",
+  "RegionDrawMode": "xywh",
+  "RegionDrawPlaceholders": [],
   "Controls": []
 }

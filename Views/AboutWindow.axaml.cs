@@ -47,8 +47,9 @@ namespace AvyScanLab.Views
             if (!string.IsNullOrWhiteSpace(imageUri))
             {
                 var uri = new Uri(imageUri, UriKind.RelativeOrAbsolute);
-                AboutImage.Source = uri.IsAbsoluteUri
-                    ? new Bitmap(AssetLoader.Open(uri))
+                using var stream = uri.IsAbsoluteUri ? AssetLoader.Open(uri) : null;
+                AboutImage.Source = stream is not null
+                    ? new Bitmap(stream)
                     : new Bitmap(imageUri);
             }
         }
