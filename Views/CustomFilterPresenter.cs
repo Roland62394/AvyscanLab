@@ -583,6 +583,7 @@ public sealed class CustomFilterPresenter
             stack.Children.Add(drawBtn);
         }
 
+        var tooltipId = filter.SourceId ?? filter.Id;
         foreach (var ctrl in filter.Controls)
         {
             var configKey = ScriptService.GetCustomFilterConfigKey(filter.Id, ctrl.Placeholder);
@@ -591,10 +592,10 @@ public sealed class CustomFilterPresenter
 
             stack.Children.Add(ctrl.Type switch
             {
-                "slider"   => BuildSlider(ctrl, configKey),
-                "combo"    => BuildCombo(ctrl, configKey),
-                "checkbox" => BuildCheckbox(ctrl, configKey),
-                _          => BuildTextBox(ctrl, configKey),
+                "slider"   => BuildSlider(ctrl, configKey, tooltipId),
+                "combo"    => BuildCombo(ctrl, configKey, tooltipId),
+                "checkbox" => BuildCheckbox(ctrl, configKey, tooltipId),
+                _          => BuildTextBox(ctrl, configKey, tooltipId),
             });
         }
 
@@ -658,7 +659,7 @@ public sealed class CustomFilterPresenter
 
     // ── Control builders ─────────────────────────────────────────────
 
-    private static TextBlock MakeParamLabel(CustomFilterControl ctrl, Thickness? margin = null)
+    private TextBlock MakeParamLabel(CustomFilterControl ctrl, string filterId, Thickness? margin = null)
     {
         var label = new TextBlock
         {
@@ -667,20 +668,42 @@ public sealed class CustomFilterPresenter
             VerticalAlignment = VerticalAlignment.Center
         };
         if (margin is { } m) label.Margin = m;
+
+        string? tip = null;
         if (!string.IsNullOrWhiteSpace(ctrl.Description))
         {
-            ToolTip.SetTip(label, ctrl.Description);
+            tip = ctrl.Description;
+        }
+        else
+        {
+            // Look up localized tooltip from ParamTooltipKeyMap → ParamTooltipTexts
+            var mapKey = $"{filterId}.{ctrl.Placeholder}";
+            if (FilterPresets.ParamTooltipKeyMap.TryGetValue(mapKey, out var labelKey))
+            {
+                // Set Name so ApplyParamTooltips can update on language change
+                label.Name = labelKey;
+                var lang = _host.ViewModel.CurrentLanguageCode ?? "en";
+                if (FilterPresets.ParamTooltipTexts.TryGetValue(labelKey, out var translations))
+                    tip = translations.TryGetValue(lang, out var t) ? t
+                        : translations.TryGetValue("en", out var en) ? en
+                        : null;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(tip))
+        {
+            ToolTip.SetTip(label, tip);
             label.Cursor = new Cursor(StandardCursorType.Help);
             label.TextDecorations = TextDecorations.Underline;
         }
         return label;
     }
 
-    private Control BuildSlider(CustomFilterControl ctrl, string configKey)
+    private Control BuildSlider(CustomFilterControl ctrl, string configKey, string filterId)
     {
         var grid = new Grid { ColumnDefinitions = ColumnDefinitions.Parse("Auto,Auto,70") };
 
-        var label = MakeParamLabel(ctrl, new Thickness(0, 0, 8, 0));
+        var label = MakeParamLabel(ctrl, filterId, new Thickness(0, 0, 8, 0));
         Grid.SetColumn(label, 0);
         grid.Children.Add(label);
 
@@ -763,10 +786,10 @@ public sealed class CustomFilterPresenter
         return grid;
     }
 
-    private Control BuildCombo(CustomFilterControl ctrl, string configKey)
+    private Control BuildCombo(CustomFilterControl ctrl, string configKey, string filterId)
     {
         var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        row.Children.Add(MakeParamLabel(ctrl));
+        row.Children.Add(MakeParamLabel(ctrl, filterId));
 
         var combo = new ComboBox();
         foreach (var opt in ctrl.Options) combo.Items.Add(opt);
@@ -782,10 +805,10 @@ public sealed class CustomFilterPresenter
         return row;
     }
 
-    private Control BuildCheckbox(CustomFilterControl ctrl, string configKey)
+    private Control BuildCheckbox(CustomFilterControl ctrl, string configKey, string filterId)
     {
         var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        row.Children.Add(MakeParamLabel(ctrl));
+        row.Children.Add(MakeParamLabel(ctrl, filterId));
 
         var current = _host.Config.Get(configKey) ?? ctrl.Default;
         var isOn = string.Equals(current, ctrl.OnValue, StringComparison.OrdinalIgnoreCase);
@@ -812,10 +835,10 @@ public sealed class CustomFilterPresenter
         return row;
     }
 
-    private Control BuildTextBox(CustomFilterControl ctrl, string configKey)
+    private Control BuildTextBox(CustomFilterControl ctrl, string configKey, string filterId)
     {
         var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        row.Children.Add(MakeParamLabel(ctrl));
+        row.Children.Add(MakeParamLabel(ctrl, filterId));
 
         var textBox = new TextBox
         {

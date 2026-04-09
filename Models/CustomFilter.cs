@@ -6,6 +6,10 @@ namespace AvyScanLab.Models;
 public sealed class CustomFilter
 {
     public string Id { get; set; } = Guid.NewGuid().ToString("N")[..8];
+
+    /// <summary>Original filter Id (for tooltip lookup on duplicated filters).</summary>
+    public string? SourceId { get; set; }
+
     public string Name { get; set; } = "Custom";
     public bool Enabled { get; set; }
     public List<string> Dlls { get; set; } = [];

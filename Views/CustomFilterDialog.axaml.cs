@@ -294,6 +294,7 @@ public partial class CustomFilterDialog : Window
         DuplicatedFilter = new CustomFilter
         {
             Id = Guid.NewGuid().ToString("N")[..8],
+            SourceId = _filter.SourceId ?? _filter.Id,
             Name = name + " (2)",
             Enabled = true,
             Position = _filter.Position,

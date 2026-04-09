@@ -1,13 +1,12 @@
 {
   "Id": "gammac",
   "Name": "GamMac",
-  "Dlls": ["GamMac_x64.dll"],
+  "Dlls": [],
   "Scripts": [],
-  "Code": "if (FunctionExists(\"GamMac\")) {\n  try {\n    base_pix = PixelType(c)\n    mx  = _MatrixAuto(c)\n    rgb = EnsureColorspaceSafe(c, \"RGB24\", matrix=mx)\n    gm_x = Min({X}, Width(rgb)-2)\n    gm_y = Min({Y}, Height(rgb)-2)\n    gm_w = ({W} > 0) ? Min({W}, Width(rgb)-gm_x-1) : 0\n    gm_h = ({H} > 0) ? Min({H}, Height(rgb)-gm_y-1) : 0\n    rgb = GamMac(rgb,\n      \\ LockChan={LockChan}, LockVal={LockVal},\n      \\ x=gm_x, y=gm_y, w=gm_w, h=gm_h,\n      \\ Scale={Scale}, Th={Th}, HiTh={HiTh},\n      \\ Omin={Omin}, Omax={Omax}, Show={Show}, Verbosity={Verbosity})\n    c = EnsureColorspaceSafe(rgb, base_pix, matrix=mx)\n  } catch(err) { pipeline_err = \"GamMac: \" + err }\n}",
+  "Code": "if (FunctionExists(\"GamMac\")) {\n  try {\n    base_pix = PixelType(c)\n    mx  = _MatrixAuto(c)\n    rgb = EnsureColorspaceSafe(c, \"RGB24\", matrix=mx)\n    rgb = GamMac(rgb,\n      \\ LockChan={LockChan}, LockVal={LockVal},\n      \\ x={X}, y={Y}, w={W}, h={H},\n      \\ Scale={Scale}, Th={Th}, HiTh={HiTh},\n      \\ Omin={Omin}, Omax={Omax}, Show={Show}, Verbosity={Verbosity})\n    c = EnsureColorspaceSafe(rgb, base_pix, matrix=mx)\n  } catch(err) { pipeline_err = \"GamMac: \" + err }\n}",
   "Position": "GamMac",
-  "RegionDraw": true,
   "RegionDrawMode": "xywh",
-  "RegionDrawPlaceholders": ["X", "Y", "W", "H"],
+  "RegionDrawPlaceholders": [],
   "Controls": [
     {
       "Placeholder": "LockChan",
@@ -69,8 +68,7 @@
       "Step": 1,
       "Options": [],
       "OnValue": "true",
-      "OffValue": "false",
-      "ScaleWithPreview": true
+      "OffValue": "false"
     },
     {
       "Placeholder": "Y",
@@ -80,8 +78,7 @@
       "Step": 1,
       "Options": [],
       "OnValue": "true",
-      "OffValue": "false",
-      "ScaleWithPreview": true
+      "OffValue": "false"
     },
     {
       "Placeholder": "W",
@@ -91,8 +88,7 @@
       "Step": 1,
       "Options": [],
       "OnValue": "true",
-      "OffValue": "false",
-      "ScaleWithPreview": true
+      "OffValue": "false"
     },
     {
       "Placeholder": "H",
@@ -102,8 +98,7 @@
       "Step": 1,
       "Options": [],
       "OnValue": "true",
-      "OffValue": "false",
-      "ScaleWithPreview": true
+      "OffValue": "false"
     },
     {
       "Placeholder": "Omin",

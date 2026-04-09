@@ -294,4 +294,55 @@ public static class FilterPresets
             ["de"] = "Nur Edge-Modus: minimaler Maskenschwellwert (nach Gammakompression) zum Auslösen der Schärfung. Gammakompression allein reicht oft aus — threshold=0 zum Deaktivieren. Empfohlen bei verbleibendem Korn: 20–40. Keine Wirkung im Simple-Modus.",
             ["es"] = "Solo modo edge: umbral mínimo de respuesta de la máscara (después de la compresión gamma) para activar el enfoque. La compresión gamma sola suele ser suficiente — threshold=0 para desactivarla. Recomendado si persiste grano residual: 20–40. Sin efecto en modo simple." },
     };
+
+    /// <summary>Maps (filterId.placeholder) to the ParamTooltipTexts key for localized tooltips.</summary>
+    public static readonly Dictionary<string, string> ParamTooltipKeyMap = new(StringComparer.OrdinalIgnoreCase)
+    {
+        // Crop
+        ["crop.left"]   = "Label_Crop_L",
+        ["crop.top"]    = "Label_Crop_T",
+        ["crop.right"]  = "Label_Crop_R",
+        ["crop.bottom"] = "Label_Crop_B",
+        // Degrain
+        ["degrain.mode"]      = "Label_degrain_mode",
+        ["degrain.thSAD"]     = "Label_degrain_thSAD",
+        ["degrain.thSADC"]    = "Label_degrain_thSADC",
+        ["degrain.blksize"]   = "Label_degrain_blksize",
+        ["degrain.overlap"]   = "Label_degrain_overlap",
+        ["degrain.pel"]       = "Label_degrain_pel",
+        ["degrain.search"]    = "Label_degrain_search",
+        ["degrain.prefilter"] = "Label_degrain_prefilter",
+        ["degrain.preset"]    = "Label_degrain_preset",
+        // Denoise
+        ["denoise.mode"]     = "Label_denoise_mode",
+        ["denoise.strength"] = "Label_denoise_strength",
+        ["denoise.dist"]     = "Label_denoise_dist",
+        ["denoise.grey"]     = "Label_denoise_grey",
+        ["denoise.preset"]   = "Label_denoise_preset",
+        // Luma
+        ["luma.bright"]   = "Label_Lum_Bright",
+        ["luma.contrast"] = "Label_Lum_Contrast",
+        ["luma.sat"]      = "Label_Lum_Sat",
+        ["luma.hue"]      = "Label_Lum_Hue",
+        ["luma.gamma"]    = "Label_Lum_GammaY",
+        // GamMac
+        ["gammac.LockChan"]  = "Label_LockChan",
+        ["gammac.LockVal"]   = "Label_LockVal",
+        ["gammac.Scale"]     = "Label_Scale",
+        ["gammac.Th"]        = "Label_Th",
+        ["gammac.HiTh"]      = "Label_HiTh",
+        ["gammac.X"]         = "Label_X",
+        ["gammac.Y"]         = "Label_Y",
+        ["gammac.W"]         = "Label_W",
+        ["gammac.H"]         = "Label_H",
+        ["gammac.Omin"]      = "Label_Omin",
+        ["gammac.Omax"]      = "Label_Omax",
+        ["gammac.Show"]      = "Label_ShowPreview",
+        ["gammac.Verbosity"] = "Label_Verbosity",
+        // Sharpen
+        ["sharpen.mode"]      = "Label_Sharp_Mode",
+        ["sharpen.strength"]  = "Label_Sharp_Strength",
+        ["sharpen.radius"]    = "Label_Sharp_Radius",
+        ["sharpen.threshold"] = "Label_Sharp_Threshold",
+    };
 }

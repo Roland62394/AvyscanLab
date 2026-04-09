@@ -76,6 +76,15 @@
     </Content>
   </ItemGroup>
 
+  <!-- Demo film — loaded on first launch -->
+  <ItemGroup>
+    <Content Include="Film test.mp4">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+  </ItemGroup>
+
   <!-- Built-in filter definitions (JSON) — auto-imported on first startup -->
   <ItemGroup>
     <Content Include="Filters\*.json">

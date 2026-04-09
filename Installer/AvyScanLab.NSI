@@ -91,6 +91,9 @@ Section "!${APP_NAME} (required)" SecCore
     ; AviSynth script templates
     File "${PUBLISH_DIR}\ScriptMaster.en.avs"
 
+    ; Demo film (loaded on first launch)
+    File /nonfatal "${PUBLISH_DIR}\Film test.mp4"
+
     ; Built-in filter definitions (JSON)
     SetOutPath "$INSTDIR\Filters"
     File /nonfatal "${PUBLISH_DIR}\Filters\*.json"
@@ -263,12 +266,16 @@ Function .onInit
         ${EndIf}
     ${EndIf}
 
-    ; ── Check if AviSynth+ is already installed (64-bit registry) ──
+    ; ── Check if AviSynth+ is already installed ──
+    ; Method 1: registry (plugindir+ is reliably set by AviSynth+ installer)
     SetRegView 64
-    ReadRegStr $0 HKLM "SOFTWARE\AviSynth+" "Version"
+    ReadRegStr $0 HKLM "SOFTWARE\AviSynth" "plugindir+"
     SetRegView 32
     ${If} $0 != ""
-        ; Already installed — skip
+        Goto avs_done
+    ${EndIf}
+    ; Method 2: default install directory exists (even x64 installs to Program Files (x86))
+    ${If} ${FileExists} "$PROGRAMFILES32\AviSynth+\plugins64+\*.*"
         Goto avs_done
     ${EndIf}
 

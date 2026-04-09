@@ -490,6 +490,14 @@ namespace AvyScanLab.Views
                 if (_recordOpen)
                     RebuildBatchClipList();
 
+                // First launch or after reset: load bundled demo film if no clips were restored
+                if (Clips.Count == 0)
+                {
+                    var demoFilm = Path.Combine(AppContext.BaseDirectory, "Film test.mp4");
+                    if (File.Exists(demoFilm))
+                        await ApplyDetectedSourceAndRefreshAsync(demoFilm, skipLoad: true);
+                }
+
                 // Régénère toujours avec la bonne langue au démarrage (indépendamment de la validation source)
                 _scriptService.Generate(_config.Snapshot(), _customFilterService.Filters, ViewModel.CurrentLanguageCode);
             }
@@ -959,11 +967,12 @@ namespace AvyScanLab.Views
             var appDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppConstants.AppDataFolder);
             try { if (Directory.Exists(appDataDir)) Directory.Delete(appDataDir, recursive: true); } catch { }
 
-            // Restart application — close gracefully so Closing handlers run
+            // Restart application — skip exit feedback dialog on reset
             var exePath = Environment.ProcessPath;
             if (exePath is not null)
             {
                 System.Diagnostics.Process.Start(exePath);
+                _exitFeedbackShown = true;
                 _isClosing = true;
                 Close();
             }
@@ -1156,7 +1165,7 @@ namespace AvyScanLab.Views
                 MainGrid.RowDefinitions[2].Height = new GridLength(Math.Clamp(bph, 60, 800), GridUnitType.Pixel);
 
             if (saved?.FilterColumnWidth is { } fcw)
-                FilterGrid.ColumnDefinitions[0].Width = new GridLength(Math.Clamp(fcw, 120, 600), GridUnitType.Pixel);
+                FilterGrid.ColumnDefinitions[0].Width = new GridLength(Math.Clamp(fcw, 200, 600), GridUnitType.Pixel);
 
             _layoutInitialized = true;
 
