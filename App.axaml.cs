@@ -70,6 +70,17 @@ namespace AvyScanLab
         private static async Task ShowSplashThenMainAsync(IClassicDesktopStyleApplicationLifetime desktop)
         {
             var splash = new SplashWindow();
+
+            // Position the splash on the same screen as the saved main window position
+            var savedSettings = new WindowStateService(AppConstants.GetAppDataPath("window-settings.json")).Load();
+            if (savedSettings is not null)
+            {
+                splash.WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.Manual;
+                splash.Position = new Avalonia.PixelPoint(
+                    savedSettings.X + (int)((savedSettings.Width - splash.Width) / 2),
+                    savedSettings.Y + (int)((savedSettings.Height - splash.Height) / 2));
+            }
+
             desktop.MainWindow = splash;
             splash.Show();
 

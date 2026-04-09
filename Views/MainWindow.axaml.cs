@@ -1161,8 +1161,7 @@ namespace AvyScanLab.Views
 
             _layoutInitialized = true;
 
-            if (saved?.TourCompleted != true && Clips.Count == 0)
-                Dispatcher.UIThread.Post(() => _ = ShowGuidedTourAsync(), DispatcherPriority.Background);
+            // Tour will start after the user loads their first film (see ApplyDetectedSourceAndRefreshAsync)
         }
 
         private double GetStartupHeight(WindowSettings? saved)
@@ -1835,11 +1834,22 @@ namespace AvyScanLab.Views
             {
                 _refreshDebouncer.Cancel();
                 await LoadScriptAsync(resetPosition: true);
+                TryStartGuidedTourAfterLoad();
                 return;
             }
 
             if (!string.IsNullOrWhiteSpace(msg))
                 await _dialogService.ShowErrorAsync(this, GetUiText("ErrorTitle"), msg);
+
+            TryStartGuidedTourAfterLoad();
+        }
+
+        private void TryStartGuidedTourAfterLoad()
+        {
+            if (_isInitializing) return;
+            var settings = _windowStateService.Load();
+            if (settings?.TourCompleted != true)
+                Dispatcher.UIThread.Post(() => _ = ShowGuidedTourAsync(), DispatcherPriority.Background);
         }
 
         private void OnSourceDragOver(object? sender, DragEventArgs e)

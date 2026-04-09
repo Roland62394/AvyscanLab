@@ -83,7 +83,7 @@ public sealed class CustomFilterPresenter
         if (changed) _filterService.Save();
     }
 
-    private bool _inactiveExpanded;
+    private bool _inactiveExpanded = true;
 
     public void CollapseInactive() => _inactiveExpanded = false;
 

@@ -255,11 +255,11 @@ public sealed class GuidedTourService
 
             static int VerticalNudge(int s) => s switch
             {
-                1 => 70, 2 => 70, 3 => 50, 6 => -100, _ => 0,
+                1 => 70, 2 => 70, 3 => 50, 6 => 100, _ => 0,
             };
             static int HorizontalNudge(int s) => s switch
             {
-                0 => 120, 1 => 80, 6 => -120, _ => 0,
+                0 => 120, 1 => 80, 6 => 120, _ => 0,
             };
 
             // ── UpdateStep ───────────────────────────────────────────
