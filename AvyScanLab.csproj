@@ -15,6 +15,7 @@
     <FileVersion>1.0.0.0</FileVersion>
     <InformationalVersion>RC 1.0.0</InformationalVersion>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <NuGetAudit>false</NuGetAudit>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
 
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
@@ -76,14 +77,6 @@
     </Content>
   </ItemGroup>
 
-  <!-- Demo film — loaded on first launch -->
-  <ItemGroup>
-    <Content Include="Film test.mp4">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-    </Content>
-  </ItemGroup>
 
   <!-- Built-in filter definitions (JSON) — auto-imported on first startup -->
   <ItemGroup>

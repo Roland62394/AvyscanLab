@@ -490,14 +490,6 @@ namespace AvyScanLab.Views
                 if (_recordOpen)
                     RebuildBatchClipList();
 
-                // First launch or after reset: load bundled demo film if no clips were restored
-                if (Clips.Count == 0)
-                {
-                    var demoFilm = Path.Combine(AppContext.BaseDirectory, "Film test.mp4");
-                    if (File.Exists(demoFilm))
-                        await ApplyDetectedSourceAndRefreshAsync(demoFilm, skipLoad: true);
-                }
-
                 // Régénère toujours avec la bonne langue au démarrage (indépendamment de la validation source)
                 _scriptService.Generate(_config.Snapshot(), _customFilterService.Filters, ViewModel.CurrentLanguageCode);
             }
