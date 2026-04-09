@@ -91,9 +91,6 @@ Section "!${APP_NAME} (required)" SecCore
     ; AviSynth script templates
     File "${PUBLISH_DIR}\ScriptMaster.en.avs"
 
-    ; Demo film (loaded on first launch)
-    File /nonfatal "${PUBLISH_DIR}\Film test.mp4"
-
     ; Built-in filter definitions (JSON)
     SetOutPath "$INSTDIR\Filters"
     File /nonfatal "${PUBLISH_DIR}\Filters\*.json"
