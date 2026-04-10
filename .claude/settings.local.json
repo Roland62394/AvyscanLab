@@ -103,7 +103,8 @@
       "Bash(cp \"C:/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/AvyscanLab/Assets/Logo.png\" \"C:/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/AvyScanLab-Website/assets/logo.png\")",
       "Bash(cp \"C:/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/AvyscanLab/Assets/Ico.ico\" \"C:/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/AvyScanLab-Website/assets/favicon.ico\")",
       "Bash(powershell:*)",
-      "Bash(cmd:*)"
+      "Bash(cmd:*)",
+      "Bash(node -c \"C:\\\\Users\\\\larde\\\\Documents\\\\Documents administratifs\\\\Scanfilm\\\\Technique\\\\ScriptRestore\\\\AvyScanLab-Website\\\\js\\\\i18n.js\")"
     ]
   }
 }
