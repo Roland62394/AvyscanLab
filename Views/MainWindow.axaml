@@ -538,9 +538,10 @@
                             <MenuItem x:Name="LicenseMenuItem" Header="License..." Click="OnLicenseClick"/>
                         </MenuItem>
                         <MenuItem x:Name="LicenseTopMenuItem"
-                                  Header="🔑 License…"
+                                  Header="Activate license…"
                                   Click="OnLicenseClick"
                                   IsVisible="False"
+                                  FontWeight="SemiBold"
                                   Foreground="#FFD54F"/>
                     </Menu>
 

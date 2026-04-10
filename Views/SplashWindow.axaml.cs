@@ -41,23 +41,16 @@ namespace AvyScanLab.Views
                                  "#7BC67E"),
 
                 // ── Trial ──────────────────────────────────────────────────────
-                ("fr", false) => ("Version d'essai",
-                                  "1 clip · sans lot · sans filtres perso",
-                                  "#CEB35C"),
-                ("de", false) => ("Testversion",
-                                  "1 Clip · kein Batch · keine Eigenfilter",
-                                  "#CEB35C"),
-                ("es", false) => ("Versión de prueba",
-                                  "1 clip · sin lotes · sin filtros propios",
-                                  "#CEB35C"),
-                (_,    false) => ("Trial Version",
-                                  "1 clip · no batch · no custom filters",
-                                  "#CEB35C"),
+                ("fr", false) => ("Version d'essai limitée",       "", "#CEB35C"),
+                ("de", false) => ("Eingeschränkte Testversion",    "", "#CEB35C"),
+                ("es", false) => ("Versión de prueba limitada",    "", "#CEB35C"),
+                (_,    false) => ("Limited trial version",         "", "#CEB35C"),
             };
 
             StatusLine.Text = main;
             StatusLine.Foreground = new SolidColorBrush(Color.Parse(colorHex));
             StatusSubLine.Text = sub;
+            StatusSubLine.IsVisible = !string.IsNullOrEmpty(sub);
         }
     }
 }
