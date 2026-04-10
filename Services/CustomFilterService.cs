@@ -17,6 +17,50 @@ public sealed class CustomFilterService
         PropertyNameCaseInsensitive = true
     };
 
+    /// <summary>
+    /// Authoritative DLL/.avsi metadata for built-in filters.
+    /// This dictionary is the **single source of truth** that shields the app
+    /// from the recurring "empty Dlls/Scripts arrays" regression in
+    /// <c>Filters/*.json</c>: every time those JSON files were edited for an
+    /// unrelated reason (controls, descriptions, code), the Dlls/Scripts arrays
+    /// were silently reset to <c>[]</c> and the Custom Filter dialog stopped
+    /// showing the absolute paths the user expects.
+    ///
+    /// Lookup is by filter <c>Id</c>. Applied as a fallback in
+    /// <see cref="ImportBuiltInFilters"/> whenever the JSON-loaded list is empty,
+    /// so future edits of <c>Filters/*.json</c> can never lose this metadata
+    /// again. The DLL filenames must match what the NSIS installer copies into
+    /// the AviSynth+ <c>plugins64+</c> folder (see <c>Installer/AvyScanLab.NSI</c>).
+    /// </summary>
+    private static readonly Dictionary<string, (string[] Dlls, string[] Scripts)> BuiltInPlugins =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["degrain"] = (["mvtools2.dll", "RgTools.dll"],                  []),
+            ["denoise"] = (["RemoveDirt.dll", "RgTools.dll", "mvtools2.dll"], ["RemoveDirt.avsi"]),
+            ["gammac"]  = (["GamMac_x64.dll"],                                []),
+            ["sharpen"] = (["masktools2.dll"],                                []),
+            ["stab8mm"] = (["DePanEstimate.dll", "DePan.dll", "mvtools2.dll"], []),
+        };
+
+    /// <summary>Apply the built-in DLL/script defaults to a filter when its
+    /// JSON-loaded lists are empty. Returns true if anything was filled in.</summary>
+    private static bool ApplyBuiltInPluginDefaults(CustomFilter filter)
+    {
+        if (!BuiltInPlugins.TryGetValue(filter.Id, out var defaults)) return false;
+        var changed = false;
+        if (filter.Dlls.Count == 0 && defaults.Dlls.Length > 0)
+        {
+            filter.Dlls = [..defaults.Dlls];
+            changed = true;
+        }
+        if (filter.Scripts.Count == 0 && defaults.Scripts.Length > 0)
+        {
+            filter.Scripts = [..defaults.Scripts];
+            changed = true;
+        }
+        return changed;
+    }
+
     private static bool ListsEqual(List<string> a, List<string> b)
     {
         if (a.Count != b.Count) return false;
@@ -108,6 +152,11 @@ public sealed class CustomFilterService
             {
                 var json = File.ReadAllText(_filePath);
                 _filters = JsonSerializer.Deserialize<List<CustomFilter>>(json, JsonOpts) ?? [];
+
+                // Heal the user's persisted state in case a previous run wrote
+                // empty Dlls/Scripts for a built-in filter (regression defense).
+                foreach (var f in _filters)
+                    ApplyBuiltInPluginDefaults(f);
             }
         }
         catch
@@ -141,6 +190,11 @@ public sealed class CustomFilterService
                 var json = File.ReadAllText(jsonFile);
                 var filter = JsonSerializer.Deserialize<CustomFilter>(json, JsonOpts);
                 if (filter is null || string.IsNullOrWhiteSpace(filter.Id)) continue;
+
+                // Defense against the recurring "empty Dlls/Scripts" regression
+                // in shipped Filters/*.json: backfill from BuiltInPlugins so the
+                // sync below propagates correct paths into the user's AppData.
+                ApplyBuiltInPluginDefaults(filter);
 
                 if (existingById.TryGetValue(filter.Id, out var existing))
                 {

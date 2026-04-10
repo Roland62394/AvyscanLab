@@ -52,7 +52,7 @@ public class FilterJsonGeneratorTests
         Name = "GamMac",
         Enabled = false,
         Position = "GamMac",
-        Dlls = [],
+        Dlls = ["GamMac_x64.dll"],
         Code = """
             if (FunctionExists("GamMac")) {
               try {
@@ -94,7 +94,8 @@ public class FilterJsonGeneratorTests
         Name = "Denoise (RemoveDirt/MC)",
         Enabled = false,
         Position = "Denoise",
-        Dlls = [],
+        Dlls = ["RemoveDirt.dll", "RgTools.dll", "mvtools2.dll"],
+        Scripts = ["RemoveDirt.avsi"],
         Code = """
             function DenoiseFilm(clip c, string "mode", float "strength", int "dist", bool "grey", string "matrix")
             {
@@ -143,7 +144,7 @@ public class FilterJsonGeneratorTests
         Name = "Degrain (MVTools2)",
         Enabled = false,
         Position = "Degrain",
-        Dlls = [],
+        Dlls = ["mvtools2.dll", "RgTools.dll"],
         Code = """
             function DegrainFilm(clip c, string "mode", int "thSAD", int "thSADC",
             \                    int "blksize", int "overlap", int "pel", int "search",
@@ -258,7 +259,7 @@ public class FilterJsonGeneratorTests
         Name = "Sharpen",
         Enabled = false,
         Position = "Sharpen",
-        Dlls = [],
+        Dlls = ["masktools2.dll"],
         Code = """
             function SharpenAdvanced(clip c, string "mode", float "strength", float "radius", int "threshold", string "matrix")
             {
