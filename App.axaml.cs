@@ -69,10 +69,11 @@ namespace AvyScanLab
 
         private static async Task ShowSplashThenMainAsync(IClassicDesktopStyleApplicationLifetime desktop)
         {
-            var splash = new SplashWindow();
+            // Read the saved language so the splash status line matches the user's locale.
+            var savedSettings = new WindowStateService(AppConstants.GetAppDataPath("window-settings.json")).Load();
+            var splash = new SplashWindow(savedSettings?.Language);
 
             // Position the splash on the same screen as the saved main window position
-            var savedSettings = new WindowStateService(AppConstants.GetAppDataPath("window-settings.json")).Load();
             if (savedSettings is not null)
             {
                 splash.WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.Manual;

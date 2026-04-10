@@ -586,6 +586,8 @@ namespace AvyScanLab.Views
                 ("ExportSettingsMenuItem", "ExportSettingsMenuItem"),
                 ("ImportSettingsMenuItem", "ImportSettingsMenuItem"),
                 ("ResetSettingsMenuItem", "ResetSettingsMenuItem"),
+                ("LicenseMenuItem",       "LicenseMenuItem"),
+                ("LicenseTopMenuItem",    "LicenseTopMenuItem"),
             })
             {
                 if (this.FindControl<MenuItem>(controlName) is { } item)
@@ -603,6 +605,13 @@ namespace AvyScanLab.Views
                 if (this.FindControl<MenuItem>(ctrlName) is { } mi)
                     ToolTip.SetTip(mi, GetUiText(tipKey));
             }
+
+            // License menu placement: top-level header in trial mode (call to action),
+            // tucked inside Settings once the user is licensed.
+            if (this.FindControl<MenuItem>("LicenseTopMenuItem") is { } topLic)
+                topLic.IsVisible = !LicenseService.IsLicensed;
+            if (this.FindControl<MenuItem>("LicenseMenuItem") is { } subLic)
+                subLic.IsVisible = LicenseService.IsLicensed;
 
             RefreshPresetCombo();
 
@@ -637,9 +646,15 @@ namespace AvyScanLab.Views
                 dropBar.Text = GetUiText("DropHintBar");
 
             if (this.FindControl<Button>("ImportCustomFilterBtn") is { } importBtn)
+            {
                 ToolTip.SetTip(importBtn, GetUiText("FilterImportTip"));
+                importBtn.IsVisible = LicenseService.IsLicensed;
+            }
             if (this.FindControl<Button>("AddCustomFilterBtn") is { } addBtn)
+            {
                 ToolTip.SetTip(addBtn, GetUiText("FilterAddTip"));
+                addBtn.IsVisible = LicenseService.IsLicensed;
+            }
             if (this.FindControl<Button>("ResetFilterOrderBtn") is { } resetBtn)
                 ToolTip.SetTip(resetBtn, GetUiText("FilterResetOrderTip"));
 
@@ -960,6 +975,223 @@ namespace AvyScanLab.Views
             try { if (Directory.Exists(appDataDir)) Directory.Delete(appDataDir, recursive: true); } catch { }
 
             // Restart application — skip exit feedback dialog on reset
+            var exePath = Environment.ProcessPath;
+            if (exePath is not null)
+            {
+                System.Diagnostics.Process.Start(exePath);
+                _exitFeedbackShown = true;
+                _isClosing = true;
+                Close();
+            }
+        }
+
+        private async void OnLicenseClick(object? sender, RoutedEventArgs e)
+        {
+            CloseSettingsMenu();
+
+            var monoFont = UiConstants.MonoFont;
+
+            string T(string fr, string en, string de, string es) =>
+                ViewModel.GetLocalizedText(fr: fr, en: en, de: de, es: es);
+
+            var statusBlock = new TextBlock
+            {
+                Text = LicenseService.IsLicensed
+                    ? "✓ " + T("Version complète activée", "Full version activated",
+                                "Vollversion aktiviert", "Versión completa activada")
+                    : T("Mode d'essai (limité)", "Trial mode (limited)",
+                        "Testmodus (eingeschränkt)", "Modo de prueba (limitado)"),
+                FontFamily = monoFont,
+                FontSize = 14,
+                FontWeight = FontWeight.SemiBold,
+                Foreground = LicenseService.IsLicensed
+                    ? new SolidColorBrush(Color.Parse("#4CAF50"))
+                    : new SolidColorBrush(Color.Parse("#FFA726")),
+                Margin = new Thickness(0, 0, 0, 6)
+            };
+
+            var introBlock = new TextBlock
+            {
+                Text = T(
+                    "Entrez votre clé de licence ci-dessous pour débloquer l'encodage par lot, " +
+                    "le chargement de plusieurs clips et la création/import de filtres personnalisés.",
+                    "Enter your license key below to unlock batch encoding, multi-clip loading " +
+                    "and custom filter creation/import.",
+                    "Geben Sie unten Ihren Lizenzschlüssel ein, um Stapelkodierung, das Laden " +
+                    "mehrerer Clips und die Erstellung/den Import benutzerdefinierter Filter freizuschalten.",
+                    "Introduzca su clave de licencia abajo para desbloquear la codificación por lotes, " +
+                    "la carga de múltiples clips y la creación/importación de filtros personalizados."),
+                TextWrapping = TextWrapping.Wrap,
+                MaxWidth = 460,
+                FontSize = 12,
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+
+            var keyBox = new TextBox
+            {
+                Watermark = "AVSL-XXXX-XXXX-XXXX",
+                Text = LicenseService.LicenseKey ?? "",
+                FontFamily = monoFont,
+                FontSize = 14,
+                Width = 320,
+                Padding = new Thickness(8, 6),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                IsReadOnly = LicenseService.IsLicensed
+            };
+
+            var feedbackBlock = new TextBlock
+            {
+                Text = "",
+                FontSize = 12,
+                Margin = new Thickness(0, 6, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+
+            var activateBtn = new Button
+            {
+                Content = T("Activer", "Activate", "Aktivieren", "Activar"),
+                MinWidth = 110,
+                IsVisible = !LicenseService.IsLicensed
+            };
+            var deactivateBtn = new Button
+            {
+                Content = T("Désactiver", "Deactivate", "Deaktivieren", "Desactivar"),
+                MinWidth = 110,
+                IsVisible = LicenseService.IsLicensed
+            };
+            var closeBtn = new Button
+            {
+                Content = GetUiText("GamMacCloseButton"),
+                MinWidth = 110
+            };
+
+            var buttonRow = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 8,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 12, 0, 0),
+                Children = { activateBtn, deactivateBtn, closeBtn }
+            };
+
+            var dialog = new Window
+            {
+                Title = T("Licence du logiciel", "Software license",
+                          "Softwarelizenz", "Licencia del software"),
+                SizeToContent = SizeToContent.WidthAndHeight,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                CanResize = false,
+                Content = new StackPanel
+                {
+                    Margin = new Thickness(20),
+                    Spacing = 4,
+                    Children = { statusBlock, introBlock, keyBox, feedbackBlock, buttonRow }
+                }
+            };
+
+            bool needsRestart = false;
+
+            // Modal confirmation that warns the user the app will restart.
+            async System.Threading.Tasks.Task<bool> ConfirmRestartAsync(string body)
+            {
+                var confirmed = false;
+                var yesBtn = new Button { Content = GetUiText("YesButton"), MinWidth = 90 };
+                var noBtn  = new Button { Content = GetUiText("NoButton"),  MinWidth = 90 };
+
+                var confirmDialog = new Window
+                {
+                    Title = T("Redémarrage requis", "Restart required",
+                              "Neustart erforderlich", "Reinicio requerido"),
+                    SizeToContent = SizeToContent.WidthAndHeight,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    CanResize = false,
+                    Content = new StackPanel
+                    {
+                        Margin = new Thickness(20),
+                        Spacing = 14,
+                        Children =
+                        {
+                            new TextBlock
+                            {
+                                Text = body,
+                                TextWrapping = TextWrapping.Wrap,
+                                MaxWidth = 420,
+                                FontSize = 13
+                            },
+                            new StackPanel
+                            {
+                                Orientation = Orientation.Horizontal,
+                                Spacing = 8,
+                                HorizontalAlignment = HorizontalAlignment.Center,
+                                Children = { yesBtn, noBtn }
+                            }
+                        }
+                    }
+                };
+
+                yesBtn.Click += (_, _) => { confirmed = true; confirmDialog.Close(); };
+                noBtn.Click  += (_, _) => confirmDialog.Close();
+                await confirmDialog.ShowDialog(dialog);
+                return confirmed;
+            }
+
+            activateBtn.Click += async (_, _) =>
+            {
+                // Validate the key shape first; only warn-then-restart if it actually unlocks.
+                if (!LicenseService.Validate(keyBox.Text))
+                {
+                    feedbackBlock.Foreground = new SolidColorBrush(Color.Parse("#E53935"));
+                    feedbackBlock.Text = "✗ " + T(
+                        "Clé de licence invalide.",
+                        "Invalid license key.",
+                        "Ungültiger Lizenzschlüssel.",
+                        "Clave de licencia no válida.");
+                    return;
+                }
+
+                var go = await ConfirmRestartAsync(T(
+                    "La clé est valide. L'application va se fermer puis se rouvrir automatiquement pour appliquer la licence. Continuer ?",
+                    "The key is valid. The application will close and automatically reopen to apply the license. Continue?",
+                    "Der Schlüssel ist gültig. Die Anwendung wird geschlossen und automatisch neu gestartet, um die Lizenz anzuwenden. Fortfahren?",
+                    "La clave es válida. La aplicación se cerrará y se reabrirá automáticamente para aplicar la licencia. ¿Continuar?"));
+                if (!go) return;
+
+                if (LicenseService.TryActivate(keyBox.Text))
+                {
+                    needsRestart = true;
+                    dialog.Close();
+                }
+                else
+                {
+                    feedbackBlock.Foreground = new SolidColorBrush(Color.Parse("#E53935"));
+                    feedbackBlock.Text = "✗ " + T(
+                        "Échec de l'activation.",
+                        "Activation failed.",
+                        "Aktivierung fehlgeschlagen.",
+                        "Error de activación.");
+                }
+            };
+
+            deactivateBtn.Click += async (_, _) =>
+            {
+                var go = await ConfirmRestartAsync(T(
+                    "La licence va être supprimée et l'application va se fermer puis se rouvrir automatiquement en mode d'essai. Continuer ?",
+                    "The license will be removed and the application will close and automatically reopen in trial mode. Continue?",
+                    "Die Lizenz wird entfernt und die Anwendung wird geschlossen und automatisch im Testmodus neu gestartet. Fortfahren?",
+                    "Se eliminará la licencia y la aplicación se cerrará y se reabrirá automáticamente en modo de prueba. ¿Continuar?"));
+                if (!go) return;
+
+                LicenseService.Deactivate();
+                needsRestart = true;
+                dialog.Close();
+            };
+
+            closeBtn.Click += (_, _) => dialog.Close();
+            await dialog.ShowDialog(this);
+
+            if (!needsRestart) return;
+
+            // Restart so all trial gates and UI elements pick up the new license state.
             var exePath = Environment.ProcessPath;
             if (exePath is not null)
             {
@@ -1874,17 +2106,21 @@ namespace AvyScanLab.Views
                 // Activate the first dropped file
                 await ApplyDetectedSourceAndRefreshAsync(paths[0]);
 
-                // Add remaining dropped files without activating
-                for (int i = 1; i < paths.Count; i++)
+                // Trial mode: only the first file is loaded; extras would clobber the
+                // single allowed clip. Licensed mode: queue the remaining files.
+                if (LicenseService.IsLicensed)
                 {
-                    var normalized = _sourceService.NormalizeConfiguredPath(NormalizeSourceValue(paths[i]));
-                    if (!Clips.Any(c => string.Equals(c.Path, normalized, StringComparison.OrdinalIgnoreCase)))
+                    for (int i = 1; i < paths.Count; i++)
                     {
-                        Clips.Add(new ClipState { Path = normalized, Config = _clipManager.CaptureConfig() });
+                        var normalized = _sourceService.NormalizeConfiguredPath(NormalizeSourceValue(paths[i]));
+                        if (!Clips.Any(c => string.Equals(c.Path, normalized, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            Clips.Add(new ClipState { Path = normalized, Config = _clipManager.CaptureConfig() });
+                        }
                     }
+                    if (paths.Count > 1)
+                        RebuildClipTabs();
                 }
-                if (paths.Count > 1)
-                    RebuildClipTabs();
             }
             catch (Exception ex) { DebugLog($"OnSourceDrop error: {ex.Message}"); }
             finally { _isDroppingFiles = false; }
@@ -1919,17 +2155,21 @@ namespace AvyScanLab.Views
                 // Activate the first dropped file
                 await ApplyDetectedSourceAndRefreshAsync(valid[0]);
 
-                // Add remaining files without activating
-                for (int i = 1; i < valid.Count; i++)
+                // Trial mode: only the first file is loaded; extras would clobber the
+                // single allowed clip. Licensed mode: queue the remaining files.
+                if (LicenseService.IsLicensed)
                 {
-                    var normalized = _sourceService.NormalizeConfiguredPath(NormalizeSourceValue(valid[i]));
-                    if (!Clips.Any(c => string.Equals(c.Path, normalized, StringComparison.OrdinalIgnoreCase)))
+                    for (int i = 1; i < valid.Count; i++)
                     {
-                        Clips.Add(new ClipState { Path = normalized, Config = _clipManager.CaptureConfig() });
+                        var normalized = _sourceService.NormalizeConfiguredPath(NormalizeSourceValue(valid[i]));
+                        if (!Clips.Any(c => string.Equals(c.Path, normalized, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            Clips.Add(new ClipState { Path = normalized, Config = _clipManager.CaptureConfig() });
+                        }
                     }
+                    if (valid.Count > 1)
+                        RebuildClipTabs();
                 }
-                if (valid.Count > 1)
-                    RebuildClipTabs();
             }
             catch (Exception ex) { DebugLog($"OnPlayerFilesDropped error: {ex.Message}"); }
             finally { _isDroppingFiles = false; }
@@ -2745,14 +2985,18 @@ namespace AvyScanLab.Views
             // Activate the first selected file
             await ApplyDetectedSourceAndRefreshAsync(newPaths[0]);
 
-            // Add remaining files without activating
-            for (int i = 1; i < newPaths.Count; i++)
+            // Trial mode: only the first file is loaded; extras would clobber the
+            // single allowed clip. Licensed mode: queue the remaining files.
+            if (LicenseService.IsLicensed)
             {
-                var normalized = _sourceService.NormalizeConfiguredPath(NormalizeSourceValue(newPaths[i]));
-                _clipManager.AddOrActivate(normalized, _clipManager.CaptureConfig());
+                for (int i = 1; i < newPaths.Count; i++)
+                {
+                    var normalized = _sourceService.NormalizeConfiguredPath(NormalizeSourceValue(newPaths[i]));
+                    _clipManager.AddOrActivate(normalized, _clipManager.CaptureConfig());
+                }
+                if (newPaths.Count > 1)
+                    RebuildClipTabs();
             }
-            if (newPaths.Count > 1)
-                RebuildClipTabs();
         }
 
         private void UpdateImageRangeFields(string directory)

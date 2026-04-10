@@ -163,6 +163,11 @@ public partial class CustomFilterDialog : Window
         DeleteBtn.IsVisible = !isNew;
         DuplicateBtn.IsVisible = !isNew;
 
+        // Trial mode: read-only view of the filter — disable every editable control
+        // and hide all action buttons that mutate state.
+        if (!LicenseService.IsLicensed)
+            ApplyReadOnlyMode();
+
         // Populate fields
         FilterNameBox.Text = filter.Name;
         RegionDrawCheck.IsChecked = filter.RegionDraw;
@@ -272,6 +277,43 @@ public partial class CustomFilterDialog : Window
         };
         okBtn.Click += (_, _) => dialog.Close();
         await dialog.ShowDialog(this);
+    }
+
+    /// <summary>
+    /// Trial mode: turn the dialog into a read-only viewer. The user can still
+    /// inspect/copy code and parameters but cannot save, delete, duplicate, export,
+    /// add plugins/scripts, or modify any value.
+    /// </summary>
+    private void ApplyReadOnlyMode()
+    {
+        // Editable text fields → read-only (still scrollable / copyable)
+        FilterNameBox.IsReadOnly = true;
+        CodeBox.IsReadOnly = true;
+
+        // Toggles & combos → disabled
+        RegionDrawCheck.IsEnabled = false;
+        RegionDrawModeCombo.IsEnabled = false;
+
+        // Hide the "add dll/script/save" buttons — those would let the user
+        // mutate the filter or persist changes.
+        AddDllBtn.IsVisible = false;
+        AddScriptBtn.IsVisible = false;
+        SaveBtn.IsVisible = false;
+        PreviewBtn.IsVisible = false;
+
+        // Keep Delete / Export / Duplicate visible (so the user sees the full form),
+        // but disable them — they're paid-version actions.
+        DeleteBtn.IsEnabled = false;
+        DuplicateBtn.IsEnabled = false;
+        ExportBtn.IsEnabled = false;
+
+        // Lock the dynamic params/lists panels so their inner controls can't be edited
+        ControlsPanel.IsEnabled = false;
+        DllListPanel.IsEnabled = false;
+        ScriptListPanel.IsEnabled = false;
+
+        // Tag the title so the user understands the dialog is locked
+        TitleText.Text = L("CfDlgTitle").ToUpperInvariant() + "  —  " + L("CfDlgReadOnly");
     }
 
     private void OnSave()

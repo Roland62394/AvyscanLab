@@ -534,7 +534,14 @@
                             <MenuItem x:Name="ImportSettingsMenuItem" Header="Import settings..." Click="OnImportSettingsClick"/>
                             <Separator/>
                             <MenuItem x:Name="ResetSettingsMenuItem" Header="Reset settings" Click="OnResetSettingsClick"/>
+                            <Separator/>
+                            <MenuItem x:Name="LicenseMenuItem" Header="License..." Click="OnLicenseClick"/>
                         </MenuItem>
+                        <MenuItem x:Name="LicenseTopMenuItem"
+                                  Header="🔑 License…"
+                                  Click="OnLicenseClick"
+                                  IsVisible="False"
+                                  Foreground="#FFD54F"/>
                     </Menu>
 
                     <Menu x:Name="MainMenuRight" HorizontalAlignment="Right" DockPanel.Dock="Right">

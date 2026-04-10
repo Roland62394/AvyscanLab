@@ -10,9 +10,6 @@ public sealed class ClipManager
 {
     private readonly ConfigStore _config;
 
-    /// <summary>Trial: maximum number of clips allowed. 0 = unlimited (full version).</summary>
-    public const int TrialMaxClips = 3;
-
     public ClipManager(ConfigStore config)
     {
         _config = config;
@@ -21,8 +18,9 @@ public sealed class ClipManager
     public List<ClipState> Clips { get; } = [];
     public int ActiveIndex { get; set; } = -1;
 
-    /// <summary>Returns true if the trial clip limit has been reached.</summary>
-    public bool IsClipLimitReached => TrialMaxClips > 0 && Clips.Count >= TrialMaxClips;
+    /// <summary>Returns true if the trial clip limit has been reached
+    /// (trial = single clip; licensed = unlimited).</summary>
+    public bool IsClipLimitReached => !LicenseService.IsLicensed && Clips.Count >= 1;
 
     public ClipState? ActiveClip =>
         ActiveIndex >= 0 && ActiveIndex < Clips.Count ? Clips[ActiveIndex] : null;
@@ -40,8 +38,13 @@ public sealed class ClipManager
             return false;
         }
 
-        // Trial clip limit
-        if (IsClipLimitReached) return false;
+        // Trial mode: a new clip replaces the existing single clip.
+        // Licensed mode: clips accumulate freely.
+        if (!LicenseService.IsLicensed && Clips.Count >= 1)
+        {
+            Clips.Clear();
+            ActiveIndex = -1;
+        }
 
         Clips.Add(new ClipState
         {

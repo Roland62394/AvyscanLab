@@ -97,7 +97,13 @@
       "Bash(python3 fix_guides.py)",
       "WebFetch(domain:www.scanfilm.ch)",
       "Bash(tasklist)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(mkdir -p \"C:/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/AvyScanLab-Website/assets\" \"C:/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/AvyScanLab-Website/css\" \"C:/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/AvyScanLab-Website/js\")",
+      "Read(//c/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/**)",
+      "Bash(cp \"C:/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/AvyscanLab/Assets/Logo.png\" \"C:/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/AvyScanLab-Website/assets/logo.png\")",
+      "Bash(cp \"C:/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/AvyscanLab/Assets/Ico.ico\" \"C:/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/AvyScanLab-Website/assets/favicon.ico\")",
+      "Bash(powershell:*)",
+      "Bash(cmd:*)"
     ]
   }
 }

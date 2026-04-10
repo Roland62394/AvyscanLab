@@ -212,6 +212,7 @@ public sealed class CustomFilterPresenter
 
     public async void OnAddClick(object? sender, RoutedEventArgs e)
     {
+        if (!LicenseService.IsLicensed) return;
         var filter = new CustomFilter { Name = "Custom " + _filterService.Filters.Count };
         var dialog = new CustomFilterDialog(filter, isNew: true, vm: _host.ViewModel,
             ownerHeight: _host.WindowHeight, themeService: _host.ThemeService)
@@ -239,6 +240,7 @@ public sealed class CustomFilterPresenter
 
     public async void OnImportClick(object? sender, RoutedEventArgs e)
     {
+        if (!LicenseService.IsLicensed) return;
         // Default to the Filters/ directory next to the executable
         Avalonia.Platform.Storage.IStorageFolder? startDir = null;
         var exeDir = System.IO.Path.GetDirectoryName(Environment.ProcessPath);

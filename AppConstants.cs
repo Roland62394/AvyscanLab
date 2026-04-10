@@ -12,8 +12,9 @@ public static class AppConstants
     public const string AppDataFolder = "AvyScanLab";
 
     // ── Trial limits ──
-    /// <summary>Max recording duration per clip in seconds. 0 = unlimited (full version).</summary>
-    public const int TrialMaxSeconds = 60;
+    /// <summary>Max recording duration per clip in seconds. 0 = unlimited.
+    /// Currently no time limit is enforced in either trial or licensed mode.</summary>
+    public const int TrialMaxSeconds = 0;
 
     // ── Config file names ──
     public const string WindowSettingsFileName  = "window-settings.json";

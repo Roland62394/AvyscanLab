@@ -32,6 +32,7 @@
             </Grid>
 
             <TextBlock Grid.Row="1"
+                       x:Name="StatusLine"
                        Text="Trial Version — Fully functional"
                        FontSize="16"
                        FontFamily="Consolas"
@@ -40,7 +41,8 @@
                        Margin="0,0,0,3"/>
 
             <TextBlock Grid.Row="2"
-                       Text="Limited to 3 files, 1 min. encoding each"
+                       x:Name="StatusSubLine"
+                       Text="Single clip — no batch encoding, no custom filters"
                        FontSize="13"
                        FontWeight="Light"
                        FontFamily="Consolas"
