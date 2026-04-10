@@ -41,17 +41,17 @@ namespace AvyScanLab.Views
                                  "#7BC67E"),
 
                 // ── Trial ──────────────────────────────────────────────────────
-                ("fr", false) => ("Version d'essai — Pleinement fonctionnelle",
-                                  "Un seul clip — pas d'encodage par lot, pas de filtres personnalisés",
+                ("fr", false) => ("Version d'essai",
+                                  "1 clip · sans lot · sans filtres perso",
                                   "#CEB35C"),
-                ("de", false) => ("Testversion — Voll funktionsfähig",
-                                  "Ein Clip — keine Stapelkodierung, keine benutzerdefinierten Filter",
+                ("de", false) => ("Testversion",
+                                  "1 Clip · kein Batch · keine Eigenfilter",
                                   "#CEB35C"),
-                ("es", false) => ("Versión de prueba — Totalmente funcional",
-                                  "Un solo clip — sin codificación por lotes, sin filtros personalizados",
+                ("es", false) => ("Versión de prueba",
+                                  "1 clip · sin lotes · sin filtros propios",
                                   "#CEB35C"),
-                (_,    false) => ("Trial Version — Fully functional",
-                                  "Single clip — no batch encoding, no custom filters",
+                (_,    false) => ("Trial Version",
+                                  "1 clip · no batch · no custom filters",
                                   "#CEB35C"),
             };
 
