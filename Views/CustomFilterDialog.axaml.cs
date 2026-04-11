@@ -163,6 +163,12 @@ public partial class CustomFilterDialog : Window
         DeleteBtn.IsVisible = !isNew;
         DuplicateBtn.IsVisible = !isNew;
 
+        // Built-in filter warning: tell the user that Code/Controls edits on a
+        // shipped filter will be silently reverted by ImportBuiltInFilters() on
+        // the next app start. The fix is for the user to click "Duplicate" and
+        // work on the clone (which has a random Id and is not built-in).
+        BuiltInWarningBanner.IsVisible = !isNew && CustomFilterService.IsBuiltIn(filter.Id);
+
         // Trial mode: read-only view of the filter — disable every editable control
         // and hide all action buttons that mutate state.
         if (!LicenseService.IsLicensed)
@@ -224,6 +230,7 @@ public partial class CustomFilterDialog : Window
         DeleteBtn.Content = L("CfDlgDelete");
         ExportBtn.Content = "\u2191 " + L("CfDlgExport");
         DuplicateBtn.Content = "\u2750 " + L("CfDlgDuplicate");
+        BuiltInWarningText.Text = L("CfDlgBuiltInWarning");
         HelpBtn.Content = "? " + L("CfDlgHelp");
         CancelBtn.Content = L("CfDlgCancel");
         SaveBtn.Content = L("CfDlgSave");

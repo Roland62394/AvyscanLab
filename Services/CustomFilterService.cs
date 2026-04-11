@@ -42,6 +42,72 @@ public sealed class CustomFilterService
             ["stab8mm"] = (["DePanEstimate.dll", "DePan.dll", "mvtools2.dll"], []),
         };
 
+    /// <summary>
+    /// Set of filter Ids that come from shipped <c>Filters/*.json</c> files.
+    /// Populated lazily on first access and also updated on every
+    /// <see cref="ImportBuiltInFilters"/> call. Used by
+    /// <c>CustomFilterDialog</c> to warn the user that modifications to a
+    /// built-in filter's Code/Controls/Dlls/Scripts are reset at startup.
+    /// </summary>
+    private static readonly HashSet<string> _builtInIds =
+        new(StringComparer.OrdinalIgnoreCase);
+    private static bool _builtInIdsLoaded;
+    private static readonly object _builtInIdsLock = new();
+
+    /// <summary>
+    /// Returns true if <paramref name="id"/> matches a shipped built-in filter.
+    /// Built-in filters are those whose Code/Controls/Dlls/Scripts are
+    /// re-synced from <c>Filters/*.json</c> on every app start by
+    /// <see cref="ImportBuiltInFilters"/>, so user modifications to those
+    /// fields are overwritten. Users who want to keep tweaks must duplicate
+    /// the filter first.
+    /// </summary>
+    public static bool IsBuiltIn(string? id)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return false;
+        if (!_builtInIdsLoaded)
+        {
+            lock (_builtInIdsLock)
+            {
+                if (!_builtInIdsLoaded)
+                {
+                    LoadBuiltInIdsFromDisk();
+                    _builtInIdsLoaded = true;
+                }
+            }
+        }
+        return _builtInIds.Contains(id);
+    }
+
+    /// <summary>
+    /// Scans the shipped <c>Filters/</c> directory once and fills
+    /// <see cref="_builtInIds"/>. Called lazily from <see cref="IsBuiltIn"/>
+    /// when the dialog is opened before <see cref="ImportBuiltInFilters"/>
+    /// has had a chance to run (e.g. unit tests, early UI paths).
+    /// </summary>
+    private static void LoadBuiltInIdsFromDisk()
+    {
+        try
+        {
+            var exeDir = Path.GetDirectoryName(Environment.ProcessPath);
+            if (string.IsNullOrWhiteSpace(exeDir)) return;
+            var filtersDir = Path.Combine(exeDir, "Filters");
+            if (!Directory.Exists(filtersDir)) return;
+            foreach (var jsonFile in Directory.GetFiles(filtersDir, "*.json"))
+            {
+                try
+                {
+                    var json = File.ReadAllText(jsonFile);
+                    var f = JsonSerializer.Deserialize<CustomFilter>(json, JsonOpts);
+                    if (f is not null && !string.IsNullOrWhiteSpace(f.Id))
+                        _builtInIds.Add(f.Id);
+                }
+                catch { /* skip malformed */ }
+            }
+        }
+        catch { /* best-effort */ }
+    }
+
     /// <summary>Apply the built-in DLL/script defaults to a filter when its
     /// JSON-loaded lists are empty. Returns true if anything was filled in.</summary>
     private static bool ApplyBuiltInPluginDefaults(CustomFilter filter)
@@ -190,6 +256,12 @@ public sealed class CustomFilterService
                 var json = File.ReadAllText(jsonFile);
                 var filter = JsonSerializer.Deserialize<CustomFilter>(json, JsonOpts);
                 if (filter is null || string.IsNullOrWhiteSpace(filter.Id)) continue;
+
+                // Track built-in Ids for IsBuiltIn() queries — the custom filter
+                // dialog uses this to warn the user when they're editing a filter
+                // whose Code/Controls will be overwritten on next startup.
+                _builtInIds.Add(filter.Id);
+                _builtInIdsLoaded = true;
 
                 // Defense against the recurring "empty Dlls/Scripts" regression
                 // in shipped Filters/*.json: backfill from BuiltInPlugins so the

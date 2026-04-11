@@ -50,7 +50,7 @@
            Background="{DynamicResource BgPanel}"
            BoxShadow="0 4 16 0 #40000000"
            CornerRadius="4">
-       <Grid RowDefinitions="Auto,*,Auto">
+       <Grid RowDefinitions="Auto,Auto,*,Auto">
 
            <!-- Title bar -->
            <Border x:Name="TitleBar"
@@ -83,8 +83,30 @@
                </Grid>
            </Border>
 
+           <!-- Built-in filter warning banner
+                Shown only when editing a shipped filter (wb32, denoise, gammac, ...).
+                Built-in filters are re-synced from Filters/*.json at every startup,
+                so Code / Controls / Dlls / Scripts edits are silently reverted.
+                The user must click "Duplicate" to keep their changes. -->
+           <Border x:Name="BuiltInWarningBanner"
+                   Grid.Row="1"
+                   IsVisible="False"
+                   Margin="20,12,20,0"
+                   Padding="14,8"
+                   Background="#3D2E1E"
+                   BorderBrush="#FFA726"
+                   BorderThickness="1"
+                   CornerRadius="3">
+               <TextBlock x:Name="BuiltInWarningText"
+                          Text=""
+                          FontSize="11"
+                          FontWeight="SemiBold"
+                          Foreground="#FFC780"
+                          TextWrapping="Wrap"/>
+           </Border>
+
            <!-- Main content: code (3*) + splitter + params (2*) -->
-           <Grid x:Name="MainContentGrid" Grid.Row="1" RowDefinitions="Auto,3*,4,2*">
+           <Grid x:Name="MainContentGrid" Grid.Row="2" RowDefinitions="Auto,3*,4,2*">
 
                <!-- Top section: Name, Position, DLLs -->
                <ScrollViewer Grid.Row="0"
@@ -243,7 +265,7 @@
            </Grid>
 
            <!-- Footer -->
-           <Border Grid.Row="2"
+           <Border Grid.Row="3"
                    BorderBrush="{DynamicResource BorderSubtle}"
                    BorderThickness="0,1,0,0"
                    Padding="14,10">
