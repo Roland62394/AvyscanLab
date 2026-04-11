@@ -1,8 +1,8 @@
                                  AvyScan LAB
                             Guía del usuario
 
-                                ScanFilm SNC
-                               www.scanfilm.ch
+                                   AvyScan
+                               www.avyscan.com
 
                  Versión de prueba — release 1.00 - marzo 2026
           Hasta 3 archivos cargados y 1 minuto de codificación por archivo
@@ -992,8 +992,8 @@ de codificación.
 =============================================================================================
 
                    AvyScan LAB 1.0.0 — GUÍA DEL USUARIO
-                                ScanFilm SNC
-                               www.scanfilm.ch
+                                   AvyScan
+                               www.avyscan.com
 
       Soporte: utilice el formulario Feedback integrado en la aplicación.
 

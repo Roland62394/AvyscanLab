@@ -13,8 +13,8 @@ GUIDES = {
     "fr": {
         "title": "C L E A N S C A N",
         "subtitle": "Guide de l'utilisateur",
-        "company": "ScanFilm SNC",
-        "website": "www.scanfilm.ch",
+        "company": "AvyScan",
+        "website": "www.avyscan.com",
         "version": "Version d'essai - Beta 5.0",
         "toc_title": "TABLE DES MATIERES",
         "sections": [
@@ -317,8 +317,8 @@ GUIDES = {
     "en": {
         "title": "C L E A N S C A N",
         "subtitle": "User Guide",
-        "company": "ScanFilm SNC",
-        "website": "www.scanfilm.ch",
+        "company": "AvyScan",
+        "website": "www.avyscan.com",
         "version": "Trial version - Beta 5.0",
         "toc_title": "TABLE OF CONTENTS",
         "sections": [
@@ -620,8 +620,8 @@ GUIDES = {
     "de": {
         "title": "C L E A N S C A N",
         "subtitle": "Benutzerhandbuch",
-        "company": "ScanFilm SNC",
-        "website": "www.scanfilm.ch",
+        "company": "AvyScan",
+        "website": "www.avyscan.com",
         "version": "Testversion - Beta 5.0",
         "toc_title": "INHALTSVERZEICHNIS",
         "sections": [
@@ -910,8 +910,8 @@ GUIDES = {
     "es": {
         "title": "C L E A N S C A N",
         "subtitle": "Guia del usuario",
-        "company": "ScanFilm SNC",
-        "website": "www.scanfilm.ch",
+        "company": "AvyScan",
+        "website": "www.avyscan.com",
         "version": "Version de prueba - Beta 5.0",
         "toc_title": "INDICE",
         "sections": [

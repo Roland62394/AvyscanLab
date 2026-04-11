@@ -22,8 +22,8 @@
 ; ── App metadata ──
 !define APP_NAME      "AvyScan Lab"
 !define APP_VERSION   "vers. 1.0"
-!define APP_PUBLISHER "ScanFilm SNC"
-!define APP_URL       "https://www.scanfilm.ch"
+!define APP_PUBLISHER "AvyScan"
+!define APP_URL       "https://www.avyscan.com"
 !define APP_EXE       "AvyScanLab.exe"
 !define PUBLISH_DIR   "..\bin\Release\net10.0\win-x64\publish"
 !define AVS_INSTALLER "AviSynthPlus_3.7.5_20250420_vcredist.exe"

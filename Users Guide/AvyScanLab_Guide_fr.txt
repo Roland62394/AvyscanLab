@@ -1,8 +1,8 @@
                                  AvyScan LAB
                             Guide de l’utilisateur
 
-                                ScanFilm SNC
-                               www.scanfilm.ch
+                                   AvyScan
+                               www.avyscan.com
 
                  Version d’essai — release 1.00 - mars 2026
           Jusqu’à 3 fichiers chargés et 1 minute d’encodage par fichier
@@ -991,8 +991,8 @@ Arborescence des fichiers distribués avec AvyScanLab :
 =============================================================================================
 
                    AvyScan LAB 1.0.0 — GUIDE DE L’UTILISATEUR
-                                ScanFilm SNC
-                               www.scanfilm.ch
+                                   AvyScan
+                               www.avyscan.com
 
       Support : utilisez le formulaire Feedback intégré dans l’application.
 

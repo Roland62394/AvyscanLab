@@ -1,8 +1,8 @@
                                  AvyScan LAB
                             User Guide
 
-                                ScanFilm SNC
-                               www.scanfilm.ch
+                                   AvyScan
+                               www.avyscan.com
 
                  Trial version — release 1.00 - March 2026
           Up to 3 files loaded and 1 minute of encoding per file
@@ -990,8 +990,8 @@ File tree distributed with AvyScanLab:
 =============================================================================================
 
                    AvyScan LAB 1.0.0 — USER GUIDE
-                                ScanFilm SNC
-                               www.scanfilm.ch
+                                   AvyScan
+                               www.avyscan.com
 
       Support: use the Feedback form built into the application.
 

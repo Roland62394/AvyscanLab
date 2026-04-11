@@ -26,7 +26,7 @@ class GuidePDF(FPDF):
     def header(self):
         self.set_font("Consolas", "I", 7)
         self.set_text_color(120, 120, 120)
-        self.cell(0, 4, "AvyScan Lab \u2014 ScanFilm SNC \u2014 www.scanfilm.ch",
+        self.cell(0, 4, "AvyScan Lab \u2014 AvyScan \u2014 www.avyscan.com",
                   align="R", new_x="LMARGIN", new_y="NEXT")
         self.ln(2)
 

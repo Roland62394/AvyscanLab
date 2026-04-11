@@ -1,8 +1,8 @@
                                  AvyScan LAB
                             Benutzerhandbuch
 
-                                ScanFilm SNC
-                               www.scanfilm.ch
+                                   AvyScan
+                               www.avyscan.com
 
                  Testversion — release 1.00 - März 2026
           Bis zu 3 geladene Dateien und 1 Minute Encoding pro Datei
@@ -991,8 +991,8 @@ Verzeichnisstruktur der mit AvyScanLab verteilten Dateien:
 =============================================================================================
 
                    AvyScan LAB 1.0.0 — BENUTZERHANDBUCH
-                                ScanFilm SNC
-                               www.scanfilm.ch
+                                   AvyScan
+                               www.avyscan.com
 
       Support: Verwenden Sie das integrierte Feedback-Formular in der Anwendung.
 

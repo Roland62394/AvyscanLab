@@ -1,8 +1,8 @@
                               C L E A N S C A N
                             Guide de l’utilisateur
 
-                                ScanFilm SNC
-                               www.scanfilm.ch
+                                   AvyScan
+                               www.avyscan.com
 
                  Version d’essai — release 1.00 - mars 2026
 
@@ -824,8 +824,8 @@ Arborescence des fichiers distribués avec AvyScanLab :
 =============================================================================================
 
                               C L E A N S C A N
-                                ScanFilm SNC
-                               www.scanfilm.ch
+                                   AvyScan
+                               www.avyscan.com
 
              Support : utilisez le formulaire Feedback intégré dans l’application.
 
