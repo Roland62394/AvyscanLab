@@ -171,6 +171,11 @@ namespace AvyScanLab.Views
                 RoutingStrategies.Tunnel,
                 handledEventsToo: true);
 
+            // Live-refresh licence-dependent UI (custom-filter buttons, licence
+            // menu placement) whenever LS toggles from trial ↔ licensed, without
+            // a language change or restart.
+            LicenseService.LicenseChanged += OnLicenseChangedRefresh;
+
             ConfigureMenuBar();
             InitTheme();
             PreApplyWindowPosition();
@@ -558,6 +563,7 @@ namespace AvyScanLab.Views
 
             _isClosing = true;
             _refreshDebouncer.Cancel();
+            LicenseService.LicenseChanged -= OnLicenseChangedRefresh;
             _config.Changed -= OnConfigChangedForSlider;
 
             // Kill any running encoding process (delegated to EncodeController — not needed,
@@ -620,13 +626,6 @@ namespace AvyScanLab.Views
                     ToolTip.SetTip(mi, GetUiText(tipKey));
             }
 
-            // License menu placement: top-level header in trial mode (call to action),
-            // tucked inside Settings once the user is licensed.
-            if (this.FindControl<MenuItem>("LicenseTopMenuItem") is { } topLic)
-                topLic.IsVisible = !LicenseService.IsLicensed;
-            if (this.FindControl<MenuItem>("LicenseMenuItem") is { } subLic)
-                subLic.IsVisible = LicenseService.IsLicensed;
-
             RefreshPresetCombo();
 
             if (this.FindControl<Button>("GlobalPresetBtn") is { } globalPresetBtn)
@@ -659,16 +658,12 @@ namespace AvyScanLab.Views
             if (this.FindControl<TextBlock>("DropHintBar") is { IsVisible: true } dropBar)
                 dropBar.Text = GetUiText("DropHintBar");
 
-            if (this.FindControl<Button>("ImportCustomFilterBtn") is { } importBtn)
-            {
-                ToolTip.SetTip(importBtn, GetUiText("FilterImportTip"));
-                importBtn.IsVisible = LicenseService.IsLicensed;
-            }
-            if (this.FindControl<Button>("AddCustomFilterBtn") is { } addBtn)
-            {
-                ToolTip.SetTip(addBtn, GetUiText("FilterAddTip"));
-                addBtn.IsVisible = LicenseService.IsLicensed;
-            }
+            // Custom-filter buttons: always visible, enabled only when licensed.
+            // Enable/disable state is kept in sync at runtime via the
+            // LicenseService.LicenseChanged subscription set up in InitializeWindow,
+            // so activating the licence updates the UI without a language change
+            // or restart.
+            ApplyLicenseDependentButtons();
             if (this.FindControl<Button>("ResetFilterOrderBtn") is { } resetBtn)
                 ToolTip.SetTip(resetBtn, GetUiText("FilterResetOrderTip"));
 
@@ -680,6 +675,51 @@ namespace AvyScanLab.Views
                 _scriptService.Generate(_config.Snapshot(), _customFilterService.Filters, ViewModel.CurrentLanguageCode);
                 SaveWindowSettings();
             }
+        }
+
+        /// <summary>
+        /// Refreshes every piece of UI whose enabled/visible state depends on
+        /// <see cref="LicenseService.IsLicensed"/>. Called from ApplyLanguage (initial
+        /// load + language switch) and from the LicenseChanged event handler so the
+        /// UI reacts live to activation / deactivation / dev-unlock toggles without
+        /// any restart or language change.
+        /// </summary>
+        private void ApplyLicenseDependentButtons()
+        {
+            var licensed = LicenseService.IsLicensed;
+
+            // Custom-filter toolbar buttons — always visible, disabled in trial.
+            // Tooltip appends a trial-mode hint so hovering explains why it's grey.
+            if (this.FindControl<Button>("ImportCustomFilterBtn") is { } importBtn)
+            {
+                importBtn.IsVisible = true;
+                importBtn.IsEnabled = licensed;
+                ToolTip.SetTip(importBtn, GetUiText("FilterImportTip")
+                    + (licensed ? "" : "\n(" + GetUiText("TrialTitle") + ")"));
+            }
+            if (this.FindControl<Button>("AddCustomFilterBtn") is { } addBtn)
+            {
+                addBtn.IsVisible = true;
+                addBtn.IsEnabled = licensed;
+                ToolTip.SetTip(addBtn, GetUiText("FilterAddTip")
+                    + (licensed ? "" : "\n(" + GetUiText("TrialTitle") + ")"));
+            }
+
+            // License menu placement: top-level "Activate licence" in trial,
+            // tucked inside Settings once licensed.
+            if (this.FindControl<MenuItem>("LicenseTopMenuItem") is { } topLic)
+                topLic.IsVisible = !licensed;
+            if (this.FindControl<MenuItem>("LicenseMenuItem") is { } subLic)
+                subLic.IsVisible = licensed;
+        }
+
+        /// <summary>
+        /// Subscribed to <see cref="LicenseService.LicenseChanged"/>. Marshals to
+        /// the UI thread since the event can fire from the LS revalidation task.
+        /// </summary>
+        private void OnLicenseChangedRefresh()
+        {
+            Dispatcher.UIThread.Post(ApplyLicenseDependentButtons);
         }
 
         private void ApplyRecordLabels()

@@ -163,6 +163,9 @@ The interface is organised into three main areas:
         1x      Speed (cycle: 0.25x -> 0.5x -> 1x; lowering the speed allows smoother playback without stuttering on less powerful machines)
         1/2     For preview, the display size is divided by 2 to reduce CPU load and allow better responsiveness.
         []      Maximise/Restore image size (F11)
+        📊      Histogram: shows a visual scope next to the image (left-click to toggle on/off).
+                Right-click this button to pick the scope type: Histogram, Histogram Parade,
+                Waveform or Vectorscope (see the Histogram section below).
         Preset  Select a previously saved settings preset
         👁      Display the window for creating/deleting/updating settings presets (filter presets, not encoding)
         REC     Open the encoding panel
@@ -265,6 +268,28 @@ Parameter interactions:
 Half-resolution mode:
     The "1/2" button activates half-resolution mode: the AviSynth script processes the image at half its size BEFORE the heavy filters, then displays it.
     This considerably speeds up preview on less powerful machines.
+
+Histogram:
+    The 📊 button in the transport bar shows a visual scope next to the image to
+    analyse color and luminance distribution. Useful for checking exposure, detecting
+    clipping and tuning white balance.
+
+        Left-click     Toggle the scope overlay on / off.
+        Right-click    Open a menu to pick the scope type.
+
+    Available scope types:
+        Histogram           Classic histogram: pixel density per brightness level (single plot,
+                            luma + chroma overlaid). Best for spotting clipping in shadows and
+                            highlights.
+        Histogram Parade    Three stacked histograms (R, G, B). Ideal for white balance and
+                            detecting color casts.
+        Waveform            Luma/chroma waveform: the horizontal axis matches the X position in
+                            the image, the vertical axis is the level. Very useful for finding
+                            local imbalances (e.g. a blown-out edge).
+        Vectorscope         Shows hue and saturation as a point cloud inside a chroma circle.
+                            Ideal for judging color fidelity and detecting hue drift.
+
+    The scope adapts automatically to half-resolution mode and to Preview mode (rendered side).
 
 Error display:
     If an AviSynth script error occurs, a banner appears in the player and an error window opens with:

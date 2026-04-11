@@ -163,6 +163,9 @@ L’interface est organisée en trois zones principales :
         1x      Vitesse (cycle : 0.25x -> 0.5x -> 1x ; l’abaissement de la vitesse permet une lecture plus fluide, sans à-coups sur les machines moins puissantes)
         1/2     Pour la prévisualisation, la taille de l’affichage est divisée par 2 afin de soulager le processeur et de permettre une meilleure réactivité.
         []      Maximiser/Restaurer la taille de l’image (F11)
+        📊      Histogramme : affiche un scope visuel à côté de l’image (clic gauche pour activer/désactiver).
+                Clic droit sur ce bouton pour choisir le type de représentation : Histogram, Histogram Parade,
+                Waveform ou Vectorscope (voir section Histogramme ci-dessous).
         Preset  Permet de sélectionner un preset de réglage préalablement mémorisé
         👁      Affiche la fenêtre permettant de créer/effacer/mettre à jour des presets de réglages (presets de filtres, pas d’encodage)
         REC     Ouvrir le panneau d’encodage
@@ -265,6 +268,29 @@ Interactions avec les paramètres :
 Mode demi-résolution :
     Le bouton "1/2" active le mode demi-résolution : le script AviSynth traite l’image à la moitié de sa taille AVANT les filtres lourds, puis l’affiche.
     Cela accélère considérablement la prévisualisation sur les machines moins puissantes.
+
+Histogramme :
+    Le bouton 📊 de la barre de transport affiche un scope visuel à côté de l’image pour
+    analyser la distribution des couleurs et de la luminance. Utile pour contrôler
+    l’exposition, détecter l’écrêtage et régler la balance des blancs.
+
+        Clic gauche    Active / désactive l’affichage du scope.
+        Clic droit     Ouvre un menu pour choisir le type de représentation.
+
+    Types disponibles :
+        Histogram           Histogramme classique : densité des pixels par niveau de luminosité
+                            (plot unique, luma + chroma superposés). Utile pour repérer l’écrêtage
+                            dans les ombres et les hautes lumières.
+        Histogram Parade    Trois histogrammes séparés empilés (R, V, B). Idéal pour la balance
+                            des blancs et détecter les dominantes de couleur.
+        Waveform            Vagueforme luma/chroma : l’axe horizontal correspond à la position X
+                            dans l’image, l’axe vertical au niveau. Très utile pour repérer les
+                            déséquilibres locaux (par exemple un bord surexposé).
+        Vectorscope         Affiche la teinte et la saturation sous forme de nuage de points dans
+                            un cercle chromatique. Idéal pour juger la fidélité des couleurs et
+                            détecter les dérives de teinte.
+
+    Le scope s’adapte automatiquement au mode demi-résolution et au mode Preview (côté rendu).
 
 Affichage des erreurs :
     En cas d’erreur de script AviSynth, un bandeau apparaît dans le lecteur et une fenêtre d’erreur s’ouvre avec :

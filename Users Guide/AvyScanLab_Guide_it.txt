@@ -163,6 +163,9 @@ L'interfaccia è organizzata in tre zone principali:
         1x      Velocità (ciclo: 0.25x -> 0.5x -> 1x; l'abbassamento della velocità consente una riproduzione più fluida, senza scatti sulle macchine meno potenti)
         1/2     Per l'anteprima, la dimensione di visualizzazione viene divisa per 2 per alleggerire il processore e consentire una migliore reattività.
         []      Massimizza/Ripristina la dimensione dell'immagine (F11)
+        📊      Istogramma: mostra uno scope visuale accanto all'immagine (clic sinistro per attivare/disattivare).
+                Clic destro su questo pulsante per scegliere il tipo di rappresentazione: Histogram, Histogram Parade,
+                Waveform o Vectorscope (vedi la sezione Istogramma più sotto).
         Preset  Permette di selezionare un preset di impostazioni precedentemente memorizzato
         👁      Mostra la finestra che permette di creare/eliminare/aggiornare i preset di impostazioni (preset di filtri, non di codifica)
         REC     Apri il pannello di codifica
@@ -265,6 +268,29 @@ Interazioni con i parametri:
 Modalità a metà risoluzione:
     Il pulsante "1/2" attiva la modalità a metà risoluzione: lo script AviSynth elabora l'immagine a metà della sua dimensione PRIMA dei filtri pesanti, poi la mostra.
     Questo accelera notevolmente l'anteprima sulle macchine meno potenti.
+
+Istogramma:
+    Il pulsante 📊 nella barra di trasporto mostra uno scope visuale accanto all'immagine
+    per analizzare la distribuzione del colore e della luminanza. Utile per controllare
+    l'esposizione, rilevare il clipping e regolare il bilanciamento del bianco.
+
+        Clic sinistro    Mostra / nasconde la sovrapposizione dello scope.
+        Clic destro      Apre un menu per scegliere il tipo di rappresentazione.
+
+    Tipi disponibili:
+        Histogram           Istogramma classico: densità dei pixel per livello di luminosità
+                            (grafico singolo, luma + chroma sovrapposti). Ideale per individuare
+                            il clipping nelle ombre e nelle alte luci.
+        Histogram Parade    Tre istogrammi impilati (R, G, B). Ideale per il bilanciamento del
+                            bianco e per rilevare dominanti di colore.
+        Waveform            Forma d'onda luma/chroma: l'asse orizzontale corrisponde alla
+                            posizione X nell'immagine, l'asse verticale al livello. Molto utile
+                            per trovare squilibri locali (es. un bordo sovraesposto).
+        Vectorscope         Mostra tinta e saturazione come nuvola di punti in un cerchio
+                            cromatico. Ideale per valutare la fedeltà del colore e rilevare
+                            derive di tinta.
+
+    Lo scope si adatta automaticamente alla modalità metà risoluzione e alla modalità Preview (lato renderizzato).
 
 Visualizzazione degli errori:
     In caso di errore dello script AviSynth, appare una barra nel lettore e si apre una finestra di errore con:

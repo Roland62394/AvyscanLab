@@ -163,6 +163,9 @@ La interfaz está organizada en tres zonas principales:
         1x      Velocidad (ciclo: 0.25x -> 0.5x -> 1x; la reducción de la velocidad permite una reproducción más fluida, sin saltos en las máquinas menos potentes)
         1/2     Para la previsualización, el tamaño de la visualización se divide por 2 para aliviar el procesador y permitir una mejor reactividad.
         []      Maximizar/Restaurar el tamaño de la imagen (F11)
+        📊      Histograma: muestra un osciloscopio visual junto a la imagen (clic izquierdo para mostrar/ocultar).
+                Clic derecho sobre este botón para elegir el tipo de representación: Histogram, Histogram Parade,
+                Waveform o Vectorscope (véase la sección Histograma más abajo).
         Preset  Permite seleccionar un preset de ajuste previamente memorizado
         👁      Muestra la ventana que permite crear/eliminar/actualizar presets de ajustes (presets de filtros, no de codificación)
         REC     Abrir el panel de codificación
@@ -265,6 +268,29 @@ Interacciones con los parámetros:
 Modo media resolución:
     El botón "1/2" activa el modo media resolución: el script AviSynth procesa la imagen a la mitad de su tamaño ANTES de los filtros pesados, y luego la muestra.
     Esto acelera considerablemente la previsualización en las máquinas menos potentes.
+
+Histograma:
+    El botón 📊 de la barra de transporte muestra un osciloscopio visual junto a la imagen
+    para analizar la distribución de color y luminancia. Útil para controlar la exposición,
+    detectar recortes y ajustar el balance de blancos.
+
+        Clic izquierdo    Muestra / oculta la superposición del scope.
+        Clic derecho      Abre un menú para elegir el tipo de representación.
+
+    Tipos disponibles:
+        Histogram           Histograma clásico: densidad de píxeles por nivel de brillo (gráfico
+                            único, luma + chroma superpuestos). Ideal para detectar recortes en
+                            sombras y luces.
+        Histogram Parade    Tres histogramas apilados (R, G, B). Ideal para el balance de blancos
+                            y detectar tintes de color.
+        Waveform            Forma de onda luma/chroma: el eje horizontal corresponde a la
+                            posición X en la imagen, el eje vertical al nivel. Muy útil para
+                            encontrar desequilibrios locales (p. ej. un borde sobreexpuesto).
+        Vectorscope         Muestra matiz y saturación como una nube de puntos dentro de un
+                            círculo cromático. Ideal para juzgar la fidelidad del color y
+                            detectar desviaciones de matiz.
+
+    El scope se adapta automáticamente al modo media resolución y al modo Preview (lado renderizado).
 
 Visualización de errores:
     En caso de error de script AviSynth, una banda aparece en el reproductor y una ventana de error se abre con:

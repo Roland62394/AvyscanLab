@@ -163,6 +163,9 @@ Die Oberfläche ist in drei Hauptbereiche gegliedert:
         1x      Geschwindigkeit (Zyklus: 0.25x -> 0.5x -> 1x; die Verringerung der Geschwindigkeit ermöglicht eine flüssigere Wiedergabe ohne Ruckeln auf weniger leistungsstarken Rechnern)
         1/2     Für die Vorschau wird die Anzeigegröße durch 2 geteilt, um den Prozessor zu entlasten und eine bessere Reaktionsfähigkeit zu ermöglichen.
         []      Bildgröße maximieren/wiederherstellen (F11)
+        📊      Histogramm: blendet ein visuelles Scope neben dem Bild ein (Linksklick zum Ein-/Ausblenden).
+                Rechtsklick auf diese Schaltfläche, um den Scope-Typ zu wählen: Histogram, Histogram Parade,
+                Waveform oder Vectorscope (siehe Abschnitt Histogramm unten).
         Preset  Ermöglicht die Auswahl einer zuvor gespeicherten Voreinstellung
         👁      Zeigt das Fenster zum Erstellen/Löschen/Aktualisieren von Einstellungs-Presets (Filter-Presets, nicht Encoding)
         REC     Encoding-Panel öffnen
@@ -265,6 +268,29 @@ Interaktionen mit den Parametern:
 Modus halbe Auflösung:
     Die Schaltfläche "1/2" aktiviert den Modus halbe Auflösung: Das AviSynth-Skript verarbeitet das Bild auf der Hälfte seiner Größe VOR den rechenintensiven Filtern und zeigt es dann an.
     Dies beschleunigt die Vorschau auf weniger leistungsstarken Rechnern erheblich.
+
+Histogramm:
+    Die Schaltfläche 📊 in der Transportleiste blendet ein visuelles Scope neben dem Bild
+    ein, um die Farb- und Luminanzverteilung zu analysieren. Nützlich zum Überprüfen der
+    Belichtung, zum Erkennen von Clipping und zum Einstellen des Weißabgleichs.
+
+        Linksklick     Scope ein- / ausblenden.
+        Rechtsklick    Öffnet ein Menü zur Auswahl des Scope-Typs.
+
+    Verfügbare Scope-Typen:
+        Histogram           Klassisches Histogramm: Pixeldichte pro Helligkeitsstufe (einzelner
+                            Plot, Luma + Chroma überlagert). Ideal, um Clipping in Schatten und
+                            Lichtern zu erkennen.
+        Histogram Parade    Drei übereinander gestapelte Histogramme (R, G, B). Ideal für den
+                            Weißabgleich und das Erkennen von Farbstichen.
+        Waveform            Luma/Chroma-Waveform: Die horizontale Achse entspricht der
+                            X-Position im Bild, die vertikale Achse dem Pegel. Sehr nützlich,
+                            um lokale Ungleichgewichte zu finden (z. B. eine überbelichtete Kante).
+        Vectorscope         Zeigt Farbton und Sättigung als Punktwolke in einem Chroma-Kreis.
+                            Ideal zur Beurteilung der Farbtreue und zum Erkennen von
+                            Farbtonverschiebungen.
+
+    Das Scope passt sich automatisch dem Halbauflösungsmodus und dem Preview-Modus (Render-Seite) an.
 
 Fehleranzeige:
     Bei einem AviSynth-Skriptfehler erscheint ein Banner im Player und ein Fehlerfenster öffnet sich mit:
