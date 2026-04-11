@@ -158,19 +158,6 @@ namespace AvyScanLab.Views
             _mainGrid = this.FindControl<Grid>("MainGrid");
             DataContext = new MainWindowViewModel();
 
-            // Dev-only shortcut: Ctrl+Shift+F12 toggles the license flag for
-            // the current session. We avoid Alt modifiers because on Windows
-            // the Alt key is consumed by menu-bar activation before it reaches
-            // the KeyDown handler. F12 is also safe because no Avalonia control
-            // (TextBox, ComboBox, etc.) treats it as text input. Registered as a
-            // TUNNEL handler with handledEventsToo:true so it fires even when a
-            // TextBox has focus.
-            this.AddHandler(
-                KeyDownEvent,
-                OnDevLicenseShortcut,
-                RoutingStrategies.Tunnel,
-                handledEventsToo: true);
-
             // Live-refresh licence-dependent UI (custom-filter buttons, licence
             // menu placement) whenever LS toggles from trial ↔ licensed, without
             // a language change or restart.
@@ -3482,76 +3469,6 @@ namespace AvyScanLab.Views
         private void OnMaxViewerClick(object? sender, RoutedEventArgs e) => _playerController.OnMaxViewerClick(sender, e);
         private void ToggleViewerMaximized() => _playerController.ToggleViewerMaximized();
         private void OnWindowKeyDown(object? sender, KeyEventArgs e) => _playerController.OnWindowKeyDown(sender, e);
-
-        /// <summary>
-        /// Tunnel-phase handler dedicated to the hidden Ctrl+Shift+F12
-        /// licence-toggle shortcut. Runs before any focused control sees the
-        /// event, so it works even inside TextBoxes and licence/update dialogs.
-        /// </summary>
-        private async void OnDevLicenseShortcut(object? sender, KeyEventArgs e)
-        {
-            if (e.Key != Key.F12) return;
-            var mods = e.KeyModifiers;
-            if (!mods.HasFlag(KeyModifiers.Control)) return;
-            if (!mods.HasFlag(KeyModifiers.Shift))   return;
-
-            var nowLicensed = LicenseService.DevUnlockToggle();
-            e.Handled = true;
-
-            // Show a visible confirmation popup so the user knows the toggle fired.
-            // We also update the status bar as a secondary signal.
-            var statusMsg = nowLicensed
-                ? "DEV: Full version UNLOCKED (session only)"
-                : "DEV: Trial mode restored (session only)";
-            ShowPlayerStatus(statusMsg);
-
-            var popupText = nowLicensed
-                ? "\u2713  Full version UNLOCKED\n\nAll trial gates are now open for this session.\nRestart the app to revert."
-                : "\u2717  Trial mode restored\n\nThe dev unlock has been cleared for this session.";
-
-            var okBtn = new Button
-            {
-                Content = "OK",
-                MinWidth = 96,
-                HorizontalContentAlignment = HorizontalAlignment.Center,
-                VerticalContentAlignment = VerticalAlignment.Center,
-            };
-            var popup = new Window
-            {
-                Title = "Developer unlock",
-                SizeToContent = SizeToContent.WidthAndHeight,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                CanResize = false,
-                Topmost = true,
-                ShowInTaskbar = false,
-                Content = new StackPanel
-                {
-                    Margin = new Thickness(24),
-                    Spacing = 16,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    Children =
-                    {
-                        new TextBlock
-                        {
-                            Text = popupText,
-                            FontSize = 13,
-                            TextAlignment = TextAlignment.Center,
-                            Foreground = nowLicensed
-                                ? new SolidColorBrush(Color.Parse("#4CAF50"))
-                                : new SolidColorBrush(Color.Parse("#FFA726")),
-                        },
-                        new StackPanel
-                        {
-                            Orientation = Orientation.Horizontal,
-                            HorizontalAlignment = HorizontalAlignment.Center,
-                            Children = { okBtn }
-                        }
-                    }
-                }
-            };
-            okBtn.Click += (_, _) => popup.Close();
-            await popup.ShowDialog(this);
-        }
         private void SyncForceSourceCombo(Dictionary<string, string> values) => _playerController.SyncForceSourceCombo(values);
         private void OnForceSourceChanged(object? sender, SelectionChangedEventArgs e) => _playerController.OnForceSourceChanged(sender, e);
 

@@ -104,23 +104,6 @@ public static class LicenseService
     }
 
     /// <summary>
-    /// Runtime-only dev backdoor. Toggles <see cref="IsLicensed"/> for the
-    /// current session without contacting Lemon Squeezy and without touching
-    /// license.dat on disk. Used by the hidden Ctrl+Shift+Alt+L shortcut so
-    /// testers can switch between trial and licensed UI without recompiling.
-    ///
-    /// Intentionally does NOT persist: a restart always reflects the true
-    /// licence state from disk / LS again.
-    /// </summary>
-    /// <returns>The new <see cref="IsLicensed"/> value after toggling.</returns>
-    public static bool DevUnlockToggle()
-    {
-        IsLicensed = !IsLicensed;
-        LicenseChanged?.Invoke();
-        return IsLicensed;
-    }
-
-    /// <summary>
     /// Structural check on a license key. Lemon Squeezy keys are UUIDs in the
     /// canonical 8-4-4-4-12 form. This is only a format check — it does not
     /// contact the server.
