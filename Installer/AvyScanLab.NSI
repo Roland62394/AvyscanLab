@@ -50,7 +50,11 @@ SetCompressor /SOLID lzma
 !define MUI_ABORTWARNING
 
 ; Installer pages
-; Welcome page has no header, nothing to override.
+; Welcome page — the default NSIS title "Welcome to the $(^NameDA) Setup Wizard"
+; overflows the fixed title box once Name is expanded to "AvyScan Lab vers. 1.0".
+; We use a short custom title (and matching body text) to avoid clipping.
+!define MUI_WELCOMEPAGE_TITLE "$(HDR_WEL_TITLE)"
+!define MUI_WELCOMEPAGE_TEXT  "$(HDR_WEL_TEXT)"
 !insertmacro MUI_PAGE_WELCOME
 
 ; Directory page — short custom header to avoid language-dependent clipping.
@@ -156,6 +160,21 @@ LangString MSG_UNINSTALL_FAILED ${LANG_SPANISH} "La desinstalación de la versi�
 LangString MSG_UNINSTALL_FAILED ${LANG_ITALIAN} "La disinstallazione della versione precedente non è riuscita (codice: $1).$\n$\nL'installazione verrà interrotta. Disinstalla manualmente la versione precedente tramite Programmi e funzionalità, quindi esegui nuovamente questo installatore."
 
 ; ── Page header strings (short — avoid clipping on languages with long text) ──
+; Welcome page (the big left-image intro screen)
+; NSIS default is "Welcome to the $(^NameDA) Setup Wizard" which, once expanded
+; with Name = "AvyScan Lab vers. 1.0", overflows the fixed title area and the
+; last line ("1.0") gets clipped at the bottom. We use a short custom title.
+LangString HDR_WEL_TITLE ${LANG_ENGLISH} "AvyScan Lab Setup"
+LangString HDR_WEL_TITLE ${LANG_FRENCH}  "Installation d'AvyScan Lab"
+LangString HDR_WEL_TITLE ${LANG_GERMAN}  "AvyScan Lab Installation"
+LangString HDR_WEL_TITLE ${LANG_SPANISH} "Instalación de AvyScan Lab"
+LangString HDR_WEL_TITLE ${LANG_ITALIAN} "Installazione di AvyScan Lab"
+LangString HDR_WEL_TEXT  ${LANG_ENGLISH} "This wizard will guide you through the installation of ${APP_NAME} ${APP_VERSION}.$\r$\n$\r$\nIt is recommended that you close all other applications before starting Setup.$\r$\n$\r$\nClick Next to continue."
+LangString HDR_WEL_TEXT  ${LANG_FRENCH}  "Cet assistant va vous guider tout au long de l'installation de ${APP_NAME} ${APP_VERSION}.$\r$\n$\r$\nIl est recommandé de fermer toutes les autres applications avant de lancer l'installation.$\r$\n$\r$\nCliquez sur Suivant pour continuer."
+LangString HDR_WEL_TEXT  ${LANG_GERMAN}  "Dieser Assistent wird Sie durch die Installation von ${APP_NAME} ${APP_VERSION} begleiten.$\r$\n$\r$\nEs wird empfohlen, alle anderen Anwendungen zu schließen, bevor Sie die Installation starten.$\r$\n$\r$\nKlicken Sie auf Weiter, um fortzufahren."
+LangString HDR_WEL_TEXT  ${LANG_SPANISH} "Este asistente le guiará a través de la instalación de ${APP_NAME} ${APP_VERSION}.$\r$\n$\r$\nSe recomienda cerrar todas las demás aplicaciones antes de iniciar la instalación.$\r$\n$\r$\nHaga clic en Siguiente para continuar."
+LangString HDR_WEL_TEXT  ${LANG_ITALIAN} "Questa procedura guidata ti accompagnerà nell'installazione di ${APP_NAME} ${APP_VERSION}.$\r$\n$\r$\nSi consiglia di chiudere tutte le altre applicazioni prima di avviare l'installazione.$\r$\n$\r$\nFai clic su Avanti per continuare."
+
 ; Directory page
 LangString HDR_DIR_TITLE ${LANG_ENGLISH} "Destination folder"
 LangString HDR_DIR_TITLE ${LANG_FRENCH}  "Dossier de destination"
