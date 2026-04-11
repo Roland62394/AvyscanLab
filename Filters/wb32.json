@@ -4,7 +4,7 @@
   "Enabled": false,
   "Dlls": [],
   "Scripts": [],
-  "Code": "# White Balance \u2014 32-bit float precision\n# Per-channel gain + gamma for precise color cast correction\n# Gain: overall channel multiplier (1.0 = neutral)\n# Gamma: midtone shift (>1 = brighten channel midtones, <1 = darken)\nmx = _MatrixAuto(c)\nc32 = EnsureColorspaceSafe(c, \"RGB24\", matrix=mx)\nc32 = ConvertToPlanarRGB(c32)\nc32 = ConvertBits(c32, 32)\nc = Expr(c32, \"x {r_gain} * 0.0 max 1.0 min 1.0 {r_gamma} / pow\", \"x {g_gain} * 0.0 max 1.0 min 1.0 {g_gamma} / pow\", \"x {b_gain} * 0.0 max 1.0 min 1.0 {b_gamma} / pow\")",
+  "Code": "# White Balance \u2014 32-bit float precision\n# Per-channel gain + gamma for precise color cast correction\n# Gain: overall channel multiplier (1.0 = neutral)\n# Gamma: midtone shift (>1 = brighten channel midtones, <1 = darken)\nbase_pix = PixelType(c)\nmx = _MatrixAuto(c)\nc32 = EnsureColorspaceSafe(c, \"RGB24\", matrix=mx)\nc32 = ConvertToPlanarRGB(c32)\nc32 = ConvertBits(c32, 32)\nc32 = Expr(c32, \"x {r_gain} * 0.0 max 1.0 min 1.0 {r_gamma} / pow\", \"x {g_gain} * 0.0 max 1.0 min 1.0 {g_gamma} / pow\", \"x {b_gain} * 0.0 max 1.0 min 1.0 {b_gamma} / pow\")\n# Restore 8-bit and return to the original pixel format so downstream filters\n# never see a 32-bit float clip (ffmpeg 8+ rejects YUV420PS / RGBPS).\nc8 = ConvertBits(c32, 8, dither=1)\nc = EnsureColorspaceSafe(c8, base_pix, matrix=mx)",
   "Position": "AfterGamMac",
   "Controls": [
     { "Placeholder": "r_gain", "Type": "slider", "Default": "1.0", "Description": "Red gain. >1 warms the image, <1 reduces red cast", "Min": 0.5, "Max": 2.0, "Step": 0.01, "Options": [], "OnValue": "true", "OffValue": "false" },

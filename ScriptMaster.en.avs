@@ -283,13 +283,18 @@ if (pipeline_err != "") {
 # PREVIEW / OUTPUT
 # =========================
 
+# Safety net: force `final` into a format ffmpeg can always open (YV12).
+# Without this, a custom filter that leaves the clip in 32-bit float or some
+# exotic high-bit-depth format (e.g. RGBPS, YUV420PS) makes ffmpeg bail out with
+# "unknown AviSynth colorspace <big int>". The preview branch already forces
+# YV24 below; we mirror the same idea for the non-preview branch.
 out = preview
     \ ? _BuildPreview(
     \     EnsureColorspaceSafe(src_flipped, "YV24", matrix=src_matrix),
     \     EnsureColorspaceSafe(final,   "YV24", matrix=src_matrix),
     \     label_size=preview_label_size,
     \     already_half=preview_half)
-    \ : final
+    \ : EnsureColorspaceSafe(final, "YV12", matrix=src_matrix)
 
 # Strip border padding added for temporal filters (image source only)
 out = (n_img_pad > 0) ? Trim(out, n_img_pad, n_img_pad + n_img_orig - 1) : out
