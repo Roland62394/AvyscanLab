@@ -232,7 +232,12 @@ public sealed class DialogService : IDialogService
         if (string.IsNullOrWhiteSpace(scriptPath) || !File.Exists(scriptPath))
         {
             await ShowErrorAsync(owner, vm.GetUiText("ErrorTitle"),
-                vm.GetLocalizedText(fr: "Le script ScriptUser.avs est introuvable.", en: "ScriptUser.avs was not found."));
+                vm.GetLocalizedText(
+                    fr: "Le script ScriptUser.avs est introuvable.",
+                    en: "ScriptUser.avs was not found.",
+                    de: "Das Skript ScriptUser.avs wurde nicht gefunden.",
+                    es: "No se encontr\u00f3 el script ScriptUser.avs.",
+                    it: "Lo script ScriptUser.avs non \u00e8 stato trovato."));
             return;
         }
 
@@ -247,13 +252,28 @@ public sealed class DialogService : IDialogService
             FontFamily = UiConstants.CodeFont
         };
 
-        var copyButton   = MakeButton(vm.GetLocalizedText(fr: "Copier dans le presse-papier", en: "Copy to clipboard"), minWidth: 200);
-        var reloadButton = MakeButton(vm.GetLocalizedText(fr: "Recharger", en: "Reload"), minWidth: 100);
+        var copyButton   = MakeButton(vm.GetLocalizedText(
+            fr: "Copier dans le presse-papier",
+            en: "Copy to clipboard",
+            de: "In die Zwischenablage kopieren",
+            es: "Copiar al portapapeles",
+            it: "Copia negli appunti"), minWidth: 200);
+        var reloadButton = MakeButton(vm.GetLocalizedText(
+            fr: "Recharger",
+            en: "Reload",
+            de: "Neu laden",
+            es: "Recargar",
+            it: "Ricarica"), minWidth: 100);
         var closeButton  = MakeButton(vm.GetUiText("GamMacCloseButton"));
 
         var dialog = new Window
         {
-            Title = vm.GetLocalizedText(fr: "Aperçu du script", en: "Script preview"),
+            Title = vm.GetLocalizedText(
+                fr: "Aperçu du script",
+                en: "Script preview",
+                de: "Skriptvorschau",
+                es: "Vista previa del script",
+                it: "Anteprima dello script"),
             Width = 980,
             Height = 650,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
@@ -281,9 +301,19 @@ public sealed class DialogService : IDialogService
             if (dialog.Clipboard is { } clipboard && !string.IsNullOrEmpty(scriptEditor.Text))
             {
                 await clipboard.SetTextAsync(scriptEditor.Text);
-                copyButton.Content = vm.GetLocalizedText(fr: "✓ Copié !", en: "✓ Copied!");
+                copyButton.Content = vm.GetLocalizedText(
+                    fr: "✓ Copié !",
+                    en: "✓ Copied!",
+                    de: "\u2713 Kopiert!",
+                    es: "\u2713 \u00a1Copiado!",
+                    it: "\u2713 Copiato!");
                 await Task.Delay(1500);
-                copyButton.Content = vm.GetLocalizedText(fr: "Copier dans le presse-papier", en: "Copy to clipboard");
+                copyButton.Content = vm.GetLocalizedText(
+                    fr: "Copier dans le presse-papier",
+                    en: "Copy to clipboard",
+                    de: "In die Zwischenablage kopieren",
+                    es: "Copiar al portapapeles",
+                    it: "Copia negli appunti");
             }
         };
 
@@ -744,9 +774,9 @@ public sealed class DialogService : IDialogService
         const string FormspreeEndpoint = "https://formspree.io/f/mvzwglbv";
 
         var lang = vm.CurrentLanguageCode;
-        string L(string en, string fr, string de, string es) => lang switch
+        string L(string en, string fr, string de, string es, string? it = null) => lang switch
         {
-            "fr" => fr, "de" => de, "es" => es, _ => en
+            "fr" => fr, "de" => de, "es" => es, "it" => it ?? en, _ => en
         };
 
         var monoFont = UiConstants.MonoFont;
@@ -767,8 +797,8 @@ public sealed class DialogService : IDialogService
             VerticalContentAlignment = VerticalAlignment.Center
         };
 
-        var nameBox = MakeField(L("Your name", "Votre nom", "Ihr Name", "Su nombre"));
-        var emailBox = MakeField(L("Your email", "Votre email", "Ihre E-Mail", "Su email"));
+        var nameBox = MakeField(L("Your name", "Votre nom", "Ihr Name", "Su nombre", it: "Il tuo nome"));
+        var emailBox = MakeField(L("Your email", "Votre email", "Ihre E-Mail", "Su email", it: "La tua email"));
 
         // Category
         var categoryCombo = new ComboBox
@@ -779,9 +809,9 @@ public sealed class DialogService : IDialogService
             FontFamily = monoFont,
             ItemsSource = new[]
             {
-                L("Bug report", "Signalement de bug", "Fehlerbericht", "Reporte de error"),
-                L("Feature request", "Demande de fonctionnalité", "Funktionswunsch", "Solicitud de función"),
-                L("General feedback", "Avis général", "Allgemeines Feedback", "Comentario general")
+                L("Bug report", "Signalement de bug", "Fehlerbericht", "Reporte de error", it: "Segnalazione bug"),
+                L("Feature request", "Demande de fonctionnalité", "Funktionswunsch", "Solicitud de función", it: "Richiesta funzionalità"),
+                L("General feedback", "Avis général", "Allgemeines Feedback", "Comentario general", it: "Commento generale")
             },
             SelectedIndex = 0
         };
@@ -793,7 +823,8 @@ public sealed class DialogService : IDialogService
                 "A few details help us fix things faster:\nWhat were you doing? What happened vs. what you expected?\nAny info about your video files or active filters is a bonus!",
                 "Quelques d\u00e9tails nous aident \u00e0 corriger plus vite :\nQue faisiez-vous\u00a0? Que s\u2019est-il pass\u00e9 par rapport \u00e0 ce que vous attendiez\u00a0?\nToute info sur vos fichiers vid\u00e9o ou filtres actifs est un plus\u00a0!",
                 "Ein paar Details helfen uns, schneller zu helfen:\nWas haben Sie gemacht? Was ist passiert vs. was Sie erwartet haben?\nInfos zu Ihren Videodateien oder aktiven Filtern sind ein Bonus!",
-                "Unos detalles nos ayudan a resolver m\u00e1s r\u00e1pido:\n\u00bfQu\u00e9 estabas haciendo? \u00bfQu\u00e9 pas\u00f3 vs. lo que esperabas?\n\u00a1Cualquier info sobre tus archivos de v\u00eddeo o filtros activos es un plus!"),
+                "Unos detalles nos ayudan a resolver m\u00e1s r\u00e1pido:\n\u00bfQu\u00e9 estabas haciendo? \u00bfQu\u00e9 pas\u00f3 vs. lo que esperabas?\n\u00a1Cualquier info sobre tus archivos de v\u00eddeo o filtros activos es un plus!",
+                it: "Qualche dettaglio ci aiuta a risolvere pi\u00f9 rapidamente:\nCosa stavi facendo? Cosa \u00e8 successo rispetto a ci\u00f2 che ti aspettavi?\nOgni informazione sui tuoi file video o filtri attivi \u00e8 un plus!"),
             FontSize = 11, FontFamily = monoFont,
             Foreground = new SolidColorBrush(Color.Parse("#D4A846")),
             TextWrapping = TextWrapping.Wrap,
@@ -838,7 +869,8 @@ public sealed class DialogService : IDialogService
             Watermark = L("Describe your issue or suggestion...",
                           "Décrivez votre problème ou suggestion...",
                           "Beschreiben Sie Ihr Problem oder Ihren Vorschlag...",
-                          "Describa su problema o sugerencia..."),
+                          "Describa su problema o sugerencia...",
+                          it: "Descrivi il tuo problema o suggerimento..."),
             Background = TB("BgInput"), Foreground = TB("TextSecondary"),
             BorderBrush = TB("BorderSubtle"), BorderThickness = new Thickness(1),
             FontFamily = monoFont, Padding = new Thickness(8, 6),
@@ -855,7 +887,7 @@ public sealed class DialogService : IDialogService
 
         var sendButton = new Button
         {
-            Content = L("Send", "Envoyer", "Senden", "Enviar"),
+            Content = L("Send", "Envoyer", "Senden", "Enviar", it: "Invia"),
             MinWidth = 120, Height = 32, Padding = new Thickness(16, 0),
             Background = new SolidColorBrush(Color.Parse("#35C156")),
             Foreground = Brushes.White, FontWeight = FontWeight.SemiBold,
@@ -866,7 +898,7 @@ public sealed class DialogService : IDialogService
 
         var closeButton = new Button
         {
-            Content = L("Close", "Fermer", "Schließen", "Cerrar"),
+            Content = L("Close", "Fermer", "Schließen", "Cerrar", it: "Chiudi"),
             MinWidth = 96, Height = 32, Padding = new Thickness(16, 0),
             Background = TB("BgHeader"),
             Foreground = TB("TextSecondary"), FontFamily = monoFont,
@@ -890,16 +922,16 @@ public sealed class DialogService : IDialogService
                     Spacing = 6,
                     Children =
                     {
-                        MakeLabel(L("Name", "Nom", "Name", "Nombre")),
+                        MakeLabel(L("Name", "Nom", "Name", "Nombre", it: "Nome")),
                         nameBox,
-                        MakeLabel(L("Email", "Email", "E-Mail", "Email")),
+                        MakeLabel(L("Email", "Email", "E-Mail", "Email", it: "Email")),
                         emailBox,
-                        MakeLabel(L("Category", "Catégorie", "Kategorie", "Categoría")),
+                        MakeLabel(L("Category", "Catégorie", "Kategorie", "Categoría", it: "Categoria")),
                         categoryCombo,
                         bugHelpText,
-                        MakeLabel(L("Message", "Message", "Nachricht", "Mensaje")),
+                        MakeLabel(L("Message", "Message", "Nachricht", "Mensaje", it: "Messaggio")),
                         messageBox,
-                        MakeLabel(L("Rating", "Note", "Bewertung", "Valoración")),
+                        MakeLabel(L("Rating", "Note", "Bewertung", "Valoración", it: "Valutazione")),
                         starPanel,
                         statusText,
                         new StackPanel
@@ -924,13 +956,14 @@ public sealed class DialogService : IDialogService
             {
                 statusText.Foreground = new SolidColorBrush(Color.Parse("#C62828"));
                 statusText.Text = L("Please enter a message.", "Veuillez saisir un message.",
-                    "Bitte geben Sie eine Nachricht ein.", "Por favor, introduzca un mensaje.");
+                    "Bitte geben Sie eine Nachricht ein.", "Por favor, introduzca un mensaje.",
+                    it: "Inserisci un messaggio.");
                 return;
             }
 
             sendButton.IsEnabled = false;
             statusText.Foreground = TB("TextPrimary");
-            statusText.Text = L("Sending...", "Envoi en cours...", "Wird gesendet...", "Enviando...");
+            statusText.Text = L("Sending...", "Envoi en cours...", "Wird gesendet...", "Enviando...", it: "Invio in corso...");
 
             try
             {
@@ -958,8 +991,9 @@ public sealed class DialogService : IDialogService
                     statusText.Text = L("Sent successfully! Thank you.",
                         "Envoyé avec succès ! Merci.",
                         "Erfolgreich gesendet! Danke.",
-                        "Enviado con éxito! Gracias.");
-                    sendButton.Content = L("Sent", "Envoyé", "Gesendet", "Enviado");
+                        "Enviado con éxito! Gracias.",
+                        it: "Inviato con successo! Grazie.");
+                    sendButton.Content = L("Sent", "Envoyé", "Gesendet", "Enviado", it: "Inviato");
                 }
                 else
                 {
@@ -968,7 +1002,8 @@ public sealed class DialogService : IDialogService
                     statusText.Text = L($"Send failed ({response.StatusCode}). {body}",
                         $"Échec de l'envoi ({response.StatusCode}). {body}",
                         $"Senden fehlgeschlagen ({response.StatusCode}). {body}",
-                        $"Error al enviar ({response.StatusCode}). {body}");
+                        $"Error al enviar ({response.StatusCode}). {body}",
+                        it: $"Invio non riuscito ({response.StatusCode}). {body}");
                     sendButton.IsEnabled = true;
                 }
             }
@@ -978,7 +1013,8 @@ public sealed class DialogService : IDialogService
                 statusText.Text = L($"Connection error: {ex.Message}",
                     $"Erreur de connexion : {ex.Message}",
                     $"Verbindungsfehler: {ex.Message}",
-                    $"Error de conexión: {ex.Message}");
+                    $"Error de conexión: {ex.Message}",
+                    it: $"Errore di connessione: {ex.Message}");
                 sendButton.IsEnabled = true;
             }
         };
@@ -1009,9 +1045,9 @@ public sealed class DialogService : IDialogService
     public async Task<(bool OpenContact, bool DontShowAgain)> ShowExitFeedbackDialogAsync(Window owner, MainWindowViewModel vm)
     {
         var lang = vm.CurrentLanguageCode;
-        string L(string en, string fr, string de, string es) => lang switch
+        string L(string en, string fr, string de, string es, string? it = null) => lang switch
         {
-            "fr" => fr, "de" => de, "es" => es, _ => en
+            "fr" => fr, "de" => de, "es" => es, "it" => it ?? en, _ => en
         };
 
         var openContact = false;
@@ -1127,9 +1163,9 @@ public sealed class DialogService : IDialogService
     public async Task ShowUpdateAvailableDialogAsync(Window owner, MainWindowViewModel vm, string latestVersion, string downloadUrl)
     {
         var lang = vm.CurrentLanguageCode;
-        string L(string en, string fr, string de, string es) => lang switch
+        string L(string en, string fr, string de, string es, string? it = null) => lang switch
         {
-            "fr" => fr, "de" => de, "es" => es, _ => en
+            "fr" => fr, "de" => de, "es" => es, "it" => it ?? en, _ => en
         };
 
         var messageText = new TextBlock
@@ -1138,15 +1174,16 @@ public sealed class DialogService : IDialogService
                 $"A new version of AvyScan Lab is available: v{latestVersion}\nYou are currently using v{UpdateService.CurrentVersion}.",
                 $"Une nouvelle version de AvyScan Lab est disponible : v{latestVersion}\nVous utilisez actuellement la v{UpdateService.CurrentVersion}.",
                 $"Eine neue Version von AvyScan Lab ist verf\u00fcgbar: v{latestVersion}\nSie verwenden derzeit v{UpdateService.CurrentVersion}.",
-                $"Una nueva versi\u00f3n de AvyScan Lab est\u00e1 disponible: v{latestVersion}\nActualmente usa la v{UpdateService.CurrentVersion}."),
+                $"Una nueva versi\u00f3n de AvyScan Lab est\u00e1 disponible: v{latestVersion}\nActualmente usa la v{UpdateService.CurrentVersion}.",
+                it: $"\u00c8 disponibile una nuova versione di AvyScan Lab: v{latestVersion}\nAttualmente stai usando la v{UpdateService.CurrentVersion}."),
             FontSize = 13,
             TextWrapping = TextWrapping.Wrap,
             Foreground = TB("TextPrimary"),
             Margin = new Thickness(0, 0, 0, 16)
         };
 
-        var closeBtn = MakeButton(L("Later", "Plus tard", "Sp\u00e4ter", "M\u00e1s tarde"));
-        var downloadBtn = MakeButton(L("Download", "T\u00e9l\u00e9charger", "Herunterladen", "Descargar"), 140);
+        var closeBtn = MakeButton(L("Later", "Plus tard", "Sp\u00e4ter", "M\u00e1s tarde", it: "Pi\u00f9 tardi"));
+        var downloadBtn = MakeButton(L("Download", "T\u00e9l\u00e9charger", "Herunterladen", "Descargar", it: "Scarica"), 140);
         downloadBtn.Background = TB("AccentGreen");
         downloadBtn.Foreground = Brushes.White;
 
@@ -1166,7 +1203,7 @@ public sealed class DialogService : IDialogService
         };
 
         var dlg = BuildSimpleDialog(
-            L("Update available", "Mise \u00e0 jour disponible", "Update verf\u00fcgbar", "Actualizaci\u00f3n disponible"),
+            L("Update available", "Mise \u00e0 jour disponible", "Update verf\u00fcgbar", "Actualizaci\u00f3n disponible", it: "Aggiornamento disponibile"),
             panel);
 
         closeBtn.Click += (_, _) => dlg.Close();
@@ -1185,16 +1222,16 @@ public sealed class DialogService : IDialogService
     public async Task ShowUserGuideEditorAsync(Window owner, MainWindowViewModel vm)
     {
         var lang = vm.CurrentLanguageCode;
-        string L(string en, string fr, string de, string es) => lang switch
+        string L(string en, string fr, string de, string es, string? it = null) => lang switch
         {
-            "fr" => fr, "de" => de, "es" => es, _ => en
+            "fr" => fr, "de" => de, "es" => es, "it" => it ?? en, _ => en
         };
 
         var exeDir = System.IO.Path.GetDirectoryName(Environment.ProcessPath) ?? string.Empty;
-        var languages = new[] { "fr", "en", "de", "es" };
+        var languages = new[] { "fr", "en", "de", "es", "it" };
         var langLabels = new Dictionary<string, string>
         {
-            ["fr"] = "Français", ["en"] = "English", ["de"] = "Deutsch", ["es"] = "Español"
+            ["fr"] = "Français", ["en"] = "English", ["de"] = "Deutsch", ["es"] = "Español", ["it"] = "Italiano"
         };
 
         // ── State ──
@@ -1499,25 +1536,25 @@ public sealed class DialogService : IDialogService
 
         void RefreshLabels()
         {
-            string Lc(string en, string fr, string de, string es) => currentLang switch
+            string Lc(string en, string fr, string de, string es, string? it = null) => currentLang switch
             {
-                "fr" => fr, "de" => de, "es" => es, _ => en
+                "fr" => fr, "de" => de, "es" => es, "it" => it ?? en, _ => en
             };
             editToggle.Content = isEditMode
-                ? Lc("Edit mode", "Mode édition", "Bearbeitungsmodus", "Modo edición")
-                : Lc("Read mode", "Mode lecture", "Lesemodus", "Modo lectura");
-            wrapToggle.Content = Lc("Wrap", "Retour ligne", "Umbruch", "Ajuste");
-            indentBtn.Content = Lc("Indent →", "Retrait →", "Einrücken →", "Sangría →");
-            unindentBtn.Content = Lc("← Unindent", "← Dés-retrait", "← Ausrücken", "← Quitar");
-            highlightBtn.Content = Lc("Highlight", "Surligner", "Markieren", "Resaltar");
-            clearHighlightBtn.Content = Lc("Clear HL", "Eff. surl.", "HL löschen", "Borrar HL");
-            searchBox.Watermark = Lc("Search…", "Rechercher…", "Suchen…", "Buscar…");
-            saveBtn.Content = Lc("Save notes", "Sauver notes", "Notizen speichern", "Guardar notas");
-            resetBtn.Content = Lc("Reset to original", "Revenir à l'original", "Original wiederherstellen", "Restaurar original");
-            copyBtn.Content = Lc("Copy", "Copier", "Kopieren", "Copiar");
-            closeBtn.Content = Lc("Close", "Fermer", "Schließen", "Cerrar");
+                ? Lc("Edit mode", "Mode édition", "Bearbeitungsmodus", "Modo edición", it: "Modalità modifica")
+                : Lc("Read mode", "Mode lecture", "Lesemodus", "Modo lectura", it: "Modalità lettura");
+            wrapToggle.Content = Lc("Wrap", "Retour ligne", "Umbruch", "Ajuste", it: "A capo");
+            indentBtn.Content = Lc("Indent →", "Retrait →", "Einrücken →", "Sangría →", it: "Indenta →");
+            unindentBtn.Content = Lc("← Unindent", "← Dés-retrait", "← Ausrücken", "← Quitar", it: "← Rimuovi indent");
+            highlightBtn.Content = Lc("Highlight", "Surligner", "Markieren", "Resaltar", it: "Evidenzia");
+            clearHighlightBtn.Content = Lc("Clear HL", "Eff. surl.", "HL löschen", "Borrar HL", it: "Canc. evid.");
+            searchBox.Watermark = Lc("Search…", "Rechercher…", "Suchen…", "Buscar…", it: "Cerca…");
+            saveBtn.Content = Lc("Save notes", "Sauver notes", "Notizen speichern", "Guardar notas", it: "Salva note");
+            resetBtn.Content = Lc("Reset to original", "Revenir à l'original", "Original wiederherstellen", "Restaurar original", it: "Ripristina originale");
+            copyBtn.Content = Lc("Copy", "Copier", "Kopieren", "Copiar", it: "Copia");
+            closeBtn.Content = Lc("Close", "Fermer", "Schließen", "Cerrar", it: "Chiudi");
             statusText.Text = HasUserNotes(currentLang)
-                ? Lc("User notes loaded", "Notes utilisateur chargées", "Benutzernotizen geladen", "Notas del usuario cargadas")
+                ? Lc("User notes loaded", "Notes utilisateur chargées", "Benutzernotizen geladen", "Notas del usuario cargadas", it: "Note utente caricate")
                 : "";
             resetBtn.IsEnabled = HasUserNotes(currentLang);
         }

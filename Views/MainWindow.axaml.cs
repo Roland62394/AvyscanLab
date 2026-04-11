@@ -157,6 +157,20 @@ namespace AvyScanLab.Views
             InitializeComponent();
             _mainGrid = this.FindControl<Grid>("MainGrid");
             DataContext = new MainWindowViewModel();
+
+            // Dev-only shortcut: Ctrl+Shift+F12 toggles the license flag for
+            // the current session. We avoid Alt modifiers because on Windows
+            // the Alt key is consumed by menu-bar activation before it reaches
+            // the KeyDown handler. F12 is also safe because no Avalonia control
+            // (TextBox, ComboBox, etc.) treats it as text input. Registered as a
+            // TUNNEL handler with handledEventsToo:true so it fires even when a
+            // TextBox has focus.
+            this.AddHandler(
+                KeyDownEvent,
+                OnDevLicenseShortcut,
+                RoutingStrategies.Tunnel,
+                handledEventsToo: true);
+
             ConfigureMenuBar();
             InitTheme();
             PreApplyWindowPosition();
@@ -761,7 +775,7 @@ namespace AvyScanLab.Views
         }
 
         private string GetUiText(string key) => ViewModel.GetUiText(key);
-        private string GetLocalizedText(string fr, string en, string? de = null, string? es = null) => ViewModel.GetLocalizedText(fr, en, de, es);
+        private string GetLocalizedText(string fr, string en, string? de = null, string? es = null, string? it = null) => ViewModel.GetLocalizedText(fr, en, de, es, it);
 
         private static readonly string[] BackupFileNames =
         [
@@ -993,16 +1007,18 @@ namespace AvyScanLab.Views
 
             var monoFont = UiConstants.MonoFont;
 
-            string T(string fr, string en, string de, string es) =>
-                ViewModel.GetLocalizedText(fr: fr, en: en, de: de, es: es);
+            string T(string fr, string en, string de, string es, string? it = null) =>
+                ViewModel.GetLocalizedText(fr: fr, en: en, de: de, es: es, it: it);
 
             var statusBlock = new TextBlock
             {
                 Text = LicenseService.IsLicensed
                     ? "✓ " + T("Version complète activée", "Full version activated",
-                                "Vollversion aktiviert", "Versión completa activada")
+                                "Vollversion aktiviert", "Versión completa activada",
+                                it: "Versione completa attivata")
                     : T("Mode d'essai (limité)", "Trial mode (limited)",
-                        "Testmodus (eingeschränkt)", "Modo de prueba (limitado)"),
+                        "Testmodus (eingeschränkt)", "Modo de prueba (limitado)",
+                        it: "Modalità di prova (limitata)"),
                 FontFamily = monoFont,
                 FontSize = 14,
                 FontWeight = FontWeight.SemiBold,
@@ -1022,7 +1038,9 @@ namespace AvyScanLab.Views
                     "Geben Sie unten Ihren Lizenzschlüssel ein, um Stapelkodierung, das Laden " +
                     "mehrerer Clips und die Erstellung/den Import benutzerdefinierter Filter freizuschalten.",
                     "Introduzca su clave de licencia abajo para desbloquear la codificación por lotes, " +
-                    "la carga de múltiples clips y la creación/importación de filtros personalizados."),
+                    "la carga de múltiples clips y la creación/importación de filtros personalizados.",
+                    it: "Inserisci la tua chiave di licenza qui sotto per sbloccare la codifica in batch, " +
+                        "il caricamento di più clip e la creazione/importazione di filtri personalizzati."),
                 TextWrapping = TextWrapping.Wrap,
                 MaxWidth = 460,
                 FontSize = 12,
@@ -1051,7 +1069,7 @@ namespace AvyScanLab.Views
 
             var activateBtn = new Button
             {
-                Content = T("Activer", "Activate", "Aktivieren", "Activar"),
+                Content = T("Activer", "Activate", "Aktivieren", "Activar", it: "Attiva"),
                 MinWidth = 110,
                 HorizontalContentAlignment = HorizontalAlignment.Center,
                 VerticalContentAlignment = VerticalAlignment.Center,
@@ -1059,7 +1077,7 @@ namespace AvyScanLab.Views
             };
             var deactivateBtn = new Button
             {
-                Content = T("Désactiver", "Deactivate", "Deaktivieren", "Desactivar"),
+                Content = T("Désactiver", "Deactivate", "Deaktivieren", "Desactivar", it: "Disattiva"),
                 MinWidth = 110,
                 HorizontalContentAlignment = HorizontalAlignment.Center,
                 VerticalContentAlignment = VerticalAlignment.Center,
@@ -1085,7 +1103,8 @@ namespace AvyScanLab.Views
             var dialog = new Window
             {
                 Title = T("Licence du logiciel", "Software license",
-                          "Softwarelizenz", "Licencia del software"),
+                          "Softwarelizenz", "Licencia del software",
+                          it: "Licenza del software"),
                 SizeToContent = SizeToContent.WidthAndHeight,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 CanResize = false,
@@ -1109,7 +1128,8 @@ namespace AvyScanLab.Views
                 var confirmDialog = new Window
                 {
                     Title = T("Redémarrage requis", "Restart required",
-                              "Neustart erforderlich", "Reinicio requerido"),
+                              "Neustart erforderlich", "Reinicio requerido",
+                              it: "Riavvio necessario"),
                     SizeToContent = SizeToContent.WidthAndHeight,
                     WindowStartupLocation = WindowStartupLocation.CenterOwner,
                     CanResize = false,
@@ -1153,7 +1173,8 @@ namespace AvyScanLab.Views
                         "Clé de licence invalide.",
                         "Invalid license key.",
                         "Ungültiger Lizenzschlüssel.",
-                        "Clave de licencia no válida.");
+                        "Clave de licencia no válida.",
+                        it: "Chiave di licenza non valida.");
                     return;
                 }
 
@@ -1167,7 +1188,8 @@ namespace AvyScanLab.Views
                     "Activation en cours…",
                     "Activating…",
                     "Aktivierung läuft…",
-                    "Activando…");
+                    "Activando…",
+                    it: "Attivazione in corso…");
 
                 var result = await LicenseService.TryActivateAsync(keyBox.Text);
 
@@ -1183,7 +1205,8 @@ namespace AvyScanLab.Views
                         "Échec de l'activation : ",
                         "Activation failed: ",
                         "Aktivierung fehlgeschlagen: ",
-                        "Error de activación: ") + (result.ErrorMessage ?? "");
+                        "Error de activación: ",
+                        it: "Attivazione non riuscita: ") + (result.ErrorMessage ?? "");
                     return;
                 }
 
@@ -1191,7 +1214,8 @@ namespace AvyScanLab.Views
                     "La clé est valide. L'application va se fermer puis se rouvrir automatiquement pour appliquer la licence. Continuer ?",
                     "The key is valid. The application will close and automatically reopen to apply the license. Continue?",
                     "Der Schlüssel ist gültig. Die Anwendung wird geschlossen und automatisch neu gestartet, um die Lizenz anzuwenden. Fortfahren?",
-                    "La clave es válida. La aplicación se cerrará y se reabrirá automáticamente para aplicar la licencia. ¿Continuar?"));
+                    "La clave es válida. La aplicación se cerrará y se reabrirá automáticamente para aplicar la licencia. ¿Continuar?",
+                    it: "La chiave è valida. L'applicazione verrà chiusa e riaperta automaticamente per applicare la licenza. Continuare?"));
                 if (!go)
                 {
                     // User clicked No — license is active but we won't restart. Let
@@ -1202,7 +1226,8 @@ namespace AvyScanLab.Views
                         "Licence activée.",
                         "License activated.",
                         "Lizenz aktiviert.",
-                        "Licencia activada.");
+                        "Licencia activada.",
+                        it: "Licenza attivata.");
                     return;
                 }
 
@@ -1216,7 +1241,8 @@ namespace AvyScanLab.Views
                     "La licence va être supprimée et l'application va se fermer puis se rouvrir automatiquement en mode d'essai. Continuer ?",
                     "The license will be removed and the application will close and automatically reopen in trial mode. Continue?",
                     "Die Lizenz wird entfernt und die Anwendung wird geschlossen und automatisch im Testmodus neu gestartet. Fortfahren?",
-                    "Se eliminará la licencia y la aplicación se cerrará y se reabrirá automáticamente en modo de prueba. ¿Continuar?"));
+                    "Se eliminará la licencia y la aplicación se cerrará y se reabrirá automáticamente en modo de prueba. ¿Continuar?",
+                    it: "La licenza verrà rimossa e l'applicazione verrà chiusa e riaperta automaticamente in modalità di prova. Continuare?"));
                 if (!go) return;
 
                 // Disable buttons while we release the activation slot server-side.
@@ -1228,7 +1254,8 @@ namespace AvyScanLab.Views
                     "Désactivation en cours…",
                     "Deactivating…",
                     "Deaktivierung läuft…",
-                    "Desactivando…");
+                    "Desactivando…",
+                    it: "Disattivazione in corso…");
 
                 await LicenseService.DeactivateAsync();
 
@@ -3414,23 +3441,76 @@ namespace AvyScanLab.Views
         private void OnHistogramClick(object? sender, RoutedEventArgs e) => _playerController.OnHistogramClick(sender, e);
         private void OnMaxViewerClick(object? sender, RoutedEventArgs e) => _playerController.OnMaxViewerClick(sender, e);
         private void ToggleViewerMaximized() => _playerController.ToggleViewerMaximized();
-        private void OnWindowKeyDown(object? sender, KeyEventArgs e)
-        {
-            // Hidden dev shortcut: Ctrl+Shift+Alt+L toggles IsLicensed for the
-            // current session (no restart, no server call, no persistence).
-            // Used by testers to compare trial vs full-version UI on the fly.
-            if (e.Key == Key.L &&
-                e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift | KeyModifiers.Alt))
-            {
-                var nowLicensed = LicenseService.DevUnlockToggle();
-                ShowPlayerStatus(nowLicensed
-                    ? "DEV: Full version UNLOCKED (session only)"
-                    : "DEV: Trial mode restored (session only)");
-                e.Handled = true;
-                return;
-            }
+        private void OnWindowKeyDown(object? sender, KeyEventArgs e) => _playerController.OnWindowKeyDown(sender, e);
 
-            _playerController.OnWindowKeyDown(sender, e);
+        /// <summary>
+        /// Tunnel-phase handler dedicated to the hidden Ctrl+Shift+F12
+        /// licence-toggle shortcut. Runs before any focused control sees the
+        /// event, so it works even inside TextBoxes and licence/update dialogs.
+        /// </summary>
+        private async void OnDevLicenseShortcut(object? sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.F12) return;
+            var mods = e.KeyModifiers;
+            if (!mods.HasFlag(KeyModifiers.Control)) return;
+            if (!mods.HasFlag(KeyModifiers.Shift))   return;
+
+            var nowLicensed = LicenseService.DevUnlockToggle();
+            e.Handled = true;
+
+            // Show a visible confirmation popup so the user knows the toggle fired.
+            // We also update the status bar as a secondary signal.
+            var statusMsg = nowLicensed
+                ? "DEV: Full version UNLOCKED (session only)"
+                : "DEV: Trial mode restored (session only)";
+            ShowPlayerStatus(statusMsg);
+
+            var popupText = nowLicensed
+                ? "\u2713  Full version UNLOCKED\n\nAll trial gates are now open for this session.\nRestart the app to revert."
+                : "\u2717  Trial mode restored\n\nThe dev unlock has been cleared for this session.";
+
+            var okBtn = new Button
+            {
+                Content = "OK",
+                MinWidth = 96,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                VerticalContentAlignment = VerticalAlignment.Center,
+            };
+            var popup = new Window
+            {
+                Title = "Developer unlock",
+                SizeToContent = SizeToContent.WidthAndHeight,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                CanResize = false,
+                Topmost = true,
+                ShowInTaskbar = false,
+                Content = new StackPanel
+                {
+                    Margin = new Thickness(24),
+                    Spacing = 16,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Children =
+                    {
+                        new TextBlock
+                        {
+                            Text = popupText,
+                            FontSize = 13,
+                            TextAlignment = TextAlignment.Center,
+                            Foreground = nowLicensed
+                                ? new SolidColorBrush(Color.Parse("#4CAF50"))
+                                : new SolidColorBrush(Color.Parse("#FFA726")),
+                        },
+                        new StackPanel
+                        {
+                            Orientation = Orientation.Horizontal,
+                            HorizontalAlignment = HorizontalAlignment.Center,
+                            Children = { okBtn }
+                        }
+                    }
+                }
+            };
+            okBtn.Click += (_, _) => popup.Close();
+            await popup.ShowDialog(this);
         }
         private void SyncForceSourceCombo(Dictionary<string, string> values) => _playerController.SyncForceSourceCombo(values);
         private void OnForceSourceChanged(object? sender, SelectionChangedEventArgs e) => _playerController.OnForceSourceChanged(sender, e);
@@ -3478,7 +3558,10 @@ namespace AvyScanLab.Views
             {
                 errorMessage = GetLocalizedText(
                     fr: "Les images référencées dans source sont introuvables.",
-                    en: "The image sequence referenced in source was not found.");
+                    en: "The image sequence referenced in source was not found.",
+                    de: "Die in source referenzierte Bildsequenz wurde nicht gefunden.",
+                    es: "No se encontr\u00f3 la secuencia de im\u00e1genes referenciada en source.",
+                    it: "La sequenza di immagini referenziata in source non \u00e8 stata trovata.");
                 return false;
             }
 
@@ -3486,7 +3569,10 @@ namespace AvyScanLab.Views
             {
                 errorMessage = GetLocalizedText(
                     fr: "Le fichier référencé dans source est introuvable.",
-                    en: "The file referenced in source was not found.");
+                    en: "The file referenced in source was not found.",
+                    de: "Die in source referenzierte Datei wurde nicht gefunden.",
+                    es: "No se encontr\u00f3 el archivo referenciado en source.",
+                    it: "Il file referenziato in source non \u00e8 stato trovato.");
                 return false;
             }
 
@@ -4133,7 +4219,7 @@ namespace AvyScanLab.Views
         Window IPlayerHost.Window => this;
         SolidColorBrush IPlayerHost.ThemeBrush(string key) => ThemeBrush(key);
         string IPlayerHost.GetUiText(string key) => GetUiText(key);
-        string IPlayerHost.GetLocalizedText(string fr, string en, string? de, string? es) => GetLocalizedText(fr, en, de, es);
+        string IPlayerHost.GetLocalizedText(string fr, string en, string? de, string? es, string? it) => GetLocalizedText(fr, en, de, es, it);
         MainWindowViewModel IPlayerHost.ViewModel => ViewModel;
         ConfigStore IPlayerHost.Config => _config;
         IScriptService IPlayerHost.ScriptService => _scriptService;

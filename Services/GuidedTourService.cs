@@ -147,7 +147,7 @@ public sealed class GuidedTourService
             {
                 Orientation = Orientation.Horizontal,
                 HorizontalAlignment = HorizontalAlignment.Center,
-                Spacing = 6, Margin = new Thickness(0, 0, 0, 12),
+                Spacing = 4, Margin = new Thickness(0, 0, 0, 12),
             };
             langRow.Children.Add(langLabel);
             Action? refreshStep = null;
@@ -155,7 +155,8 @@ public sealed class GuidedTourService
             {
                 var btn = new Button
                 {
-                    Content = label, Tag = code, MinWidth = 70, FontSize = 12,
+                    Content = label, Tag = code, FontSize = 11,
+                    Padding = new Thickness(6, 3),
                     HorizontalContentAlignment = HorizontalAlignment.Center,
                     Cursor = new Cursor(StandardCursorType.Hand),
                     Foreground = host.ThemeBrush("TextSecondary"),

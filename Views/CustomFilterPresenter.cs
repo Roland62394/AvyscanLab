@@ -672,24 +672,26 @@ public sealed class CustomFilterPresenter
         if (margin is { } m) label.Margin = m;
 
         string? tip = null;
-        if (!string.IsNullOrWhiteSpace(ctrl.Description))
+
+        // Prefer localized lookup (ParamTooltipKeyMap → ParamTooltipTexts) so that
+        // a language change instantly updates the tooltip. The JSON "Description"
+        // field is only used as an English fallback for filters that are not
+        // present in the localized map.
+        var mapKey = $"{filterId}.{ctrl.Placeholder}";
+        if (FilterPresets.ParamTooltipKeyMap.TryGetValue(mapKey, out var labelKey))
+        {
+            // Set Name so ApplyParamTooltips can update on language change
+            label.Name = labelKey;
+            var lang = _host.ViewModel.CurrentLanguageCode ?? "en";
+            if (FilterPresets.ParamTooltipTexts.TryGetValue(labelKey, out var translations))
+                tip = translations.TryGetValue(lang, out var t) ? t
+                    : translations.TryGetValue("en", out var en) ? en
+                    : null;
+        }
+
+        if (string.IsNullOrWhiteSpace(tip) && !string.IsNullOrWhiteSpace(ctrl.Description))
         {
             tip = ctrl.Description;
-        }
-        else
-        {
-            // Look up localized tooltip from ParamTooltipKeyMap → ParamTooltipTexts
-            var mapKey = $"{filterId}.{ctrl.Placeholder}";
-            if (FilterPresets.ParamTooltipKeyMap.TryGetValue(mapKey, out var labelKey))
-            {
-                // Set Name so ApplyParamTooltips can update on language change
-                label.Name = labelKey;
-                var lang = _host.ViewModel.CurrentLanguageCode ?? "en";
-                if (FilterPresets.ParamTooltipTexts.TryGetValue(labelKey, out var translations))
-                    tip = translations.TryGetValue(lang, out var t) ? t
-                        : translations.TryGetValue("en", out var en) ? en
-                        : null;
-            }
         }
 
         if (!string.IsNullOrWhiteSpace(tip))

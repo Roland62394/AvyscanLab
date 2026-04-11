@@ -664,7 +664,8 @@
                                 VerticalAlignment="Center"
                                 Spacing="5">
                         <Button x:Name="preview" Classes="transport" Content="Orig ▮ Result"
-                                FontSize="12" MinWidth="120" Padding="16,4"
+                                FontSize="12" MinWidth="160" Padding="16,4"
+                                HorizontalContentAlignment="Center"
                                 ToolTip.Tip="Compare: original / result" Click="OnOptionToggleButtonClick"/>
                         <Rectangle Width="1" Height="22" Fill="{DynamicResource BorderSubtle}" Margin="4,0"/>
                         <Button x:Name="VdbBeginning" Classes="transport" Content="|◀" FontSize="12"
