@@ -89,6 +89,13 @@ namespace AvyScanLab
             {
                 await Task.Delay(6000);
 
+                // Kick off the Lemon Squeezy license re-validation in the background.
+                // Fire-and-forget: we don't want to block the splash-to-main transition
+                // on a network call. If the server reports a revoked key (or the user
+                // is past the 14-day offline grace), LicenseService raises LicenseChanged
+                // and the main window's gates pick it up on their next check.
+                _ = LicenseService.InitializeAsync();
+
                 // Instantiate services
                 var config             = new ConfigStore();
                 var sourceService      = new SourceService();

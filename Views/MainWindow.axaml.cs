@@ -1029,11 +1029,11 @@ namespace AvyScanLab.Views
 
             var keyBox = new TextBox
             {
-                Watermark = "AVSL-XXXX-XXXX-XXXX",
+                Watermark = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
                 Text = LicenseService.LicenseKey ?? "",
                 FontFamily = monoFont,
                 FontSize = 14,
-                Width = 320,
+                Width = 400,
                 Padding = new Thickness(8, 6),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 IsReadOnly = LicenseService.IsLicensed
@@ -1137,7 +1137,7 @@ namespace AvyScanLab.Views
 
             activateBtn.Click += async (_, _) =>
             {
-                // Validate the key shape first; only warn-then-restart if it actually unlocks.
+                // Structural check first (UUID format) — purely local, no network.
                 if (!LicenseService.Validate(keyBox.Text))
                 {
                     feedbackBlock.Foreground = new SolidColorBrush(Color.Parse("#E53935"));
@@ -1149,27 +1149,57 @@ namespace AvyScanLab.Views
                     return;
                 }
 
+                // Busy state: disable inputs, show progress message, then hit LS.
+                activateBtn.IsEnabled = false;
+                deactivateBtn.IsEnabled = false;
+                closeBtn.IsEnabled = false;
+                keyBox.IsReadOnly = true;
+                feedbackBlock.Foreground = new SolidColorBrush(Color.Parse("#9E9E9E"));
+                feedbackBlock.Text = "… " + T(
+                    "Activation en cours…",
+                    "Activating…",
+                    "Aktivierung läuft…",
+                    "Activando…");
+
+                var result = await LicenseService.TryActivateAsync(keyBox.Text);
+
+                // Always restore closeBtn so the user can bail out on failure.
+                closeBtn.IsEnabled = true;
+
+                if (!result.Success)
+                {
+                    activateBtn.IsEnabled = true;
+                    keyBox.IsReadOnly = false;
+                    feedbackBlock.Foreground = new SolidColorBrush(Color.Parse("#E53935"));
+                    feedbackBlock.Text = "✗ " + T(
+                        "Échec de l'activation : ",
+                        "Activation failed: ",
+                        "Aktivierung fehlgeschlagen: ",
+                        "Error de activación: ") + (result.ErrorMessage ?? "");
+                    return;
+                }
+
                 var go = await ConfirmRestartAsync(T(
                     "La clé est valide. L'application va se fermer puis se rouvrir automatiquement pour appliquer la licence. Continuer ?",
                     "The key is valid. The application will close and automatically reopen to apply the license. Continue?",
                     "Der Schlüssel ist gültig. Die Anwendung wird geschlossen und automatisch neu gestartet, um die Lizenz anzuwenden. Fortfahren?",
                     "La clave es válida. La aplicación se cerrará y se reabrirá automáticamente para aplicar la licencia. ¿Continuar?"));
-                if (!go) return;
+                if (!go)
+                {
+                    // User clicked No — license is active but we won't restart. Let
+                    // them close the window manually; on next launch the new state
+                    // will already be in effect.
+                    feedbackBlock.Foreground = new SolidColorBrush(Color.Parse("#4CAF50"));
+                    feedbackBlock.Text = "✓ " + T(
+                        "Licence activée.",
+                        "License activated.",
+                        "Lizenz aktiviert.",
+                        "Licencia activada.");
+                    return;
+                }
 
-                if (LicenseService.TryActivate(keyBox.Text))
-                {
-                    needsRestart = true;
-                    dialog.Close();
-                }
-                else
-                {
-                    feedbackBlock.Foreground = new SolidColorBrush(Color.Parse("#E53935"));
-                    feedbackBlock.Text = "✗ " + T(
-                        "Échec de l'activation.",
-                        "Activation failed.",
-                        "Aktivierung fehlgeschlagen.",
-                        "Error de activación.");
-                }
+                needsRestart = true;
+                dialog.Close();
             };
 
             deactivateBtn.Click += async (_, _) =>
@@ -1181,7 +1211,19 @@ namespace AvyScanLab.Views
                     "Se eliminará la licencia y la aplicación se cerrará y se reabrirá automáticamente en modo de prueba. ¿Continuar?"));
                 if (!go) return;
 
-                LicenseService.Deactivate();
+                // Disable buttons while we release the activation slot server-side.
+                activateBtn.IsEnabled = false;
+                deactivateBtn.IsEnabled = false;
+                closeBtn.IsEnabled = false;
+                feedbackBlock.Foreground = new SolidColorBrush(Color.Parse("#9E9E9E"));
+                feedbackBlock.Text = "… " + T(
+                    "Désactivation en cours…",
+                    "Deactivating…",
+                    "Deaktivierung läuft…",
+                    "Desactivando…");
+
+                await LicenseService.DeactivateAsync();
+
                 needsRestart = true;
                 dialog.Close();
             };
