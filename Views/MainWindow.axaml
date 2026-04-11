@@ -556,6 +556,7 @@
                             <MenuItem x:Name="LanguageFrenchMenuItem"  Header="Français" Tag="fr" Click="OnLanguageClick"/>
                             <MenuItem x:Name="LanguageGermanMenuItem"  Header="Deutsch"  Tag="de" Click="OnLanguageClick"/>
                             <MenuItem x:Name="LanguageSpanishMenuItem" Header="Español"  Tag="es" Click="OnLanguageClick"/>
+                            <MenuItem x:Name="LanguageItalianMenuItem" Header="Italiano" Tag="it" Click="OnLanguageClick"/>
                         </MenuItem>
                         <MenuItem x:Name="FeedbackMenuItem" Header="Contact" Click="OnFeedbackClick"/>
                         <MenuItem x:Name="AboutMenuItem" Header="A propos" Click="OnAboutClick"/>

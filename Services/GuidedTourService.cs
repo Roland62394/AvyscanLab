@@ -151,7 +151,7 @@ public sealed class GuidedTourService
             };
             langRow.Children.Add(langLabel);
             Action? refreshStep = null;
-            foreach (var (code, label) in new[] { ("en", "English"), ("fr", "Français"), ("de", "Deutsch"), ("es", "Español") })
+            foreach (var (code, label) in new[] { ("en", "English"), ("fr", "Français"), ("de", "Deutsch"), ("es", "Español"), ("it", "Italiano") })
             {
                 var btn = new Button
                 {

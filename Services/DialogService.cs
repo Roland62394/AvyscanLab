@@ -998,7 +998,13 @@ public sealed class DialogService : IDialogService
     };
 
     private static Button MakeButton(string label, int minWidth = 96) =>
-        new() { Content = label, MinWidth = minWidth };
+        new()
+        {
+            Content = label,
+            MinWidth = minWidth,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+        };
 
     public async Task<(bool OpenContact, bool DontShowAgain)> ShowExitFeedbackDialogAsync(Window owner, MainWindowViewModel vm)
     {
@@ -1147,15 +1153,15 @@ public sealed class DialogService : IDialogService
         var buttonPanel = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            HorizontalAlignment = HorizontalAlignment.Right,
-            Spacing = 8,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Spacing = 12,
             Children = { closeBtn, downloadBtn }
         };
 
         var panel = new StackPanel
         {
-            Width = 420,
-            Margin = new Thickness(20),
+            Width = 340,
+            Margin = new Thickness(24, 20, 24, 16),
             Children = { messageText, buttonPanel }
         };
 

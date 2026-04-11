@@ -469,6 +469,20 @@ public sealed class PlayerController
         UpdateConfigurationValue("preview_half", _halfRes.ToString().ToLowerInvariant());
     }
 
+    /// <summary>
+    /// Force half-resolution preview ON — called whenever a new clip is loaded
+    /// so users always start with fast preview. Updates internal state, the
+    /// persisted config and the toolbar button visual in one shot.
+    /// </summary>
+    public void ForceHalfResOn()
+    {
+        _halfRes = true;
+        if (_host.FindControl<Button>("HalfResBtn") is { } btn)
+            ApplyHalfResButtonColors(btn);
+        // Do not trigger a script regenerate here — caller will regenerate right after.
+        _host.Config.Set("preview_half", "true");
+    }
+
     public void RestoreHalfResVisual()
     {
         var halfResValue = _host.Config.Get("preview_half");

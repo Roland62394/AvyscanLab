@@ -739,6 +739,7 @@ namespace AvyScanLab.Views
             SetLanguageMenuItemChecked("LanguageFrenchMenuItem",  "fr");
             SetLanguageMenuItemChecked("LanguageGermanMenuItem",  "de");
             SetLanguageMenuItemChecked("LanguageSpanishMenuItem", "es");
+            SetLanguageMenuItemChecked("LanguageItalianMenuItem", "it");
         }
 
         private void SetLanguageMenuItemChecked(string menuName, string languageCode)
@@ -751,6 +752,7 @@ namespace AvyScanLab.Views
                 "fr" => "Français",
                 "de" => "Deutsch",
                 "es" => "Español",
+                "it" => "Italiano",
                 _    => languageCode
             };
 
@@ -1051,18 +1053,24 @@ namespace AvyScanLab.Views
             {
                 Content = T("Activer", "Activate", "Aktivieren", "Activar"),
                 MinWidth = 110,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                VerticalContentAlignment = VerticalAlignment.Center,
                 IsVisible = !LicenseService.IsLicensed
             };
             var deactivateBtn = new Button
             {
                 Content = T("Désactiver", "Deactivate", "Deaktivieren", "Desactivar"),
                 MinWidth = 110,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                VerticalContentAlignment = VerticalAlignment.Center,
                 IsVisible = LicenseService.IsLicensed
             };
             var closeBtn = new Button
             {
                 Content = GetUiText("GamMacCloseButton"),
-                MinWidth = 110
+                MinWidth = 110,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                VerticalContentAlignment = VerticalAlignment.Center
             };
 
             var buttonRow = new StackPanel
@@ -2070,6 +2078,10 @@ namespace AvyScanLab.Views
 
             // Stop mpv playback and reset player state for the new clip.
             _playerController.ResetPlayerState();
+
+            // Always force half-resolution preview ON when a new clip is loaded
+            // (user expectation: every clip starts in fast-preview mode).
+            _playerController.ForceHalfResOn();
 
             // Reset crop values to 0.
             _suppressTextEvents = true;
@@ -3402,7 +3414,24 @@ namespace AvyScanLab.Views
         private void OnHistogramClick(object? sender, RoutedEventArgs e) => _playerController.OnHistogramClick(sender, e);
         private void OnMaxViewerClick(object? sender, RoutedEventArgs e) => _playerController.OnMaxViewerClick(sender, e);
         private void ToggleViewerMaximized() => _playerController.ToggleViewerMaximized();
-        private void OnWindowKeyDown(object? sender, KeyEventArgs e) => _playerController.OnWindowKeyDown(sender, e);
+        private void OnWindowKeyDown(object? sender, KeyEventArgs e)
+        {
+            // Hidden dev shortcut: Ctrl+Shift+Alt+L toggles IsLicensed for the
+            // current session (no restart, no server call, no persistence).
+            // Used by testers to compare trial vs full-version UI on the fly.
+            if (e.Key == Key.L &&
+                e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift | KeyModifiers.Alt))
+            {
+                var nowLicensed = LicenseService.DevUnlockToggle();
+                ShowPlayerStatus(nowLicensed
+                    ? "DEV: Full version UNLOCKED (session only)"
+                    : "DEV: Trial mode restored (session only)");
+                e.Handled = true;
+                return;
+            }
+
+            _playerController.OnWindowKeyDown(sender, e);
+        }
         private void SyncForceSourceCombo(Dictionary<string, string> values) => _playerController.SyncForceSourceCombo(values);
         private void OnForceSourceChanged(object? sender, SelectionChangedEventArgs e) => _playerController.OnForceSourceChanged(sender, e);
 

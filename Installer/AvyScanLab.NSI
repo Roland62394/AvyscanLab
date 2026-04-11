@@ -1,4 +1,4 @@
-; ─────────────────────────────────────────────────────
+﻿; ─────────────────────────────────────────────────────
 ; AvyScan Lab — NSIS Installer Script
 ; ─────────────────────────────────────────────────────
 ; Prerequisites:
@@ -68,10 +68,18 @@ SetCompressor /SOLID lzma
 !insertmacro MUI_UNPAGE_INSTFILES
 
 ; ── Languages ──
+; The first language listed is the default used when MUI_LANGDLL_DISPLAY
+; cannot auto-match the system locale. We keep English first as the neutral fallback.
+; Store chosen language in HKCU so re-running the installer remembers the choice.
+!define MUI_LANGDLL_REGISTRY_ROOT      "HKCU"
+!define MUI_LANGDLL_REGISTRY_KEY       "Software\${APP_NAME}"
+!define MUI_LANGDLL_REGISTRY_VALUENAME "InstallerLanguage"
+
 !insertmacro MUI_LANGUAGE "English"
 !insertmacro MUI_LANGUAGE "French"
 !insertmacro MUI_LANGUAGE "German"
 !insertmacro MUI_LANGUAGE "Spanish"
+!insertmacro MUI_LANGUAGE "Italian"
 
 ; ── Localized MessageBox strings ──
 ; NSIS substitutes ${APP_NAME} at compile time and $1 (register) at display time.
@@ -82,36 +90,42 @@ LangString MSG_REQUIRES_X64 ${LANG_ENGLISH} "${APP_NAME} requires a 64-bit versi
 LangString MSG_REQUIRES_X64 ${LANG_FRENCH}  "${APP_NAME} nécessite une version 64 bits de Windows."
 LangString MSG_REQUIRES_X64 ${LANG_GERMAN}  "${APP_NAME} benötigt eine 64-Bit-Version von Windows."
 LangString MSG_REQUIRES_X64 ${LANG_SPANISH} "${APP_NAME} requiere una versión de Windows de 64 bits."
+LangString MSG_REQUIRES_X64 ${LANG_ITALIAN} "${APP_NAME} richiede una versione a 64 bit di Windows."
 
 ; 2. Previous version already installed (Yes = uninstall / No = overwrite / Cancel = abort)
 LangString MSG_ALREADY_INSTALLED ${LANG_ENGLISH} "${APP_NAME} is already installed.$\n$\nDo you want to uninstall the previous version before continuing?$\n$\nYes = Uninstall first, then install$\nNo  = Install over existing (update)$\nCancel = Abort"
 LangString MSG_ALREADY_INSTALLED ${LANG_FRENCH}  "${APP_NAME} est déjà installé.$\n$\nVoulez-vous désinstaller la version précédente avant de continuer ?$\n$\nOui = Désinstaller d'abord, puis installer$\nNon = Installer par-dessus (mise à jour)$\nAnnuler = Abandonner"
 LangString MSG_ALREADY_INSTALLED ${LANG_GERMAN}  "${APP_NAME} ist bereits installiert.$\n$\nMöchten Sie die vorherige Version zuerst deinstallieren?$\n$\nJa = Zuerst deinstallieren, dann installieren$\nNein = Über bestehende installieren (Update)$\nAbbrechen = Abbrechen"
 LangString MSG_ALREADY_INSTALLED ${LANG_SPANISH} "${APP_NAME} ya está instalado.$\n$\n¿Desea desinstalar la versión anterior antes de continuar?$\n$\nSí = Desinstalar primero, luego instalar$\nNo = Instalar sobre la existente (actualizar)$\nCancelar = Cancelar"
+LangString MSG_ALREADY_INSTALLED ${LANG_ITALIAN} "${APP_NAME} è già installato.$\n$\nVuoi disinstallare la versione precedente prima di continuare?$\n$\nSì = Disinstalla prima, poi installa$\nNo = Installa sopra quella esistente (aggiornamento)$\nAnnulla = Annulla"
 
 ; 3. App currently running — must be closed before install can proceed
 LangString MSG_APP_RUNNING ${LANG_ENGLISH} "${APP_NAME} is currently running and will be closed to proceed with the installation.$\n$\nClick OK to close it and continue, or Cancel to exit."
 LangString MSG_APP_RUNNING ${LANG_FRENCH}  "${APP_NAME} est actuellement en cours d'exécution et sera fermé pour poursuivre l'installation.$\n$\nCliquez sur OK pour le fermer et continuer, ou sur Annuler pour quitter."
 LangString MSG_APP_RUNNING ${LANG_GERMAN}  "${APP_NAME} wird derzeit ausgeführt und wird geschlossen, um die Installation fortzusetzen.$\n$\nKlicken Sie auf OK, um es zu schließen und fortzufahren, oder auf Abbrechen, um zu beenden."
 LangString MSG_APP_RUNNING ${LANG_SPANISH} "${APP_NAME} se está ejecutando actualmente y se cerrará para continuar con la instalación.$\n$\nHaga clic en Aceptar para cerrarlo y continuar, o en Cancelar para salir."
+LangString MSG_APP_RUNNING ${LANG_ITALIAN} "${APP_NAME} è attualmente in esecuzione e verrà chiuso per procedere con l'installazione.$\n$\nFai clic su OK per chiuderlo e continuare, oppure su Annulla per uscire."
 
 ; 4. AviSynth+ dependency required
 LangString MSG_AVS_REQUIRED ${LANG_ENGLISH} "${APP_NAME} requires AviSynth+ to function.$\n$\nAviSynth+ (GPLv2) will now be installed.$\nClick OK to proceed, or Cancel to exit."
 LangString MSG_AVS_REQUIRED ${LANG_FRENCH}  "${APP_NAME} nécessite AviSynth+ pour fonctionner.$\n$\nAviSynth+ (GPLv2) va maintenant être installé.$\nCliquez sur OK pour continuer, ou sur Annuler pour quitter."
 LangString MSG_AVS_REQUIRED ${LANG_GERMAN}  "${APP_NAME} benötigt AviSynth+ zum Ausführen.$\n$\nAviSynth+ (GPLv2) wird jetzt installiert.$\nKlicken Sie auf OK, um fortzufahren, oder auf Abbrechen, um zu beenden."
 LangString MSG_AVS_REQUIRED ${LANG_SPANISH} "${APP_NAME} requiere AviSynth+ para funcionar.$\n$\nAviSynth+ (GPLv2) se instalará ahora.$\nHaga clic en Aceptar para continuar, o en Cancelar para salir."
+LangString MSG_AVS_REQUIRED ${LANG_ITALIAN} "${APP_NAME} richiede AviSynth+ per funzionare.$\n$\nAviSynth+ (GPLv2) verrà ora installato.$\nFai clic su OK per continuare, oppure su Annulla per uscire."
 
 ; 5. AviSynth+ install exit code != 0 ($1 holds the exit code, resolved at runtime)
 LangString MSG_AVS_INSTALL_FAILED ${LANG_ENGLISH} "AviSynth+ installation may have failed (exit code: $1).$\n$\nClick OK to continue anyway, or Cancel to exit."
 LangString MSG_AVS_INSTALL_FAILED ${LANG_FRENCH}  "L'installation d'AviSynth+ a peut-être échoué (code de sortie : $1).$\n$\nCliquez sur OK pour continuer malgré tout, ou sur Annuler pour quitter."
 LangString MSG_AVS_INSTALL_FAILED ${LANG_GERMAN}  "Die Installation von AviSynth+ ist möglicherweise fehlgeschlagen (Exit-Code: $1).$\n$\nKlicken Sie auf OK, um trotzdem fortzufahren, oder auf Abbrechen, um zu beenden."
 LangString MSG_AVS_INSTALL_FAILED ${LANG_SPANISH} "Es posible que la instalación de AviSynth+ haya fallado (código de salida: $1).$\n$\nHaga clic en Aceptar para continuar de todos modos, o en Cancelar para salir."
+LangString MSG_AVS_INSTALL_FAILED ${LANG_ITALIAN} "L'installazione di AviSynth+ potrebbe non essere riuscita (codice di uscita: $1).$\n$\nFai clic su OK per continuare comunque, oppure su Annulla per uscire."
 
 ; 6. Uninstall-time license deactivation reminder (Lemon Squeezy)
 LangString MSG_LICENSE_DEACTIVATE ${LANG_ENGLISH} "Before uninstalling ${APP_NAME}, please make sure you have deactivated your license.$\n$\nIn the app:  Settings  ->  License  ->  Deactivate$\n$\nThis releases an activation slot on the license server so you can reinstall on another machine later.$\n$\nClick OK to continue uninstalling (only if you have already deactivated),$\nor Cancel to abort and deactivate first."
 LangString MSG_LICENSE_DEACTIVATE ${LANG_FRENCH}  "Avant de désinstaller ${APP_NAME}, assurez-vous d'avoir désactivé votre licence.$\n$\nDans l'application :  Paramètres  ->  Licence  ->  Désactiver$\n$\nCela libère un emplacement d'activation sur le serveur de licences afin que vous puissiez réinstaller sur une autre machine plus tard.$\n$\nCliquez sur OK pour poursuivre la désinstallation (uniquement si vous avez déjà désactivé),$\nou sur Annuler pour abandonner et désactiver d'abord."
 LangString MSG_LICENSE_DEACTIVATE ${LANG_GERMAN}  "Bevor Sie ${APP_NAME} deinstallieren, stellen Sie bitte sicher, dass Sie Ihre Lizenz deaktiviert haben.$\n$\nIn der Anwendung:  Einstellungen  ->  Lizenz  ->  Deaktivieren$\n$\nDies gibt einen Aktivierungsplatz auf dem Lizenzserver frei, sodass Sie später auf einer anderen Maschine neu installieren können.$\n$\nKlicken Sie auf OK, um die Deinstallation fortzusetzen (nur wenn Sie bereits deaktiviert haben),$\noder auf Abbrechen, um abzubrechen und zuerst zu deaktivieren."
 LangString MSG_LICENSE_DEACTIVATE ${LANG_SPANISH} "Antes de desinstalar ${APP_NAME}, asegúrese de haber desactivado su licencia.$\n$\nEn la aplicación:  Configuración  ->  Licencia  ->  Desactivar$\n$\nEsto libera una ranura de activación en el servidor de licencias para que pueda reinstalar en otra máquina más adelante.$\n$\nHaga clic en Aceptar para continuar con la desinstalación (solo si ya ha desactivado),$\no en Cancelar para abortar y desactivar primero."
+LangString MSG_LICENSE_DEACTIVATE ${LANG_ITALIAN} "Prima di disinstallare ${APP_NAME}, assicurati di aver disattivato la tua licenza.$\n$\nNell'applicazione:  Impostazioni  ->  Licenza  ->  Disattiva$\n$\nQuesto libera uno slot di attivazione sul server delle licenze, permettendoti di reinstallare l'applicazione su un'altra macchina in seguito.$\n$\nFai clic su OK per proseguire con la disinstallazione (solo se hai già disattivato),$\noppure su Annulla per interrompere e disattivare prima."
 
 ; ── Variable to hold AviSynth+ plugin directory ──
 Var AVS_PLUGINDIR
@@ -257,6 +271,11 @@ Function .onInit
         Abort
     ${EndIf}
 
+    ; Pick the language automatically from the system locale (or from the
+    ; previous install stored in HKCU). If no match is found, the user is
+    ; prompted to choose — English is the default in that case.
+    !insertmacro MUI_LANGDLL_DISPLAY
+
     ; ── Check if already installed ──
     ReadRegStr $0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "UninstallString"
     ${If} $0 != ""
@@ -330,6 +349,13 @@ avs_install:
     ${EndIf}
 
 avs_done:
+FunctionEnd
+
+; ─────────────────────────────────────────────────────
+; UNINSTALLER INIT — show language picker for uninstaller too
+; ─────────────────────────────────────────────────────
+Function un.onInit
+    !insertmacro MUI_UNGETLANGUAGE
 FunctionEnd
 
 ; ─────────────────────────────────────────────────────

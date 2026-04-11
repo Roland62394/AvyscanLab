@@ -1,8 +1,8 @@
 <Window xmlns="https://github.com/avaloniaui"
        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
        x:Class="AvyScanLab.Views.AboutWindow"
-       Width="520"
-       Height="520"
+       Width="560"
+       Height="600"
        CanResize="False"
        WindowStartupLocation="CenterScreen"
        SystemDecorations="None"
@@ -68,8 +68,8 @@
                        Spacing="0"
                        VerticalAlignment="Center">
                <Image x:Name="AboutImage"
-                      Width="400"
-                      Height="210"
+                      Width="480"
+                      Height="320"
                       HorizontalAlignment="Center"
                       Stretch="Uniform"
                       Margin="0,0,0,18"/>

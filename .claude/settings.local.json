@@ -109,7 +109,8 @@
       "Bash(cp bin/Release/net10.0/win-x64/Obfuscated/AvyScanLab.dll bin/Release/net10.0/win-x64/AvyScanLab.dll)",
       "Bash(cp bin/Release/net10.0/win-x64/Obfuscated/AvyScanLab.dll obj/Release/net10.0/win-x64/AvyscanLab.dll)",
       "Bash(cp bin/Release/net10.0/win-x64/Obfuscated/AvyScanLab.dll obj/Release/net10.0/win-x64/AvyScanLab.dll)",
-      "Bash(rm -f bin/Release/net10.0/win-x64/publish/AvyScanLab.exe)"
+      "Bash(rm -f bin/Release/net10.0/win-x64/publish/AvyScanLab.exe)",
+      "Bash(identify \"C:/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/AvyscanLab/Assets/Logo.png\")"
     ]
   }
 }
