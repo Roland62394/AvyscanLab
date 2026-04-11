@@ -104,7 +104,12 @@
       "Bash(cp \"C:/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/AvyscanLab/Assets/Ico.ico\" \"C:/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/AvyScanLab-Website/assets/favicon.ico\")",
       "Bash(powershell:*)",
       "Bash(cmd:*)",
-      "Bash(node -c \"C:\\\\Users\\\\larde\\\\Documents\\\\Documents administratifs\\\\Scanfilm\\\\Technique\\\\ScriptRestore\\\\AvyScanLab-Website\\\\js\\\\i18n.js\")"
+      "Bash(node -c \"C:\\\\Users\\\\larde\\\\Documents\\\\Documents administratifs\\\\Scanfilm\\\\Technique\\\\ScriptRestore\\\\AvyScanLab-Website\\\\js\\\\i18n.js\")",
+      "Bash(obfuscar.console \"C:/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/AvyscanLab/obfuscar.xml\")",
+      "Bash(cp bin/Release/net10.0/win-x64/Obfuscated/AvyScanLab.dll bin/Release/net10.0/win-x64/AvyScanLab.dll)",
+      "Bash(cp bin/Release/net10.0/win-x64/Obfuscated/AvyScanLab.dll obj/Release/net10.0/win-x64/AvyscanLab.dll)",
+      "Bash(cp bin/Release/net10.0/win-x64/Obfuscated/AvyScanLab.dll obj/Release/net10.0/win-x64/AvyScanLab.dll)",
+      "Bash(rm -f bin/Release/net10.0/win-x64/publish/AvyScanLab.exe)"
     ]
   }
 }

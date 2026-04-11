@@ -51,5 +51,24 @@
     <SkipType name="AvyScanLab.Services.SessionState" />
     <SkipType name="AvyScanLab.Services.ConfigStore" />
 
+    <!-- Préserver LicenseService et les DTO Lemon Squeezy :
+         - LicenseService : surface publique + stack traces
+         - LicenseRecord  : sérialisation JSON du fichier license.dat
+         - Ls* DTOs       : désérialisation des réponses API Lemon Squeezy
+         Les DTO sont définis comme types top-level dans LicenseService.cs
+         (et non comme types imbriqués) afin que <SkipType> puisse les
+         référencer par leur nom simple — Obfuscar n'applique pas
+         correctement SkipType aux nested types sous une classe skippée.
+         Note: les attributs [JsonPropertyName] sont préservés par Obfuscar,
+         donc la désérialisation fonctionnerait même sans ces skips ; ils
+         servent principalement à la lisibilité des logs en production. -->
+    <SkipType name="AvyScanLab.Services.LicenseService" />
+    <SkipType name="AvyScanLab.Services.LicenseRecord" />
+    <SkipType name="AvyScanLab.Services.LsActivateResponse" />
+    <SkipType name="AvyScanLab.Services.LsValidateResponse" />
+    <SkipType name="AvyScanLab.Services.LsLicenseKey" />
+    <SkipType name="AvyScanLab.Services.LsInstance" />
+    <SkipType name="AvyScanLab.Services.LsMeta" />
+
   </Module>
 </Obfuscator>

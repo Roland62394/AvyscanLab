@@ -397,72 +397,79 @@ public static class LicenseService
         IsLicensed = false;
     }
 
-    // ─────────────────────────────────────────────────────────────────
-    //  Types
-    // ─────────────────────────────────────────────────────────────────
+}
 
-    /// <summary>Persisted local license state.</summary>
-    private sealed class LicenseRecord
+// ─────────────────────────────────────────────────────────────────────
+//  Types used by LicenseService
+//
+//  These are deliberately top-level (not nested inside LicenseService)
+//  so that Obfuscar's <SkipType> entries can reference them by simple
+//  name. Nested types under a skipped outer type are still obfuscated,
+//  which would garble stack traces even though JsonPropertyName-based
+//  serialization would keep working.
+// ─────────────────────────────────────────────────────────────────────
+
+/// <summary>Result of <see cref="LicenseService.TryActivateAsync"/>.</summary>
+public readonly struct ActivationResult
+{
+    public bool Success { get; }
+    public string? ErrorMessage { get; }
+
+    private ActivationResult(bool success, string? error)
     {
-        [JsonPropertyName("license_key")]       public string? LicenseKey { get; set; }
-        [JsonPropertyName("instance_id")]       public string? InstanceId { get; set; }
-        [JsonPropertyName("instance_name")]     public string? InstanceName { get; set; }
-        [JsonPropertyName("last_validated_utc")] public DateTime LastValidatedUtc { get; set; }
-        [JsonPropertyName("status")]            public string? Status { get; set; }
+        Success = success;
+        ErrorMessage = error;
     }
 
-    /// <summary>Result of <see cref="TryActivateAsync"/>.</summary>
-    public readonly struct ActivationResult
-    {
-        public bool Success { get; }
-        public string? ErrorMessage { get; }
+    public static ActivationResult Ok() => new(true, null);
+    public static ActivationResult Fail(string message) => new(false, message);
+}
 
-        private ActivationResult(bool success, string? error)
-        {
-            Success = success;
-            ErrorMessage = error;
-        }
+/// <summary>Persisted local license state (serialized to license.dat).</summary>
+internal sealed class LicenseRecord
+{
+    [JsonPropertyName("license_key")]        public string? LicenseKey { get; set; }
+    [JsonPropertyName("instance_id")]        public string? InstanceId { get; set; }
+    [JsonPropertyName("instance_name")]      public string? InstanceName { get; set; }
+    [JsonPropertyName("last_validated_utc")] public DateTime LastValidatedUtc { get; set; }
+    [JsonPropertyName("status")]             public string? Status { get; set; }
+}
 
-        public static ActivationResult Ok() => new(true, null);
-        public static ActivationResult Fail(string message) => new(false, message);
-    }
+// ─── Lemon Squeezy API DTOs ──────────────────────────────────────────
+// Only the fields we actually consume are mapped; LS is free to add more.
 
-    // ─── Lemon Squeezy API DTOs ───────────────────────────────────────
-    // Only the fields we actually consume are mapped; LS is free to add more.
+internal sealed class LsActivateResponse
+{
+    [JsonPropertyName("activated")]   public bool Activated { get; set; }
+    [JsonPropertyName("error")]       public string? Error { get; set; }
+    [JsonPropertyName("license_key")] public LsLicenseKey? LicenseKey { get; set; }
+    [JsonPropertyName("instance")]    public LsInstance? Instance { get; set; }
+    [JsonPropertyName("meta")]        public LsMeta? Meta { get; set; }
+}
 
-    private sealed class LsActivateResponse
-    {
-        [JsonPropertyName("activated")]   public bool Activated { get; set; }
-        [JsonPropertyName("error")]       public string? Error { get; set; }
-        [JsonPropertyName("license_key")] public LsLicenseKey? LicenseKey { get; set; }
-        [JsonPropertyName("instance")]    public LsInstance? Instance { get; set; }
-        [JsonPropertyName("meta")]        public LsMeta? Meta { get; set; }
-    }
+internal sealed class LsValidateResponse
+{
+    [JsonPropertyName("valid")]       public bool Valid { get; set; }
+    [JsonPropertyName("error")]       public string? Error { get; set; }
+    [JsonPropertyName("license_key")] public LsLicenseKey? LicenseKey { get; set; }
+    [JsonPropertyName("meta")]        public LsMeta? Meta { get; set; }
+}
 
-    private sealed class LsValidateResponse
-    {
-        [JsonPropertyName("valid")]       public bool Valid { get; set; }
-        [JsonPropertyName("error")]       public string? Error { get; set; }
-        [JsonPropertyName("license_key")] public LsLicenseKey? LicenseKey { get; set; }
-        [JsonPropertyName("meta")]        public LsMeta? Meta { get; set; }
-    }
+internal sealed class LsLicenseKey
+{
+    [JsonPropertyName("id")]     public long Id { get; set; }
+    [JsonPropertyName("status")] public string? Status { get; set; }
+    [JsonPropertyName("key")]    public string? Key { get; set; }
+}
 
-    private sealed class LsLicenseKey
-    {
-        [JsonPropertyName("id")]     public long Id { get; set; }
-        [JsonPropertyName("status")] public string? Status { get; set; }
-        [JsonPropertyName("key")]    public string? Key { get; set; }
-    }
+internal sealed class LsInstance
+{
+    [JsonPropertyName("id")]   public string? Id { get; set; }
+    [JsonPropertyName("name")] public string? Name { get; set; }
+}
 
-    private sealed class LsInstance
-    {
-        [JsonPropertyName("id")]   public string? Id { get; set; }
-        [JsonPropertyName("name")] public string? Name { get; set; }
-    }
-
-    private sealed class LsMeta
-    {
-        [JsonPropertyName("store_id")]   public long StoreId { get; set; }
-        [JsonPropertyName("product_id")] public long ProductId { get; set; }
-    }
+internal sealed class LsMeta
+{
+    [JsonPropertyName("store_id")]   public long StoreId { get; set; }
+    [JsonPropertyName("product_id")] public long ProductId { get; set; }
 }
