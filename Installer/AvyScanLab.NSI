@@ -50,10 +50,24 @@ SetCompressor /SOLID lzma
 !define MUI_ABORTWARNING
 
 ; Installer pages
+; Welcome page has no header, nothing to override.
 !insertmacro MUI_PAGE_WELCOME
+
+; Directory page — short custom header to avoid language-dependent clipping.
+!define MUI_PAGE_HEADER_TEXT    "$(HDR_DIR_TITLE)"
+!define MUI_PAGE_HEADER_SUBTEXT "$(HDR_DIR_SUB)"
 !insertmacro MUI_PAGE_DIRECTORY
+
+; Components page
+!define MUI_PAGE_HEADER_TEXT    "$(HDR_CMP_TITLE)"
+!define MUI_PAGE_HEADER_SUBTEXT "$(HDR_CMP_SUB)"
 !insertmacro MUI_PAGE_COMPONENTS
+
+; InstFiles page (copy-progress screen)
+!define MUI_PAGE_HEADER_TEXT    "$(HDR_INST_TITLE)"
+!define MUI_PAGE_HEADER_SUBTEXT "$(HDR_INST_SUB)"
 !insertmacro MUI_PAGE_INSTFILES
+
 ; "Launch app" checkbox on finish page
 ; Use a custom function to launch the app as the normal (non-elevated) user.
 ; Without this, the app inherits the installer's admin privileges and UIPI
@@ -127,6 +141,107 @@ LangString MSG_LICENSE_DEACTIVATE ${LANG_GERMAN}  "Bevor Sie ${APP_NAME} deinsta
 LangString MSG_LICENSE_DEACTIVATE ${LANG_SPANISH} "Antes de desinstalar ${APP_NAME}, asegúrese de haber desactivado su licencia.$\n$\nEn la aplicación:  Configuración  ->  Licencia  ->  Desactivar$\n$\nEsto libera una ranura de activación en el servidor de licencias para que pueda reinstalar en otra máquina más adelante.$\n$\nHaga clic en Aceptar para continuar con la desinstalación (solo si ya ha desactivado),$\no en Cancelar para abortar y desactivar primero."
 LangString MSG_LICENSE_DEACTIVATE ${LANG_ITALIAN} "Prima di disinstallare ${APP_NAME}, assicurati di aver disattivato la tua licenza.$\n$\nNell'applicazione:  Impostazioni  ->  Licenza  ->  Disattiva$\n$\nQuesto libera uno slot di attivazione sul server delle licenze, permettendoti di reinstallare l'applicazione su un'altra macchina in seguito.$\n$\nFai clic su OK per proseguire con la disinstallazione (solo se hai già disattivato),$\noppure su Annulla per interrompere e disattivare prima."
 
+; 7. Silent uninstall of previous version — SUCCESS
+LangString MSG_UNINSTALL_SUCCESS ${LANG_ENGLISH} "The previous version of ${APP_NAME} was uninstalled successfully.$\n$\nThe new version will now be installed."
+LangString MSG_UNINSTALL_SUCCESS ${LANG_FRENCH}  "La version précédente de ${APP_NAME} a été désinstallée avec succès.$\n$\nLa nouvelle version va maintenant être installée."
+LangString MSG_UNINSTALL_SUCCESS ${LANG_GERMAN}  "Die vorherige Version von ${APP_NAME} wurde erfolgreich deinstalliert.$\n$\nDie neue Version wird nun installiert."
+LangString MSG_UNINSTALL_SUCCESS ${LANG_SPANISH} "La versión anterior de ${APP_NAME} se desinstaló correctamente.$\n$\nAhora se instalará la nueva versión."
+LangString MSG_UNINSTALL_SUCCESS ${LANG_ITALIAN} "La versione precedente di ${APP_NAME} è stata disinstallata correttamente.$\n$\nOra verrà installata la nuova versione."
+
+; 8. Silent uninstall of previous version — FAILURE ($1 holds exit code)
+LangString MSG_UNINSTALL_FAILED ${LANG_ENGLISH} "The uninstallation of the previous version failed (exit code: $1).$\n$\nInstallation will be aborted. Please uninstall the previous version manually via Programs and Features, then run this installer again."
+LangString MSG_UNINSTALL_FAILED ${LANG_FRENCH}  "La désinstallation de la version précédente a échoué (code : $1).$\n$\nL'installation va être interrompue. Veuillez désinstaller manuellement la version précédente via Programmes et fonctionnalités, puis relancez cet installateur."
+LangString MSG_UNINSTALL_FAILED ${LANG_GERMAN}  "Die Deinstallation der vorherigen Version ist fehlgeschlagen (Code: $1).$\n$\nDie Installation wird abgebrochen. Bitte deinstallieren Sie die vorherige Version manuell über Programme und Features und starten Sie dieses Installationsprogramm erneut."
+LangString MSG_UNINSTALL_FAILED ${LANG_SPANISH} "La desinstalación de la versión anterior falló (código: $1).$\n$\nLa instalación se cancelará. Por favor, desinstale manualmente la versión anterior mediante Programas y características, y vuelva a ejecutar este instalador."
+LangString MSG_UNINSTALL_FAILED ${LANG_ITALIAN} "La disinstallazione della versione precedente non è riuscita (codice: $1).$\n$\nL'installazione verrà interrotta. Disinstalla manualmente la versione precedente tramite Programmi e funzionalità, quindi esegui nuovamente questo installatore."
+
+; ── Page header strings (short — avoid clipping on languages with long text) ──
+; Directory page
+LangString HDR_DIR_TITLE ${LANG_ENGLISH} "Destination folder"
+LangString HDR_DIR_TITLE ${LANG_FRENCH}  "Dossier de destination"
+LangString HDR_DIR_TITLE ${LANG_GERMAN}  "Zielordner"
+LangString HDR_DIR_TITLE ${LANG_SPANISH} "Carpeta de destino"
+LangString HDR_DIR_TITLE ${LANG_ITALIAN} "Cartella di destinazione"
+LangString HDR_DIR_SUB   ${LANG_ENGLISH} "Choose where to install ${APP_NAME}."
+LangString HDR_DIR_SUB   ${LANG_FRENCH}  "Choisissez l'emplacement d'installation."
+LangString HDR_DIR_SUB   ${LANG_GERMAN}  "Wählen Sie den Installationsort."
+LangString HDR_DIR_SUB   ${LANG_SPANISH} "Elija dónde instalar la aplicación."
+LangString HDR_DIR_SUB   ${LANG_ITALIAN} "Scegli dove installare l'applicazione."
+
+; Components page
+LangString HDR_CMP_TITLE ${LANG_ENGLISH} "Components"
+LangString HDR_CMP_TITLE ${LANG_FRENCH}  "Composants"
+LangString HDR_CMP_TITLE ${LANG_GERMAN}  "Komponenten"
+LangString HDR_CMP_TITLE ${LANG_SPANISH} "Componentes"
+LangString HDR_CMP_TITLE ${LANG_ITALIAN} "Componenti"
+LangString HDR_CMP_SUB   ${LANG_ENGLISH} "Pick the optional features to install."
+LangString HDR_CMP_SUB   ${LANG_FRENCH}  "Choisissez les options à installer."
+LangString HDR_CMP_SUB   ${LANG_GERMAN}  "Wählen Sie die optionalen Funktionen aus."
+LangString HDR_CMP_SUB   ${LANG_SPANISH} "Elija las funciones opcionales a instalar."
+LangString HDR_CMP_SUB   ${LANG_ITALIAN} "Scegli le funzionalità opzionali da installare."
+
+; InstFiles page
+LangString HDR_INST_TITLE ${LANG_ENGLISH} "Installation"
+LangString HDR_INST_TITLE ${LANG_FRENCH}  "Installation"
+LangString HDR_INST_TITLE ${LANG_GERMAN}  "Installation"
+LangString HDR_INST_TITLE ${LANG_SPANISH} "Instalación"
+LangString HDR_INST_TITLE ${LANG_ITALIAN} "Installazione"
+LangString HDR_INST_SUB   ${LANG_ENGLISH} "Please wait while the application is being installed."
+LangString HDR_INST_SUB   ${LANG_FRENCH}  "Veuillez patienter pendant l'installation."
+LangString HDR_INST_SUB   ${LANG_GERMAN}  "Bitte warten Sie, die Anwendung wird installiert."
+LangString HDR_INST_SUB   ${LANG_SPANISH} "Espere mientras se instala la aplicación."
+LangString HDR_INST_SUB   ${LANG_ITALIAN} "Attendere l'installazione dell'applicazione."
+
+; ── Section names (shown on the Components page) ──
+LangString SECNAME_CORE ${LANG_ENGLISH} "AvyScan Lab (required)"
+LangString SECNAME_CORE ${LANG_FRENCH}  "AvyScan Lab (obligatoire)"
+LangString SECNAME_CORE ${LANG_GERMAN}  "AvyScan Lab (erforderlich)"
+LangString SECNAME_CORE ${LANG_SPANISH} "AvyScan Lab (obligatorio)"
+LangString SECNAME_CORE ${LANG_ITALIAN} "AvyScan Lab (obbligatorio)"
+
+LangString SECNAME_PLUGINS ${LANG_ENGLISH} "Restoration plugins (required)"
+LangString SECNAME_PLUGINS ${LANG_FRENCH}  "Plugins de restauration (obligatoire)"
+LangString SECNAME_PLUGINS ${LANG_GERMAN}  "Wiederherstellungs-Plugins (erforderlich)"
+LangString SECNAME_PLUGINS ${LANG_SPANISH} "Plugins de restauración (obligatorio)"
+LangString SECNAME_PLUGINS ${LANG_ITALIAN} "Plugin di restauro (obbligatorio)"
+
+LangString SECNAME_DESKTOP ${LANG_ENGLISH} "Desktop shortcut"
+LangString SECNAME_DESKTOP ${LANG_FRENCH}  "Raccourci sur le Bureau"
+LangString SECNAME_DESKTOP ${LANG_GERMAN}  "Desktop-Verknüpfung"
+LangString SECNAME_DESKTOP ${LANG_SPANISH} "Acceso directo en el Escritorio"
+LangString SECNAME_DESKTOP ${LANG_ITALIAN} "Collegamento sul Desktop"
+
+LangString SECNAME_STARTMENU ${LANG_ENGLISH} "Start Menu shortcut"
+LangString SECNAME_STARTMENU ${LANG_FRENCH}  "Raccourci dans le menu Démarrer"
+LangString SECNAME_STARTMENU ${LANG_GERMAN}  "Startmenü-Verknüpfung"
+LangString SECNAME_STARTMENU ${LANG_SPANISH} "Acceso directo en el menú Inicio"
+LangString SECNAME_STARTMENU ${LANG_ITALIAN} "Collegamento nel menu Start"
+
+; ── Section descriptions (shown when hovering over a section on the Components page) ──
+LangString SECDESC_CORE ${LANG_ENGLISH} "Main application files, built-in filters and user guide."
+LangString SECDESC_CORE ${LANG_FRENCH}  "Fichiers principaux de l'application, filtres intégrés et mode d'emploi."
+LangString SECDESC_CORE ${LANG_GERMAN}  "Hauptanwendungsdateien, integrierte Filter und Benutzerhandbuch."
+LangString SECDESC_CORE ${LANG_SPANISH} "Archivos principales de la aplicación, filtros integrados y guía del usuario."
+LangString SECDESC_CORE ${LANG_ITALIAN} "File principali dell'applicazione, filtri integrati e guida utente."
+
+LangString SECDESC_PLUGINS ${LANG_ENGLISH} "AviSynth+ plugins for film restoration (LSMASHSource, MVTools2, MaskTools2, RemoveDirt, FFMS2, RgTools, GamMac)."
+LangString SECDESC_PLUGINS ${LANG_FRENCH}  "Plugins AviSynth+ pour la restauration de films (LSMASHSource, MVTools2, MaskTools2, RemoveDirt, FFMS2, RgTools, GamMac)."
+LangString SECDESC_PLUGINS ${LANG_GERMAN}  "AviSynth+-Plugins für die Filmrestaurierung (LSMASHSource, MVTools2, MaskTools2, RemoveDirt, FFMS2, RgTools, GamMac)."
+LangString SECDESC_PLUGINS ${LANG_SPANISH} "Plugins AviSynth+ para la restauración de películas (LSMASHSource, MVTools2, MaskTools2, RemoveDirt, FFMS2, RgTools, GamMac)."
+LangString SECDESC_PLUGINS ${LANG_ITALIAN} "Plugin AviSynth+ per il restauro di pellicole (LSMASHSource, MVTools2, MaskTools2, RemoveDirt, FFMS2, RgTools, GamMac)."
+
+LangString SECDESC_DESKTOP ${LANG_ENGLISH} "Create a shortcut to ${APP_NAME} on the Desktop."
+LangString SECDESC_DESKTOP ${LANG_FRENCH}  "Créer un raccourci vers ${APP_NAME} sur le Bureau."
+LangString SECDESC_DESKTOP ${LANG_GERMAN}  "Eine Verknüpfung zu ${APP_NAME} auf dem Desktop erstellen."
+LangString SECDESC_DESKTOP ${LANG_SPANISH} "Crear un acceso directo a ${APP_NAME} en el Escritorio."
+LangString SECDESC_DESKTOP ${LANG_ITALIAN} "Crea un collegamento a ${APP_NAME} sul Desktop."
+
+LangString SECDESC_STARTMENU ${LANG_ENGLISH} "Create shortcuts to ${APP_NAME} in the Start Menu."
+LangString SECDESC_STARTMENU ${LANG_FRENCH}  "Créer des raccourcis vers ${APP_NAME} dans le menu Démarrer."
+LangString SECDESC_STARTMENU ${LANG_GERMAN}  "Verknüpfungen zu ${APP_NAME} im Startmenü erstellen."
+LangString SECDESC_STARTMENU ${LANG_SPANISH} "Crear accesos directos a ${APP_NAME} en el menú Inicio."
+LangString SECDESC_STARTMENU ${LANG_ITALIAN} "Crea collegamenti a ${APP_NAME} nel menu Start."
+
 ; ── Variable to hold AviSynth+ plugin directory ──
 Var AVS_PLUGINDIR
 
@@ -134,7 +249,7 @@ Var AVS_PLUGINDIR
 ; INSTALLER SECTIONS
 ; ─────────────────────────────────────────────────────
 
-Section "!${APP_NAME} (required)" SecCore
+Section "!$(SECNAME_CORE)" SecCore
     SectionIn RO  ; Cannot be deselected
 
     SetOutPath "$INSTDIR"
@@ -184,7 +299,7 @@ Section "!${APP_NAME} (required)" SecCore
 SectionEnd
 
 ; ── AviSynth+ restoration plugins (installed into plugins64+ folder) ──
-Section "Restoration plugins (required)" SecGplPlugins
+Section "!$(SECNAME_PLUGINS)" SecGplPlugins
     SectionIn RO  ; Cannot be deselected — required for AvyScan Lab
 
     ; Read AviSynth+ plugin directory from 64-bit registry view
@@ -235,22 +350,22 @@ Section "Restoration plugins (required)" SecGplPlugins
 
 SectionEnd
 
-Section "Desktop shortcut" SecDesktop
+Section "$(SECNAME_DESKTOP)" SecDesktop
     CreateShortCut "$DESKTOP\${APP_NAME}.lnk" "$INSTDIR\${APP_EXE}" "" "$INSTDIR\${APP_EXE}" 0
 SectionEnd
 
-Section "Start Menu shortcut" SecStartMenu
+Section "$(SECNAME_STARTMENU)" SecStartMenu
     CreateDirectory "$SMPROGRAMS\${APP_NAME}"
     CreateShortCut  "$SMPROGRAMS\${APP_NAME}\${APP_NAME}.lnk"  "$INSTDIR\${APP_EXE}" "" "$INSTDIR\${APP_EXE}" 0
     CreateShortCut  "$SMPROGRAMS\${APP_NAME}\Uninstall.lnk"    "$INSTDIR\Uninstall.exe"
 SectionEnd
 
-; ── Section descriptions ──
+; ── Section descriptions (localized — shown on hover on the Components page) ──
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
-    !insertmacro MUI_DESCRIPTION_TEXT ${SecCore}       "Core application files, built-in filters and user guide (required)."
-    !insertmacro MUI_DESCRIPTION_TEXT ${SecGplPlugins} "AviSynth+ restoration plugins (LSMASHSource, RgTools, GamMac, MVTools2, MaskTools2, RemoveDirt, FFMS2). Installed into AviSynth+ plugins64+ folder."
-    !insertmacro MUI_DESCRIPTION_TEXT ${SecDesktop}    "Create a shortcut on the Desktop."
-    !insertmacro MUI_DESCRIPTION_TEXT ${SecStartMenu}  "Create a shortcut in the Start Menu."
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecCore}       "$(SECDESC_CORE)"
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecGplPlugins} "$(SECDESC_PLUGINS)"
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecDesktop}    "$(SECDESC_DESKTOP)"
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecStartMenu}  "$(SECDESC_STARTMENU)"
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 ; ─────────────────────────────────────────────────────
@@ -277,6 +392,11 @@ Function .onInit
     !insertmacro MUI_LANGDLL_DISPLAY
 
     ; ── Check if already installed ──
+    ; All message boxes below run inside .onInit, BEFORE the main installer
+    ; window is drawn, so they appear on top of an empty screen — nothing
+    ; can cover them. This is critical for the licence-deactivation reminder,
+    ; which previously got hidden behind the installer window when it was
+    ; displayed from the silent uninstaller.
     ReadRegStr $0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "UninstallString"
     ${If} $0 != ""
         MessageBox MB_YESNOCANCEL|MB_ICONQUESTION "$(MSG_ALREADY_INSTALLED)" \
@@ -284,9 +404,47 @@ Function .onInit
         Abort
 
     uninst_prev:
-        ; Run the existing uninstaller silently
-        ExecWait '$0 /S' $1
-        Sleep 1000
+        ; Show the licence-deactivation reminder from the INSTALLER itself
+        ; (not from the old uninstaller which would be hidden behind the
+        ; installer window). The user must click OK to acknowledge that
+        ; they have deactivated their licence in-app before we proceed.
+        MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "$(MSG_LICENSE_DEACTIVATE)" \
+            IDOK uninst_ack
+        Abort
+
+    uninst_ack:
+        ; Read the OLD install directory from the registry so the uninstaller
+        ; is invoked in place at its real location (the user may have installed
+        ; the previous version to a non-default folder). Without the _?= flag,
+        ; NSIS uninstallers copy themselves to %TEMP% and return immediately,
+        ; which breaks ExecWait synchronisation.
+        ReadRegStr $2 HKLM "Software\${APP_NAME}" "InstallDir"
+        ${If} $2 == ""
+            ; Fallback: the uninstaller path in $0 is always <InstallDir>\Uninstall.exe,
+            ; so its parent folder is the previous install directory.
+            ${GetParent} "$0" $2
+        ${EndIf}
+
+        ; Run the existing uninstaller silently and wait for it to finish.
+        ; /SD IDOK on the uninstaller's own licence-deactivation MessageBox
+        ; makes it auto-accept in silent mode, so the user never sees a
+        ; duplicate prompt (we already showed the reminder just above).
+        ExecWait '"$0" /S _?=$2' $1
+
+        ; With _?= the uninstaller runs in place and ExecWait blocks properly,
+        ; but the Uninstall.exe file itself is left behind — clean it up.
+        Delete "$0"
+        RMDir  "$2"
+
+        ; Confirm the uninstall result to the user — previously the user had
+        ; no feedback at all and could not tell whether the old version had
+        ; been properly removed before the new installation started.
+        ${If} $1 == 0
+            MessageBox MB_OK|MB_ICONINFORMATION "$(MSG_UNINSTALL_SUCCESS)"
+        ${Else}
+            MessageBox MB_OK|MB_ICONSTOP "$(MSG_UNINSTALL_FAILED)"
+            Abort
+        ${EndIf}
 
     skip_uninst:
     ${EndIf}
@@ -369,7 +527,14 @@ Section "Uninstall"
     ; server-side and they lose one of their 2 slots every reinstall.
     ; This is a soft reminder — we cannot call the LS API from NSIS, so
     ; we rely on the user running the in-app "Deactivate" before continuing.
+    ;
+    ; /SD IDOK = when the uninstaller is invoked silently (e.g. from the
+    ; new installer's .onInit when upgrading), this MessageBox auto-accepts
+    ; with OK. In that scenario the NEW installer has already shown the
+    ; reminder up-front in its own .onInit, so skipping the duplicate
+    ; prompt here is the correct behaviour.
     MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "$(MSG_LICENSE_DEACTIVATE)" \
+        /SD IDOK \
         IDOK license_ack
     Abort
 

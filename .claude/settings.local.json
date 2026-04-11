@@ -110,7 +110,11 @@
       "Bash(cp bin/Release/net10.0/win-x64/Obfuscated/AvyScanLab.dll obj/Release/net10.0/win-x64/AvyscanLab.dll)",
       "Bash(cp bin/Release/net10.0/win-x64/Obfuscated/AvyScanLab.dll obj/Release/net10.0/win-x64/AvyScanLab.dll)",
       "Bash(rm -f bin/Release/net10.0/win-x64/publish/AvyScanLab.exe)",
-      "Bash(identify \"C:/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/AvyscanLab/Assets/Logo.png\")"
+      "Bash(identify \"C:/Users/larde/Documents/Documents administratifs/Scanfilm/Technique/ScriptRestore/AvyscanLab/Assets/Logo.png\")",
+      "Bash(command -v makensis)",
+      "Bash(\"/c/Program Files \\(x86\\)/NSIS/makensis.exe\" //V2 AvyScanLab.NSI)",
+      "Bash(\"/c/Program Files \\(x86\\)/NSIS/makensis.exe\" AvyScanLab.NSI)",
+      "Bash(echo \"EXIT=$?\")"
     ]
   }
 }
