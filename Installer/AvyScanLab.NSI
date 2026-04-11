@@ -73,6 +73,46 @@ SetCompressor /SOLID lzma
 !insertmacro MUI_LANGUAGE "German"
 !insertmacro MUI_LANGUAGE "Spanish"
 
+; ── Localized MessageBox strings ──
+; NSIS substitutes ${APP_NAME} at compile time and $1 (register) at display time.
+; All MessageBox calls below use $(MSG_*) which picks the active language.
+
+; 1. Requires 64-bit Windows (fatal, installer aborts)
+LangString MSG_REQUIRES_X64 ${LANG_ENGLISH} "${APP_NAME} requires a 64-bit version of Windows."
+LangString MSG_REQUIRES_X64 ${LANG_FRENCH}  "${APP_NAME} nécessite une version 64 bits de Windows."
+LangString MSG_REQUIRES_X64 ${LANG_GERMAN}  "${APP_NAME} benötigt eine 64-Bit-Version von Windows."
+LangString MSG_REQUIRES_X64 ${LANG_SPANISH} "${APP_NAME} requiere una versión de Windows de 64 bits."
+
+; 2. Previous version already installed (Yes = uninstall / No = overwrite / Cancel = abort)
+LangString MSG_ALREADY_INSTALLED ${LANG_ENGLISH} "${APP_NAME} is already installed.$\n$\nDo you want to uninstall the previous version before continuing?$\n$\nYes = Uninstall first, then install$\nNo  = Install over existing (update)$\nCancel = Abort"
+LangString MSG_ALREADY_INSTALLED ${LANG_FRENCH}  "${APP_NAME} est déjà installé.$\n$\nVoulez-vous désinstaller la version précédente avant de continuer ?$\n$\nOui = Désinstaller d'abord, puis installer$\nNon = Installer par-dessus (mise à jour)$\nAnnuler = Abandonner"
+LangString MSG_ALREADY_INSTALLED ${LANG_GERMAN}  "${APP_NAME} ist bereits installiert.$\n$\nMöchten Sie die vorherige Version zuerst deinstallieren?$\n$\nJa = Zuerst deinstallieren, dann installieren$\nNein = Über bestehende installieren (Update)$\nAbbrechen = Abbrechen"
+LangString MSG_ALREADY_INSTALLED ${LANG_SPANISH} "${APP_NAME} ya está instalado.$\n$\n¿Desea desinstalar la versión anterior antes de continuar?$\n$\nSí = Desinstalar primero, luego instalar$\nNo = Instalar sobre la existente (actualizar)$\nCancelar = Cancelar"
+
+; 3. App currently running — must be closed before install can proceed
+LangString MSG_APP_RUNNING ${LANG_ENGLISH} "${APP_NAME} is currently running and will be closed to proceed with the installation.$\n$\nClick OK to close it and continue, or Cancel to exit."
+LangString MSG_APP_RUNNING ${LANG_FRENCH}  "${APP_NAME} est actuellement en cours d'exécution et sera fermé pour poursuivre l'installation.$\n$\nCliquez sur OK pour le fermer et continuer, ou sur Annuler pour quitter."
+LangString MSG_APP_RUNNING ${LANG_GERMAN}  "${APP_NAME} wird derzeit ausgeführt und wird geschlossen, um die Installation fortzusetzen.$\n$\nKlicken Sie auf OK, um es zu schließen und fortzufahren, oder auf Abbrechen, um zu beenden."
+LangString MSG_APP_RUNNING ${LANG_SPANISH} "${APP_NAME} se está ejecutando actualmente y se cerrará para continuar con la instalación.$\n$\nHaga clic en Aceptar para cerrarlo y continuar, o en Cancelar para salir."
+
+; 4. AviSynth+ dependency required
+LangString MSG_AVS_REQUIRED ${LANG_ENGLISH} "${APP_NAME} requires AviSynth+ to function.$\n$\nAviSynth+ (GPLv2) will now be installed.$\nClick OK to proceed, or Cancel to exit."
+LangString MSG_AVS_REQUIRED ${LANG_FRENCH}  "${APP_NAME} nécessite AviSynth+ pour fonctionner.$\n$\nAviSynth+ (GPLv2) va maintenant être installé.$\nCliquez sur OK pour continuer, ou sur Annuler pour quitter."
+LangString MSG_AVS_REQUIRED ${LANG_GERMAN}  "${APP_NAME} benötigt AviSynth+ zum Ausführen.$\n$\nAviSynth+ (GPLv2) wird jetzt installiert.$\nKlicken Sie auf OK, um fortzufahren, oder auf Abbrechen, um zu beenden."
+LangString MSG_AVS_REQUIRED ${LANG_SPANISH} "${APP_NAME} requiere AviSynth+ para funcionar.$\n$\nAviSynth+ (GPLv2) se instalará ahora.$\nHaga clic en Aceptar para continuar, o en Cancelar para salir."
+
+; 5. AviSynth+ install exit code != 0 ($1 holds the exit code, resolved at runtime)
+LangString MSG_AVS_INSTALL_FAILED ${LANG_ENGLISH} "AviSynth+ installation may have failed (exit code: $1).$\n$\nClick OK to continue anyway, or Cancel to exit."
+LangString MSG_AVS_INSTALL_FAILED ${LANG_FRENCH}  "L'installation d'AviSynth+ a peut-être échoué (code de sortie : $1).$\n$\nCliquez sur OK pour continuer malgré tout, ou sur Annuler pour quitter."
+LangString MSG_AVS_INSTALL_FAILED ${LANG_GERMAN}  "Die Installation von AviSynth+ ist möglicherweise fehlgeschlagen (Exit-Code: $1).$\n$\nKlicken Sie auf OK, um trotzdem fortzufahren, oder auf Abbrechen, um zu beenden."
+LangString MSG_AVS_INSTALL_FAILED ${LANG_SPANISH} "Es posible que la instalación de AviSynth+ haya fallado (código de salida: $1).$\n$\nHaga clic en Aceptar para continuar de todos modos, o en Cancelar para salir."
+
+; 6. Uninstall-time license deactivation reminder (Lemon Squeezy)
+LangString MSG_LICENSE_DEACTIVATE ${LANG_ENGLISH} "Before uninstalling ${APP_NAME}, please make sure you have deactivated your license.$\n$\nIn the app:  Settings  ->  License  ->  Deactivate$\n$\nThis releases an activation slot on the license server so you can reinstall on another machine later.$\n$\nClick OK to continue uninstalling (only if you have already deactivated),$\nor Cancel to abort and deactivate first."
+LangString MSG_LICENSE_DEACTIVATE ${LANG_FRENCH}  "Avant de désinstaller ${APP_NAME}, assurez-vous d'avoir désactivé votre licence.$\n$\nDans l'application :  Paramètres  ->  Licence  ->  Désactiver$\n$\nCela libère un emplacement d'activation sur le serveur de licences afin que vous puissiez réinstaller sur une autre machine plus tard.$\n$\nCliquez sur OK pour poursuivre la désinstallation (uniquement si vous avez déjà désactivé),$\nou sur Annuler pour abandonner et désactiver d'abord."
+LangString MSG_LICENSE_DEACTIVATE ${LANG_GERMAN}  "Bevor Sie ${APP_NAME} deinstallieren, stellen Sie bitte sicher, dass Sie Ihre Lizenz deaktiviert haben.$\n$\nIn der Anwendung:  Einstellungen  ->  Lizenz  ->  Deaktivieren$\n$\nDies gibt einen Aktivierungsplatz auf dem Lizenzserver frei, sodass Sie später auf einer anderen Maschine neu installieren können.$\n$\nKlicken Sie auf OK, um die Deinstallation fortzusetzen (nur wenn Sie bereits deaktiviert haben),$\noder auf Abbrechen, um abzubrechen und zuerst zu deaktivieren."
+LangString MSG_LICENSE_DEACTIVATE ${LANG_SPANISH} "Antes de desinstalar ${APP_NAME}, asegúrese de haber desactivado su licencia.$\n$\nEn la aplicación:  Configuración  ->  Licencia  ->  Desactivar$\n$\nEsto libera una ranura de activación en el servidor de licencias para que pueda reinstalar en otra máquina más adelante.$\n$\nHaga clic en Aceptar para continuar con la desinstalación (solo si ya ha desactivado),$\no en Cancelar para abortar y desactivar primero."
+
 ; ── Variable to hold AviSynth+ plugin directory ──
 Var AVS_PLUGINDIR
 
@@ -213,19 +253,14 @@ FunctionEnd
 ; ─────────────────────────────────────────────────────
 Function .onInit
     ${IfNot} ${RunningX64}
-        MessageBox MB_OK|MB_ICONSTOP "${APP_NAME} requires a 64-bit version of Windows."
+        MessageBox MB_OK|MB_ICONSTOP "$(MSG_REQUIRES_X64)"
         Abort
     ${EndIf}
 
     ; ── Check if already installed ──
     ReadRegStr $0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "UninstallString"
     ${If} $0 != ""
-        MessageBox MB_YESNOCANCEL|MB_ICONQUESTION \
-            "${APP_NAME} is already installed.$\n$\n\
-            Do you want to uninstall the previous version before continuing?$\n$\n\
-            Yes = Uninstall first, then install$\n\
-            No  = Install over existing (update)$\n\
-            Cancel = Abort" \
+        MessageBox MB_YESNOCANCEL|MB_ICONQUESTION "$(MSG_ALREADY_INSTALLED)" \
             IDYES uninst_prev IDNO skip_uninst
         Abort
 
@@ -240,9 +275,7 @@ Function .onInit
     ; ── Close running instance of AvyScan Lab ──
     FindWindow $0 "" "${APP_NAME}"
     ${If} $0 != 0
-        MessageBox MB_OKCANCEL|MB_ICONINFORMATION \
-            "${APP_NAME} is currently running and will be closed to proceed with the installation.$\n$\n\
-            Click OK to close it and continue, or Cancel to exit." \
+        MessageBox MB_OKCANCEL|MB_ICONINFORMATION "$(MSG_APP_RUNNING)" \
             IDOK close_app
         Abort
 
@@ -277,10 +310,7 @@ Function .onInit
     ${EndIf}
 
     ; ── AviSynth+ not found — must install ──
-    MessageBox MB_OKCANCEL|MB_ICONINFORMATION \
-        "${APP_NAME} requires AviSynth+ to function.$\n$\n\
-        AviSynth+ (GPLv2) will now be installed.$\n\
-        Click OK to proceed, or Cancel to exit." \
+    MessageBox MB_OKCANCEL|MB_ICONINFORMATION "$(MSG_AVS_REQUIRED)" \
         IDOK avs_install
     ; User clicked Cancel → abort the entire installer
     Abort
@@ -294,9 +324,7 @@ avs_install:
 
     ; Verify installation succeeded
     ${If} $1 != 0
-        MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION \
-            "AviSynth+ installation may have failed (exit code: $1).$\n$\n\
-            Click OK to continue anyway, or Cancel to exit." \
+        MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "$(MSG_AVS_INSTALL_FAILED)" \
             IDOK avs_done
         Abort
     ${EndIf}
@@ -308,6 +336,18 @@ FunctionEnd
 ; UNINSTALLER
 ; ─────────────────────────────────────────────────────
 Section "Uninstall"
+    ; ── License deactivation reminder ──
+    ; Each Lemon Squeezy license has a limited number of activation slots
+    ; (2 per key, configured in the LS dashboard). If the user uninstalls
+    ; without first clicking "Deactivate" in the app, the slot stays busy
+    ; server-side and they lose one of their 2 slots every reinstall.
+    ; This is a soft reminder — we cannot call the LS API from NSIS, so
+    ; we rely on the user running the in-app "Deactivate" before continuing.
+    MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "$(MSG_LICENSE_DEACTIVATE)" \
+        IDOK license_ack
+    Abort
+
+license_ack:
     ; Remove AvyScan Lab files (includes Plugins\ffmpeg, mpv, etc.)
     RMDir /r "$INSTDIR\Plugins"
     RMDir /r "$INSTDIR\Filters"
