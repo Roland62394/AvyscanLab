@@ -51,7 +51,7 @@ public static class LicenseService
     //  DEV TOGGLE — flip to true to force-unlock for testing.
     //  ⚠️ Must be false for production / trial builds.
     // ─────────────────────────────────────────────────────────────────
-    public const bool ForceLicensed = false;
+    public const bool ForceLicensed = true;
 
     private const string LicenseFileName = "license.dat";
 
