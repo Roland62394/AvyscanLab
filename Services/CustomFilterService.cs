@@ -115,7 +115,9 @@ public sealed class CustomFilterService
 
     // ── Persistence ─────────────────────────────────────────────────────
 
-    /// <summary>Writes a single filter to its own JSON file.</summary>
+    /// <summary>Writes a single filter to its own JSON file.
+    /// Also removes any stale file whose name no longer matches the filter Id
+    /// (e.g. a shipped file named differently from the Id it contains).</summary>
     public void SaveFilter(CustomFilter filter)
     {
         try
@@ -124,8 +126,32 @@ public sealed class CustomFilterService
             var path = Path.Combine(_filtersDir, $"{filter.Id}.json");
             var json = JsonSerializer.Serialize(filter, JsonOpts);
             File.WriteAllText(path, json);
+            CleanStaleFile(filter.Id);
         }
         catch { /* best effort */ }
+    }
+
+    /// <summary>
+    /// If a JSON file in the directory contains this Id but has a different
+    /// file name, delete it to avoid duplicates after save.
+    /// </summary>
+    private void CleanStaleFile(string id)
+    {
+        var expectedName = $"{id}.json";
+        if (!Directory.Exists(_filtersDir)) return;
+        foreach (var file in Directory.GetFiles(_filtersDir, "*.json"))
+        {
+            if (string.Equals(Path.GetFileName(file), expectedName, StringComparison.OrdinalIgnoreCase))
+                continue;
+            try
+            {
+                var json = File.ReadAllText(file);
+                var f = JsonSerializer.Deserialize<CustomFilter>(json, JsonOpts);
+                if (f is not null && string.Equals(f.Id, id, StringComparison.OrdinalIgnoreCase))
+                    File.Delete(file);
+            }
+            catch { /* skip */ }
+        }
     }
 
     /// <summary>Writes all in-memory filters to disk (batch operation, e.g. reorder).</summary>

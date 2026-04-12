@@ -149,6 +149,7 @@ public static class LicenseService
     public static async Task InitializeAsync(CancellationToken ct = default)
     {
         if (ForceLicensed) return;
+        if (TestBuildDate.HasValue) return;
         if (_record is null || string.IsNullOrWhiteSpace(_record.LicenseKey)) return;
 
         try
@@ -169,7 +170,7 @@ public static class LicenseService
     /// </summary>
     public static async Task<ActivationResult> TryActivateAsync(string? key, CancellationToken ct = default)
     {
-        if (ForceLicensed) return ActivationResult.Ok();
+        if (ForceLicensed || TestBuildDate.HasValue) return ActivationResult.Ok();
 
         var trimmed = (key ?? string.Empty).Trim();
         if (!Validate(trimmed))
@@ -238,7 +239,7 @@ public static class LicenseService
     /// </summary>
     public static async Task DeactivateAsync(CancellationToken ct = default)
     {
-        if (ForceLicensed) return;
+        if (ForceLicensed || TestBuildDate.HasValue) return;
 
         var record = _record;
         if (record is not null &&
@@ -274,7 +275,7 @@ public static class LicenseService
     /// </summary>
     public static async Task RevalidateAsync(CancellationToken ct = default)
     {
-        if (ForceLicensed) return;
+        if (ForceLicensed || TestBuildDate.HasValue) return;
 
         var record = _record;
         if (record is null || string.IsNullOrWhiteSpace(record.LicenseKey))
