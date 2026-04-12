@@ -163,11 +163,7 @@ public partial class CustomFilterDialog : Window
         DeleteBtn.IsVisible = !isNew;
         DuplicateBtn.IsVisible = !isNew;
 
-        // Built-in filter warning: tell the user that Code/Controls edits on a
-        // shipped filter will be silently reverted by ImportBuiltInFilters() on
-        // the next app start. The fix is for the user to click "Duplicate" and
-        // work on the clone (which has a random Id and is not built-in).
-        BuiltInWarningBanner.IsVisible = !isNew && CustomFilterService.IsBuiltIn(filter.Id);
+        BuiltInWarningBanner.IsVisible = false;
 
         // Trial mode: read-only view of the filter — disable every editable control
         // and hide all action buttons that mutate state.
@@ -362,8 +358,8 @@ public partial class CustomFilterDialog : Window
     private async void OnDelete()
     {
         var filterName = string.IsNullOrWhiteSpace(FilterNameBox.Text) ? "Custom" : FilterNameBox.Text.Trim();
-        var isBuiltIn = IsBuiltInFilter(_filter.Id);
-        var msgKey = isBuiltIn ? "CfDlgRemoveConfirm" : "CfDlgDeleteConfirm";
+        var isShipped = CustomFilterService.IsShippedFilter(_filter.Id);
+        var msgKey = isShipped ? "CfDlgRemoveConfirm" : "CfDlgDeleteConfirm";
         var msg = L(msgKey).Replace("$name$", filterName);
 
         var confirmed = false;
@@ -372,7 +368,7 @@ public partial class CustomFilterDialog : Window
 
         var dialog = new Window
         {
-            Title = L(isBuiltIn ? "CfDlgRemoveConfirmTitle" : "CfDlgDeleteConfirmTitle"),
+            Title = L(isShipped ? "CfDlgRemoveConfirmTitle" : "CfDlgDeleteConfirmTitle"),
             SizeToContent = SizeToContent.WidthAndHeight,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             MaxWidth = 460,
@@ -458,18 +454,38 @@ public partial class CustomFilterDialog : Window
 
         if (picker is null) return;
 
-        var json = JsonSerializer.Serialize(new[] { snapshot }, ExportJsonOpts);
+        var json = JsonSerializer.Serialize(snapshot, ExportJsonOpts);
         await File.WriteAllTextAsync(picker.Path.LocalPath, json);
     }
 
-    /// <summary>Deserialize filters from a JSON file. Returns empty list on error.</summary>
+    /// <summary>
+    /// Deserialize filters from a JSON file. Accepts both a single object and
+    /// an array (backward compatibility with old exports). Returns empty list on error.
+    /// </summary>
     public static List<CustomFilter> ImportFromFile(string path)
     {
         try
         {
             var json = File.ReadAllText(path);
-            var filters = JsonSerializer.Deserialize<List<CustomFilter>>(json, ExportJsonOpts);
+            var trimmed = json.TrimStart();
+
+            List<CustomFilter>? filters;
+            if (trimmed.StartsWith('['))
+            {
+                filters = JsonSerializer.Deserialize<List<CustomFilter>>(json, ExportJsonOpts);
+            }
+            else
+            {
+                var single = JsonSerializer.Deserialize<CustomFilter>(json, ExportJsonOpts);
+                filters = single is not null ? [single] : null;
+            }
+
             if (filters is null) return [];
+
+            // Validate: each filter must have a Name and either Code or Controls
+            filters.RemoveAll(f =>
+                string.IsNullOrWhiteSpace(f.Name) ||
+                (string.IsNullOrWhiteSpace(f.Code) && f.Controls.Count == 0));
 
             // Assign fresh IDs to avoid collisions
             foreach (var f in filters)
@@ -1161,26 +1177,6 @@ public partial class CustomFilterDialog : Window
 
     /// <summary>Pre-fill the code box. Call after construction, before ShowDialog.</summary>
     public void SetCode(string code) => CodeBox.Text = code;
-
-    private static bool IsBuiltInFilter(string id)
-    {
-        var exeDir = System.IO.Path.GetDirectoryName(Environment.ProcessPath);
-        if (string.IsNullOrWhiteSpace(exeDir)) return false;
-        var filtersDir = System.IO.Path.Combine(exeDir, "Filters");
-        if (!System.IO.Directory.Exists(filtersDir)) return false;
-        foreach (var jsonFile in System.IO.Directory.GetFiles(filtersDir, "*.json"))
-        {
-            try
-            {
-                var json = System.IO.File.ReadAllText(jsonFile);
-                var f = System.Text.Json.JsonSerializer.Deserialize<CustomFilter>(json);
-                if (f is not null && string.Equals(f.Id, id, StringComparison.OrdinalIgnoreCase))
-                    return true;
-            }
-            catch { }
-        }
-        return false;
-    }
 
     private static CustomFilterControl CloneControl(CustomFilterControl src) => new()
     {

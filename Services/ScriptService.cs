@@ -91,7 +91,8 @@ public sealed partial class ScriptService(SourceService source) : IScriptService
 
         var template = File.ReadAllText(templatePath);
 
-        // Convert ALL filters (built-in + user-created) to modules — no distinction
+        // All filters in the directory are used for script generation.
+        // Trial mode prevents add/remove/modify via the UI, not here.
         var allModules = customFilters is not null
             ? ConvertCustomFiltersToModules(customFilters, configValues)
             : new List<ScriptModule>();

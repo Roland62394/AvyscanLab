@@ -144,8 +144,9 @@ namespace AvyScanLab.Views
             _gammacPresetService  = new PresetService(AppConstants.GetAppDataPath(AppConstants.GammacPresetsFileName));
             _windowStateService = windowStateService;
             _sessionService     = new SessionService(AppConstants.GetAppDataPath(AppConstants.SessionFileName));
-            _customFilterService = new CustomFilterService(AppConstants.GetAppDataPath(AppConstants.CustomFiltersFileName));
-            _customFilterService.ImportBuiltInFilters();
+            _customFilterService = new CustomFilterService(AppConstants.GetFiltersDir());
+            _customFilterService.MigrateFromLegacy(AppConstants.GetAppDataPath(AppConstants.CustomFiltersFileName));
+            _customFilterService.SeedFromShipped();
             _dialogService      = dialogService;
             _aviService         = aviService;
 
@@ -806,7 +807,7 @@ namespace AvyScanLab.Views
 
         private static readonly string[] BackupFileNames =
         [
-            AppConstants.PresetsFileName, AppConstants.CustomFiltersFileName, AppConstants.EncodingPresetsFileName,
+            AppConstants.PresetsFileName, AppConstants.EncodingPresetsFileName,
             AppConstants.GammacPresetsFileName, AppConstants.SessionFileName, AppConstants.WindowSettingsFileName
         ];
 
@@ -839,6 +840,14 @@ namespace AvyScanLab.Views
                     if (File.Exists(src))
                         zip.CreateEntryFromFile(src, name);
                 }
+
+                // Include all filter files from Filters/ directory
+                var filtersDir = AppConstants.GetFiltersDir();
+                if (Directory.Exists(filtersDir))
+                {
+                    foreach (var filterFile in Directory.GetFiles(filtersDir, "*.json"))
+                        zip.CreateEntryFromFile(filterFile, $"{AppConstants.FiltersDirName}/{Path.GetFileName(filterFile)}");
+                }
             }
             catch (Exception ex)
             {
@@ -865,10 +874,12 @@ namespace AvyScanLab.Views
             var report = new List<(string Name, string Status)>();
             Dictionary<string, byte[]> validFiles;
 
+            Dictionary<string, byte[]> validFilterFiles;
             try
             {
                 using var zip = ZipFile.OpenRead(zipPath);
                 validFiles = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+                validFilterFiles = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
 
                 foreach (var name in BackupFileNames)
                 {
@@ -896,6 +907,52 @@ namespace AvyScanLab.Views
                         report.Add((name, GetUiText("ImportReportCorrupt").Replace("$name$", name)));
                     }
                 }
+
+                // Extract filter files from Filters/ directory in ZIP
+                var filterPrefix = AppConstants.FiltersDirName + "/";
+                var filterCount = 0;
+                foreach (var entry in zip.Entries)
+                {
+                    if (!entry.FullName.StartsWith(filterPrefix, StringComparison.OrdinalIgnoreCase)) continue;
+                    if (!entry.FullName.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) continue;
+                    using var stream = entry.Open();
+                    using var ms = new MemoryStream();
+                    await stream.CopyToAsync(ms);
+                    var bytes = ms.ToArray();
+                    try
+                    {
+                        System.Text.Json.JsonDocument.Parse(bytes);
+                        validFilterFiles[Path.GetFileName(entry.FullName)] = bytes;
+                        filterCount++;
+                    }
+                    catch { /* skip corrupt filter files */ }
+                }
+
+                // Also support legacy custom_filters.json (array format) from old backups
+                if (filterCount == 0)
+                {
+                    var legacyEntry = zip.GetEntry(AppConstants.CustomFiltersFileName);
+                    if (legacyEntry is not null)
+                    {
+                        using var stream = legacyEntry.Open();
+                        using var ms = new MemoryStream();
+                        await stream.CopyToAsync(ms);
+                        var bytes = ms.ToArray();
+                        try
+                        {
+                            System.Text.Json.JsonDocument.Parse(bytes);
+                            validFiles[AppConstants.CustomFiltersFileName] = bytes;
+                            report.Add((AppConstants.CustomFiltersFileName, GetUiText("ImportReportOk").Replace("$name$", AppConstants.CustomFiltersFileName)));
+                        }
+                        catch
+                        {
+                            report.Add((AppConstants.CustomFiltersFileName, GetUiText("ImportReportCorrupt").Replace("$name$", AppConstants.CustomFiltersFileName)));
+                        }
+                    }
+                }
+
+                if (filterCount > 0)
+                    report.Add(($"{AppConstants.FiltersDirName}/", GetUiText("ImportReportOk").Replace("$name$", $"{AppConstants.FiltersDirName}/ ({filterCount})")));
             }
             catch (Exception ex)
             {
@@ -903,7 +960,7 @@ namespace AvyScanLab.Views
                 return;
             }
 
-            if (validFiles.Count == 0)
+            if (validFiles.Count == 0 && validFilterFiles.Count == 0)
             {
                 await _dialogService.ShowErrorAsync(this, GetUiText("ImportSettingsTitle"), "No valid files found.");
                 return;
@@ -959,6 +1016,15 @@ namespace AvyScanLab.Views
                 Directory.CreateDirectory(appDir);
                 foreach (var (name, bytes) in validFiles)
                     await File.WriteAllBytesAsync(Path.Combine(appDir, name), bytes);
+
+                // Write filter files to Filters/ directory
+                if (validFilterFiles.Count > 0)
+                {
+                    var filtersDir = AppConstants.GetFiltersDir();
+                    Directory.CreateDirectory(filtersDir);
+                    foreach (var (name, bytes) in validFilterFiles)
+                        await File.WriteAllBytesAsync(Path.Combine(filtersDir, name), bytes);
+                }
 
                 // Restart application to apply — close gracefully so Closing handlers run
                 var exePath = Environment.ProcessPath;

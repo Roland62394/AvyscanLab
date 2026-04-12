@@ -315,6 +315,35 @@ public sealed class CustomFilterPresenter
         _ = _host.LoadScriptAsync();
     }
 
+    /// <summary>Shows a dialog listing backed-up (removed) base filters for restoration.</summary>
+    public async void OnRestoreClick()
+    {
+        if (!LicenseService.IsLicensed) return;
+
+        var backed = _filterService.GetBackedUpFilters();
+        if (backed.Count == 0) return;
+
+        var restored = false;
+        foreach (var f in backed)
+        {
+            if (_filterService.RestoreFilter(f.Id))
+            {
+                _host.Config.Set(ScriptService.GetCustomFilterEnabledKey(f.Id), "true");
+                restored = true;
+            }
+        }
+
+        if (restored)
+        {
+            RebuildUI();
+            _host.RegenerateScript(showValidationError: false);
+            await _host.LoadScriptAsync();
+        }
+    }
+
+    /// <summary>Returns true if there are backed-up filters available for restoration.</summary>
+    public bool HasBackedUpFilters() => _filterService.GetBackedUpFilters().Count > 0;
+
     // ── Private: row / panel construction ────────────────────────────
 
     private Point? _dragStartPos;
@@ -466,7 +495,13 @@ public sealed class CustomFilterPresenter
         {
             // Remove config keys for this filter (enabled + all placeholders)
             RemoveFilterConfigKeys(filter);
-            _filterService.Remove(filter.Id);
+
+            // Base filters are moved to backup instead of being deleted
+            if (CustomFilterService.IsShippedFilter(filter.Id))
+                _filterService.BackupAndRemove(filter.Id);
+            else
+                _filterService.Remove(filter.Id);
+
             RebuildUI();
             _host.RegenerateScript(showValidationError: false);
             await _host.LoadScriptAsync();
@@ -487,7 +522,7 @@ public sealed class CustomFilterPresenter
         }
         else if (dialog.Saved)
         {
-            _filterService.Save();
+            _filterService.SaveFilter(filter);
             RebuildUI();
             _host.RegenerateScript(showValidationError: false);
             await _host.LoadScriptAsync();

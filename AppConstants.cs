@@ -39,7 +39,9 @@ public static class AppConstants
     public const string EncodingPresetsFileName = "encoding_presets.json";
     public const string GammacPresetsFileName   = "gammac_presets.json";
     public const string SessionFileName         = "session.json";
-    public const string CustomFiltersFileName   = "custom_filters.json";
+    public const string CustomFiltersFileName   = "custom_filters.json"; // legacy, kept for migration
+    public const string FiltersDirName          = "Filters";
+    public const string FiltersBackupDirName    = "Filters_backup";
     public const string ThemeSettingsFileName    = "theme-settings.json";
     public const string CfDlgLayoutFileName     = "cfdlg-layout.json";
 
@@ -51,4 +53,18 @@ public static class AppConstants
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             AppDataFolder,
             fileName);
+
+    /// <summary>User-writable Filters directory in AppData.</summary>
+    public static string GetFiltersDir() =>
+        Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            AppDataFolder,
+            FiltersDirName);
+
+    /// <summary>Backup directory for removed base filters.</summary>
+    public static string GetFiltersBackupDir() =>
+        Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            AppDataFolder,
+            FiltersBackupDirName);
 }

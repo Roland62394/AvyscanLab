@@ -8,7 +8,8 @@ namespace AvyScanLab.Services;
 
 public sealed class CustomFilterService
 {
-    private readonly string _filePath;
+    private readonly string _filtersDir;
+    private readonly string _backupDir;
     private List<CustomFilter> _filters = [];
 
     private static readonly JsonSerializerOptions JsonOpts = new()
@@ -17,309 +18,220 @@ public sealed class CustomFilterService
         PropertyNameCaseInsensitive = true
     };
 
-    /// <summary>
-    /// Authoritative DLL/.avsi metadata for built-in filters.
-    /// This dictionary is the **single source of truth** that shields the app
-    /// from the recurring "empty Dlls/Scripts arrays" regression in
-    /// <c>Filters/*.json</c>: every time those JSON files were edited for an
-    /// unrelated reason (controls, descriptions, code), the Dlls/Scripts arrays
-    /// were silently reset to <c>[]</c> and the Custom Filter dialog stopped
-    /// showing the absolute paths the user expects.
-    ///
-    /// Lookup is by filter <c>Id</c>. Applied as a fallback in
-    /// <see cref="ImportBuiltInFilters"/> whenever the JSON-loaded list is empty,
-    /// so future edits of <c>Filters/*.json</c> can never lose this metadata
-    /// again. The DLL filenames must match what the NSIS installer copies into
-    /// the AviSynth+ <c>plugins64+</c> folder (see <c>Installer/AvyScanLab.NSI</c>).
-    /// </summary>
-    private static readonly Dictionary<string, (string[] Dlls, string[] Scripts)> BuiltInPlugins =
-        new(StringComparer.OrdinalIgnoreCase)
-        {
-            ["degrain"] = (["mvtools2.dll", "RgTools.dll"],                  []),
-            ["denoise"] = (["RemoveDirt.dll", "RgTools.dll", "mvtools2.dll"], ["RemoveDirt.avsi"]),
-            ["gammac"]  = (["GamMac_x64.dll"],                                []),
-            ["sharpen"] = (["masktools2.dll"],                                []),
-            ["stab8mm"] = (["DePanEstimate.dll", "DePan.dll", "mvtools2.dll"], []),
-        };
-
-    /// <summary>
-    /// Set of filter Ids that come from shipped <c>Filters/*.json</c> files.
-    /// Populated lazily on first access and also updated on every
-    /// <see cref="ImportBuiltInFilters"/> call. Used by
-    /// <c>CustomFilterDialog</c> to warn the user that modifications to a
-    /// built-in filter's Code/Controls/Dlls/Scripts are reset at startup.
-    /// </summary>
-    private static readonly HashSet<string> _builtInIds =
-        new(StringComparer.OrdinalIgnoreCase);
-    private static bool _builtInIdsLoaded;
-    private static readonly object _builtInIdsLock = new();
-
-    /// <summary>
-    /// Returns true if <paramref name="id"/> matches a shipped built-in filter.
-    /// Built-in filters are those whose Code/Controls/Dlls/Scripts are
-    /// re-synced from <c>Filters/*.json</c> on every app start by
-    /// <see cref="ImportBuiltInFilters"/>, so user modifications to those
-    /// fields are overwritten. Users who want to keep tweaks must duplicate
-    /// the filter first.
-    /// </summary>
-    public static bool IsBuiltIn(string? id)
+    public CustomFilterService(string filtersDir)
     {
-        if (string.IsNullOrWhiteSpace(id)) return false;
-        if (!_builtInIdsLoaded)
-        {
-            lock (_builtInIdsLock)
-            {
-                if (!_builtInIdsLoaded)
-                {
-                    LoadBuiltInIdsFromDisk();
-                    _builtInIdsLoaded = true;
-                }
-            }
-        }
-        return _builtInIds.Contains(id);
-    }
-
-    /// <summary>
-    /// Scans the shipped <c>Filters/</c> directory once and fills
-    /// <see cref="_builtInIds"/>. Called lazily from <see cref="IsBuiltIn"/>
-    /// when the dialog is opened before <see cref="ImportBuiltInFilters"/>
-    /// has had a chance to run (e.g. unit tests, early UI paths).
-    /// </summary>
-    private static void LoadBuiltInIdsFromDisk()
-    {
-        try
-        {
-            var exeDir = Path.GetDirectoryName(Environment.ProcessPath);
-            if (string.IsNullOrWhiteSpace(exeDir)) return;
-            var filtersDir = Path.Combine(exeDir, "Filters");
-            if (!Directory.Exists(filtersDir)) return;
-            foreach (var jsonFile in Directory.GetFiles(filtersDir, "*.json"))
-            {
-                try
-                {
-                    var json = File.ReadAllText(jsonFile);
-                    var f = JsonSerializer.Deserialize<CustomFilter>(json, JsonOpts);
-                    if (f is not null && !string.IsNullOrWhiteSpace(f.Id))
-                        _builtInIds.Add(f.Id);
-                }
-                catch { /* skip malformed */ }
-            }
-        }
-        catch { /* best-effort */ }
-    }
-
-    /// <summary>Apply the built-in DLL/script defaults to a filter when its
-    /// JSON-loaded lists are empty. Returns true if anything was filled in.</summary>
-    private static bool ApplyBuiltInPluginDefaults(CustomFilter filter)
-    {
-        if (!BuiltInPlugins.TryGetValue(filter.Id, out var defaults)) return false;
-        var changed = false;
-        if (filter.Dlls.Count == 0 && defaults.Dlls.Length > 0)
-        {
-            filter.Dlls = [..defaults.Dlls];
-            changed = true;
-        }
-        if (filter.Scripts.Count == 0 && defaults.Scripts.Length > 0)
-        {
-            filter.Scripts = [..defaults.Scripts];
-            changed = true;
-        }
-        return changed;
-    }
-
-    private static bool ListsEqual(List<string> a, List<string> b)
-    {
-        if (a.Count != b.Count) return false;
-        for (var i = 0; i < a.Count; i++)
-            if (!string.Equals(a[i], b[i], StringComparison.OrdinalIgnoreCase)) return false;
-        return true;
-    }
-
-    private static bool SyncDescriptions(List<CustomFilterControl> existing, List<CustomFilterControl> shipped)
-    {
-        var changed = false;
-        foreach (var sc in shipped)
-        {
-            var ec = existing.Find(c => string.Equals(c.Placeholder, sc.Placeholder, StringComparison.OrdinalIgnoreCase));
-            if (ec is null) continue;
-
-            if (!string.IsNullOrWhiteSpace(sc.Description)
-                && !string.Equals(ec.Description, sc.Description, StringComparison.Ordinal))
-            {
-                ec.Description = sc.Description;
-                changed = true;
-            }
-
-            if (ec.ScaleWithPreview != sc.ScaleWithPreview)
-            {
-                ec.ScaleWithPreview = sc.ScaleWithPreview;
-                changed = true;
-            }
-        }
-        return changed;
-    }
-
-    public CustomFilterService(string filePath)
-    {
-        _filePath = filePath;
+        _filtersDir = filtersDir;
+        _backupDir = AppConstants.GetFiltersBackupDir();
         Load();
     }
 
     public IReadOnlyList<CustomFilter> Filters => _filters;
 
+    // ── CRUD ────────────────────────────────────────────────────────────
+
     public CustomFilter Add(string name = "Custom")
     {
         var filter = new CustomFilter { Name = name };
         _filters.Add(filter);
-        Save();
+        SaveFilter(filter);
         return filter;
     }
 
     public void Add(CustomFilter filter)
     {
         _filters.Add(filter);
-        Save();
+        SaveFilter(filter);
     }
 
     public void InsertAt(int index, CustomFilter filter)
     {
         _filters.Insert(index, filter);
-        Save();
+        SaveFilter(filter);
     }
 
     public void Remove(string id)
     {
         _filters.RemoveAll(f => f.Id == id);
-        Save();
+        var path = Path.Combine(_filtersDir, $"{id}.json");
+        try { if (File.Exists(path)) File.Delete(path); } catch { /* best effort */ }
     }
 
     public CustomFilter? GetById(string id) =>
         _filters.Find(f => f.Id == id);
 
-    public void Save()
-    {
-        try
-        {
-            var dir = Path.GetDirectoryName(_filePath);
-            if (!string.IsNullOrWhiteSpace(dir))
-                Directory.CreateDirectory(dir);
+    // ── Backup / Restore ────────────────────────────────────────────────
 
-            var json = JsonSerializer.Serialize(_filters, JsonOpts);
-            File.WriteAllText(_filePath, json);
-        }
-        catch { /* best effort */ }
-    }
-
-    public void Load()
+    /// <summary>Moves a filter to the backup directory instead of deleting it.</summary>
+    public void BackupAndRemove(string id)
     {
-        try
+        var srcPath = Path.Combine(_filtersDir, $"{id}.json");
+        if (File.Exists(srcPath))
         {
-            if (File.Exists(_filePath))
+            try
             {
-                var json = File.ReadAllText(_filePath);
-                _filters = JsonSerializer.Deserialize<List<CustomFilter>>(json, JsonOpts) ?? [];
-
-                // Heal the user's persisted state in case a previous run wrote
-                // empty Dlls/Scripts for a built-in filter (regression defense).
-                foreach (var f in _filters)
-                    ApplyBuiltInPluginDefaults(f);
+                Directory.CreateDirectory(_backupDir);
+                var destPath = Path.Combine(_backupDir, $"{id}.json");
+                File.Move(srcPath, destPath, overwrite: true);
             }
+            catch { /* best effort */ }
         }
-        catch
-        {
-            _filters = [];
-        }
+        _filters.RemoveAll(f => f.Id == id);
     }
 
-    /// <summary>
-    /// Imports built-in filter JSON files from the Filters/ directory next to the executable.
-    /// Only imports filters whose Id is not already present in the user's list.
-    /// Called once at startup.
-    /// </summary>
-    public void ImportBuiltInFilters()
+    /// <summary>Returns the list of filters currently in the backup directory.</summary>
+    public List<CustomFilter> GetBackedUpFilters()
     {
-        var exeDir = Path.GetDirectoryName(Environment.ProcessPath);
-        if (string.IsNullOrWhiteSpace(exeDir)) return;
-
-        var filtersDir = Path.Combine(exeDir, "Filters");
-        if (!Directory.Exists(filtersDir)) return;
-
-        var existingById = new Dictionary<string, CustomFilter>(StringComparer.OrdinalIgnoreCase);
-        foreach (var f in _filters)
-            existingById[f.Id] = f;
-        var changed = false;
-
-        foreach (var jsonFile in Directory.GetFiles(filtersDir, "*.json"))
+        var result = new List<CustomFilter>();
+        if (!Directory.Exists(_backupDir)) return result;
+        foreach (var jsonFile in Directory.GetFiles(_backupDir, "*.json"))
         {
             try
             {
                 var json = File.ReadAllText(jsonFile);
-                var filter = JsonSerializer.Deserialize<CustomFilter>(json, JsonOpts);
-                if (filter is null || string.IsNullOrWhiteSpace(filter.Id)) continue;
-
-                // Track built-in Ids for IsBuiltIn() queries — the custom filter
-                // dialog uses this to warn the user when they're editing a filter
-                // whose Code/Controls will be overwritten on next startup.
-                _builtInIds.Add(filter.Id);
-                _builtInIdsLoaded = true;
-
-                // Defense against the recurring "empty Dlls/Scripts" regression
-                // in shipped Filters/*.json: backfill from BuiltInPlugins so the
-                // sync below propagates correct paths into the user's AppData.
-                ApplyBuiltInPluginDefaults(filter);
-
-                if (existingById.TryGetValue(filter.Id, out var existing))
-                {
-                    // Update code/scripts/dlls from shipped version (user may have customized controls)
-                    if (!string.Equals(existing.Code, filter.Code, StringComparison.Ordinal))
-                    {
-                        existing.Code = filter.Code;
-                        existing.Dlls = filter.Dlls;
-                        existing.Scripts = filter.Scripts;
-                        existing.Controls = filter.Controls;
-                        changed = true;
-                    }
-                    // Always sync Dlls/Scripts/Descriptions even if Code unchanged
-                    else
-                    {
-                        if (!ListsEqual(existing.Dlls, filter.Dlls)
-                            || !ListsEqual(existing.Scripts, filter.Scripts))
-                        {
-                            existing.Dlls = filter.Dlls;
-                            existing.Scripts = filter.Scripts;
-                            changed = true;
-                        }
-                        // Sync descriptions from shipped controls
-                        if (SyncDescriptions(existing.Controls, filter.Controls))
-                            changed = true;
-                    }
-                    // Sync RegionDraw flag and mode from shipped version
-                    if (existing.RegionDraw != filter.RegionDraw)
-                    {
-                        existing.RegionDraw = filter.RegionDraw;
-                        changed = true;
-                    }
-                    if (!string.Equals(existing.RegionDrawMode, filter.RegionDrawMode, StringComparison.OrdinalIgnoreCase))
-                    {
-                        existing.RegionDrawMode = filter.RegionDrawMode;
-                        changed = true;
-                    }
-                    if (!ListsEqual(existing.RegionDrawPlaceholders, filter.RegionDrawPlaceholders))
-                    {
-                        existing.RegionDrawPlaceholders = filter.RegionDrawPlaceholders;
-                        changed = true;
-                    }
-                }
-                else
-                {
-                    _filters.Add(filter);
-                    existingById[filter.Id] = filter;
-                    changed = true;
-                }
+                var f = JsonSerializer.Deserialize<CustomFilter>(json, JsonOpts);
+                if (f is not null && !string.IsNullOrWhiteSpace(f.Id))
+                    result.Add(f);
             }
-            catch { /* skip malformed files */ }
+            catch { /* skip malformed */ }
+        }
+        return result;
+    }
+
+    /// <summary>Moves a filter from the backup directory back to the active directory.</summary>
+    public bool RestoreFilter(string id)
+    {
+        var srcPath = Path.Combine(_backupDir, $"{id}.json");
+        if (!File.Exists(srcPath)) return false;
+        try
+        {
+            Directory.CreateDirectory(_filtersDir);
+            var destPath = Path.Combine(_filtersDir, $"{id}.json");
+            File.Move(srcPath, destPath, overwrite: true);
+            Load();
+            return true;
+        }
+        catch { return false; }
+    }
+
+    // ── Persistence ─────────────────────────────────────────────────────
+
+    /// <summary>Writes a single filter to its own JSON file.</summary>
+    public void SaveFilter(CustomFilter filter)
+    {
+        try
+        {
+            Directory.CreateDirectory(_filtersDir);
+            var path = Path.Combine(_filtersDir, $"{filter.Id}.json");
+            var json = JsonSerializer.Serialize(filter, JsonOpts);
+            File.WriteAllText(path, json);
+        }
+        catch { /* best effort */ }
+    }
+
+    /// <summary>Writes all in-memory filters to disk (batch operation, e.g. reorder).</summary>
+    public void Save()
+    {
+        try
+        {
+            Directory.CreateDirectory(_filtersDir);
+            foreach (var f in _filters)
+                SaveFilter(f);
+        }
+        catch { /* best effort */ }
+    }
+
+    /// <summary>Reads all *.json files from the filters directory.</summary>
+    public void Load()
+    {
+        _filters = [];
+        if (!Directory.Exists(_filtersDir)) return;
+        foreach (var jsonFile in Directory.GetFiles(_filtersDir, "*.json"))
+        {
+            try
+            {
+                var json = File.ReadAllText(jsonFile);
+                var f = JsonSerializer.Deserialize<CustomFilter>(json, JsonOpts);
+                if (f is not null && !string.IsNullOrWhiteSpace(f.Id))
+                    _filters.Add(f);
+            }
+            catch { /* skip malformed */ }
+        }
+    }
+
+    // ── First-run seeding & migration ───────────────────────────────────
+
+    /// <summary>
+    /// Copies shipped filter files from {exe}/Filters/ into the AppData Filters
+    /// directory. Only runs when the AppData directory does not yet exist (fresh install).
+    /// </summary>
+    public void SeedFromShipped()
+    {
+        if (Directory.Exists(_filtersDir)) return;
+        var exeDir = Path.GetDirectoryName(Environment.ProcessPath);
+        if (string.IsNullOrWhiteSpace(exeDir)) return;
+        var shippedDir = Path.Combine(exeDir, "Filters");
+        if (!Directory.Exists(shippedDir)) return;
+
+        Directory.CreateDirectory(_filtersDir);
+        foreach (var src in Directory.GetFiles(shippedDir, "*.json"))
+        {
+            try
+            {
+                var dest = Path.Combine(_filtersDir, Path.GetFileName(src));
+                File.Copy(src, dest, overwrite: false);
+            }
+            catch { /* skip on error */ }
+        }
+        Load();
+    }
+
+    /// <summary>
+    /// Migrates the legacy single-file format (custom_filters.json array) to
+    /// individual per-filter files. The legacy file is renamed to .migrated.
+    /// </summary>
+    public void MigrateFromLegacy(string legacyFilePath)
+    {
+        if (!File.Exists(legacyFilePath)) return;
+
+        // If the Filters directory already has files, just archive the legacy file
+        if (Directory.Exists(_filtersDir) && Directory.GetFiles(_filtersDir, "*.json").Length > 0)
+        {
+            try { File.Move(legacyFilePath, legacyFilePath + ".migrated", overwrite: true); } catch { }
+            return;
         }
 
-        if (changed) Save();
+        try
+        {
+            var json = File.ReadAllText(legacyFilePath);
+            var filters = JsonSerializer.Deserialize<List<CustomFilter>>(json, JsonOpts);
+            if (filters is not null)
+            {
+                Directory.CreateDirectory(_filtersDir);
+                foreach (var f in filters)
+                {
+                    if (!string.IsNullOrWhiteSpace(f.Id))
+                        SaveFilter(f);
+                }
+            }
+            File.Move(legacyFilePath, legacyFilePath + ".migrated", overwrite: true);
+            Load();
+        }
+        catch { /* if migration fails, SeedFromShipped will handle it */ }
+    }
+
+    // ── Shipped filter detection ────────────────────────────────────────
+
+    /// <summary>
+    /// Returns true if a filter with this ID exists in the shipped {exe}/Filters/
+    /// directory. Used to decide between backup (base filter) and hard delete
+    /// (user-created filter) when removing.
+    /// </summary>
+    public static bool IsShippedFilter(string? id)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return false;
+        var exeDir = Path.GetDirectoryName(Environment.ProcessPath);
+        if (string.IsNullOrWhiteSpace(exeDir)) return false;
+        var shippedPath = Path.Combine(exeDir, "Filters", $"{id}.json");
+        return File.Exists(shippedPath);
     }
 }
