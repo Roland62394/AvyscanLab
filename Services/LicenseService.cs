@@ -51,7 +51,15 @@ public static class LicenseService
     //  DEV TOGGLE — flip to true to force-unlock for testing.
     //  ⚠️ Must be false for production / trial builds.
     // ─────────────────────────────────────────────────────────────────
-    public const bool ForceLicensed = true;
+    public const bool ForceLicensed = false;
+
+    // ─────────────────────────────────────────────────────────────────
+    //  TESTER BUILD — set a date to grant full access for TestGraceDays.
+    //  After expiry the app reverts to trial mode automatically.
+    //  ⚠️ Set to null for production builds.
+    // ─────────────────────────────────────────────────────────────────
+    private static readonly DateTime? TestBuildDate = new(2026, 4, 12);
+    private const int TestGraceDays = 15;
 
     private const string LicenseFileName = "license.dat";
 
@@ -94,6 +102,25 @@ public static class LicenseService
                 LastValidatedUtc = DateTime.UtcNow,
                 Status = "active"
             };
+            return;
+        }
+
+        // Tester build: full access for TestGraceDays after TestBuildDate
+        if (TestBuildDate.HasValue)
+        {
+            var elapsed = (DateTime.UtcNow - TestBuildDate.Value).TotalDays;
+            IsLicensed = elapsed <= TestGraceDays;
+            if (IsLicensed)
+            {
+                _record = new LicenseRecord
+                {
+                    LicenseKey = "TEST-BUILD",
+                    InstanceId = null,
+                    InstanceName = Environment.MachineName,
+                    LastValidatedUtc = TestBuildDate.Value,
+                    Status = "active"
+                };
+            }
             return;
         }
 
